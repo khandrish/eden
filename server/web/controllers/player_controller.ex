@@ -61,11 +61,11 @@ defmodule Eden.PlayerController do
   plug EnsurePopulatedParams, ~w(id) when action in [:delete]
 
   # Login plugs
-  #plug FilterParams, ~w(login password) when action in [:login]
-  #plug EnsureAllParams, ~w(login password) when action in [:login]
-  #plug ScrubExistingParams, ~w(login password) when action in [:login]
-  #plug EnsurePopulatedParams, ~w(login password) when action in [:login]
-  #plug EnsurePopulatedParams, ~w(login password) when action in [:login]
+  plug FilterParams, ~w(login password) when action in [:login]
+  plug EnsureAllParams, ~w(login password) when action in [:login]
+  plug ScrubExistingParams, ~w(login password) when action in [:login]
+  plug EnsurePopulatedParams, ~w(login password) when action in [:login]
+  plug EnsurePopulatedParams, ~w(login password) when action in [:login]
 
   # Logout plugs
   plug Authenticated when action in [:logout]
