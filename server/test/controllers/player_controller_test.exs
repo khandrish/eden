@@ -1,39 +1,13 @@
 defmodule Eden.PlayerControllerTest do
-  import Ecto.Changeset
-  use Phoenix.ConnTest
+  use Eden.Case
   use Eden.ConnCase
-  use Plug.Test
-  alias Eden.Player
-  alias Eden.Router
-
-  @password "This is a valid passphrase"
-  @valid_attrs %{email: nil, email_confirmation: nil, password: @password, password_confirmation: @password, login: nil, name: nil}
-  @invalid_attrs %{email: "invalidemailaddress"}
+  use Eden.PlayerCase
 
   setup do
-    conn = conn() |> put_req_header("accept", "application/json")
-
-    email = "#{Ecto.UUID.generate}@eden.com"
-    login = Ecto.UUID.generate
-    name = Ecto.UUID.generate
-
-    attrs = @valid_attrs
-    |> Map.put(:email, email)
-    |> Map.put(:login, login)
-    |> Map.put(:name, name)
-
-    changeset = Player.changeset(:create, %Player{}, attrs)
-    |> force_change(:hash, Comeonin.Bcrypt.hashpwsalt(@password))
-
-    player = Repo.insert! changeset
-    on_exit fn ->
-      Repo.delete! player
-    end
-
-    {:ok, %{:conn => conn, :player => player}}
+    {:ok, %{:conn => json_conn, :player => create_player}}
   end
 
-  test "lists all entries on index", %{:conn => conn, :player => player} do
+  test "lists all entries on index", %{:conn => conn} do
     conn = get conn, player_path(conn, :index)
     assert json_response(conn, 200)["data"] != []
   end
@@ -47,10 +21,10 @@ defmodule Eden.PlayerControllerTest do
   end
 
   test "does not show resource and instead throw error when id is nonexistent", %{:conn => conn} do
-    assert_raise Ecto.NoResultsError, fn ->
-      conn
-        |> get player_path(conn, :show, -1)
-    end
+    conn = conn
+    |> get player_path(conn, :show, -1)
+
+    assert response(conn, 404)
   end
   
   test "does not verify email when email verification token is invalid", %{:conn => conn} do
@@ -59,7 +33,11 @@ defmodule Eden.PlayerControllerTest do
   end
 
   test "does not create resource and renders errors when data is invalid", %{:conn => conn} do
-    conn = post conn, player_path(conn, :create), @valid_attrs
+    conn = post conn, player_path(conn, :create), %{login: "Valid Login",
+                                                    password: "Valid Password",
+                                                    password_confirmation: "Valid Password",
+                                                    email: "foo@bar",
+                                                    name: "foobar"}
     assert response(conn, 422)
   end
 
@@ -124,11 +102,11 @@ defmodule Eden.PlayerControllerTest do
     conn = conn
     |> with_session
 
-    conn = post conn, player_path(conn, :login), %{"login" => player.login, "password" => @password}
+    conn = post conn, player_path(conn, :login), %{"login" => player.login, "password" => "Valid Password"}
     assert conn.status == 200
   end
 
-  test "unsuccessfully logs into an account", %{:conn => conn, :player => player} do
+  test "unsuccessfully logs into an account", %{:conn => conn} do
     conn = post conn, player_path(conn, :login), %{"login" => "bad login", "password" => "bad password"}
     assert json_response(conn, 422)
   end

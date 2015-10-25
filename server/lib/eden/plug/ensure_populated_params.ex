@@ -1,7 +1,7 @@
 defmodule Eden.Plug.EnsurePopulatedParams do
   @moduledoc """
-    Authenticated plug can be used ensure an action can only be triggered by
-    players that are authenticated.
+    EnsurePopulatedParams plug can be used to make sure none of the
+    required_params params sent in with the request are empty.
   """
   import Plug.Conn
 

@@ -14,6 +14,15 @@ config :eden, Eden.Endpoint,
   pubsub: [name: Eden.PubSub,
            adapter: Phoenix.PubSub.PG2]
 
+# Configures the player session.
+config :eden, :player_session,
+  ttl: 60 * 60 * 24 * 14 # 14 days in seconds
+
+config :eden, :pools,
+  example: %{size: 1,
+                    max_overflow: 0,
+                    worker_module: Eden.Pool.Example}
+
 # Configures Elixir's Logger
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",
@@ -28,9 +37,10 @@ config :phoenix, :generators,
   migration: true,
   binary_id: false
 
-config :eden, mailgun_domain: "https://api.mailgun.net/v3/sandbox28310e312b6841c78098ece145a4e653.mailgun.org",
-              mailgun_key: "key-9de238d170019e92fdd3d4f3877990dc",
-              password_reset_token_ttl: 60 * 60 * 24, # One Day
-              email_verification_token_ttl: 60 * 60 * 24 * 7, # One Week
-              mailgun_client_mode: :prod,
-              mailgun_test_file_path: "/tmp/mailgun.json"
+config :eden,
+  mailgun_domain: "https://api.mailgun.net/v3/sandbox28310e312b6841c78098ece145a4e653.mailgun.org",
+  mailgun_key: "key-9de238d170019e92fdd3d4f3877990dc",
+  password_reset_token_ttl: 60 * 60 * 24, # One Day
+  email_verification_token_ttl: 60 * 60 * 24 * 7, # One Week
+  mailgun_client_mode: :prod,
+  mailgun_test_file_path: "/tmp/mailgun.json"

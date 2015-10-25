@@ -12,13 +12,21 @@ defmodule Eden do
       # Start the Ecto repository
       worker(Eden.Repo, []),
       # Here you could define other workers and supervisors as children
-      # worker(Eden.Worker, [arg1, arg2, arg3]),
+      worker(Eden.Sandbox, []),
     ]
+
+    pools = Enum.map(pools(), fn({name, args}) ->
+        pool_options = [name: {:local, name},
+                     worker_module: args.worker_module,
+                     size: args.size,
+                     max_overflow: args.max_overflow]
+        :poolboy.child_spec(name, pool_options, [])
+      end)
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Eden.Supervisor]
-    Supervisor.start_link(children, opts)
+    Supervisor.start_link(children ++ pools, opts)
   end
 
   # Tell Phoenix to update the endpoint configuration
@@ -26,5 +34,9 @@ defmodule Eden do
   def config_change(changed, _new, removed) do
     Eden.Endpoint.config_change(changed, removed)
     :ok
+  end
+
+  defp pools do
+    Application.get_env(:eden, :pools)
   end
 end

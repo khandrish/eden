@@ -13,12 +13,6 @@ defmodule Eden.PlayerController do
   alias Eden.Plug.EnsurePopulatedParams
   alias Eden.Plug.Authenticated
   alias Eden.Plug.HasAllPermissions
-  alias Eden.Plug.JsonApi
-
-  alias Times.Date
-
-  # General plugs
-  plug JsonApi
 
   # Create plugs
   plug FilterParams, ~w(login name email password password_confirmation) when action in [:create]
@@ -116,8 +110,12 @@ defmodule Eden.PlayerController do
 
   def show(conn, %{"id" => id}) do
     # TODO: return different data based on the permissions available to the session
-    player = Repo.get!(Player, id)
-    render conn, "show.json", player: player
+    case Repo.get(Player, id) do
+      nil ->
+        conn |> send_resp(:not_found, "")
+      player ->
+        render conn, "show.json", player: player
+    end
   end
 
   def update(conn, params) do
@@ -250,12 +248,12 @@ defmodule Eden.PlayerController do
     |> send_resp(:ok, "")
   end
 
-  defp login(player, password, conn) when is_nil(player) do
+  defp login(player, _password, conn) when is_nil(player) do
     conn
     |> send_resp(:unprocessable_entity, ~S({"errors": ["Must provide a login."]}))
   end
 
-  defp login(player, password, conn) when is_nil(password) do
+  defp login(_player, password, conn) when is_nil(password) do
     conn
     |> send_resp(:unprocessable_entity, ~S({"errors": ["Must provide a password."]}))
   end

@@ -28,6 +28,10 @@ defmodule Eden.ConnCase do
 
       # The default endpoint for testing
       @endpoint Eden.Endpoint
+
+      def json_conn() do
+        conn() |> put_req_header("accept", "application/json")
+      end
     end
   end
 

@@ -4,9 +4,8 @@ defmodule Eden.Router do
   pipeline :api do
     plug :accepts, ["json"]
     plug :fetch_session
-    plug :fetch_flash
-    plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug Eden.Plug.JsonApi
   end
 
   pipeline :authenticated do
@@ -21,6 +20,8 @@ defmodule Eden.Router do
       post "/verify-email", PlayerController, :verify_email
       post "/login", PlayerController, :login
       post "/logout", PlayerController, :logout
+
+    resources "characters", CharacterController, except: [:new, :edit]
 
     scope "/sandbox" do
       pipe_through :authenticated
