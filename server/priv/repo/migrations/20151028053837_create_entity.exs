@@ -3,6 +3,7 @@ defmodule Eden.Repo.Migrations.CreateEntity do
 
   def change do
     create table(:entities) do
+      add :components, :map
 
       timestamps
     end

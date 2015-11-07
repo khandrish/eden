@@ -1,7 +1,8 @@
 defmodule Eden.Entity do
-  use Eden.Web, :model
+  use Ecto.Model
 
   schema "entities" do
+    field :components, :map
 
     timestamps
   end

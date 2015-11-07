@@ -128,13 +128,14 @@ defmodule Eden.PlayerController do
           if Map.has_key?(params, :email) and params.email != nil do
             token = Phoenix.Token.sign(conn, @verify_email_salt, player.id)
             changeset = force_change(changeset, :email_verification_token, token)
-            changeset = force_change(changeset, :email_verified, false)
+            |> force_change(:email_verified, false)
             Mailer.send_email_validation_email(params.email, token)
           end
 
           if Map.has_key?(params, :password) and params.password != nil do
             changeset = force_change(changeset, :failed_login_attempts, 0)
-            changeset = force_change(changeset, :login_lock, nil)
+            |> force_change(:login_lock, nil)
+            |> generate_password_hash
           end
 
           Repo.update!(changeset)

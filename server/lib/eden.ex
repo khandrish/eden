@@ -13,6 +13,7 @@ defmodule Eden do
       worker(Eden.Repo, []),
       # Here you could define other workers and supervisors as children
       worker(Eden.Sandbox, []),
+      worker(ConCache, [[], [name: :entity_cache]])
     ]
 
     pools = Enum.map(pools(), fn({name, args}) ->
