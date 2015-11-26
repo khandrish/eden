@@ -1,7 +1,5 @@
-defmodule Eden.Case do
+defmodule Eden.TestHelper do
   use ExUnit.CaseTemplate
-  alias Ecto.Adapters.SQL
-  alias Eden.Repo
 
   using do
     quote do

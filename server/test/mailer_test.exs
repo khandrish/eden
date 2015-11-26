@@ -1,5 +1,5 @@
 defmodule Eden.MailerTest do
-  use Eden.ConnCase
+  use Eden.Case
 
   test "Send welcome email" do
     assert {:ok, _} = Eden.Mailer.send_welcome_email("khandrish@gmail.com", "Khan")

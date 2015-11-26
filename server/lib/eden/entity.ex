@@ -1,22 +1,23 @@
 defmodule Eden.Entity do
   use Ecto.Model
 
+  @primary_key {:id, :binary_id, autogenerate: true}
+
   schema "entities" do
-    field :components, :map
+    field :components, :binary
 
     timestamps
   end
 
-  @required_fields ~w()
+  @required_fields ~w(components)
   @optional_fields ~w()
 
   @doc """
   Creates a changeset based on the `model` and `params`.
-
-  If no params are provided, an invalid changeset is returned
+  If `params` are nil, an invalid changeset is returned
   with no validation performed.
   """
-  def changeset(model, params \\ :empty) do
+  def changeset(model, params \\ nil) do
     model
     |> cast(params, @required_fields, @optional_fields)
   end
