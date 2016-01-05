@@ -55,4 +55,14 @@ defmodule Eden.EntityManagerTest do
     assert :true == EM.load_entity(id)
     assert "bar" == EM.get_key(id, "foo", "foo")
   end
+
+  test "Can search for entities by components", %{entity: id} do
+      unique_id_1 = Ecto.UUID.generate
+      unique_id_2 = Ecto.UUID.generate
+      assert :true == EM.add_component(id, unique_id_1)
+      assert [id] == EM.get_entities_with_component(unique_id_1)
+      assert :true == EM.add_component(id, unique_id_2)
+      assert [id] == EM.get_entities_with_component(unique_id_2)
+      assert [id] == EM.get_entities_with_components([unique_id_1, unique_id_2])
+    end
 end

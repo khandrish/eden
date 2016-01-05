@@ -118,6 +118,21 @@ defmodule Eden.EntityManager do
     for {_, component} <- :ets.lookup(@ec_index, id), do: component
   end
 
+  def get_entities_with_component(component) do
+    get_entities_with_components([component])
+  end
+
+  def get_entities_with_components(components) do
+    [first_set|rest] = Enum.reduce(components, [], fn(component, sets) ->
+      [(for entity <- :ets.lookup_element(@ce_index, component, 2), into: MapSet.new(), do: entity)|sets]
+    end)
+
+    Enum.reduce(rest, first_set, fn(test_set, control_set) ->
+      MapSet.intersection(control_set, test_set)
+    end)
+    |> MapSet.to_list
+  end
+
   def load_all_entities do
     Repo.all(Entity)
     |> unpack_entities
