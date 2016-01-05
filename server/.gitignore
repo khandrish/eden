@@ -3,6 +3,7 @@
 /db
 /deps
 /*.ez
+/.idea
 
 # Generate on crash by the VM
 erl_crash.dump
