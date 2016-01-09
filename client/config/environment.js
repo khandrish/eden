@@ -19,14 +19,6 @@ module.exports = function(environment) {
     }
   };
 
-  ENV.contentSecurityPolicy = {
-    'connect-src': "'self' http://localhost:8080 http://0.0.0.0:8080",
-    'img-src': "'self' http://localhost:8080",
-    'script-src': "'self' http://localhost:8080 'unsafe-eval",
-    'media-src': "'self' http://localhost:8080",
-    'style-src': "'self' 'unsafe-inline' http://localhost:8080 http://0.0.0.0:8080"
-  };
-
   if (environment === 'development') {
     // ENV.APP.LOG_RESOLVER = true;
     // ENV.APP.LOG_ACTIVE_GENERATION = true;

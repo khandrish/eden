@@ -20,8 +20,8 @@ config :eden, :player_session,
 
 config :eden, :pools,
   example: %{size: 1,
-                    max_overflow: 0,
-                    worker_module: Eden.Pool.Example}
+             max_overflow: 0,
+             worker_module: Eden.Pool.Example}
 
 # Configures Elixir's Logger
 config :logger, :console,
@@ -44,3 +44,6 @@ config :eden,
   email_verification_token_ttl: 60 * 60 * 24 * 7, # One Week
   mailgun_client_mode: :prod,
   mailgun_test_file_path: "/tmp/mailgun.json"
+
+config :eden, :game,
+  time: %{}
