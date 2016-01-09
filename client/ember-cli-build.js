@@ -7,6 +7,12 @@ module.exports = function(defaults) {
     // Add options here
     emberCliFontAwesome: {
       useScss: true
+    },
+    'foundationJs': 'all',
+    sassOptions: {
+      includePaths: [
+        'bower_components/foundation-sites/scss'
+      ]
     }
   });
 

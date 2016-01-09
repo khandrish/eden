@@ -2,3 +2,13 @@
 @import 'foundation';
 @include foundation-everything;
 @import "bower_components/font-awesome/scss/font-awesome";
+
+$background-color: #292c2f;
+$primary-color: #87D37C;
+
+.row {
+  max-width: 100%;
+}
+
+$topbar-background: #333;
+$topbar-link-color: #333;
