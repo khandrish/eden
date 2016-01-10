@@ -6,9 +6,32 @@
 $background-color: #292c2f;
 $primary-color: #87D37C;
 
+$menu-background: #333;
+
 .row {
   max-width: 100%;
 }
 
-$topbar-background: #333;
-$topbar-link-color: #333;
+.top-bar {
+  background: $menu-background;
+  
+  ul {
+    background: $menu-background;
+  
+    li {
+      background: $menu-background;
+    
+        a {
+          color: #fff;
+      }
+    }
+  }
+}
+
+.tooltip {
+	z-index: 1010;
+}
+
+.has-tooltip {
+	cursor: help;
+}

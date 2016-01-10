@@ -9,8 +9,8 @@
    <div class="top-bar-right">
     <ul class="menu">
       {{#unless session.isAuthenticated}}
-        <li><a href="#" data-reveal-id="login_modal">Login</a></li>
-        <li><a href="#" data-reveal-id="register_modal">Register</a></li>
+        <li><a href="#" data-toggle="login_modal">Login</a></li>
+        <li><a href="#" data-toggle="register_modal">Register</a></li>
       {{/unless}}
       {{#if session.isAuthenticated}}
         <li><a href="#" {{action 'logout'}}>Logout</a></li>
@@ -19,33 +19,21 @@
   </div>
 </nav>
 
-
-<!--
-<div id="login_modal" class="reveal-modal tiny" data-reveal aria-hidden="true" role="dialog">
-  <a class="close-reveal-modal" aria-label="Close">&#215;</a>
+<div id="login_modal" class="reveal tiny" data-reveal>
   <form id="login_form">
     <fieldset>
       <legend>Welcome Back!</legend>
-      <div class="row collapse">
-        <div class="small-1 medium-2 large-1 columns">
-          <span class="prefix has-tip" data-tooltip aria-haspopup="true" title="The login must be between 8 and 255 characters in length.">{{fa-icon "info"}}</span>
-        </div>
-        <div class="small-11 medium-10 large-11 columns">
-          <input name="login" type="text" placeholder="Login">
-        </div>
-      </div>
-      <div class="row collapse">
-        <div class="small-1 medium-2 large-1 columns">
-          <span class="prefix has-tip" data-tooltip aria-haspopup="true" title="The password must be between 8 and 50 characters in length.">{{fa-icon "info"}}</span>
-        </div>
-        <div class="small-11 medium-10 large-11 columns">
-          <input name="password" type="password" placeholder="Password">
-        </div>
-      </div>
       <div class="row">
-        <div class="small-12 columns">
-          <input id="remember" name="remember" type="checkbox"><label for="remember">Remember Me</label>
-        </div>
+      	<div class="input-group">
+      		<span class="input-group-label has-tooltip" data-tooltip aria-haspopup="true" data-disable-hover='false' title="The login must be between 8 and 255 characters in length.">{{fa-icon "info"}}</span>
+  				<input name="login" class="input-group-field" type="text" placeholder="Login">
+      	</div>
+      	<div class="input-group">
+      		<span class="input-group-label has-tooltip" data-tooltip aria-haspopup="true" data-disable-hover='false' title="The password must be between 8 and 50 characters in length.">{{fa-icon "info"}}</span>
+  				<input name="password" class="input-group-field" type="text" placeholder="Password">
+      	</div>
+  			<input id="remember" name="remember" type="checkbox">
+      	<label for="remember" class="has-tip" data-tooltip aria-haspopup="true" data-disable-hover='false' title="Only use this on trusted devices, as the session will remain open for up to 14 days.">Remember Me</label>
       </div>
       <div class="row">
         <div class="small-12 columns">
@@ -54,52 +42,44 @@
       </div>
     </fieldset>
   </form>
+	<button class="close-button" data-close aria-label="Close reveal" type="button">
+    <span aria-hidden="true">&times;</span>
+  </button>
 </div>
 
-<div id="register_modal" class="reveal-modal tiny" data-reveal aria-hidden="true" role="dialog">
-  <a class="close-reveal-modal" aria-label="Close">&#215;</a>
-  <form id="register_form">
+<div id="register_modal" class="reveal tiny" data-reveal aria-hidden="true" role="dialog">
+  <form id="register_form" data-abide novalidate>
     <fieldset>
       <legend>Join Us!</legend>
       <div class="row collapse">
-        <div class="small-1 medium-2 large-1 columns">
-          <span class="prefix has-tip" data-tooltip aria-haspopup="true" title="Your login is used only for authentication and is not displayed to other players or staff. It must be between 8 and 255 characters in length.">{{fa-icon "info"}}</span>
-        </div>
-        <div class="small-11 medium-10 large-11 columns">
-          <input name="login" type="text" placeholder="Login">
-        </div>
+        <div class="input-group">
+      		<span class="input-group-label has-tooltip" data-tooltip aria-haspopup="true" data-disable-hover='false' title="The login must be between 8 and 255 characters in length.">{{fa-icon "info"}}</span>
+  				<input name="login" class="input-group-field" type="text" placeholder="Login" required pattern="[ -~]{8,255}">
+      	</div>
+      	<div class="input-group">
+      		<span class="input-group-label has-tooltip" data-tooltip aria-haspopup="true" data-disable-hover='false' title="The password must be between 8 and 50 characters in length.">{{fa-icon "info"}}</span>
+  				<input id="password" name="password" class="input-group-field" type="password" placeholder="Password" required pattern="[ -~]{8,50}">
+      	</div>
+      	<div class="input-group">
+      		<span class="input-group-label has-tooltip" data-tooltip aria-haspopup="true" data-disable-hover='false' title="Must match password entered above.">{{fa-icon "info"}}</span>
+  				<input class="input-group-field" type="password" placeholder="Confirm Password" required data-equalto="password">
+      	</div>
+      	<div class="input-group">
+      		<span class="input-group-label has-tooltip" data-tooltip aria-haspopup="true" data-disable-hover='false' title="This is how you are known to players and staff. Must be between 2 and 20 characters in length.">{{fa-icon "info"}}</span>
+  				<input name="playername" class="input-group-field" type="text" placeholder="Playername" required pattern="[A-Z][a-z]{1,19}">
+      	</div>
+      	<div class="input-group">
+      		<span class="input-group-label has-tooltip" data-tooltip aria-haspopup="true" data-disable-hover='false' title="Your email is used for password and account recovery as well as communications from staff.">{{fa-icon "info"}}</span>
+  				<input name="email" class="input-group-field" type="text" placeholder="Email" required pattern="email">
+      	</div>
       </div>
-      <div class="row collapse">
-        <div class="small-1 medium-2 large-1 columns">
-          <span class="prefix has-tip" data-tooltip aria-haspopup="true" title="Your password must be between 8 and 50 characters in length.">{{fa-icon "info"}}</span>
-        </div>
-        <div class="small-11 medium-10 large-11 columns">
-          <input name="password" type="password" placeholder="Password">
-        </div>
+      <div class="row">
+        <input id="remember" name="remember" type="checkbox" required>
+      	<label for="remember" class="has-tip" data-tooltip aria-haspopup="true" data-disable-hover='false' title="Only use this on trusted devices, as the session will remain open for up to 14 days.">Remember Me</label>
       </div>
-      <div class="row collapse">
-        <div class="small-2 medium-2 large-1 columns">
-          <span class="prefix has-tip" data-tooltip aria-haspopup="true" title="Must match password entered above.">{{fa-icon "info"}}</span>
-        </div>
-        <div class="small-10 medium-10 large-11 columns">
-          <input name="password_confirmation" type="password" placeholder="Confirm Password">
-        </div>
-      </div>
-      <div class="row collapse">
-        <div class="small-2 medium-2 large-1 columns">
-          <span class="prefix has-tip" data-tooltip aria-haspopup="true" title="This is how you are known to players and staff. Must be between 2 and 20 characters in length.">{{fa-icon "info"}}</span>
-        </div>
-        <div class="small-10 medium-10 large-11 columns">
-          <input name="name" type="text" placeholder="PlayerName">
-        </div>
-      </div>
-      <div class="row collapse">
-        <div class="small-2 medium-2 large-1 columns">
-          <span class="prefix has-tip" data-tooltip aria-haspopup="true" title="Your email is used for password and account recovery as well as communications from staff.">{{fa-icon "info"}}</span>
-        </div>
-        <div class="small-10 medium-10 large-11 columns">
-          <input name="email" type="text" placeholder="Email">
-        </div>
+      <div class="row">
+        <input id="tos" name="tos" type="checkbox" required>
+      	<label for="tos">Agree to <a href="#" data-toggle="tos_modal">Terms of Service</a></label>
       </div>
       <div class="row">
         <div class="small-12 columns">
@@ -108,5 +88,14 @@
       </div>
     </fieldset>
   </form>
+	<button class="close-button" data-close aria-label="Close reveal" type="button">
+    <span aria-hidden="true">&times;</span>
+  </button>
 </div>
--->
+
+<div id="tos_modal" class="reveal tiny" data-reveal>
+  <p>Placeholder for TOS</p>
+  <button class="close-button" data-close aria-label="Close reveal" data-reveal-id="register_modal" type="button">
+    <span aria-hidden="true">&times;</span>
+  </button>
+</div>
