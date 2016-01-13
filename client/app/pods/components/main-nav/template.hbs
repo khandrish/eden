@@ -1,0 +1,26 @@
+<nav id="main-desktop-nav" class="top-bar" role="navigation">
+	<div class="top-bar-left">
+   	<ul class="menu">
+      {{#if session.isAuthenticated}}
+        <li>{{#link-to 'play'}}Play{{/link-to}}</li>
+      {{/if}}
+    </ul>
+   </div>
+   <div class="top-bar-right">
+    <ul class="menu">
+      {{#unless session.isAuthenticated}}
+        <li><a href="#" data-toggle="login_modal">Login</a></li>
+        <li><a href="#" data-toggle="registration_modal">Register</a></li>
+      {{/unless}}
+      {{#if session.isAuthenticated}}
+        <li><a href="#" {{action 'logout'}}>Logout</a></li>
+      {{/if}}
+    </ul>
+  </div>
+</nav>
+
+{{login-modal}}
+
+{{modal-wrapper id="registration_modal" modal="registration-modal" onConfirm=(action "closeRegistrationModal") onCancel=(action "closeRegistrationModal")}}
+
+{{modal-wrapper id="tos_modal" modal="tos-modal" onConfirm=(action "showRegistrationModal") confirmText="Ok"}}

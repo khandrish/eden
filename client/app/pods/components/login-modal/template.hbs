@@ -1,0 +1,27 @@
+<div id="login_modal" class="reveal tiny" data-reveal>
+  <form id="login_form">
+    <fieldset>
+      <legend>Welcome Back!</legend>
+      <div class="row">
+      	<div class="input-group">
+      		<span class="input-group-label has-tooltip" data-tooltip aria-haspopup="true" data-disable-hover='false' title="The login must be between 8 and 255 characters in length.">{{fa-icon "info"}}</span>
+  				<input name="login" class="input-group-field" type="text" placeholder="Login">
+      	</div>
+      	<div class="input-group">
+      		<span class="input-group-label has-tooltip" data-tooltip aria-haspopup="true" data-disable-hover='false' title="The password must be between 8 and 50 characters in length.">{{fa-icon "info"}}</span>
+  				<input name="password" class="input-group-field" type="text" placeholder="Password">
+      	</div>
+  			<input id="remember" name="remember" type="checkbox">
+      	<label for="remember" class="has-tip" data-tooltip aria-haspopup="true" data-disable-hover='false' title="Only use this on trusted devices, as the session will remain open for up to 14 days.">Remember Me</label>
+      </div>
+      <div class="row">
+        <div class="small-12 columns">
+          <button {{action 'processLoginForm'}} class="button primary">Login</button>
+        </div>
+      </div>
+    </fieldset>
+  </form>
+	<button class="close-button" data-close aria-label="Close reveal" type="button">
+    <span aria-hidden="true">&times;</span>
+  </button>
+</div>

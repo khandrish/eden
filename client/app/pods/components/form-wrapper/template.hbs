@@ -1,0 +1,11 @@
+{{component form}}
+
+<div class="row">
+{{#if submitText}}
+  <button class="button" disabled={{isInvalid}} {{action "submit"}}>{{submitText}}</button>
+{{/if}}
+
+{{#if cancelText}}
+  <button class="button" {{action "cancel"}}>{{cancelText}}</button>
+{{/if}}
+</div>
