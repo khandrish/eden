@@ -9,6 +9,9 @@ export default Ember.Component.extend({
     cancel: function() {
       this.get('onCancel')();
     },
+    formValidityChanged: function(newValue) {
+      this.set('isValid', newValue);
+    },
     submit: function() {
       var inputs = this.$(':input[name]');
       var values = {};
