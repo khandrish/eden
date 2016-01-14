@@ -9,18 +9,18 @@
    <div class="top-bar-right">
     <ul class="menu">
       {{#unless session.isAuthenticated}}
-        <li><a href="#" data-toggle="login_modal">Login</a></li>
-        <li><a href="#" data-toggle="registration_modal">Register</a></li>
+        <li><a href="#" {{action "showLoginModal"}}>Login</a></li>
+        <li><a href="#" {{action "showRegistrationModal"}}>Register</a></li>
       {{/unless}}
       {{#if session.isAuthenticated}}
-        <li><a href="#" {{action 'logout'}}>Logout</a></li>
+        <li><a href="#" {{action 'invalidateSessioninvalidateSession'}}>Logout</a></li>
       {{/if}}
     </ul>
   </div>
 </nav>
 
-{{login-modal}}
+{{modal-wrapper id="login_modal" modal="login-modal" onConfirm=(action "closeLoginModal") onCancel=(action "closeLoginModal")}}
 
 {{modal-wrapper id="registration_modal" modal="registration-modal" onConfirm=(action "closeRegistrationModal") onCancel=(action "closeRegistrationModal")}}
 
-{{modal-wrapper id="tos_modal" modal="tos-modal" onConfirm=(action "showRegistrationModal") confirmText="Ok"}}
+{{modal-wrapper id="tos_modal" modal="tos-modal" onConfirm=(action "showRegistrationModal") onCancel=(action "showRegistrationModal") confirmText="Ok"}}

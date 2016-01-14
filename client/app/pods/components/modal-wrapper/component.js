@@ -6,6 +6,8 @@ export default Ember.Component.extend({
   reveal: true,
   aria: 'true',
   role: 'dialog',
+  onCancel: function(){},
+  onConfirm: function(){},
   actions: {
     cancel: function() {
       this.get('onCancel')();

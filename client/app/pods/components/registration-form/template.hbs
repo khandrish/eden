@@ -1,7 +1,11 @@
 <fieldset>
   <legend>Join Us!</legend>
   <div class="row collapse">
-    <input name="test" type="text" value="test">
+    <div class="input-group">
+      <span class="input-group-label has-tooltip" data-tooltip aria-haspopup="true" data-disable-hover='false' title="The login must be between 8 and 255 characters in length, and can only be made up of ASCII characters. It will never be shown to other players.">{{fa-icon "info"}}</span>
+      {{input type="text" placeholder="Login" class="input-group-field" name="login" value=(mut loginValue) }}
+    </div>
+    <button {{action "printValue"}}>test</button>
     <input name="password" type="password" value="password">
     <input type="radio" name="gender" value="male" checked> Male<br>
     <input type="radio" name="gender" value="female"> Female<br>

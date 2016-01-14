@@ -8,6 +8,12 @@ export default Ember.Component.extend({
     },
     registerNewPlayer: function(params) {
       this.get('confirm')();
-    }
+    },
+    closeTosModal: function() {
+      Ember.$('#tos_modal').foundation('close');
+    },
+    showTosModal: function() {
+      Ember.$('#tos_modal').foundation('open');
+    },
   }
 });
