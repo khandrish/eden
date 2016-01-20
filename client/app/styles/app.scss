@@ -1,6 +1,7 @@
 @import "settings";
 @import 'foundation';
 @include foundation-everything;
+@include foundation-flex-grid;
 @import "bower_components/font-awesome/scss/font-awesome";
 
 $background-color: #292c2f;
@@ -34,4 +35,8 @@ $menu-background: #333;
 
 .has-tooltip {
 	cursor: help;
+}
+
+.input-group-field {
+  width: 100%;
 }

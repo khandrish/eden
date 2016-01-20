@@ -17,13 +17,12 @@ defmodule Eden.Player do
     field :last_name_change, Ecto.DateTime
 
     field :password, :string, virtual: true
-    field :password_confirmation, :string, virtual: true
     field :password_reset_token, :string
 
     timestamps
   end
 
-  @create_required_fields ~w(login name email password password_confirmation)
+  @create_required_fields ~w(login name email password)
   def changeset(:create, model, params) do
     cs = model
     |> cast(params, @create_required_fields)
@@ -31,7 +30,7 @@ defmodule Eden.Player do
   end
 
   @update_required_fields ~w()
-  @update_optional_fields ~w(email name login password password_confirmation)
+  @update_optional_fields ~w(email name login password)
   def changeset(:update, model, params) do
     cs = model
     |> cast(params, @update_required_fields, @update_optional_fields)
@@ -43,7 +42,6 @@ defmodule Eden.Player do
     |> validate_length(:login, min: 12, max: 100)
     |> unique_constraint(:login)
     |> validate_length(:password, min: 12, max: 100)
-    |> validate_confirmation(:password)
     |> validate_format(:email, ~r/@/)
     |> validate_length(:name, min: 2, max: 50)
     |> unique_constraint(:name)

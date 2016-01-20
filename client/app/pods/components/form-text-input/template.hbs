@@ -1,7 +1,4 @@
+{{#if hasTooltip}}
 <span class="input-group-label has-tooltip" data-tooltip aria-haspopup="true" data-disable-hover='false' title={{tooltipText}}>{{fa-icon "info"}}</span>
-{{#if hasId}}
-	<input id={{inputId}} name={{name}} class="input-group-field" type={{type}} placeholder={{placeholder}} {{action "input" on="input"}}>
 {{/if}}
-{{#unless hasId}}
-	<input name={{name}} class="input-group-field" type={{type}} placeholder={{placeholder}} {{action "input" on="input"}}>
-{{/unless}}
+<input class="input-group-field" placeholder={{placeholder}} type={{type}}>

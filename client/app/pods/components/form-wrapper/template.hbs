@@ -1,11 +1,13 @@
-{{component form onFormValidityChange=(action "formValidityChanged")}}
+<form>
+  {{yield (hash
+    textInput=(component 'form-text-input' submit=true register=(action 'registerInput'))
+    checkboxInput=(component 'form-checkbox-input' submit=true register=(action 'registerInput'))
+  )}}
+  {{#if submitText}}
+    <button class="button" disabled={{isInvalid}} {{action "submit"}}>{{submitText}}</button>
+  {{/if}}
 
-<div class="row">
-{{#if submitText}}
-  <button class="button" disabled={{isInvalid}} {{action "submit"}}>{{submitText}}</button>
-{{/if}}
-
-{{#if cancelText}}
-  <button class="button" {{action "cancel"}}>{{cancelText}}</button>
-{{/if}}
-</div>
+  {{#if cancelText}}
+    <button class="button" {{action "cancel"}}>{{cancelText}}</button>
+  {{/if}}
+</form>

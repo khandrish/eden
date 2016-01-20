@@ -1,39 +1,27 @@
 import Ember from 'ember';
 
 export default Ember.Component.extend({
-  tagName: 'form',
-  form: undefined,
+  classNames: ['columns', 'row'],
+
+  // Form state
+  inputs: {},
   isValid: false,
-  isInvalid: Ember.computed('isValid', function() {return !this.get('isValid');}),
+  isInvalid: Ember.computed.not('isValid'),
+
+  // Application Logic
   actions: {
+    registerInput: function(name, getter) {
+      this.set('inputs.'+name, getter);
+    },
     cancel: function() {
       this.get('onCancel')();
     },
-    formValidityChanged: function(newValue) {
-      this.set('isValid', newValue);
-    },
-    submit: function() {
-      var inputs = this.$(':input[name]');
+    submit: function(values) {
+      var inputs = this.get('inputs');
       var values = {};
-
-      inputs.each(function() {
-        switch(this.type) {
-          case 'checkbox':
-            values[this.name] = this.checked;
-            break;
-          case 'text':
-          case 'password':
-          case 'select':
-            values[this.name] = this.value;
-            break;
-          case 'radio':
-            if(this.checked) {
-              values[this.name] = this.value;
-            }
-            break;
-        }
-      });
-
+      for (var key in inputs) {
+        values[key] = inputs[key]();
+      }
       this.get('onSubmit')(values);
     }
   }

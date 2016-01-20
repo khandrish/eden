@@ -1,25 +1,24 @@
 import Ember from 'ember';
 
 export default Ember.Component.extend({
+  classNames: ['row', 'columns', 'collapse'],
+  
   // Services
   session: Ember.inject.service('session'),
 
-  // Hooks
-  onFormValidityChange: function() {},
-
   // Form State
-  isFormValid: Ember.computed.and('isLoginValueValid', 'isPasswordValueValid', 'isPasswordConfirmationValueValid'),
-  formValidityChanged: Ember.observer('isFormValid', function(sender, key, value, rev) {
-    this.get('onFormValidityChange')(value);
-  }),
+  isValid: Ember.computed.and('loginValueValid', 'passwordValueValid', 'passwordConfirmationValueValid'),
 
   // Form Values
   loginValue: '',
-  isLoginValueValid: Ember.computed.match('loginValue', /^[\x20-\x7F]{7,255}$/),
+  loginValueValid: Ember.computed.match('loginValue', /^[\x20-\x7F]{7,255}$/),
   passwordValue: '',
-  isPasswordValueValid: Ember.computed.match('passwordValue', /^[\x20-\x7F]{7,50}$/),
+  passwordValueValid: Ember.computed.match('passwordValue', /^[\x20-\x7F]{7,50}$/),
   passwordConfirmationValue: '',
-  isPasswordConfirmationValueValid: Ember.computed.equal('passwordConfirmationValue', 'passwordValue'),
+  passwordConfirmationValueValid: Ember.observer('passwordConfirmationValue', 'passwordValue', function(sender, key, value, rev) {
+    return true;
+  }),
+  tosAccepted: false,
   actions: {
     processRegistrationForm : function() {
       console.log('processing registration');
@@ -49,7 +48,9 @@ export default Ember.Component.extend({
       console.log('validateLogin');
     },
     printValue: function() {
-      console.log(this.get('isLoginValueValid'));
+      console.log(this.get('loginValueValid'));
+      console.log(this.get('passwordValueValid'));
+      console.log(this.get('passwordConfirmationValueValid'));
     }
   },
 });
