@@ -6,6 +6,7 @@ defmodule Eden.Player do
     field :last_login, Ecto.DateTime
     field :failed_login_attempts, :integer, default: 0
     has_many :player_locks, Eden.PlayerLock
+    has_many :player_tokens, Eden.PlayerToken
 
     field :email, :string
     field :email_verified, :boolean, default: false
