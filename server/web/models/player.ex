@@ -5,7 +5,7 @@ defmodule Eden.Player do
     field :login, :string
     field :last_login, Ecto.DateTime
     field :failed_login_attempts, :integer, default: 0
-    embeds_one :login_lock, Eden.Player.Lock
+    has_many :player_locks, Eden.PlayerLock
 
     field :email, :string
     field :email_verified, :boolean, default: false
@@ -45,23 +45,5 @@ defmodule Eden.Player do
     |> validate_format(:email, ~r/@/)
     |> validate_length(:name, min: 2, max: 50)
     |> unique_constraint(:name)
-  end
-end
-
-defmodule Eden.Player.Token do
-  use Eden.Web, :model
-
-  embedded_schema do
-    field :token, :string
-  end
-end
-
-defmodule Eden.Player.Lock do
-  use Eden.Web, :model
-
-  embedded_schema do
-    field :reason, :string
-    field :start, Ecto.DateTime
-    field :end, Ecto.DateTime
   end
 end
