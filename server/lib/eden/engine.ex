@@ -1,6 +1,5 @@
 defmodule Eden.Engine do
   use GenServer
-  use Phoenix.Channel
 
   alias Eden.EntityManager, as: EM
 
@@ -30,7 +29,7 @@ defmodule Eden.Engine do
     {:reply, :ok, %{state | :cache_primed => true, :state_entity => id}}
   end
 
-  def handle_call(:start, _from, state) do
+  def handle_call(:start, _from, {:state_entity = id} = state) do
     start_engine(id)
     {:reply, :ok, state}
   end
