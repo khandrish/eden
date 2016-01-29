@@ -24,7 +24,7 @@ defmodule Eden.Player do
 
   @create_required_fields ~w(login name email password)
   def changeset(:create, model, params) do
-    cs = model
+    model
     |> cast(params, @create_required_fields)
     |> validate_params
   end
@@ -32,16 +32,16 @@ defmodule Eden.Player do
   @update_required_fields ~w()
   @update_optional_fields ~w(email name login password)
   def changeset(:update, model, params) do
-    cs = model
+    model
     |> cast(params, @update_required_fields, @update_optional_fields)
     |> validate_params
   end
 
   defp validate_params(changeset) do
     changeset
-    |> validate_length(:login, min: 12, max: 100)
+    |> validate_length(:login, min: 12, max: 255)
     |> unique_constraint(:login)
-    |> validate_length(:password, min: 12, max: 100)
+    |> validate_length(:password, min: 12, max: 50)
     |> validate_format(:email, ~r/@/)
     |> validate_length(:name, min: 2, max: 50)
     |> unique_constraint(:name)
