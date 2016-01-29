@@ -1,7 +1,6 @@
 defmodule Eden.Plug.ScrubExistingParams do
   @moduledoc """
-    Authenticated plug can be used ensure an action can only be triggered by
-    players that are authenticated.
+    Scrubs all existing parameters.
   """
   import Plug.Conn
 
