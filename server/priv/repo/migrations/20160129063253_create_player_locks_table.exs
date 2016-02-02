@@ -2,7 +2,8 @@ defmodule Eden.Repo.Migrations.PlayerLock do
   use Ecto.Migration
 
   def change do
-    create table(:player_locks) do
+    create table(:player_locks, primary_key: false) do
+      add :id, :uuid, primary_key: true, default: fragment("uuid_generate_v4()")
       add :player_id, :integer
       add :type, :string
       add :reason, :string

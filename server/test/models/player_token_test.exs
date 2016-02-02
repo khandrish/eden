@@ -3,16 +3,13 @@ defmodule Eden.PlayerTokenTest do
 
   alias Eden.PlayerToken
 
-  @valid_attrs %{expiry: "some content", player_id: 42, token: "some content", type: "some content"}
-  @invalid_attrs %{}
-
   test "changeset with valid attributes" do
-    changeset = PlayerToken.changeset(%PlayerToken{}, @valid_attrs)
+    changeset = PlayerToken.new(%{expiry: "some content", player_id: Ecto.UUID.generate, type: "some content"})
     assert changeset.valid?
   end
 
   test "changeset with invalid attributes" do
-    changeset = PlayerToken.changeset(%PlayerToken{}, @invalid_attrs)
+    changeset = PlayerToken.new(%{})
     refute changeset.valid?
   end
 end

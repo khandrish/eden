@@ -1,5 +1,6 @@
 defmodule Eden.Player do
   use Eden.Web, :model
+  alias Eden.Repo
 
   schema "players" do
     field :login, :string
@@ -10,7 +11,6 @@ defmodule Eden.Player do
 
     field :email, :string
     field :email_verified, :boolean, default: false
-    field :email_verification_token, :string
     
     field :hash, :binary
 
@@ -18,25 +18,41 @@ defmodule Eden.Player do
     field :last_name_change, Ecto.DateTime
 
     field :password, :string, virtual: true
-    field :password_reset_token, :string
 
     timestamps
   end
 
-  @create_required_fields ~w(login name email password)
-  def changeset(:create, model, params) do
-    model
-    |> cast(params, @create_required_fields)
+  #
+  # API
+  #
+
+  def insert(player) do
+    player
+    |> Repo.insert!
+  end
+
+  def new(params) do
+    result = %Eden.Player{}
+    |> cast(params, ~w(login name email password), [])
     |> validate_params
   end
 
-  @update_required_fields ~w()
-  @update_optional_fields ~w(email name login password)
-  def changeset(:update, model, params) do
-    model
-    |> cast(params, @update_required_fields, @update_optional_fields)
-    |> validate_params
+  def save(player) do
+    Repo.update! player
   end
+
+  def update(player, key, value) do
+    update(player, %{key: value})
+  end
+
+  def update(player, params) do
+    p = ~w(email email_verified failed_login_attempts hash last_login last_name_change login name password)
+    cast(player, params, [], p)
+  end
+
+  #
+  # Private Functions
+  #
 
   defp validate_params(changeset) do
     changeset
@@ -46,5 +62,6 @@ defmodule Eden.Player do
     |> validate_format(:email, ~r/@/)
     |> validate_length(:name, min: 2, max: 50)
     |> unique_constraint(:name)
+    |> unique_constraint(:id)
   end
 end

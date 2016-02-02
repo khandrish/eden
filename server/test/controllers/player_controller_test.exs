@@ -22,7 +22,7 @@ defmodule Eden.PlayerControllerTest do
 
   test "does not show resource and instead throw error when id is nonexistent", %{:conn => conn} do
     conn = conn
-    |> get player_path(conn, :show, -1)
+    |> get player_path(conn, :show, Ecto.UUID.generate)
 
     assert response(conn, 404)
   end
@@ -33,7 +33,7 @@ defmodule Eden.PlayerControllerTest do
   end
 
   test "does not create resource and renders errors when data is invalid", %{:conn => conn} do
-    conn = post conn, player_path(conn, :create), %{login: "Valid Login",
+    conn = post conn, player_path(conn, :create), %{login: "Valid Login yay",
                                                     password: "Valid Password",
                                                     password_confirmation: "Valid Password",
                                                     email: "foo@bar",
@@ -117,7 +117,7 @@ defmodule Eden.PlayerControllerTest do
     |> put_session(:current_player, player.id)
     |> assign(:current_player, player)
 
-    conn = post conn, player_path(conn, :logout), %{"id" => Integer.to_string(player.id)}
+    conn = post conn, player_path(conn, :logout), %{"id" => player.id}
     assert conn.status == 200
   end
 

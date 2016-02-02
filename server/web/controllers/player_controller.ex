@@ -79,7 +79,7 @@ defmodule Eden.PlayerController do
   end
 
   def create(conn, params) do
-    changeset = Player.changeset(:create, %Player{}, params)
+    changeset = Player.new(params)
 
     if changeset.valid? do
       insert_result = changeset
@@ -123,7 +123,7 @@ defmodule Eden.PlayerController do
       nil ->
         conn |> send_resp(:not_found, "")
       player ->
-        changeset = Player.changeset(:update, player, params)
+        changeset = Player.update(player, params)
         if changeset.valid? do
           if Map.has_key?(params, :email) and params.email != nil do
             token = Phoenix.Token.sign(conn, @verify_email_salt, player.id)
@@ -291,6 +291,6 @@ defmodule Eden.PlayerController do
   end
 
   defp generate_password_hash(changeset) do
-    put_change(changeset, :hash, hashpwsalt(get_change(changeset, "password")))
+    put_change(changeset, :hash, hashpwsalt(get_change(changeset, :password)))
   end
 end

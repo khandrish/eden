@@ -2,15 +2,16 @@ defmodule Eden.PlayerToken do
   use Eden.Web, :model
 
   schema "player_tokens" do
-    field :player_id, :integer
+    belongs_to :player, Eden.Player
+    
     field :type, :string
-    field :token, :string
+    field :token, :binary_id
     field :expiry, :string
 
     timestamps
   end
 
-  @required_fields ~w(player_id type token expiry)
+  @required_fields ~w(player_id type expiry)
   @optional_fields ~w()
 
   @doc """

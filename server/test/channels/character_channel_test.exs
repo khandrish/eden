@@ -6,22 +6,17 @@ defmodule Eden.CharacterChannelTest do
   alias Eden.Player
 
   @password "This is a valid passphrase"
-  @valid_attrs %{email: nil, email_confirmation: nil, password: @password, password_confirmation: @password, login: nil, name: nil}
+  @valid_attrs 
 
   setup do
-    email = "#{Ecto.UUID.generate}@eden.com"
-    login = Ecto.UUID.generate
-    name = Ecto.UUID.generate
+    params = %{ email: "#{Ecto.UUID.generate}@eden.com",
+                password: Ecto.UUID.generate,
+                login: Ecto.UUID.generate,
+                name: Ecto.UUID.generate}
 
-    attrs = @valid_attrs
-    |> Map.put(:email, email)
-    |> Map.put(:login, login)
-    |> Map.put(:name, name)
-
-    changeset = Player.changeset(:create, %Player{}, attrs)
-    |> force_change(:hash, Comeonin.Bcrypt.hashpwsalt(@password))
-
-    player = Repo.insert! changeset
+    player = Player.new(params)
+    |> Player.update(:hash, Comeonin.Bcrypt.hashpwsalt(Ecto.UUID.generate))
+    |> Player.insert
 
     on_exit fn ->
       Repo.delete! player

@@ -1,8 +1,9 @@
-defmodule Eden.Repo.Migrations.CreatePlayer do
+defmodule Eden.Repo.Migrations.CreatePlayersTable do
   use Ecto.Migration
 
   def change do
-    create table(:players) do
+    create table(:players, primary_key: false) do
+      add :id, :binary_id, primary_key: true, default: fragment("uuid_generate_v4()")
       add :login, :string
       add :name, :string
       add :last_name_change, :datetime
@@ -11,14 +12,11 @@ defmodule Eden.Repo.Migrations.CreatePlayer do
       add :email_verified, :boolean, default: false
       add :last_login, :datetime
       add :failed_login_attempts, :integer, default: 0
-      add :login_lock, :map
-      add :email_verification_token, :string
-      add :password_reset_token, :string
 
       timestamps
     end
 
     create unique_index(:players, [:login])
-
+    create unique_index(:players, [:email])
   end
 end

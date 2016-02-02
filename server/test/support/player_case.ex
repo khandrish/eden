@@ -28,11 +28,14 @@ defmodule Eden.PlayerCase do
   Helper for creating a Player model and saving it to the database for use in
   test cases. Is not automatically cleaned up.
   """
-  def create_player(password \\ "Valid Password") do
-    %Player{login: Ecto.UUID.generate,
-            hash: Comeonin.Bcrypt.hashpwsalt(password),
-            email: "#{Ecto.UUID.generate}@eden.com",
-            name: Ecto.UUID.generate}
-    |> Repo.insert!
+  def create_player() do
+    params = %{
+      :login => Ecto.UUID.generate,
+      :password => Ecto.UUID.generate,
+      :email => "#{Ecto.UUID.generate}@eden.com",
+      :name => Ecto.UUID.generate
+    }
+    Player.new(params)
+    |> Player.insert
   end
 end

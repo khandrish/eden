@@ -14,7 +14,7 @@ defmodule Eden.Plug.HasAllPermissions do
       Enum.all?(permissions, fn(permission) ->
         case permission do
           "self" ->
-            if player.id == String.to_integer(Map.get(conn.params, "id")) do
+            if player.id == Map.get(conn.params, "id") do
               true
             else
               false
@@ -27,7 +27,7 @@ defmodule Eden.Plug.HasAllPermissions do
       true ->
         conn
         |> halt
-        |> send_resp(:unauthorized, "[\"Not authorized to modify resource.\"]")
+        |> send_resp(:unauthorized, "[\"Not authorized.\"]")
     end
   end
 end
