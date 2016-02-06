@@ -15,6 +15,7 @@ defmodule Eden.PlayerCase do
   use ExUnit.CaseTemplate
   alias Eden.Repo
   alias Eden.Player
+  import Ecto.Changeset
 
   using do
     quote do
@@ -30,12 +31,13 @@ defmodule Eden.PlayerCase do
   """
   def create_player() do
     params = %{
-      :login => Ecto.UUID.generate,
-      :password => Ecto.UUID.generate,
+      :login => "#{Ecto.UUID.generate}",
+      :password => "Valid Password",
       :email => "#{Ecto.UUID.generate}@eden.com",
-      :name => Ecto.UUID.generate
+      :name => "#{Ecto.UUID.generate}"
     }
     Player.new(params)
+    |> put_change(:hash, Comeonin.Bcrypt.hashpwsalt("Valid Password"))
     |> Player.insert
   end
 end
