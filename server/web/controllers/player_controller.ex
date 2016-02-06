@@ -72,14 +72,12 @@ defmodule Eden.PlayerController do
   @verify_email_salt "validate email salt"
   @password_reset_salt "reset password salt"
 
-  def index(conn, _params) do
-    # TODO: return different data based on the permissions available to the session
-    players = Repo.all(Player)
-    render(conn, "index.json", players: players)
-  end
-
   def create(conn, params) do
+    Logger.debug "Creating player"
+    Logger.debug "#{inspect params}"
     changeset = Player.new(params)
+    Logger.debug "Created player"
+    Logger.debug "#{inspect changeset}"
 
     if changeset.valid? do
       insert_result = changeset
@@ -108,6 +106,22 @@ defmodule Eden.PlayerController do
     end
   end
 
+  def delete(conn, %{"id" => id}) do
+    player = Repo.get!(Player, id)
+
+    # Here we use delete! (with a bang) because we expect
+    # it to always work (and if it does not, it will raise).
+    Repo.delete!(player)
+
+    send_resp(conn, :no_content, "")
+  end
+
+  def index(conn, _params) do
+    # TODO: return different data based on the permissions available to the session
+    players = Repo.all(Player)
+    render(conn, "index.json", players: players)
+  end
+
   def show(conn, %{"id" => id}) do
     # TODO: return different data based on the permissions available to the session
     case Repo.get(Player, id) do
@@ -118,17 +132,67 @@ defmodule Eden.PlayerController do
     end
   end
 
+  def send_password_reset_email(conn, %{"search" => search}) do
+    player = if String.contains?(search, "@") do
+        Repo.get_by!(Player, email: search)
+      else
+        Repo.get_by!(Player, login: search)
+      end
+
+    if player == nil do
+      conn
+      |> send_resp(:not_found, "")
+    else
+
+    end
+
+    case Repo.get_by!(Player, login: search) do
+      nil ->
+        case Repo.get_by!(Player, email: search) do
+          nil ->
+            conn
+            |> send_resp(:not_found, "")
+          result ->
+            player = result
+        end
+      result ->
+        player = result
+    end
+
+    case player do
+      nil ->
+        conn
+        |> send_resp(:not_found, "")
+      player ->
+        token = Phoenix.Token.sign(conn, @password_reset_salt, player.id)
+        player = Repo.update!(%{player | password_reset_token: token})
+
+        Mailer.send_password_reset_email(player)
+        conn
+        |> put_flash(:info, "Password reset email sent.")
+        |> assign(:password_reset_token, token)
+        |> send_resp(:ok, "")
+    end
+  end
+
   def update(conn, params) do
+    Logger.debug "Updating player"
+    Logger.debug "#{inspect params}"
     case Repo.get(Player, Map.get(params, "id")) do
       nil ->
+      Logger.debug "Player not found"
         conn |> send_resp(:not_found, "")
       player ->
+        Logger.debug "Player found"
         changeset = Player.update(player, params)
+        Logger.debug "Updated player model"
+        Logger.debug "Changeset valid: #{inspect changeset.valid?}"
         if changeset.valid? do
           if Map.has_key?(params, :email) and params.email != nil do
             token = Phoenix.Token.sign(conn, @verify_email_salt, player.id)
-            changeset = force_change(changeset, :email_verification_token, token)
-            |> force_change(:email_verified, false)
+            # TODO: How tokens are saved has been changed
+            #changeset = force_change(changeset, :email_verification_token, token)
+            #|> force_change(:email_verified, false)
             Mailer.send_email_validation_email(params.email, token)
           end
 
@@ -171,37 +235,6 @@ defmodule Eden.PlayerController do
     end
   end
 
-  def send_password_reset_email(conn, %{"search" => search}) do
-    player = nil
-    case Repo.get_by!(Player, login: search) do
-      nil ->
-        case Repo.get_by!(Player, email: search) do
-          nil ->
-            conn
-            |> send_resp(:not_found, "")
-          result ->
-            player = result
-        end
-      result ->
-        player = result
-    end
-
-    case player do
-      nil ->
-        conn
-        |> send_resp(:not_found, "")
-      player ->
-        token = Phoenix.Token.sign(conn, @password_reset_salt, player.id)
-        player = Repo.update!(%{player | password_reset_token: token})
-
-        Mailer.send_password_reset_email(player)
-        conn
-        |> put_flash(:info, "Password reset email sent.")
-        |> assign(:password_reset_token, token)
-        |> send_resp(:ok, "")
-    end
-  end
-
   def reset_password(conn, %{"token" => token, "password" => password, "password_confirmation" => password_confirmation}) do
     case Phoenix.Token.verify(conn, @password_reset_salt, token, max_age: password_reset_token_ttl) do
       {:ok, player_id} ->
@@ -231,7 +264,9 @@ defmodule Eden.PlayerController do
     end
   end
 
-  def login(conn, %{"login" => login, "password" => password}) do
+  def login(conn, %{"login" => login, "password" => password} = params) do
+    Logger.debug "Logging in"
+    Logger.debug "#{inspect params}"
     player = if is_nil(login) do
       nil
     else
@@ -260,6 +295,9 @@ defmodule Eden.PlayerController do
   end
 
   defp login(player, password, conn) when is_map(player) do
+    Logger.debug "#{inspect player}"
+    Logger.debug "#{inspect player.hash}"
+    Logger.debug "#{inspect password}"
     cond do
       Comeonin.Bcrypt.checkpw(password, player.hash) ->
         player = Repo.update!(%{player | failed_login_attempts: 0, last_login: Ecto.DateTime.utc})
@@ -270,16 +308,6 @@ defmodule Eden.PlayerController do
         conn
         |> send_resp(:unprocessable_entity, ~S({"errors": ["Provided login/password pair did not return any matches."]}))
     end
-  end
-
-  def delete(conn, %{"id" => id}) do
-    player = Repo.get!(Player, id)
-
-    # Here we use delete! (with a bang) because we expect
-    # it to always work (and if it does not, it will raise).
-    Repo.delete!(player)
-
-    send_resp(conn, :no_content, "")
   end
 
   defp password_reset_token_ttl do
