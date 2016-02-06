@@ -8,7 +8,7 @@ defmodule Eden.Repo.Migrations.CreatePlayersTable do
       add :name, :string
       add :last_name_change, :datetime
       add :email, :string
-      add :hash, :binary
+      add :hash, :string
       add :email_verified, :boolean, default: false
       add :last_login, :datetime
       add :failed_login_attempts, :integer, default: 0

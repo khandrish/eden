@@ -12,7 +12,7 @@ defmodule Eden.Player do
     field :email, :string
     field :email_verified, :boolean, default: false
     
-    field :hash, :binary
+    field :hash, :string
 
     field :name, :string
     field :last_name_change, Ecto.DateTime
