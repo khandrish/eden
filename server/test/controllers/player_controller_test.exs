@@ -33,9 +33,8 @@ defmodule Eden.PlayerControllerTest do
   end
 
   test "does not create resource and renders errors when data is invalid", %{:conn => conn} do
-    conn = post conn, player_path(conn, :create), %{login: "Valid Login yay",
+    conn = post conn, player_path(conn, :create), %{login: "invalid",
                                                     password: "Valid Password",
-                                                    password_confirmation: "Valid Password",
                                                     email: "foo@bar",
                                                     name: "foobar"}
     assert response(conn, 422)
@@ -70,7 +69,7 @@ defmodule Eden.PlayerControllerTest do
     |> assign(:current_player, player)
 
     conn = conn
-    |> put player_path(conn, :update, player), %{"password" => "This is a new valid password", "password_confirmation" => "This is a new valid password"}
+    |> put player_path(conn, :update, player), %{"password" => "This is a new valid password"}
     assert json_response(conn, 200)
   end
 
@@ -83,7 +82,7 @@ defmodule Eden.PlayerControllerTest do
     player = %{player | id: -1}
 
     conn = conn
-    |> put player_path(conn, :update, player), %{"password" => "This is a new valid password", "password_confirmation" => "This is a new valid password"}
+    |> put player_path(conn, :update, player), %{"password" => "This is a new valid password"}
     assert json_response(conn, 401)
   end
 

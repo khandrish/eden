@@ -15,19 +15,19 @@ defmodule Eden.PlayerController do
   alias Eden.Plug.HasAllPermissions
 
   # Create plugs
-  plug FilterParams, ~w(login name email password password_confirmation) when action in [:create]
-  plug EnsureAllParams, ~w(login name email password password_confirmation) when action in [:create]
-  plug ScrubExistingParams, ~w(login name email password password_confirmation) when action in [:create]
-  plug EnsurePopulatedParams, ~w(login name email password password_confirmation) when action in [:create]
+  plug FilterParams, ~w(login name email password) when action in [:create]
+  plug EnsureAllParams, ~w(login name email password) when action in [:create]
+  plug ScrubExistingParams, ~w(login name email password) when action in [:create]
+  plug EnsurePopulatedParams, ~w(login name email password) when action in [:create]
 
   # Update plugs
   plug Authenticated when action in [:update]
   plug HasAllPermissions, ~w(self) when action in [:update]
-  plug FilterParams, ~w(id login name email password password_confirmation) when action in [:update]
+  plug FilterParams, ~w(id login name email password) when action in [:update]
   plug EnsureAllParams, ~w(id) when action in [:update]
-  plug EnsureSomeParams, ~w(login name email password password_confirmation) when action in [:update]
-  plug ScrubExistingParams, ~w(id login name email password password_confirmation) when action in [:update]
-  plug EnsurePopulatedParams, ~w(id login name email password password_confirmation) when action in [:update]
+  plug EnsureSomeParams, ~w(login name email password) when action in [:update]
+  plug ScrubExistingParams, ~w(id login name email password) when action in [:update]
+  plug EnsurePopulatedParams, ~w(id login name email password) when action in [:update]
 
   # Show plugs
   plug FilterParams, ~w(id) when action in [:show]
