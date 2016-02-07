@@ -22,6 +22,7 @@ defmodule Eden.Web do
       @primary_key {:id, :binary_id, autogenerate: true}
       @foreign_key_type :binary_id
       before_insert Eden.UUID, :put_uuid, []
+      use Calecto.Schema, usec: true
     end
   end
 

@@ -18,7 +18,8 @@ defmodule Eden.Mixfile do
   def application do
     [mod: {Eden, []},
      applications: [:phoenix, :phoenix_html, :cowboy, :logger,
-                    :phoenix_ecto, :postgrex, :gproc, :con_cache]]
+                    :phoenix_ecto, :postgrex, :gproc, :con_cache,
+                    :tzdata]]
   end
 
   # Specifies which paths to compile per environment
@@ -40,6 +41,8 @@ defmodule Eden.Mixfile do
      {:gproc, "~> 0.5.0"},
      {:poolboy, "~> 1.5"},
      {:con_cache, "~> 0.9.0"},
-     {:corsica, "~> 0.4"}]
+     {:corsica, "~> 0.4"},
+     {:phoenix_calendar, "~> 0.1.2"},
+     {:calecto, "~> 0.5.0"}]
   end
 end

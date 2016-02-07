@@ -300,7 +300,7 @@ defmodule Eden.PlayerController do
     Logger.debug "#{inspect password}"
     cond do
       Comeonin.Bcrypt.checkpw(password, player.hash) ->
-        player = Repo.update!(%{player | failed_login_attempts: 0, last_login: Ecto.DateTime.utc})
+        player = Repo.update!(%{player | failed_login_attempts: 0, last_login: Calendar.DateTime.now_utc})
         conn
         |> put_session(:current_player, player.id)
         |> send_resp(:ok, "")
