@@ -17,7 +17,7 @@
   "idna": {:hex, :idna, "1.0.3"},
   "mailgun": {:hex, :mailgun, "0.1.2"},
   "mimerl": {:hex, :mimerl, "1.0.2"},
-  "phoenix": {:hex, :phoenix, "1.0.4"},
+  "phoenix": {:hex, :phoenix, "1.1.4"},
   "phoenix_calendar": {:hex, :phoenix_calendar, "0.1.2"},
   "phoenix_ecto": {:hex, :phoenix_ecto, "2.0.1"},
   "phoenix_html": {:hex, :phoenix_html, "2.5.0"},

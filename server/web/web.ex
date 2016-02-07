@@ -19,6 +19,8 @@ defmodule Eden.Web do
   def model do
     quote do
       use Ecto.Model
+      import Ecto
+      import Ecto.Changeset
       @primary_key {:id, :binary_id, autogenerate: true}
       @foreign_key_type :binary_id
       before_insert Eden.UUID, :put_uuid, []
@@ -32,7 +34,7 @@ defmodule Eden.Web do
       require Logger
 
       alias Eden.Repo
-      import Ecto.Model
+      import Ecto
       import Ecto.Query, only: [from: 1, from: 2]
 
       import Eden.Router.Helpers
@@ -66,7 +68,7 @@ defmodule Eden.Web do
       require Logger
 
       alias Eden.Repo
-      import Ecto.Model
+      import Ecto
       import Ecto.Query, only: [from: 1, from: 2]
 
     end
