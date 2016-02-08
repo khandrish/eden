@@ -1,5 +1,5 @@
 defmodule Eden.Player do
-  use Eden.Web, :model
+  use Eden.Web, :changeset
   alias Eden.Repo
 
   schema "players" do
@@ -33,7 +33,7 @@ defmodule Eden.Player do
 
   def new(params) do
     result = %Eden.Player{}
-    |> cast(params, ~w(login name email password), [])
+    |> cast(params, ~w(login name email password))
     |> validate_params
   end
 
@@ -46,8 +46,7 @@ defmodule Eden.Player do
   end
 
   def update(player, params) do
-    p = ~w(email email_verified failed_login_attempts hash last_login last_name_change login name password)
-    cast(player, params, [], p)
+    cast(player, params, [])
     |> validate_params
   end
 
