@@ -67,10 +67,6 @@ defmodule Eden.Web do
       use Phoenix.Channel
       require Logger
 
-      alias Eden.Repo
-      import Ecto
-      import Ecto.Query, only: [from: 1, from: 2]
-
     end
   end
 
