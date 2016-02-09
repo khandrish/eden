@@ -1,6 +1,7 @@
 defmodule Eden.Player do
   use Eden.Web, :changeset
   alias Eden.Repo
+  import Comeonin.Bcrypt, only: [hashpwsalt: 1]
 
   schema "players" do
     field :login, :string
@@ -32,9 +33,16 @@ defmodule Eden.Player do
   end
 
   def new(params) do
-    result = %Eden.Player{}
+    cs = %Eden.Player{}
     |> cast(params, ~w(login name email password))
     |> validate_params
+
+    if cs.valid? do
+      cs
+      |> handle_password_update
+    else
+      cs
+    end
   end
 
   def save(player) do
@@ -46,13 +54,38 @@ defmodule Eden.Player do
   end
 
   def update(player, params) do
-    cast(player, params, [])
+    cs = cast(player, params, [])
     |> validate_params
+
+    if cs.valid? do
+      cs
+      |> handle_password_update
+      |> handle_email_update
+      |> handle_name_update
+    end
   end
 
   #
   # Private Functions
   #
+
+  defp handle_password_update(changeset) do
+    password = fetch_change(changeset, :password)
+    if password != :error do
+      put_change(changeset, :hash, hashpwsalt(password))
+    else
+      changeset
+    end
+  end
+
+  defp handle_email_update(changeset) do
+    email = fetch_change(changeset, :email)
+    if email != :error do
+      put_change(changeset, :email_verified, false)
+    else
+      changeset
+    end
+  end
 
   defp validate_params(changeset) do
     changeset

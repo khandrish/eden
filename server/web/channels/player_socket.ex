@@ -6,6 +6,7 @@ defmodule Eden.PlayerSocket do
 
   ## Channels
   channel "characters:*", Eden.CharacterChannel
+  channel "api:*", Eden.ApiChannel
 
   ## Transports
   transport :websocket, Phoenix.Transports.WebSocket

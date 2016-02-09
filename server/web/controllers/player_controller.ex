@@ -180,7 +180,7 @@ defmodule Eden.PlayerController do
     Logger.debug "#{inspect params}"
     case Repo.get(Player, Map.get(params, "id")) do
       nil ->
-      Logger.debug "Player not found"
+        Logger.debug "Player not found"
         conn |> send_resp(:not_found, "")
       player ->
         Logger.debug "Player found"
@@ -198,8 +198,6 @@ defmodule Eden.PlayerController do
 
           if Map.has_key?(params, :password) and params.password != nil do
             changeset = force_change(changeset, :failed_login_attempts, 0)
-            |> force_change(:login_lock, nil)
-            |> generate_password_hash
           end
 
           Repo.update!(changeset)
