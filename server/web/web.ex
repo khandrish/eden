@@ -36,6 +36,7 @@ defmodule Eden.Web do
       @foreign_key_type :binary_id
       before_insert Eden.UUID, :put_uuid, []
       use Calecto.Schema, usec: true
+      require Logger
     end
   end
 
