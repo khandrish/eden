@@ -54,7 +54,7 @@ defmodule Eden.Player do
   end
 
   def update(player, params) do
-    cs = cast(player, params, [])
+    cs = cast(player, params, [], ~w(email email_verified failed_login_attempts last_login last_name_change login name password))
     |> validate_params
 
     if cs.valid? do
