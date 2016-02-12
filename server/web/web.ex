@@ -16,6 +16,17 @@ defmodule Eden.Web do
   below.
   """
 
+  def schema do
+    quote do
+      import Ecto
+      import Ecto.Changeset
+      @primary_key {:id, :binary_id, autogenerate: true}
+      @foreign_key_type :binary_id
+      before_insert Eden.UUID, :put_uuid, []
+      use Calecto.Schema, usec: true
+    end
+  end
+
   def changeset do
     quote do
       use Ecto.Model
