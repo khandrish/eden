@@ -12,7 +12,8 @@ defmodule Eden do
       # Start the Ecto repository
       worker(Eden.Repo, []),
       # Here you could define other workers and supervisors as children
-      worker(Eden.Engine, [])
+      worker(Eden.Engine, []),
+      worker(ConCache, [[], [name: :data_cache]])
     ]
 
     pools = Enum.map(pools(), fn({name, args}) ->

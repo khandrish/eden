@@ -2,7 +2,7 @@
   "calendar": {:hex, :calendar, "0.12.4"},
   "certifi": {:hex, :certifi, "0.3.0"},
   "comeonin": {:hex, :comeonin, "1.2.2"},
-  "con_cache": {:hex, :con_cache, "0.9.0"},
+  "con_cache": {:hex, :con_cache, "0.10.0"},
   "connection": {:hex, :connection, "1.0.2"},
   "corsica": {:hex, :corsica, "0.4.0"},
   "cowboy": {:hex, :cowboy, "1.0.4"},
