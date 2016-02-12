@@ -62,7 +62,10 @@ defmodule Eden.Player do
       |> handle_password_update
       |> handle_email_update
       |> handle_name_update
+    else
+      cs
     end
+
   end
 
   #
@@ -70,18 +73,23 @@ defmodule Eden.Player do
   #
 
   defp handle_password_update(changeset) do
-    password = fetch_change(changeset, :password)
-    if password != :error do
-      put_change(changeset, :hash, hashpwsalt(password))
+    case fetch_change(changeset, :password) do
+      {:ok, password} -> put_change(changeset, :hash, hashpwsalt(password))
+      :error -> changeset
+    end
+  end
+
+  defp handle_email_update(changeset) do
+    if fetch_change(changeset, :email) != :error do
+      put_change(changeset, :email_verified, false)
     else
       changeset
     end
   end
 
-  defp handle_email_update(changeset) do
-    email = fetch_change(changeset, :email)
-    if email != :error do
-      put_change(changeset, :email_verified, false)
+  defp handle_name_update(changeset) do
+    if fetch_change(changeset, :name) != :error do
+      put_change(changeset, :last_name_change, Calendar.DateTime.now_utc)
     else
       changeset
     end
