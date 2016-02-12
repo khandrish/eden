@@ -1,6 +1,6 @@
 defmodule Eden.EntityManager do
   alias Eden.Repo
-  alias Eden.Entity
+  alias Eden.Schema.Entity
   import Ecto.Query, only: [from: 2]
 
   @ec_data :entity_cache

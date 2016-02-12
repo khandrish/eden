@@ -1,7 +1,7 @@
 defmodule Eden.EntityTest do
   use Eden.ModelCase
 
-  alias Eden.Entity
+  alias Eden.Schema.Entity
 
   @valid_attrs %{component: "some content", entity: "7488a646-e31f-11e4-aace-600308960662", key: "some content", value: "some content"}
   @invalid_attrs %{}
