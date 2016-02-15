@@ -43,6 +43,7 @@ defmodule Eden.Mixfile do
      {:con_cache, "~> 0.10.0"},
      {:corsica, "~> 0.4"},
      {:phoenix_calendar, "~> 0.1.2"},
-     {:calecto, "~> 0.5.0"}]
+     {:calecto, "~> 0.5.0"},
+     {:pipe, "~> 0.0.2"}]
   end
 end
