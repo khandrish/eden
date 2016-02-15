@@ -2,6 +2,7 @@ defmodule Eden.CharacterChannelTest do
   use Eden.ChannelCase
   import Ecto.Changeset
   import Phoenix.Socket
+  import Pipe
   alias Eden.CharacterChannel
   alias Eden.Player
 
@@ -14,9 +15,7 @@ defmodule Eden.CharacterChannelTest do
                 login: Ecto.UUID.generate,
                 name: Ecto.UUID.generate}
 
-    player = Player.new(params)
-    |> Player.update(:hash, Comeonin.Bcrypt.hashpwsalt(Ecto.UUID.generate))
-    |> Player.insert
+    {:ok, player} = Player.create(params)
 
     on_exit fn ->
       Repo.delete! player

@@ -16,12 +16,12 @@ defmodule Eden.PlayerCase do
   alias Eden.Repo
   alias Eden.Player
   import Ecto.Changeset
+  import Pipe
 
   using do
     quote do
-      alias Eden.Player
-      import Eden.PlayerCase
-      use Eden.ModelCase
+      alias Eden.Schema.Player
+      import Eden.PlayerCase, only: [create_player: 0]
     end
   end
 
@@ -36,8 +36,8 @@ defmodule Eden.PlayerCase do
       :email => "#{Ecto.UUID.generate}@eden.com",
       :name => "#{Ecto.UUID.generate}"
     }
-    Player.new(params)
-    |> put_change(:hash, Comeonin.Bcrypt.hashpwsalt("Valid Password"))
-    |> Player.insert
+
+    {:ok, player} = Player.create(params)
+    player
   end
 end
