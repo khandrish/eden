@@ -1,12 +1,13 @@
 defmodule Eden.Schema.Player do
-  use Eden.Web, :changeset
+  use Eden.Web, :schema
 
   schema "players" do
+    has_many :player_locks, Eden.Schema.PlayerLock
+    has_many :player_tokens, Eden.Schema.PlayerToken
+
     field :login, :string
     field :last_login, Calecto.DateTimeUTC
     field :failed_login_attempts, :integer, default: 0
-    has_many :player_locks, Eden.PlayerLock
-    has_many :player_tokens, Eden.PlayerToken
 
     field :email, :string
     field :email_verified, :boolean, default: false
@@ -14,7 +15,6 @@ defmodule Eden.Schema.Player do
     field :hash, :string
 
     field :name, :string
-    field :last_name_change, Calecto.DateTimeUTC
 
     field :password, :string, virtual: true
 

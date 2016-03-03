@@ -42,6 +42,8 @@ config :eden,
   mailgun_key: "key-9de238d170019e92fdd3d4f3877990dc",
   password_reset_token_ttl: 60 * 60 * 24, # One Day
   email_verification_token_ttl: 60 * 60 * 24 * 7, # One Week
+  failed_login_lockout_period: 60 * 15, # Fifteen minutes
+  failed_logins_allowed: 4,
   mailgun_client_mode: :prod,
   mailgun_test_file_path: "/tmp/mailgun.json"
 

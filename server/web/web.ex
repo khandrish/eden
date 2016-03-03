@@ -20,35 +20,10 @@ defmodule Eden.Web do
     quote do
       import Ecto
       import Ecto.Changeset
+      use Calecto.Schema, usec: true
+      use Ecto.Schema
       @primary_key {:id, :binary_id, autogenerate: true}
       @foreign_key_type :binary_id
-      before_insert Eden.UUID, :put_uuid, []
-      use Calecto.Schema, usec: true
-    end
-  end
-
-  def changeset do
-    quote do
-      use Ecto.Model
-      import Ecto
-      import Ecto.Changeset
-      @primary_key {:id, :binary_id, autogenerate: true}
-      @foreign_key_type :binary_id
-      before_insert Eden.UUID, :put_uuid, []
-      use Calecto.Schema, usec: true
-      require Logger
-    end
-  end
-
-  def model do
-    quote do
-      use Ecto.Model
-      import Ecto
-      import Ecto.Changeset
-      @primary_key {:id, :binary_id, autogenerate: true}
-      @foreign_key_type :binary_id
-      before_insert Eden.UUID, :put_uuid, []
-      use Calecto.Schema, usec: true
     end
   end
 

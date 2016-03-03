@@ -6,7 +6,6 @@ defmodule Eden.Repo.Migrations.CreatePlayersTable do
       add :id, :binary_id, primary_key: true, default: fragment("uuid_generate_v4()")
       add :login, :string
       add :name, :string
-      add :last_name_change, :datetime
       add :email, :string
       add :hash, :string
       add :email_verified, :boolean, default: false
@@ -18,5 +17,6 @@ defmodule Eden.Repo.Migrations.CreatePlayersTable do
 
     create unique_index(:players, [:login])
     create unique_index(:players, [:email])
+    create unique_index(:players, [:name])
   end
 end

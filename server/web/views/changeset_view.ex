@@ -4,7 +4,7 @@ defmodule Eden.ChangesetView do
   def render("error.json", %{changeset: changeset}) do
     Logger.debug "Rendering errors"
 
-    errors = Enum.map(changeset.errors, fn {field, detail} ->
+    errors = Enum.map(changeset.errors, fn {_field, detail} ->
       %{
         title: "Invalid Attribute",
         detail: render_detail(detail)

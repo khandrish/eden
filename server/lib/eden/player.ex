@@ -24,12 +24,20 @@ defmodule Eden.Player do
 
   """
 
+  alias Eden.Endpoint
+  alias Eden.Mailer
+  alias Eden.PlayerLock, as: PL
+  alias Eden.PlayerToken, as: PT
   alias Eden.Repo
   alias Eden.Schema.Player, as: PlayerSchema
+  alias Eden.Time, as: ET
   import Comeonin.Bcrypt, only: [hashpwsalt: 1]
+  import Ecto
   import Ecto.Changeset
+  import Ecto.Query, only: [from: 2]
   require Logger
   use Pipe
+
 
   #
   #  Attributes
@@ -38,68 +46,32 @@ defmodule Eden.Player do
   @verify_email_salt "email verification token"
   @password_reset_salt "password reset token"
 
-  @optional_params ~w(email email_verified failed_login_attempts last_login last_name_change login name password)
+  @optional_params ~w(email email_verified failed_login_attempts last_login login name password)
   @required_params ~w(login name email password)
 
   #
-  # API
+  # CRUD operations
   #
 
-  def authenticate(login, password) do
-    Logger.debug "Authenticating player with login: #{login}"
-
-    case Repo.get_by(PlayerSchema, login: login) do
-      nil ->
-        Logger.debug "Player not found"
-        {:error, :player_not_found}
-      player ->
-        Logger.debug "Player found"
-        cond do
-          Comeonin.Bcrypt.checkpw(password, player.hash) ->
-            #player
-            #|> Player.set("failed_login_attempts")
-            player = Repo.update!(%{player | failed_login_attempts: 0, last_login: Calendar.DateTime.now_utc})
-            Logger.info "#Player {player.id} has been authenticated"
-            {:ok, player}
-          true ->
-            Logger.debug "Password did not match"
-            {:error, :invalid_password}
-        end
-    end
-  end
-
   def create(params) do
-    Logger.debug "Creating new player"
-    
-    changeset = %Eden.Schema.Player{}
-    |> cast(params, @required_params, @optional_params)
-    |> validate_params
-
-    Logger.debug "Changeset valid?: #{inspect changeset.valid?}"
-
-    if changeset.valid? do
-      player = changeset
+    {status, player} = result =
+      %Eden.Schema.Player{}
+      |> cast(params, @required_params, @optional_params)
+      |> validate_params
       |> handle_updates
-      |> Repo.insert!
+      |> Repo.insert
 
-      Logger.info "Player #{player.id} has been created"
+    if status == :ok, do: Logger.info "Player #{player.id} created"
 
-      {:ok, player}
-    else
-      Logger.debug "Player not created due to invalid params"
-      {:error, changeset}
-    end
+    result
   end
 
   def delete(id) do
-    Logger.debug "Deleting player: #{id}"
-
     case Repo.get(PlayerSchema, id) do
       nil ->
-        Logger.warn "Player #{id} not found in database when attempting a delete"
+        Logger.warn "Player #{id} not found in database when attempting to delete"
         {:error, :player_not_found}
       player ->
-        Logger.debug "Player found"
         case Repo.delete(player) do
           {:ok, player} ->
             Logger.info "Player #{player.id} has been deleted"
@@ -111,109 +83,19 @@ defmodule Eden.Player do
     end
   end
 
-  def get(player, key, default \\ nil) do
-    Logger.debug "Getting #{key} from player #{player.id} with default of #{default}"
-    
-    value = get_field(player, key, default)
-    
-    Logger.debug "Returning value: #{value}"
-    value
-  end
-
   def read(id) do
-    Logger.debug "Reading player from database: #{id}"
-
     case Repo.get(PlayerSchema, id) do
       nil ->
         Logger.warn "Player #{id} not found in database when attempting a read"
-        {:error, "Player not found"}
+        {:error, :player_not_found}
       player ->
-        Logger.debug "Player #{id} read from database"
         {:ok, player}
     end
   end
 
-  def reset_password(token, password) do
-    Logger.debug "Resetting password using token: #{token}"
-    
-    case Phoenix.Token.verify(Eden.Endpoint, @password_reset_salt, token, max_age: password_reset_token_ttl) do
-      {:ok, player_id} ->
-        Logger.debug "Token verified"
-        case read(player_id) do
-          {:ok, player} ->
-            # TODO: Check token
-            case set(player, %{password: password}) do
-              {:ok, player} ->
-                Logger.debug "New password is valid"
-                case update player do
-                  {:ok, player} = result ->
-                    Logger.info "Password reset for player #{player.id}"
-                    result
-                  result ->
-                    Logger.warn "Unable to save player #{player.id} when resetting password"
-                    result
-                end
-              {:error, _} ->
-                Logger.debug "New password is invalid"
-                {:error, :invalid_password}
-            end
-          {:error, _} ->
-            {:error, :player_not_found}
-        end
-      {:error, _} ->
-        Logger.debug "Invalid token"
-        {:error, :invalid_token}
-    end
-  end
-
-  def send_password_reset_email(search) do
-    Logger.debug "Sending password reset email to player found by using search term: #{search}"
-
-    player = if String.contains?(search, "@") do
-      Logger.debug "Searching for player by email"
-      Repo.get_by(PlayerSchema, email: search)
-    else
-      Logger.debug "Searching for player by login"
-      Repo.get_by(PlayerSchema, login: search)
-    end
-
-    if player == nil do
-      Logger.debug "Player not found"
-      {:error, :player_not_found}
-    else
-      Logger.debug "Player found"
-      # TODO: Save token and fix mail logic
-      # token = Phoenix.Token.sign(conn, @password_reset_salt, player.id)
-      # Mailer.send_password_reset_email(player)
-      {:ok, player}
-    end
-  end
-
-  def set(player, key, value) do
-    set(player, Map.new([{key, value}]))
-  end
-
-  def set(player, params) do
-    Logger.debug "Setting value(s) on player object #{inspect params}"
-    changeset = cast(player, params, [], @optional_params)
-    |> validate_params
-
-    if changeset.valid? do
-      changeset = handle_updates(changeset)
-      Logger.debug "Changeset valid?: #{changeset.valid?}"
-      {:ok, changeset}
-    else
-      Logger.debug "Changeset invalid, bad params"
-      {:error, changeset}
-    end
-  end
-
   def update(player) do
-    Logger.debug "Updating player #{player.id}"
-
     case Repo.update player do
       {:ok, _} = result ->
-        Logger.debug "Player updated"
         result
       {:error, _} = result ->
         Logger.warn "Unable to save player #{player.id} when updating"
@@ -221,34 +103,196 @@ defmodule Eden.Player do
     end
   end
 
-  def verify_email(token) do
-    Logger.debug "Verifying email with token: #{token}"
 
-    case Phoenix.Token.verify(Eden.Endpoint, @verify_email_salt, token, max_age: email_verification_token_ttl) do
-      {:ok, player_id} ->
-        Logger.debug "Token verified, getting player by id: #{player_id}"
-        case Repo.get(PlayerSchema, player_id) do
-          nil ->
-            Logger.debug "Player not found"
-            {:error, :player_not_found}
-          player ->
-            Logger.debug "Player found"
-            # TODO: check token from returned player and either save as below or return error
-            result = pipe_matching x, {:ok, x}, player
-            |> Player.set(:email_verified, true)
-            |> Player.update
+  #
+  # Getters and setters for `opaque` data structure
+  #
 
-            # TODO: Delete token
-            result
-        end
-      {:error, _} ->
-        Logger.debug "Invalid token"
-        {:error, :invalid_token}
+  def get(player, key, default \\ nil) do
+    get_field(player, key, default)
+  end
+
+  def set(player, key, value) do
+    set(player, Map.new([{key, value}]))
+  end
+
+  def set(player, params) do
+    changeset = cast(player, params, [], @optional_params)
+    |> validate_params
+
+    if changeset.valid? do
+      changeset = handle_updates(changeset)
+      {:ok, changeset}
+    else
+      {:error, changeset}
     end
   end
 
+
   #
-  # Private Functions
+  # Password related operations
+  #
+
+  def start_password_reset(search_text) do
+    if String.contains?(search_text, "@") do
+      send_token(Repo.get_by(PlayerSchema, email: search_text))
+    else
+      send_token(Repo.get_by(PlayerSchema, login: search_text))
+    end
+  end
+
+  defp send_token(nil) do
+    {:error, :player_not_found}
+  end
+
+  defp send_token(player) do
+    token = Phoenix.Token.sign(Endpoint, @password_reset_salt, player.id)
+
+    {status, player_token} =
+      PT.create(player, %{type: "password reset", token: token})
+
+    if status == :ok do
+      Mailer.send_password_reset_email(player.email, token)
+      player = Repo.preload(player, :player_tokens)
+      {:ok, player}
+    else
+      {:error, :unable_to_create_token}
+    end
+  end
+
+  def finish_password_reset(token, password) do
+    {status, player} = result =
+      pipe_matching x, {:ok, x},
+        Phoenix.Token.verify(Endpoint, @password_reset_salt, token, max_age: password_reset_token_ttl)
+        |> read
+        |> set(%{password: password})
+        |> update
+
+    if status == :ok do
+      PT.delete_all(player, "password reset")
+      result
+    else
+      {:error, :password_reset_failed}
+    end
+  end
+
+  defp password_reset_token_ttl do
+    Application.get_env(:eden, :password_reset_token_ttl)
+  end
+
+
+  #
+  # Authentication and related operations
+  #
+
+  def authenticate(login, password) do
+    query = from p in PlayerSchema,
+              where: p.login == ^login,
+              select: p,
+              preload: [:player_locks]
+
+    case Repo.one(query) do
+      player ->
+        if PL.any_active_locks?("login", player.player_locks) == false do
+          {authenticated, player} = if Comeonin.Bcrypt.checkpw(password, player.hash) do
+            {true, change(player, %{failed_login_attempts: 0, last_login: ET.now_utc})}
+          else
+            player =
+              if player.failed_login_attempts > failed_logins_allowed do
+                disable_login(player, "Too many failed login attempts.", failed_login_lockout_period)
+                change(player, %{failed_login_attempts: 0})
+              else
+                change(player, %{failed_login_attempts: player.failed_login_attempts + 1})
+              end
+
+            {false, player}
+          end
+
+          {status, player} = result = Repo.update player
+
+          cond do
+            authenticated == true and status == :ok ->
+              Logger.info "Player #{player.id} authenticated"
+              result
+            status == :ok ->
+              {:error, :invalid_password}
+            true ->
+              Logger.warn "Unable to update player #{player.id} when authenticating"
+              result
+          end
+        else
+          {:error, :active_login_lock}
+        end
+      nil ->
+        {:error, :player_not_found}
+    end
+  end
+
+  def disable_login(player, reason, time) do
+    params = %{
+      :type => "login",
+      :reason => reason,
+      :expiry => ET.timestamp_after_utc(time)
+    }
+    
+    case PL.create(player, params) do
+      {:ok, _} ->
+        {:ok, player}
+      result ->
+        result
+    end
+  end
+
+  defp failed_logins_allowed do
+    Application.get_env(:eden, :failed_logins_allowed)
+  end
+
+  defp failed_login_lockout_period do
+    Application.get_env(:eden, :failed_login_lockout_period)
+  end
+
+  
+  #
+  # Email related operations
+  #  
+
+  def start_email_verification(player) do
+    token = Phoenix.Token.sign(Endpoint, @verify_email_salt, player.id)
+
+    {status, player_token} =
+      PT.create(player, %{type: "verify email", token: token})
+
+    if status == :ok do
+      Mailer.send_email_verification_email(player.email, token)
+      player = Repo.preload(player, :player_tokens)
+      {:ok, player}
+    else
+      {:error, :unable_to_create_token}
+    end
+  end
+
+  def finish_email_verification(token) do
+    {status, player} = result =
+      pipe_matching x, {:ok, x},
+        Phoenix.Token.verify(Endpoint, @verify_email_salt, token, max_age: email_verification_token_ttl)
+        |> read
+        |> set(:email_verified, true)
+        |> update
+
+    if status == :ok do
+      PT.delete_all(player, "verify email")
+      result
+    else
+      {:error, :email_verification_failed}
+    end
+  end
+
+  defp email_verification_token_ttl do
+    Application.get_env(:eden, :email_verification_token_ttl)
+  end
+
+  #
+  # Validation and update logic
   #
 
   defp validate_params(changeset) do
@@ -262,42 +306,9 @@ defmodule Eden.Player do
     |> unique_constraint(:id)
   end
 
-  # Token TTL's
-
-  defp email_verification_token_ttl do
-    Application.get_env(:eden, :email_verification_token_ttl)
-  end
-
-  defp password_reset_token_ttl do
-    Application.get_env(:eden, :password_reset_token_ttl)
-  end
-
-  # Update logic
-
   defp handle_updates(changeset) do
     changeset
-    |> handle_email_update
-    |> handle_name_update
     |> handle_password_update
-  end
-
-  defp handle_email_update(changeset) do
-    if fetch_change(changeset, :email) != :error do
-      # TODO: Save token and update email logic
-      # token = Phoenix.Token.sign(:eden, @verify_email_salt, player.id)
-      # Mailer.send_email_validation_email(player)
-      put_change(changeset, :email_verified, false)
-    else
-      changeset
-    end
-  end
-
-  defp handle_name_update(changeset) do
-    if fetch_change(changeset, :name) != :error do
-      put_change(changeset, :last_name_change, Calendar.DateTime.now_utc)
-    else
-      changeset
-    end
   end
 
   defp handle_password_update(changeset) do
