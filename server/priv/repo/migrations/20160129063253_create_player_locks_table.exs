@@ -1,4 +1,4 @@
-defmodule Eden.Repo.Migrations.PlayerLock do
+defmodule Eden.Repo.Migrations.CreatePlayerLocksTable do
   use Ecto.Migration
 
   def change do

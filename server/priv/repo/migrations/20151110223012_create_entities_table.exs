@@ -1,4 +1,4 @@
-defmodule Eden.Repo.Migrations.CreateEntity do
+defmodule Eden.Repo.Migrations.CreateEntitiesTable do
   use Ecto.Migration
 
   def change do

@@ -55,7 +55,7 @@ defmodule Eden.Player do
 
   def create(params) do
     {status, player} = result =
-      %Eden.Schema.Player{}
+      %PlayerSchema{}
       |> cast(params, @required_params, @optional_params)
       |> validate_params
       |> handle_updates
@@ -192,6 +192,8 @@ defmodule Eden.Player do
               preload: [:player_locks]
 
     case Repo.one(query) do
+      nil ->
+        {:error, :player_not_found}
       player ->
         if PL.any_active_locks?("login", player.player_locks) == false do
           {authenticated, player} = if Comeonin.Bcrypt.checkpw(password, player.hash) do
@@ -223,8 +225,6 @@ defmodule Eden.Player do
         else
           {:error, :active_login_lock}
         end
-      nil ->
-        {:error, :player_not_found}
     end
   end
 

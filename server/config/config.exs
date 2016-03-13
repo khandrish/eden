@@ -45,7 +45,8 @@ config :eden,
   failed_login_lockout_period: 60 * 15, # Fifteen minutes
   failed_logins_allowed: 4,
   mailgun_client_mode: :prod,
-  mailgun_test_file_path: "/tmp/mailgun.json"
+  mailgun_test_file_path: "/tmp/mailgun.json",
+  session_ttl: 60 * 60 * 24 * 14 # Two Weeks
 
 config :eden, :game,
   time: %{}

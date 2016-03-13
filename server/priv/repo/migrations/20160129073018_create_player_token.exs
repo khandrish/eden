@@ -1,4 +1,4 @@
-defmodule Eden.Repo.Migrations.CreatePlayerToken do
+defmodule Eden.Repo.Migrations.CreatePlayerTokensTable do
   use Ecto.Migration
 
   def change do
