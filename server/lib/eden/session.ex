@@ -26,20 +26,17 @@ defmodule Eden.Session do
 
         result
       _ ->
-        Logger.warn "ERROR WHEN AUTHENTICATING"
         {:error, session}
     end
   end
 
   def initialize(token) do
-    Logger.debug "INITIALIZING TOKEN: #{token}"
     query = from s in SessionSchema,
               where: s.token == ^token,
               select: s
 
     case Repo.one(query) do
       nil ->
-        Logger.debug "NO SESSION FOUND"
         {status, _} = result =
           %Eden.Schema.Session{token: token, expiry: session_expiry, data: %{}}
           |> serialize
@@ -51,7 +48,6 @@ defmodule Eden.Session do
 
         result
       session ->
-        Logger.debug "SESSION FOUND"
         {:ok, session}
     end
   end
