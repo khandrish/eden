@@ -24,11 +24,11 @@ defmodule Eden.ApiChannelTest do
     ref = push socket, "session:authenticate", %{:login => player.login, :password => "Valid Password"}
     assert_reply ref, :ok
     ref = push socket, "session:is_authenticated"
-    assert_reply ref, :ok, %{"message" => true}
+    assert_reply ref, :ok, %{"data" => true}
     ref = push socket, "session:repudiate", %{}
     assert_reply ref, :ok
     ref = push socket, "session:is_authenticated"
-    assert_reply ref, :ok, %{"message" => false}
+    assert_reply ref, :ok, %{"data" => false}
   end
 
   test "reuse session", %{socket: socket, token: token} do
@@ -37,7 +37,7 @@ defmodule Eden.ApiChannelTest do
     ref = push socket, "session:authenticate", %{:login => player.login, :password => "Valid Password"}
     assert_reply ref, :ok
     ref = push socket, "session:is_authenticated"
-    assert_reply ref, :ok, %{"message" => true}
+    assert_reply ref, :ok, %{"data" => true}
     
     leave socket
     Logger.debug "LEFT SOCKET"
@@ -45,13 +45,13 @@ defmodule Eden.ApiChannelTest do
       socket()
       |> subscribe_and_join(ApiChannel, "api:v1", %{:token => token})
     ref = push socket, "session:is_authenticated"
-    assert_reply ref, :ok, %{"message" => true}
+    assert_reply ref, :ok, %{"data" => true}
   end
 
   test "invalid operations", %{socket: socket} do
     ref = push socket, "foo"
-    assert_reply ref, :error, %{"message" => "Invalid operation"}
+    assert_reply ref, :error, %{"data" => "Invalid operation"}
     ref = push socket, "session:foo"
-    assert_reply ref, :error, %{"message" => "Invalid operation"}
+    assert_reply ref, :error, %{"data" => "Invalid operation"}
   end
 end

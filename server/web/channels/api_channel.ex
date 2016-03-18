@@ -9,32 +9,35 @@ defmodule Eden.ApiChannel do
   def join(operation, payload, socket) do
     try do
       context = Router.route(:join, operation, payload, new(socket)) # New context
-      {get_result_code(context), %{"message" => get_result_message(context)}, get_socket(context)}
+      {get_result_code(context), %{"data" => get_result_data(context)}, get_socket(context)}
     rescue
       FunctionClauseError ->
         Logger.warn "Client attempted invalid channel join: #{operation}"
-        {:error, %{"message" => "Invalid operation"}, socket}
+        {:error, %{"data" => "Invalid operation"}, socket}
     end
   end 
 
   def handle_in(operation, payload, socket) do
     try do
       context = Router.route(:handle_in, operation, payload, new(socket)) # New context
-      {:reply, {get_result_code(context), %{"message" => get_result_message(context)}}, get_socket(context)}
+      {:reply, {get_result_code(context), %{"data" => get_result_data(context)}}, get_socket(context)}
     rescue
       FunctionClauseError ->
         Logger.warn "Client made request for invalid operation: #{operation}"
-        {:reply, {:error, %{"message" => "Invalid operation"}}, socket}
+        {:reply, {:error, %{"data" => "Invalid operation"}}, socket}
     end
   end
 
   def handle_out(operation, payload, socket) do
     try do
       context = Router.route(:handle_out, operation, payload, new(socket)) # New context
-      push socket, "push_message", %{"message" => get_result_message(context)}
+      if get_result_code(context) == :ok do
+        push socket, operation, %{"data" => get_result_data(context)}
+      end
       {:noreply, get_socket(context)}
     rescue
       FunctionClauseError ->
+        push socket, operation, %{"data" => payload}
         {:noreply, socket}
     end
   end

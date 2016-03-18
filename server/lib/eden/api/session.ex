@@ -17,7 +17,7 @@ defmodule Eden.Api.Session do
       _ ->
         context
         |> set_result_code(:error)
-        |> set_result_message("Unable to authenticate.")
+        |> set_result_data("Unable to authenticate.")
     end
   end
 
@@ -26,7 +26,7 @@ defmodule Eden.Api.Session do
     authenticated = Session.is_authenticated?(socket.assigns.session)
     context
     |> set_result_code(:ok)
-    |> set_result_message(authenticated)
+    |> set_result_data(authenticated)
   end
 
   def handle_in("session:repudiate", _, context) do
@@ -39,7 +39,7 @@ defmodule Eden.Api.Session do
       _ ->
         context
         |> set_result_code(:error)
-        |> set_result_message("Unable to repudiate.")
+        |> set_result_data("Unable to repudiate.")
     end
   end
 end

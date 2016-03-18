@@ -14,7 +14,7 @@ defmodule Eden.Api.Context do
   actually makes up the operation.
   """
 
-  defstruct result_message: nil, request_id: nil, result_code: nil, socket: nil
+  defstruct result_data: nil, request_id: nil, result_code: nil, socket: nil
 
   def new, do: %Eden.Api.Context{request_id: Ecto.UUID.generate}
 
@@ -22,9 +22,9 @@ defmodule Eden.Api.Context do
 
   # Reply Message functions
 
-  def get_result_message(context), do: context.result_message
+  def get_result_data(context), do: context.result_data
 
-  def set_result_message(context, result_message), do: %{context | result_message: result_message}
+  def set_result_data(context, result_data), do: %{context | result_data: result_data}
 
   # Request Id functions
 
