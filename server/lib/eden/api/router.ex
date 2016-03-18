@@ -19,8 +19,4 @@ defmodule Eden.Api.Router do
   def route(method, "session" <> _ = operation, params, context) do
     apply(Eden.Api.Session, method, [operation, params, context])
   end
-
-  def route(method, "player" <> _ = operation, params, context) do
-    apply(Eden.Api.Player, method, [operation, params, context])
-  end
 end

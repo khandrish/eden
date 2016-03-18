@@ -67,23 +67,19 @@ defmodule Eden.Player do
   end
 
   def delete(id) do
-    try do
-      case Repo.get(PlayerSchema, id) do
-        nil ->
-          Logger.warn "Player #{id} not found in database when attempting to delete"
-          {:error, :player_not_found}
-        player ->
-          case Repo.delete(player) do
-            {:ok, player} ->
-              Logger.info "Player #{player.id} has been deleted"
-              {:ok, player}
-            {:error, player} ->
-              Logger.warn "Unable to delete player #{id}"
-              {:error, player}
-          end
-      end
-    rescue
-      Ecto.CastError -> {:error, :invalid_params}
+    case Repo.get(PlayerSchema, id) do
+      nil ->
+        Logger.warn "Player #{id} not found in database when attempting to delete"
+        {:error, :player_not_found}
+      player ->
+        case Repo.delete(player) do
+          {:ok, player} ->
+            Logger.info "Player #{player.id} has been deleted"
+            {:ok, player}
+          {:error, player} ->
+            Logger.warn "Unable to delete player #{id}"
+            {:error, player}
+        end
     end
   end
 
