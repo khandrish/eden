@@ -20,19 +20,19 @@ defmodule Eden.Api do
           true ->
             context
             |> set_result_code(:error)
-            |> set_result_data("Unable to initialize session.")
+            |> set_result_message(%{message: "Unable to initialize session."})
         end
       {:error, :invalid} ->
         context
         |> set_result_code(:error)
-        |> set_result_data("Invalid session token.")
+        |> set_result_message(%{message: "Invalid session token."})
     end
   end
 
   def handle_in("ping", _payload, context) do
     context
     |> set_result_code(:ok)
-    |> set_result_data("pong")
+    |> set_result_message("pong")
   end
 
   def terminate(_reason, context) do
