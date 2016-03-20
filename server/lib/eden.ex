@@ -8,8 +8,7 @@ defmodule Eden do
       supervisor(Eden.Endpoint, []),
       worker(Eden.Repo, []),
       worker(Eden.Engine, []),
-      worker(ConCache, [[], [name: :data_cache]]),
-      supervisor(Eden.GameSessionSupervisor, [])
+      worker(ConCache, [[], [name: :data_cache]])
     ]
 
     pools = Enum.map(pools(), fn({name, args}) ->

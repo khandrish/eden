@@ -64,23 +64,3 @@ defmodule Eden.ApiChannel do
     Phoenix.Token.verify(Eden.Endpoint, "session token", token, max_age: session_ttl)
   end
 end
-
-# 
-# new_api_context()
-# |> set_player_session(socket.assigns.session)
-# |> throttle
-# |> permissions
-# |> execute
-# |> transform data
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-
