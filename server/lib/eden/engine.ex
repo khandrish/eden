@@ -1,4 +1,8 @@
 defmodule Eden.Engine do
+  defmodule State do
+    defstruct engine_state: :cold, entity_id: nil
+  end
+
   use GenServer
 
   alias Eden.EntityManager, as: EM
@@ -19,18 +23,18 @@ defmodule Eden.Engine do
   # Callbacks
   def init(_input) do
     EM.create_caches
-  	{:ok, %{cache_primed: false, state_entity: nil}}
+  	{:ok, %State{}}
   end
 
-  def handle_call(:start, _from, %{cache_primed: false} = state) do
+  def handle_call(:start, _from, %State{engine_state: :cold} = state) do
     EM.load_all_entities
-    [id] = EM.get_entities_with_component("world state")
+    [id] = EM.get_entities_with_component("world_state")
     start_engine(id)
     {:reply, :ok, %{state | :cache_primed => true, :state_entity => id}}
   end
 
-  def handle_call(:start, _from, {:state_entity = id} = state) do
-    start_engine(id)
+  def handle_call(:start, _from, %State{entity_id: entity_id} = state) do
+    start_engine(entity_id)
     {:reply, :ok, state}
   end
 

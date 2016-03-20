@@ -4,21 +4,18 @@ defmodule Eden.SessionChannelTest do
   alias Eden.SessionChannel
 
   setup do
+    uuid = Ecto.UUID.generate
+    token = Phoenix.Token.sign(Eden.Endpoint, "session_token", uuid)
     {:ok, _, socket} =
-      socket("user_id", %{some: :assign})
-      |> subscribe_and_join(SessionChannel, "session:lobby")
+      socket()
+      |> subscribe_and_join(SessionChannel, "session:#{uuid}", %{token: token})
 
-    {:ok, socket: socket}
+    {:ok, %{socket: socket, token: token, session_id: uuid}}
   end
 
   test "ping replies with status ok", %{socket: socket} do
     ref = push socket, "ping", %{"hello" => "there"}
-    assert_reply ref, :ok, %{"hello" => "there"}
-  end
-
-  test "shout broadcasts to session:lobby", %{socket: socket} do
-    push socket, "shout", %{"hello" => "all"}
-    assert_broadcast "shout", %{"hello" => "all"}
+    assert_reply ref, :ok, %{data: "pong"}
   end
 
   test "broadcasts are pushed to the client", %{socket: socket} do

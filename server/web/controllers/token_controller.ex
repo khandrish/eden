@@ -1,9 +1,12 @@
 defmodule Eden.TokenController do
   use Eden.Web, :controller
 
-  plug Eden.Plug.Authenticated when action in [:token]
-
-  def token(conn, _params) do
-    json conn, %{token: Phoenix.Token.sign(conn, "player", conn.assigns[:current_player].id)}
+  def get_token(conn, _params) do
+  	result = conn.cookies["foo"]
+  	IO.inspect result
+  	IO.inspect "foo"
+  	uuid = Ecto.UUID.generate
+  	token = Phoenix.Token.sign(conn, "player", uuid)
+    json conn, %{token: token, session_id: uuid}
   end
 end

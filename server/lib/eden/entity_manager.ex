@@ -110,7 +110,7 @@ defmodule Eden.EntityManager do
   end
 
   def delete_entity_from_db(entity_id) do
-    Repo.delete! %Entity{entity_id: entity_id}
+    Repo.delete! %Entity{id: entity_id}
     :true
   end
 
@@ -140,7 +140,7 @@ defmodule Eden.EntityManager do
 
   def load_entity(entity_id) do
     query = from e in Entity,
-            where: e.entity_id == ^entity_id
+            where: e.id == ^entity_id
     query
     |> Repo.all
     |> unpack_entities
@@ -158,7 +158,7 @@ defmodule Eden.EntityManager do
       Map.put(mapping, component, pairs)
     end)
 
-    Repo.insert! %Entity{entity_id: entity_id, components: :erlang.term_to_binary(component_map)}
+    Repo.insert! %Entity{id: entity_id, components: :erlang.term_to_binary(component_map)}
     :true
   end
 
@@ -168,7 +168,7 @@ defmodule Eden.EntityManager do
 
   defp unpack_entities(entities) do
     Enum.each(entities, fn(entity) ->
-      entity_id = entity.entity_id
+      entity_id = entity.id
       :erlang.binary_to_term(entity.components)
       |> Enum.each(fn({component, pairs}) ->
         :ets.insert_new(@ec_index, {entity_id, component})

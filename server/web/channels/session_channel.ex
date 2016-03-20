@@ -1,10 +1,11 @@
 defmodule Eden.SessionChannel do
+  alias Eden.Session
   use Eden.Web, :channel
 
   def join("session:" <> id, %{token: token}, socket) do
     result =
-      with true <- id == token,
-           {:ok, session_token} <- validate_token(token),
+      with {:ok, session_token} <- validate_token(token),
+           true <- id == session_token,
         do: Session.initialize(session_token)
 
     case result do
@@ -22,7 +23,7 @@ defmodule Eden.SessionChannel do
   # Channels can be used in a request/response fashion
   # by sending replies to requests from the client
   def handle_in("ping", _, socket) do
-    {:reply, {:ok, "pong"}, socket}
+    {:reply, {:ok, %{data: "pong"}}, socket}
   end
 
   # It is also common to receive messages from the client and
@@ -49,6 +50,6 @@ defmodule Eden.SessionChannel do
 
   defp validate_token(token) do
     session_ttl = Application.get_env(:eden, :session_ttl)
-    Phoenix.Token.verify(Eden.Endpoint, "session token", token, max_age: session_ttl)
+    Phoenix.Token.verify(Eden.Endpoint, "session_token", token, max_age: session_ttl)
   end
 end
