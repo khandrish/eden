@@ -32,18 +32,19 @@ defmodule Eden.Mixfile do
   defp deps do
     [{:phoenix, "~> 1.1"},
      {:phoenix_ecto, "~> 2.0"},
-     {:phoenix_html, "~> 2.3"},
-     {:postgrex, ">= 0.0.0"},
+     {:phoenix_html, "~> 2.5"},
+     {:postgrex, "~> 0.11.1"},
      {:phoenix_live_reload, "~> 1.0", only: :dev},
      {:cowboy, "~> 1.0"},
      {:mailgun, "~> 0.1.2"},
-     {:comeonin, "~> 1.2.2"},
+     {:comeonin, "~> 2.3"},
+     {:comeonin_ecto_password, "~> 0.0.3"},
      {:gproc, "~> 0.5.0"},
      {:poolboy, "~> 1.5"},
-     {:con_cache, "~> 0.10.0"},
+     {:con_cache, "~> 0.11.0"},
      {:corsica, "~> 0.4"},
      {:phoenix_calendar, "~> 0.1.2"},
-     {:calecto, "~> 0.5.0"},
+     {:calecto, "~> 0.5.2"},
      {:pipe, "~> 0.0.2"}]
   end
 end

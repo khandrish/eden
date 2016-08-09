@@ -10,7 +10,7 @@ defmodule Eden.EntityManager do
   @eck_index :entity_component_key_index
 
   #
-  # cache management
+  # Cache management
   #
 
   def create_caches() do
@@ -40,78 +40,33 @@ defmodule Eden.EntityManager do
   end
 
   #
-  # entity management
+  # Entity creation
   #
 
-  def create_entity() do
+  def create_entity do
     Ecto.UUID.generate
   end
 
-  def get_key(entity_id, component, key) do
-    [{_, value}] = :ets.lookup(@ec_data, {entity_id, component, key})
-    value
-  end
-
-  def put_key(entity_id, component, key, value) do
-    :ets.insert(@ec_data, {{entity_id, component, key}, value})
-    :ets.insert(@eck_index, {{entity_id, component}, key})
-    :ets.insert(@cke_index, {{component, key}, entity_id})
-  end
-
-  def has_key?(entity_id, component, key) do
-    if length(:ets.match_object(@eck_index, {{entity_id, component}, key})) == 1 do
-      :true
+  def create_with_or_return(component, params \\ %{}) do
+    if :ets.member(@ce_index, component) do
+      get_entity_with_component(component)
     else
-      :false
+      entity = create_entity
+      :ok = apply(component, :init, [entity])
+      entity
     end
   end
 
-  def delete_key(entity_id, component, key) do
-    :ets.delete(@ec_data, {entity_id, component, key})
-    :ets.delete_object(@eck_index, {{entity_id, component}, key})
-    :ets.delete_object(@cke_index, {{component, key}, entity_id})
-  end
+  #
+  # Getting information about and from entities
+  #
 
-  def add_component(entity_id, component) do
-    :ets.insert(@ec_index, {entity_id, component})
-    :ets.insert(@ce_index, {component, entity_id})
-  end
-
-  def remove_component(entity_id, component) do
-    :ets.delete_object(@ec_index, {entity_id, component})
-    :ets.delete_object(@ce_index, {component, entity_id})
-    Enum.each(:ets.lookup(@eck_index, {entity_id, component}), fn({_, key}) ->
-      :ets.delete(@ec_data, {entity_id, component, key})
-      :ets.delete_object(@cke_index, {{component, key}, entity_id})
+  def get_all_component_data(entity_id, component) do
+    keys = :ets.lookup(@eck_index, {entity_id, component}
+    Enum.reduce(keys, %{}, fn({_, key}, pairs) ->
+      [{_, value}] = :ets.lookup(@ec_data, {entity_id, component, key})
+      Map.put(pairs, key, value)
     end)
-    :ets.delete(@eck_index, {entity_id, component})
-  end
-
-  def has_component?(entity_id, component) do
-    if length(:ets.match_object(@ec_index, {entity_id, component})) == 1 do
-      :true
-    else
-      :false
-    end
-  end
-
-  def delete_entity_from_cache(entity_id) do
-    :ets.lookup(@ec_index, entity_id)
-    |> Enum.each(fn({_, component}) ->
-      :ets.delete_object(@ec_index, {entity_id, component})
-      :ets.delete_object(@ce_index, {component, entity_id})
-      Enum.each(:ets.lookup(@eck_index, {entity_id, component}), fn({_, key}) ->
-        :ets.delete_object(@eck_index,  {{entity_id, component}, key})
-        :ets.delete_object(@cke_index, {{component, key}, entity_id})
-        :ets.delete_object(@ec_data, {{entity_id, component}, key})
-      end)
-    end)
-    :true
-  end
-
-  def delete_entity_from_db(entity_id) do
-    Repo.delete! %Entity{id: entity_id}
-    :true
   end
 
   def get_all_components(entity_id) do
@@ -133,6 +88,95 @@ defmodule Eden.EntityManager do
     |> MapSet.to_list
   end
 
+  def get_entity_with_component(component) do
+    [entity] = get_entities_with_components([component])
+    entity
+  end
+
+  def get_entity_with_components(components) do
+    [entity] = get_entities_with_components(component)
+    entity
+  end
+
+  def get_key(entity_id, component, key) do
+    [{_, value}] = :ets.lookup(@ec_data, {entity_id, component, key})
+    value
+  end
+
+  def has_component?(entity_id, component) do
+    if length(:ets.match_object(@ec_index, {entity_id, component})) == 1 do
+      :true
+    else
+      :false
+    end
+  end
+
+  def has_key?(entity_id, component, key) do
+    if length(:ets.match_object(@eck_index, {{entity_id, component}, key})) == 1 do
+      :true
+    else
+      :false
+    end
+  end
+
+  #
+  # Modifying entities
+  #
+
+  def add_component(entity_id, component) do
+    :ets.insert(@ec_index, {entity_id, component})
+    :ets.insert(@ce_index, {component, entity_id})
+    entity_id
+  end
+
+  def delete_entity_from_cache(entity_id) do
+    :ets.lookup(@ec_index, entity_id)
+    |> Enum.each(fn({_, component}) ->
+      :ets.delete_object(@ec_index, {entity_id, component})
+      :ets.delete_object(@ce_index, {component, entity_id})
+      Enum.each(:ets.lookup(@eck_index, {entity_id, component}), fn({_, key}) ->
+        :ets.delete_object(@eck_index,  {{entity_id, component}, key})
+        :ets.delete_object(@cke_index, {{component, key}, entity_id})
+        :ets.delete_object(@ec_data, {{entity_id, component}, key})
+      end)
+    end)
+    entity_id
+  end
+
+  def delete_key(entity_id, component, key) do
+    :ets.delete(@ec_data, {entity_id, component, key})
+    :ets.delete_object(@eck_index, {{entity_id, component}, key})
+    :ets.delete_object(@cke_index, {{component, key}, entity_id})
+    entity_id
+  end
+
+  def put_key(entity_id, component, key, value) do
+    :ets.insert(@ec_data, {{entity_id, component, key}, value})
+    :ets.insert(@eck_index, {{entity_id, component}, key})
+    :ets.insert(@cke_index, {{component, key}, entity_id})
+    entity_id
+  end
+
+  def remove_component(entity_id, component) do
+    :ets.delete_object(@ec_index, {entity_id, component})
+    :ets.delete_object(@ce_index, {component, entity_id})
+    Enum.each(:ets.lookup(@eck_index, {entity_id, component}), fn({_, key}) ->
+      :ets.delete(@ec_data, {entity_id, component, key})
+      :ets.delete_object(@cke_index, {{component, key}, entity_id})
+    end)
+    :ets.delete(@eck_index, {entity_id, component})
+    entity_id
+  end
+
+  #
+  # Database interaction
+  #
+
+  def delete_entity_from_db(entity_id) do
+    Repo.delete! %Entity{id: entity_id}
+    entity_id
+  end
+
   def load_all_entities do
     Repo.all(Entity)
     |> unpack_entities
@@ -151,11 +195,7 @@ defmodule Eden.EntityManager do
     components = get_all_components(entity_id)
     component_map = Enum.reduce(components, %{}, fn(component, components) -> Map.put(components, component, %{}) end)
     component_map = Enum.reduce(components, component_map, fn(component, mapping) ->
-      pairs = Enum.reduce(:ets.lookup(@eck_index, {entity_id, component}), %{}, fn({_, key}, pairs) ->
-        [{_, value}] = :ets.lookup(@ec_data, {entity_id, component, key})
-        Map.put(pairs, key, value)
-      end)
-      Map.put(mapping, component, pairs)
+      Map.put(mapping, component, get_all_component_data(component))
     end)
 
     Repo.insert! %Entity{id: entity_id, components: :erlang.term_to_binary(component_map)}
