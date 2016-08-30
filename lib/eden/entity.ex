@@ -7,7 +7,6 @@ defmodule Eden.Entity do
   Eden.Db.transaction/1 for details.
   """  
   alias Amnesia.Selection
-  alias Apex.Format, as: Ap
   alias Eden.Database.EntityData, as: ED
   require Logger
   use Amnesia
@@ -19,7 +18,7 @@ defmodule Eden.Entity do
   #
 
   @doc """
-  Even the core entity functionality utilizes components to work.
+  Creates a new entity within the system, returning the new id
   """
   def new do
     id = ED.write(%ED{component: "entity", key: :component, value: true}).id
@@ -29,7 +28,7 @@ defmodule Eden.Entity do
 
   # Manipulation at the entity level
 
-  def delete(entities) do
+  def delete(entities) when is_list(entities) do
     entities
     |> Enum.each(&(delete(ED.match(id: &1))))
     true
@@ -42,32 +41,33 @@ defmodule Eden.Entity do
   end
 
   def get(entities) when is_list(entities) do
-    final_transform = &(%{id: &2, components: &1})
+    entities
+    |> Enum.map(fn(entity) -> entity |> ED.read() end)
+    |> Enum.filter(&(&1))
+    |> Enum.reduce(%{}, fn(data, entity_map) ->
+      entity_map = Map.put_new(entity_map, List.first(data).id, %{})
+      
+      Enum.reduce(data, entity_map, fn(entry, map) ->
+        entity = entry.id
+        component = entry.component
+        key = entry.key
 
-    result = entities
-    |> Enum.map(fn(entity) ->
-      entity
-      |> ED.read()
-      |> Enum.reduce(%{}, fn(data, map) ->
-        component = data.component
-        if Map.has_key?(map, component) do
-          updated_component = map
-          |> Map.get(component)
-          |> Map.put_new(data.key, data.value)
-
-          Map.put(map, component, updated_component)
-        else
-          map
-          |> Map.put_new(component, %{data.key => data.value})
+        map = case Map.has_key?(map[entity], component) do
+          false -> put_in(map, [entity, component], %{})
+          _ -> map
         end
+            
+        put_in(map, [entity, component, key], entry.value)
       end)
-      |> final_transform.(entity)
     end)
-  end
+    |> Enum.map(&(%{id: elem(&1, 0), components: elem(&1, 1)}))
+end
 
   def get(entity) do
-    get([entity])
-    |> List.first()
+    case get([entity]) do
+      [] -> nil
+      [result] -> result
+    end
   end
 
   # Manipulation at the component level
@@ -100,7 +100,7 @@ defmodule Eden.Entity do
   def list_with_components(components) when is_list(components) do
     components
     |> Enum.map(fn(component) ->
-      match_spec = [{{ED, :'$1', :'$2', :_ , :_},
+      [{{ED, :'$1', :'$2', :_ , :_},
         [{:'==', component, :'$2'}],
         [:'$1']}]
       |> select()
@@ -124,7 +124,7 @@ defmodule Eden.Entity do
 
     %ED{id: entity, component: component, key: @component_flag, value: true}
     |> ED.write
-    true
+    :ok
   end
 
   def remove_component(entity, component) do
