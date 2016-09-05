@@ -52,14 +52,14 @@ defmodule Eden.SystemManager do
   end
 
   def handle_call({:start, :all}, _from, systems) do
-    :ok = start_systems(MapSet.to_list(systems))
+    :ok = do_start(MapSet.to_list(systems))
     {:reply, :ok, systems}
   end
 
   def handle_call({:start, systems_to_start}, _from, systems) do
     case MapSet.subset(MapSet.new(systems_to_start), systems) do
       true ->
-        start_systems(systems_to_start)
+        do_start(systems_to_start)
         {:reply, :ok, systems}
       false ->
         {:reply, {:error, :not_all_systems_registered}, systems}
@@ -67,14 +67,14 @@ defmodule Eden.SystemManager do
   end
 
   def handle_call({:stop, :all}, _from, systems) do
-    :ok = start_systems(MapSet.to_list(systems))
+    :ok = do_stop(MapSet.to_list(systems))
     {:reply, :ok, systems}
   end
 
   def handle_call({:stop, systems_to_stop}, _from, systems) do
     case MapSet.subset(MapSet.new(systems_to_stop), systems) do
       true ->
-        stop_systems(systems_to_stop)
+        do_stop(Enum.reverse(systems_to_stop))
         {:reply, :ok, systems}
       false ->
         {:reply, {:error, :not_all_systems_registered}, systems}
@@ -85,11 +85,11 @@ defmodule Eden.SystemManager do
   # Private Functions
   #
 
-  defp start_systems(systems) do
+  defp do_start(systems) do
     Enum.each(systems, &(&1.start()))
   end
 
-  defp stop_systems(systems) do
+  defp do_stop(systems) do
     Enum.each(systems, &(&1.stop()))
   end
 end
