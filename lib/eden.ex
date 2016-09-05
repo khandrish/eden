@@ -5,7 +5,7 @@ defmodule Eden do
     import Supervisor.Spec, warn: false
 
     children = [
-      worker(Eden.ServiceManager, [])
+      worker(Eden.SystemManager, [])
     ]
 
     opts = [strategy: :one_for_one, name: Eden.Supervisor]
