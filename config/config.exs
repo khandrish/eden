@@ -11,7 +11,12 @@ config :logger, :console,
   metadata: [:request_id]
 
 config :eden, 
-  systems: [Eden.System.World]
+  systems: [Eden.System.World, Eden.System.Scheduler, Eden.System.Weather]
+
+# These arguments are passed to each system at startup and are available to
+# each system as environment variables.
+config :eden, 
+  system_env: %{foo: "bar"}
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

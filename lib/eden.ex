@@ -5,10 +5,15 @@ defmodule Eden do
     import Supervisor.Spec, warn: false
 
     children = [
-      worker(Eden.SystemManager, [])
+      supervisor(Task.Supervisor, [[name: Eden.TaskSupervisor]])
     ]
 
+    env = Application.get_env(:eden, :system_env, %{})
+    
+    systems = Application.get_env(:eden, :systems, [])
+      |> Enum.map(&(worker(&1, [env])))
+
     opts = [strategy: :one_for_one, name: Eden.Supervisor]
-    Supervisor.start_link(children, opts)
+    Supervisor.start_link(children ++ systems, opts)
   end
 end

@@ -1,4 +1,4 @@
-defmodule DataTest do
+defmodule EntityTest do
   alias Eden.Db
   alias Eden.Entity
   use ExUnit.Case
