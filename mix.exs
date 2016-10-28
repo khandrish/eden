@@ -28,8 +28,7 @@ defmodule Eden.Mixfile do
   #
   # Type `mix help deps` for examples and options
   defp deps do
-    [{:amnesia, "~> 0.2.0"},
-     {:apex, "~> 0.5.2"},
+    [{:apex, "~> 0.5.2"},
      {:calendar, "~> 0.16.0"},
      {:fsm, "~> 0.2.0"},
      {:gproc, "~> 0.6.1"},
