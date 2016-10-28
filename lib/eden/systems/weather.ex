@@ -3,11 +3,11 @@ defmodule Eden.System.Weather do
   Changes the weather as time passes to provide a dynamic weather system at
   arbitrary granularity.
   """
-
+  alias Eden.Entity
   use GenServer
 
-  @run_interval 50 # ms
-  @weather_regions = "weather regions"
+  @run_interval 500 # ms
+  @weather_regions_component :weather_region
 
   # API
   def start_link(env) do
@@ -16,8 +16,12 @@ defmodule Eden.System.Weather do
 
   # Callbacks
   def init(env) do
-    weather_regions = Entity.list_with_components(@weather_regions)
-    {:ok, %{env: env, weather_regions: weather_regions}, 0}
+    # weather_regions = Entity.transaction(fn ->
+    #   Entity.list_with_components(@weather_regions_component)
+    # end)
+    # {:ok, %{env: env, weather_regions: weather_regions}, 0}
+
+    {:ok, true}
   end
 
   @doc """

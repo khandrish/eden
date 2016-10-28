@@ -1,91 +1,123 @@
-defmodule EntityTest do
-  alias Eden.Db
-  alias Eden.Entity
-  use ExUnit.Case
+defmodule Eden.EntityTest do
+#   alias Eden.Entity
+#   alias Eden.TestComponent, as: TC
+#   use ExUnit.Case
 
-  setup do
-    %{entity: Db.transaction(fn -> Entity.new end)}
-  end
+#   setup do
+#     %{entity: Entity.transaction(fn -> Entity.new end)}
+#   end
 
-  test "get/1", %{entity: entity} = _context do
-    entities = Db.transaction(fn ->
-      Enum.map(1..5, fn(_) -> Entity.new() end)
-    end)
+#   test "add_component/2", %{entity: entity} = _context do
+#     Entity.transaction(fn ->
+#       Entity.add_component(entity, TC)
+#     end)
 
-    refute Db.transaction(fn -> Entity.get(entity) end) == nil
-    assert Db.transaction(fn -> Entity.get(0) end) == nil
-    assert Db.transaction(fn -> Entity.get([0, 0, 0, 0, 0]) end) == []
-    assert length(Db.transaction(fn -> Entity.get(entities) end)) == 5
-  end
+#     assert Entity.transaction(fn -> Entity.has_component?(entity, TC) end) == true
+#   end
 
-  test "has_component/2", %{entity: entity} = _context do
-    assert Db.transaction(fn -> Entity.has_component?(entity, "entity") end) == true
-    assert Db.transaction(fn -> Entity.has_component?(entity, "foo") end) == false
-  end
+#   test "add_key/3", %{entity: entity} = _context do
+#     Entity.transaction(fn ->
+#       Entity.add_component(entity, TC)
+#       Entity.add_key(entity, TC, "foo", "bar")
+#     end)
 
-  test "add_component/2", %{entity: entity} = _context do
-    Db.transaction(fn ->
-      Entity.add_component(entity, "test")
-    end)
+#     assert Entity.transaction(fn -> Entity.has_key?(entity, TC, "foo") end) == true
+#   end
 
-    assert Db.transaction(fn -> Entity.has_component?(entity, "test") end) == true
-  end
+#   test "delete/1", %{entity: entity} = _context do
+#     assert Entity.transaction(fn -> Entity.delete(entity) end) == true
+#     assert Entity.transaction(fn -> Entity.get(entity) end) == nil
+#   end
 
-  test "remove_component/2", %{entity: entity} = _context do
-    Db.transaction(fn ->
-      Entity.add_component(entity, "test")
-      Entity.remove_component(entity, "test")
-    end)
+#   test "get/1", %{entity: entity} = _context do
+#     entities = Entity.transaction(fn ->
+#       Enum.map(1..5, fn(_) -> Entity.new() end)
+#     end)
 
-    assert Db.transaction(fn -> Entity.has_component?(entity, "test") end) == false
-  end
+#     refute Entity.transaction(fn -> Entity.get(entity) end) == nil
+#     assert Entity.transaction(fn -> Entity.get(0) end) == nil
+#     assert Entity.transaction(fn -> Entity.get([0, 0, 0, 0, 0]) end) == []
+#     assert length(Entity.transaction(fn -> Entity.get(entities) end)) == 5
+#   end
 
-  test "list_with_components/1", %{entity: entity} = _context do
-    Db.transaction(fn ->
-      Entity.add_component(entity, "test")
-    end)
-
-    refute Db.transaction(fn -> Entity.list_with_components("entity") end) == []
-    refute Db.transaction(fn -> Entity.list_with_components(["entity", "test"]) end) == []
-  end
+#   test "get_all_keys/2", %{entity: _entity} = _context do
+#     refute Entity.transaction(fn -> Entity.get_all_keys("entity", "created") end) == []
+#   end
 
 
-  test "get_key/3 success case", %{entity: entity} = _context do
-    refute Db.transaction(fn -> Entity.get_key(entity, "entity", "created") end) == nil
-    assert Db.transaction(fn -> Entity.get_key(entity, "entity", "foo") end) == nil
-  end
+#   test "get_key/3", %{entity: entity} = _context do
+#     refute Entity.transaction(fn -> Entity.get_key(entity, "entity", "created") end) == nil
+#     assert Entity.transaction(fn -> Entity.get_key(entity, "entity", "foo") end) == nil
+#   end
 
-  test "has_key/3 success case", %{entity: entity} = _context do
-    assert Db.transaction(fn -> Entity.has_key?(entity, "entity", "created") end) == true
-    assert Db.transaction(fn -> Entity.has_key?(entity, "entity", "foo") end) == false
-    assert Db.transaction(fn -> Entity.has_key?(entity, "foo", "created") end) == false
-    assert Db.transaction(fn -> Entity.has_key?("foo", "entity", "created") end) == false
-  end
+#   test "has_component/2", %{entity: entity} = _context do
+#     assert Entity.transaction(fn -> Entity.has_component?(entity, "entity") end) == true
+#     assert Entity.transaction(fn -> Entity.has_component?(entity, "foo") end) == false
+#   end
 
-  test "add_key/3", %{entity: entity} = _context do
-    Db.transaction(fn ->
-      Entity.add_component(entity, "test")
-      Entity.add_key(entity, "test", "foo", "bar")
-    end)
+#   test "has_key/3", %{entity: entity} = _context do
+#     assert Entity.transaction(fn -> Entity.has_key?(entity, "entity", "created") end) == true
+#     assert Entity.transaction(fn -> Entity.has_key?(entity, "entity", "foo") end) == false
+#     assert Entity.transaction(fn -> Entity.has_key?(entity, "foo", "created") end) == false
+#     assert Entity.transaction(fn -> Entity.has_key?("foo", "entity", "created") end) == false
+#   end
 
-    assert Db.transaction(fn -> Entity.has_key?(entity, "test", "foo") end) == true
-  end
+#   test "list_components/1", %{entity: entity} = _context do
+#     Entity.transaction(fn ->
+#       Entity.add_component(entity, TC)
+#     end)
 
-  test "put_key/3", %{entity: entity} = _context do
-    assert Db.transaction(fn -> Entity.put_key(entity, "test", "foo") end) == true
-    assert Db.transaction(fn -> Entity.has_component?(entity, "test") end) == true
-  end
+#     assert length(Entity.transaction(fn -> Entity.list_components(entity) end)) == 2
+#   end
 
-  test "get_all_keys/2 results case", %{entity: _entity} = _context do
-    refute Db.transaction(fn -> Entity.get_all_keys("entity", "created") end) == []
-  end
+#   test "list_with_components/1", %{entity: entity} = _context do
+#     Entity.transaction(fn ->
+#       Entity.add_component(entity, TC)
+#     end)
 
-  test "remove_key/3", %{entity: entity} = _context do
-    Db.transaction(fn ->
-      Entity.add_key(entity, "test", "foo", "bar")
-      Entity.remove_key(entity, "test", "foo")
-    end)
+#     refute Entity.transaction(fn -> Entity.list_with_components("entity") end) == []
+#     refute Entity.transaction(fn -> Entity.list_with_components(["entity", TC]) end) == []
+#   end
 
-    assert Db.transaction(fn -> Entity.has_key?(entity, "test", "foo") end) == false
-  end
+#   test "put_key/3", %{entity: entity} = _context do
+#     assert is_integer(Entity.transaction(fn -> Entity.put_key(entity, TC, "foo") end)) == true
+#     assert Entity.transaction(fn -> Entity.has_component?(entity, TC) end) == true
+#   end
+
+#   test "remove_component/2", %{entity: entity} = _context do
+#     Entity.transaction(fn ->
+#       Entity.add_component(entity, TC)
+#       Entity.remove_component(entity, TC)
+#     end)
+
+#     assert Entity.transaction(fn -> Entity.has_component?(entity, TC) end) == false
+#   end
+
+#   test "remove_key/3", %{entity: entity} = _context do
+#     Entity.transaction(fn ->
+#       Entity.add_key(entity, TC, "foo", "bar")
+#       assert Entity.has_key?(entity, TC, "foo") == true
+#       Entity.remove_key(entity, TC, "foo")
+#       assert Entity.has_key?(entity, TC, "foo") == false
+#     end)
+#   end
+
+#   test "value_exists?/3", %{entity: entity} = _context do
+#     Entity.transaction(fn ->
+#       Entity.add_key(entity, TC, "foo", "bar")
+#     end)
+
+#     assert Entity.transaction(fn -> Entity.value_exists?(TC, "foo", "bar") end) == true
+#     assert Entity.transaction(fn -> Entity.value_exists?(TC, "foo", "barbarblacksheep") end) == false
+#   end
+# end
+
+# defmodule Eden.TestComponent do
+#   def init(_) do
+#     :ok
+#   end
+
+#   def destroy(_) do
+#     :ok
+#   end
 end

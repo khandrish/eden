@@ -7,8 +7,8 @@ use Mix.Config
 
 # Configures Elixir's Logger
 config :logger, :console,
-  format: "$time $metadata[$level] $message\n",
-  metadata: [:request_id]
+  format: "$time - $level - $metadata - $message\n",
+  metadata: [:module, :function, :line]
 
 config :eden, 
   systems: [Eden.System.World, Eden.System.Scheduler, Eden.System.Weather]
@@ -17,6 +17,12 @@ config :eden,
 # each system as environment variables.
 config :eden, 
   system_env: %{foo: "bar"}
+
+# These values configure the pluggable modules so logic can be easily changed
+config :eden,
+  db_client: Eden.DbClient.Mnesia,
+  entity_component: Eden.Component.Entity
+  
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

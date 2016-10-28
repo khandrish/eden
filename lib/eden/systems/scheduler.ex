@@ -7,6 +7,8 @@ defmodule Eden.System.Scheduler do
 
   use GenServer
 
+  @scheduler_component :scheduler
+
   # API
   def start_link(env) do
     GenServer.start_link(__MODULE__, env, name: __MODULE__)

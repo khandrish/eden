@@ -5,7 +5,8 @@ defmodule Eden do
     import Supervisor.Spec, warn: false
 
     children = [
-      supervisor(Task.Supervisor, [[name: Eden.TaskSupervisor]])
+      supervisor(Task.Supervisor, [[name: Eden.TaskSupervisor]]),
+      supervisor(Eden.PlayerSup, [])
     ]
 
     env = Application.get_env(:eden, :system_env, %{})

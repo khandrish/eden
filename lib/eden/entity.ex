@@ -6,207 +6,112 @@ defmodule Eden.Entity do
   of a transaction and will raise an exception if they aren't. See
   Eden.Db.transaction/1 for details.
   """  
-  alias Amnesia.Selection
-  alias Eden.Database.EntityData, as: ED
-  require Logger
-  use Amnesia
+  # require Logger
 
-  @component_flag :component
+  # @component_flag :component
+  # @db_client Application.get_env(:eden, :db_client)
+  # @entity_component Application.get_env(:eden, :entity_component)
 
   #
   # API
   #
 
+  # def transaction(block) do
+  #   @db_client.transaction(block)
+  # end
+
   @doc """
   Creates a new entity within the system, returning the new id
   """
-  def new do
-    id = ED.write(%ED{component: "entity", key: :component, value: true}).id
-    add_key(id, "entity", "created", Timex.now)
-    id
-  end
+  # def new do
+  #   @db_client.new_entity()
+  #   |> add_component(@entity_component)
+  # end
 
   # Manipulation at the entity level
 
-  def delete(entities) when is_list(entities) do
-    entities
-    |> Enum.each(&(delete(ED.match(id: &1))))
-    true
-  end
+  # def delete(entities) when is_list(entities) do
+  #   @db_client.delete_entities(entities)
+  # end
 
-  def delete(entity) do
-    ED.match(id: entity)
-    |> delete()
-    true
-  end
+  # def delete(entity) do
+  #   delete([entity])
+  # end
 
-  def get(entities) when is_list(entities) do
-    entities
-    |> Enum.map(fn(entity) -> entity |> ED.read() end)
-    |> Enum.filter(&(&1))
-    |> Enum.reduce(%{}, fn(data, entity_map) ->
-      entity_map = Map.put_new(entity_map, List.first(data).id, %{})
-      
-      Enum.reduce(data, entity_map, fn(entry, map) ->
-        entity = entry.id
-        component = entry.component
-        key = entry.key
+  # def get(entities) when is_list(entities) do
+  #   @db_client.get(entities)
+  # end
 
-        map = case Map.has_key?(map[entity], component) do
-          false -> put_in(map, [entity, component], %{})
-          _ -> map
-        end
-            
-        put_in(map, [entity, component, key], entry.value)
-      end)
-    end)
-    |> Enum.map(&(%{id: elem(&1, 0), components: elem(&1, 1)}))
-end
-
-  def get(entity) do
-    case get([entity]) do
-      [] -> nil
-      [result] -> result
-    end
-  end
+  # def get(entity) do
+  #   case get([entity]) do
+  #     [] -> nil
+  #     [result] -> result
+  #   end
+  # end
 
   # Manipulation at the component level
 
-  def add_component(entity, component) do
-    if has_component?(entity, component) do
-      false
-    else
-      put_component(entity, component)
-    end
-  end
+  # def add_component(entity, component) do
+  #   Logger.debug("Adding #{component} to #{entity}")
+  #   @db_client.add_component(entity, component)
+  #   component.init(entity)
+  # end
 
-  def has_component?(entity, component) do
-    [{{ED, :'$1', :'$2', :_ , :_},
-      [{:'and', {:'==', component, :'$2'},
-      {:'==', entity, :'$1'}}],
-      [:'$1']}]
-    |> has?()
-  end
+  # def has_component?(entity, component) do
+  #   @db_client.has_component?(entity, component)
+  # end
 
-  def list_components(entity) do
-    [{{ED, :'$1', :'$2', :_ , :_},
-      [{:'==', entity, :'$1'}],
-      [:'$2']}]
-    |> select()
-    |> MapSet.new()
-    |> MapSet.to_list()
-  end
+  # def list_components(entity) do
+  #   @db_client.list_components(entity)
+  # end
 
-  def list_with_components(components) when is_list(components) do
-    components
-    |> Enum.map(fn(component) ->
-      [{{ED, :'$1', :'$2', :_ , :_},
-        [{:'==', component, :'$2'}],
-        [:'$1']}]
-      |> select()
-      |> MapSet.new()
-    end)
-    |> Enum.reduce(nil,
-      fn(entity_set, nil) ->
-        entity_set
-      (entity_set, acc) ->
-        MapSet.intersection(entity_set, acc)
-      end)
-    |> MapSet.to_list()
-  end
+  # def list_with_components(components) when is_list(components) do
+  #   @db_client.list_with_components(components)
+  # end
 
-  def list_with_components(component) do
-    list_with_components([component])
-  end
+  # def list_with_components(component) do
+  #   list_with_components([component])
+  # end
 
-  def put_component(entity, component) do
-    remove_component(entity, component)
-
-    %ED{id: entity, component: component, key: @component_flag, value: true}
-    |> ED.write
-    :ok
-  end
-
-  def remove_component(entity, component) do
-    ED.match(id: entity, component: component)
-    |> do_delete()
-  end
+  # def remove_component(entity, component) do
+  #   component.destroy(entity)
+  #   @db_client.remove_component(entity, component)
+  # end
 
   # Manipulation at the key level
 
-  def add_key(entity, component, key, value \\ nil) do
-    if has_key?(entity, component, key) do
-      false
-    else
-      put_key(entity, component, key, value)
-    end
-  end
+  # def add_key(entity, component, key, value \\ nil) do
+  #   Logger.debug("Adding #{key} to #{component} of #{entity}")
+  #   @db_client.add_key(entity, component, key, value)
+  # end
 
-  def get_all_keys(component, key) do
-    [{{ED, :_, :'$2', :'$3' , :'$4'},
-      [{:'and', {:'==', component, :'$2'},
-      {:'==', key, :'$3'}}],
-      [:'$4']}]
-    |> select()
-  end
+  # def get_all_keys(component, key) do
+  #   @db_client.get_all_keys(component, key)
+  # end
 
-  def get_key(entity, component, key) do
-    [{{ED, :'$1', :'$2', :'$3' , :'$4'},
-      [{:'and', {:'==', component, :'$2'},
-      {:'==', entity, :'$1'},
-      {:'==', key, :'$3'}}],
-      [:'$4']}]
-    |> select()
-    |> List.first()
-  end
+  # def get_key(entity, component, key) do
+  #   @db_client.get_key(entity, component, key)
+  # end
 
-  def has_key?(entity, component, key) do
-    [{{ED, :'$1', :'$2', :'$3' , :_},
-      [{:'and', {:'==', component, :'$2'},
-      {:'==', entity, :'$1'},
-      {:'==', key, :'$3'}}],
-      [:'$1']}]
-    |> has?()
-  end
+  # def has_key?(entity, component, key) do
+  #   @db_client.has_key?(entity, component, key)
+  # end
 
-  def put_key(entity, component, key, value \\ nil) do
-    if has_component?(entity, component) == false do
-      add_component(entity, component)
-    end
+  # def put_key(entity, component, key, value \\ nil) do
+  #   @db_client.put_key(entity, component, key, value)
+  # end
 
-    remove_key(entity, component, key)
-      
-    %ED{id: entity, component: component, key: key, value: value}
-    |> ED.write()
-    true
-  end
+  # def remove_key(entity, component, key) do
+  #   @db_client.remove_key(entity, component, key)
+  # end
 
-  def remove_key(entity, component, key) do
-    ED.match(id: entity, component: component, key: key)
-    |> do_delete()
-  end
+  # # Manipulation at the value level
+  # def value_exists?(component, key, value) do
+  #   Logger.debug("Checking #{key} of #{component}")
+  #   @db_client.value_exists?(component, key, value)
+  # end
 
   #
   # Private functions
   #
-
-  defp do_delete(object) do
-    object
-    |> Selection.values()
-    |> Stream.each(&(ED.delete(&1)))
-    |> Stream.run()
-  end
-
-  defp has?(match_spec) do
-    match_spec
-    |> ED.select()
-    |> Selection.values()
-    |> length() > 0
-  end
-
-  defp select(match_spec) do
-    match_spec
-    |> ED.select()
-    |> Selection.values()
-  end
 end
