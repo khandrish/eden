@@ -17,7 +17,7 @@ defmodule Eden.Mixfile do
   # Type `mix help compile.app` for more information
   def application do
     [mod: {Eden, []},
-     applications: [:logger, :calendar, :mnesia, :gproc]]
+     applications: [:logger, :calendar, :gproc, :execs]]
   end
 
   # Specifies which paths to compile per environment
@@ -30,10 +30,10 @@ defmodule Eden.Mixfile do
   defp deps do
     [{:apex, "~> 0.5.2"},
      {:calendar, "~> 0.16.0"},
+     {:execs, git: "https://github.com/mononym/execs.git"},
      {:fsm, "~> 0.2.0"},
      {:gproc, "~> 0.6.1"},
      {:pipe, "~> 0.0.2"},
-     {:qlc, "~> 1.0"},
      {:timex, "~> 3.0"},
      {:uuid, "~> 1.1"}]
   end
