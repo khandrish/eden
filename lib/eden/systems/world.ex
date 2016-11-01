@@ -3,7 +3,6 @@ defmodule Eden.System.World do
   Manages the epoch date for the world from which everything else will be measured.
   """
 
-  alias Eden.Entity
   alias Eden.Time
   use GenServer
 
@@ -25,20 +24,19 @@ defmodule Eden.System.World do
   otherwise the existing epoch is loaded.
   """
   def init(env) do
-    # epoch = Entity.transaction(fn ->
-    #   case Entity.list_with_components(@world_system_component) do
-    #     [] ->
-    #       epoch = Time.now_utc()
-    #       Entity.new
-    #       |> Entity.put_key(@world_system_component, "epoch", epoch)
-    #       epoch
-    #     [entity] ->
-    #       Entity.get_key(entity, @world_system_component, "epoch")
-    #   end
-    # end)
+    epoch = Execs.transaction(fn ->
+      case Execs.find_with_all(@world_system_component) do
+        [] ->
+          epoch = Time.now_utc()
+          Execs.create
+          |> Execs.write(@world_system_component, "epoch", epoch)
+          epoch
+        [entity] ->
+          Execs.read(entity, @world_system_component, "epoch")
+      end
+    end)
 
-    # {:ok, %{env: env, epoch: epoch}}
-    {:ok, true}
+    {:ok, %{env: env, epoch: epoch}}
   end
 
   def handle_call(:get_epoch, _from, %{epoch: epoch} = state) do

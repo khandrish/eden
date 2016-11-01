@@ -16,8 +16,8 @@ defmodule Eden.System.Weather do
 
   # Callbacks
   def init(env) do
-    weather_regions = Execs.transaction(fn ->
-       Execs.find_with_all(@weather_regions_component)
+    weather_regions = transaction(fn ->
+       find_with_all(@weather_regions_component)
     end)
 
     {:ok, %{env: env, weather_regions: weather_regions}, 0}

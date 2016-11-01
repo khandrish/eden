@@ -30,7 +30,7 @@ defmodule Eden.Mixfile do
   defp deps do
     [{:apex, "~> 0.5.2"},
      {:calendar, "~> 0.16.0"},
-     {:execs, git: "https://github.com/mononym/execs.git"},
+     {:execs, "~> 0.1.0"},
      {:fsm, "~> 0.2.0"},
      {:gproc, "~> 0.6.1"},
      {:pipe, "~> 0.0.2"},
