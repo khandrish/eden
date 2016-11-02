@@ -32,7 +32,8 @@ defmodule Eden.System.World do
           |> Execs.write(@world_system_component, "epoch", epoch)
           epoch
         [entity] ->
-          Execs.read(entity, @world_system_component, "epoch")
+          result = Execs.read(entity, @world_system_component, "epoch")
+          result[@world_system_component]["epoch"]
       end
     end)
 

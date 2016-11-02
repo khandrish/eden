@@ -30,7 +30,8 @@ defmodule Eden.Mixfile do
   defp deps do
     [{:apex, "~> 0.5.2"},
      {:calendar, "~> 0.16.0"},
-     {:execs, "~> 0.1.0"},
+     #{:execs, "~> 0.1.0"},
+     {:execs, path: "/home/khan/IdeaProjects/execs"},
      {:fsm, "~> 0.2.0"},
      {:gproc, "~> 0.6.1"},
      {:pipe, "~> 0.0.2"},
