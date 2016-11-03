@@ -11,7 +11,7 @@ config :logger, :console,
   metadata: [:module, :function, :line]
 
 config :eden,
-  systems: [Eden.System.World, Eden.System.Scheduler, Eden.System.Weather]
+  systems: [Eden.System.Scheduler, Eden.System.World, Eden.System.Weather]
 
 # These arguments are passed to each system at startup and are available to
 # each system as environment variables.
