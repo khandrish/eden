@@ -1,7 +1,6 @@
 # Eden
 
 [![Build Status](https://travis-ci.org/mononym/eden.svg?branch=master)](https://travis-ci.org/mononym/eden)
-[![Hex.pm Version](http://img.shields.io/hexpm/v/eden.svg?style=flat)](https://hex.pm/packages/eden)
 [![Inline docs](http://inch-ci.org/github/mononym/eden.svg)](http://inch-ci.org/github/mononym/eden)
 
 Eden is a framework agnostic M.U.D. engine.
