@@ -29,7 +29,7 @@ defmodule Eden.Mixfile do
      {:ex_doc, ">= 0.14.3", only: :dev},
      {:fsm, "~> 0.2.0"},
      {:gproc, "~> 0.6.1"},
-     {:inch_ex, only: :docs},
+     {:inch_ex, ">= 0.0.0", only: :docs},
      {:pipe, "~> 0.0.2"},
      {:timex, "~> 3.0"},
      {:uuid, "~> 1.1"}]
