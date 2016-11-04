@@ -1,4 +1,4 @@
-defmodule Eden.Mixfile do
+defmodule Exmud.Mixfile do
   use Mix.Project
 
   def project do
