@@ -1,4 +1,4 @@
-defmodule Eden.Registry do
+defmodule Exmud.Registry do
   @moduledoc """
   Wraps and abstracts away gproc, making working with the app easier and more
   concise given this applications use cases. Also makes creating pluggable

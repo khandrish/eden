@@ -1,4 +1,4 @@
-defmodule Eden.ComponentBase do
+defmodule Exmud.ComponentBase do
   defmacro __using__(_opts) do
     quote do
       def before_create(component), do: component
@@ -25,7 +25,7 @@ defmodule Eden.ComponentBase do
                       after_add_key: 4,
                       before_remove_key: 3,
                       after_remove_key: 3,
-                      before_update_key: 3, 
+                      before_update_key: 3,
                       after_update_key: 3,
                       before_delete: 1,
                       after_delete: 1]

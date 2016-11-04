@@ -1,4 +1,4 @@
-defmodule Eden do
+defmodule Exmud do
   use Application
 
   def start(_type, _args) do
@@ -6,15 +6,15 @@ defmodule Eden do
 
     children = [
       supervisor(Task.Supervisor, [[name: Eden.TaskSupervisor]]),
-      supervisor(Eden.PlayerSup, [])
+      supervisor(Exmud.PlayerSup, [])
     ]
 
     env = Application.get_env(:eden, :system_env, %{})
-    
+
     systems = Application.get_env(:eden, :systems, [])
       |> Enum.map(&(worker(&1, [env])))
 
-    opts = [strategy: :one_for_one, name: Eden.Supervisor]
+    opts = [strategy: :one_for_one, name: Exmud.Supervisor]
     Supervisor.start_link(children ++ systems, opts)
   end
 end

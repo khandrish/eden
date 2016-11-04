@@ -1,17 +1,17 @@
-# Eden
+# Exmud
 
-[![Build Status](https://travis-ci.org/mononym/eden.svg?branch=master)](https://travis-ci.org/mononym/eden)
-[![Inline docs](http://inch-ci.org/github/mononym/eden.svg)](http://inch-ci.org/github/mononym/eden)
+[![Build Status](https://travis-ci.org/mononym/exmud.svg?branch=master)](https://travis-ci.org/mononym/exmud)
+[![Inline docs](http://inch-ci.org/github/mononym/exmud.svg)](http://inch-ci.org/github/mononym/exmud)
 
-Eden is a framework agnostic M.U.D. engine.
+Exmud is a framework and game agnostic M.U.D. engine.
 
-**WARNING:** Eden is in the prototyping stage and is likely to change rapidly and dramatically without warning.
+**WARNING:** Exmud is in the prototyping stage and is likely to change rapidly and dramatically without warning.
 
-## What does that mean?
+## What does framework agnostic mean?
 It means that in an effort to, among other things, limit the scope the following restrictions are in place:
 * All communication with the engine must be done through a well defined API.
   * The API will be restricted to Elixir functions provided in API modules.
-* Beyond providing the API modules, it is up to developers to decide how to integrate with their framework.
+* Beyond providing the API modules, it is up to developers to decide how to integrate with their application which communicates with everything not the engine.
 * The engine must only implement the core logic necessary to the running of the engine. Everything else must be delegated and configurable, with well defined API's and protocols for communicating between pieces.
   * There will be no built in systems, world, or game logic of any kind. Any example projects are out of scope and will come in another package.
 

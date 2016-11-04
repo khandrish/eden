@@ -2,7 +2,7 @@ defmodule Eden.Mixfile do
   use Mix.Project
 
   def project do
-    [app: :eden,
+    [app: :exmud,
      version: "0.0.1",
      elixir: "~> 1.3",
      elixirc_paths: elixirc_paths(Mix.env),
@@ -15,7 +15,7 @@ defmodule Eden.Mixfile do
   end
 
   def application do
-    [mod: {Eden, []},
+    [mod: {Exmud, []},
      applications: [:logger, :calendar, :gproc, :execs]]
   end
 
@@ -37,13 +37,13 @@ defmodule Eden.Mixfile do
 
   defp description do
     """
-    A framework-agnostic M.U.D. engine.
+    A M.U.D. engine implemented in Elixir.
     """
   end
 
   defp package do
     [
-     name: :execs,
+     name: :exmud,
      files: ["lib", "mix.exs", "README*", "LICENSE*"],
      maintainers: ["Chris Hicks"],
      licenses: ["MIT"],

@@ -1,4 +1,4 @@
-defmodule Eden.Player do
+defmodule Exmud.Player do
   @moduledoc """
   This module is the interface for managing the communication for and lifecycle
   of players. In this context a player is a representation of a human actor
@@ -20,7 +20,7 @@ defmodule Eden.Player do
   # def start_link(name) do
   #   GenServer.start_link(__MODULE__, name)
   # end
-  
+
 
   # def new(name) do
   #   Logger.debug("Creating player with name `#{name}`")
@@ -75,7 +75,7 @@ defmodule Eden.Player do
   # A connected player can puppet entities via this method.
   # """
   # def puppet(player, puppet) do
-    
+
   # end
 
   # def session_exists?(name) do
@@ -100,7 +100,7 @@ defmodule Eden.Player do
   #     Logger.warn("Player `#{name}` does not exist")
   #     {:error, :no_such_player}
   #   end
-    
+
   # end
 
   # #

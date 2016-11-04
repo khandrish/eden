@@ -1,4 +1,4 @@
-defmodule Eden.PlayerTest do
+defmodule Exmud.PlayerTest do
   # alias Eden.Player
   # alias Eden.Registry
   # require Logger

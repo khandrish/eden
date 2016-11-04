@@ -1,4 +1,4 @@
-defmodule Eden.System.Weather do
+defmodule Exmud.System.Weather do
   @moduledoc """
   Changes the weather as time passes to provide a dynamic weather system at
   arbitrary granularity.

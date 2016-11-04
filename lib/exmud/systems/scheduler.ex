@@ -1,4 +1,4 @@
-defmodule Eden.System.Scheduler do
+defmodule Exmud.System.Scheduler do
   @moduledoc """
   Manages the lifecycle of scheduled tasks. Scheduled tasks can come in the
   form of one time actions scheduled to be executed at some point in time

@@ -2,7 +2,7 @@
 /_build
 /cover
 /deps
-/doc
+/doc*
 erl_crash.dump
 /Mnesia.*
 /config/prod.secret.exs

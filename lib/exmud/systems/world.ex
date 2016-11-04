@@ -1,9 +1,9 @@
-defmodule Eden.System.World do
+defmodule Exmud.System.World do
   @moduledoc """
   Manages the epoch date for the world from which everything else will be measured.
   """
 
-  alias Eden.Time
+  alias Exmud.Time
   use GenServer
 
   @world_system_component :world_system

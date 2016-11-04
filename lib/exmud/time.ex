@@ -1,4 +1,4 @@
-defmodule Eden.Time do
+defmodule Exmud.Time do
   @moduledoc """
   Provides utility functions for working with the Calendar module, simplifying
   and shortening common use cases.

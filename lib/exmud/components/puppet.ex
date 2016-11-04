@@ -1,7 +1,7 @@
-defmodule Eden.Component.Puppet do
+defmodule Exmud.Component.Puppet do
   #alias Eden.Entity
   require Logger
-  
+
   def init(_entity) do
   	# Logger.debug("Initializing #{__MODULE__} of `#{entity}`")
    #  entity

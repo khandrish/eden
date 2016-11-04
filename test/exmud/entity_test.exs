@@ -1,4 +1,4 @@
-defmodule Eden.EntityTest do
+defmodule Exmud.EntityTest do
 #   alias Eden.Entity
 #   alias Eden.TestComponent, as: TC
 #   use ExUnit.Case

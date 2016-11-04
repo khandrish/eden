@@ -1,4 +1,4 @@
-defmodule Eden.PlayerSup do
+defmodule Exmud.PlayerSup do
   require Logger
   use Supervisor
 
@@ -13,7 +13,7 @@ defmodule Eden.PlayerSup do
 
   def init(_) do
     children = [
-      worker(Eden.Player, [])
+      worker(Exmud.Player, [])
     ]
 
     supervise(children, strategy: :simple_one_for_one)

@@ -10,12 +10,12 @@ config :logger, :console,
   format: "$time - $level - $metadata - $message\n",
   metadata: [:module, :function, :line]
 
-config :eden,
-  systems: [Eden.System.Scheduler, Eden.System.World, Eden.System.Weather]
+config :exmud,
+  systems: [Exmud.System.Scheduler, Exmud.System.World, Exmud.System.Weather]
 
 # These arguments are passed to each system at startup and are available to
 # each system as environment variables.
-config :eden,
+config :exmud,
   system_env: %{foo: "bar"}
 
 
