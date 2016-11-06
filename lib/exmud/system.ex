@@ -4,12 +4,16 @@ defmodule Exmud.System do
   actions, covering everything from weather effects to triggering AI actions.
   """
 
-  alias Exmud.SystemRunner
+  alias Exmud.Registry
+  use GenServer
 
   def call(systems, message) when is_list(systems) do
     systems
     |> Enum.map(fn(system) ->
-      {system, SystemRunner.call(system, message)}
+      response = Registry.find_by_name(system)
+      |> GenServer.call({:message, message})
+
+      {system, response}
     end)
   end
 
@@ -22,7 +26,8 @@ defmodule Exmud.System do
   def cast(systems, message) when is_list(systems) do
     systems
     |> Enum.each(fn(system) ->
-      SystemRunner.cast(system, message)
+      Registry.find_by_name(system)
+      |> GenServer.cast({:message, message})
     end)
 
     systems
@@ -33,22 +38,24 @@ defmodule Exmud.System do
     |> hd()
   end
 
-  def deregister(systems) when is_list(systems) do
+  def deregister(systems, args \\ %{})
+  def deregister(systems, args) when is_list(systems) do
     systems
     |> Enum.each(fn(system) ->
-      SystemRunner.deregister(system)
+      Registry.find_by_name(system)
+      |> GenServer.call({:terminate, args})
     end)
 
     systems
   end
 
-  def deregister(system), do: hd(deregister([system]))
+  def deregister(system, args), do: hd(deregister([system], args))
 
   def register(systems, args \\ %{})
   def register(systems, args) when is_list(systems) do
     systems
     |> Enum.each(fn(system) ->
-      SystemRunner.register(system, args)
+      {:ok, _} = Supervisor.start_child(Exmud.SystemSup, [system, args])
     end)
 
     systems
@@ -59,7 +66,7 @@ defmodule Exmud.System do
   def registered?(systems) when is_list(systems) do
     systems
     |> Enum.map(fn(system) ->
-      {system, SystemRunner.registered?(system)}
+      {system, Registry.name_registered?(system)}
     end)
   end
 
@@ -72,7 +79,9 @@ defmodule Exmud.System do
   def running?(systems) when is_list(systems) do
     systems
     |> Enum.map(fn(system) ->
-      {system, SystemRunner.running?(system)}
+      result = Registry.find_by_name(system)
+      |> GenServer.call(:running?)
+      {system, result}
     end)
   end
 
@@ -86,7 +95,8 @@ defmodule Exmud.System do
   def start(systems, args) when is_list(systems) do
     systems
     |> Enum.each(fn(system) ->
-      SystemRunner.start(system, args)
+      Registry.find_by_name(system)
+      |> GenServer.call({:start, args})
     end)
 
     systems
@@ -94,15 +104,63 @@ defmodule Exmud.System do
 
   def start(system, args), do: hd(start([system], args))
 
+  def start_link(system, args) do
+    GenServer.start_link(__MODULE__, {system, args})
+  end
+
   def stop(systems, args \\ %{})
   def stop(systems, args) when is_list(systems) do
     systems
     |> Enum.each(fn(system) ->
-      SystemRunner.stop(system, args)
+      Registry.find_by_name(system)
+      |> GenServer.call({:stop, args})
     end)
 
     systems
   end
 
   def stop(system, args), do: hd(stop([system], args))
+
+  #
+  # GenServer Callbacks
+  #
+
+  def init({module, args}) do
+    Registry.register_name(module)
+    state = module.initialize(args)
+
+    {:ok, %{state: state, module: module, running: false}}
+  end
+
+  def handle_call(:running?, _from, %{running: running} = data) do
+    {:reply, running, data}
+  end
+
+  def handle_call({:terminate, args}, _from, %{state: state, module: module} = data) do
+    new_state = module.terminate(args, state)
+    {:stop, :normal, :ok, Map.merge(data, %{state: new_state, running: false})}
+  end
+
+  def handle_call({:start, args}, _from, %{state: state, module: module} = data) do
+    new_state = module.start(args, state)
+    {:reply, :ok, Map.merge(data, %{state: new_state, running: true})}
+  end
+
+  def handle_call({:stop, args}, _from, %{state: state, module: module} = data) do
+    new_state = module.stop(args, state)
+    {:reply, :ok, Map.merge(data, %{state: new_state, running: false})}
+  end
+
+  def handle_call({:message, message}, _from, %{state: state, module: module} = data) do
+    {response, new_state} = module.handle_message(message, state)
+    {:reply, response, Map.put(data, :state, new_state)}
+  end
+
+  def handle_cast({:message, message}, %{state: state, module: module} = data) do
+    {_response, new_state} = module.handle_message(message, state)
+    {:noreply, Map.put(data, :state, new_state)}  end
+
+  def terminate(_reason, %{module: module} = _data) do
+    Registry.unregister_name(module)
+  end
 end

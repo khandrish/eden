@@ -19,7 +19,7 @@ defmodule Exmud.System.Example do
     state
   end
 
-  def terminate(_state) do
+  def terminate(_args, _state) do
     :ok
   end
 end
