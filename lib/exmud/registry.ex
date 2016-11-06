@@ -21,11 +21,11 @@ defmodule Exmud.Registry do
 
   def register_name(name) do
     true = :gproc.reg({:n, :l, name})
-    :ok
+    name
   end
 
   def unregister_name(name) do
     true = :gproc.unreg({:n, :l, name})
-    :ok
+    name
   end
 end

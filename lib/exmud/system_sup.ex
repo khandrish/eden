@@ -1,4 +1,4 @@
-defmodule Exmud.ServiceSup do
+defmodule Exmud.SystemSup do
   require Logger
   use Supervisor
 
@@ -6,14 +6,9 @@ defmodule Exmud.ServiceSup do
     Supervisor.start_link(__MODULE__, :ok,  name: __MODULE__)
   end
 
-  def start_service(service, args) do
-    Logger.debug("Starting service: `#{service}`")
-    Supervisor.start_child(__MODULE__, [service, args])
-  end
-
   def init(:ok) do
     children = [
-      worker(Exmud.ServiceRunner, [])
+      worker(Exmud.SystemRunner, [])
     ]
 
     supervise(children, strategy: :simple_one_for_one)

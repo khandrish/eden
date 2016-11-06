@@ -5,7 +5,7 @@
 
 Exmud is a framework and game agnostic M.U.D. engine.
 
-**WARNING:** Exmud is in the prototyping stage and is likely to change rapidly and dramatically without warning.
+**WARNING:** Exmud is in the prototyping stage and is likely to change rapidly and dramatically without warning. It is not ready to be used.
 
 ## What does framework agnostic mean?
 It means that in an effort to, among other things, limit the scope the following restrictions are in place:

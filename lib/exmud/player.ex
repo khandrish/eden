@@ -6,6 +6,11 @@ defmodule Exmud.Player do
   Eden as a dependency to decide.
   """
 
+    def initialize(_args) do
+      IO.inspect "initializing"
+      %{}
+    end
+
   # alias Eden.Component.Player, as: P
   # alias Eden.Entity
   # alias Eden.PlayerSup
