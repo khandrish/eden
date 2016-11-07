@@ -127,7 +127,13 @@ defmodule Exmud.System do
 
   def init({module, args}) do
     Registry.register_name(module)
-    state = module.initialize(args)
+    # check for state
+    # if exists read it
+    # if not use default value
+    case Execs.find_with_all(__MODULE__) do
+      [entity] -> Execs.read(entity, __MODULE__, :state)
+    end
+    state = module.initialize(args, %{})
 
     {:ok, %{state: state, module: module, running: false}}
   end

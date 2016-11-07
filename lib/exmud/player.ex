@@ -1,30 +1,83 @@
 defmodule Exmud.Player do
   @moduledoc """
   This module is the interface for managing the communication for and lifecycle
-  of players. In this context a player is a representation of a human actor
+  of players. In this context a player is a representation of an external actor
   within the system. What that means in practice is up to the application using
-  Eden as a dependency to decide.
+  Exmud to decide.
   """
 
-    def initialize(_args) do
-      IO.inspect "initializing"
-      %{}
-    end
 
-  # alias Eden.Component.Player, as: P
-  # alias Eden.Entity
-  # alias Eden.PlayerSup
-  # alias Eden.Registry
-  # require Logger
-  # use GenServer
+  alias Exmud.PlayerSup
+  alias Exmud.Registry
+  require Logger
+  use GenServer
 
-  # #
-  # # API
-  # #
+  #
+  # API
+  #
 
-  # def start_link(name) do
-  #   GenServer.start_link(__MODULE__, name)
-  # end
+  # manage the existence of players within the system
+
+  def is_registered?(name) do
+
+  end
+
+  def register(name) do
+
+  end
+
+  def unregister(name) do
+    # Other then killing active sessions, the scope of this function is limited.
+    # References to the player will not be sought out and changed and logic must
+    # account for players going missing.
+  end
+
+  # manage sessions and the information about sessions
+
+  def end_session do
+    # Ending a session also ends the connection to any of the puppets the player had.
+  end
+
+  def get_session_history do
+
+  end
+
+  def get_session_info do
+
+  end
+
+  def has_active_session? do
+
+  end
+
+  def start_session do
+
+  end
+
+  # manage player puppets and access information about them
+
+  def has_puppet? do
+
+  end
+
+  def puppet do
+
+  end
+
+  def unpuppet do
+
+  end
+
+  def which_puppets do
+
+  end
+
+  # worker callback
+
+  @doc false
+  def start_link(name) do
+    GenServer.start_link(__MODULE__, name)
+  end
 
 
   # def new(name) do
@@ -108,25 +161,28 @@ defmodule Exmud.Player do
 
   # end
 
-  # #
-  # # GenServer Callbacks
-  # #
-  # def init(name) do
-  #   Logger.debug("Player session starting with name `#{name}`")
-  #   :ok = Registry.register_name(name)
-  #   {:ok, %{name: name}}
-  # end
+
+  #
+  # GenServer Callbacks
+  #
+
+
+  def init(name) do
+    Logger.debug("Player session starting with name `#{name}`")
+    :ok = Registry.register_name(name)
+    {:ok, %{name: name}}
+  end
 
   # def handle_call(:end_session, _from, state) do
   #   {:stop, :normal, :ok, state}
   # end
 
-  # def terminate(_reason, %{name: name} = state) do
-  #   Registry.unregister_name(name)
-  #   :ok
-  # end
+  def terminate(_reason, %{name: name} = state) do
+    Registry.unregister_name(name)
+    :ok
+  end
 
-  # #
-  # # Private Functions
-  # #
+  #
+  # Private Functions
+  #
 end
