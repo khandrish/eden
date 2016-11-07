@@ -130,10 +130,16 @@ defmodule Exmud.System do
     # check for state
     # if exists read it
     # if not use default value
-    case Execs.find_with_all(__MODULE__) do
-      [entity] -> Execs.read(entity, __MODULE__, :state)
-    end
-    state = module.initialize(args, %{})
+    state = Execs.transaction(fn ->
+      case Execs.find_with_all(__MODULE__) do
+        [entity] -> {entity, Execs.read(entity, __MODULE__, :state)}
+        [] ->
+          Execs.create()
+          |> Execs.write(__MODULE__, :state, %{})
+          {entity, %{}}
+      end
+    end)
+    state = module.initialize(args, state)
 
     {:ok, %{state: state, module: module, running: false}}
   end
