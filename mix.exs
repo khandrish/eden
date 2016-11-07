@@ -25,7 +25,7 @@ defmodule Exmud.Mixfile do
   defp deps do
     [{:apex, "~> 0.5.2"},
      {:calendar, "~> 0.16.0"},
-     {:execs, "~> 0.2.1"},
+     {:execs, "~> 0.3.1"},
      {:ex_doc, ">= 0.14.3", only: :dev},
      {:fsm, "~> 0.2.0"},
      {:gproc, "~> 0.6.1"},

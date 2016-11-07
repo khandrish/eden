@@ -127,14 +127,12 @@ defmodule Exmud.System do
 
   def init({module, args}) do
     Registry.register_name(module)
-    # check for state
-    # if exists read it
-    # if not use default value
+
     state = Execs.transaction(fn ->
       case Execs.find_with_all(__MODULE__) do
         [entity] -> {entity, Execs.read(entity, __MODULE__, :state)}
         [] ->
-          Execs.create()
+          entity = Execs.create()
           |> Execs.write(__MODULE__, :state, %{})
           {entity, %{}}
       end
