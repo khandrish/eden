@@ -4,13 +4,18 @@ defmodule Exmud.System do
   actions, covering everything from weather effects to triggering AI actions.
   """
 
-  alias Exmud.Registry
   use GenServer
+
+
+  #
+  # API
+  #
+
 
   def call(systems, message) when is_list(systems) do
     systems
     |> Enum.map(fn(system) ->
-      response = Registry.find_by_name(system)
+      response = :global.whereis_name(system)
       |> GenServer.call({:message, message})
 
       {system, response}
@@ -25,12 +30,11 @@ defmodule Exmud.System do
 
   def cast(systems, message) when is_list(systems) do
     systems
-    |> Enum.each(fn(system) ->
-      Registry.find_by_name(system)
+    |> Enum.map(fn(system) ->
+      :global.whereis_name(system)
       |> GenServer.cast({:message, message})
+      system
     end)
-
-    systems
   end
 
   def cast(system, message) do
@@ -38,40 +42,20 @@ defmodule Exmud.System do
     |> hd()
   end
 
-  def deregister(systems, args \\ %{})
-  def deregister(systems, args) when is_list(systems) do
-    systems
-    |> Enum.each(fn(system) ->
-      Registry.find_by_name(system)
-      |> GenServer.call({:terminate, args})
+  def purge(systems) when is_list(systems) do
+    Execs.transaction(fn ->
+      systems
+      |> Enum.each(fn(system) ->
+        Execs.find_with_all(system)
+        |> Execs.delete()
+      end)
     end)
 
     systems
   end
 
-  def deregister(system, args), do: hd(deregister([system], args))
-
-  def register(systems, args \\ %{})
-  def register(systems, args) when is_list(systems) do
-    systems
-    |> Enum.each(fn(system) ->
-      {:ok, _} = Supervisor.start_child(Exmud.SystemSup, [system, args])
-    end)
-
-    systems
-  end
-
-  def register(system, args), do: hd(register([system], args))
-
-  def registered?(systems) when is_list(systems) do
-    systems
-    |> Enum.map(fn(system) ->
-      {system, Registry.name_registered?(system)}
-    end)
-  end
-
-  def registered?(system) do
-    registered?([system])
+  def purge(system) do
+    purge([system])
     |> hd()
     |> elem(1)
   end
@@ -79,9 +63,7 @@ defmodule Exmud.System do
   def running?(systems) when is_list(systems) do
     systems
     |> Enum.map(fn(system) ->
-      result = Registry.find_by_name(system)
-      |> GenServer.call(:running?)
-      {system, result}
+      {system, :global.whereis_name(system) != :undefined}
     end)
   end
 
@@ -95,8 +77,7 @@ defmodule Exmud.System do
   def start(systems, args) when is_list(systems) do
     systems
     |> Enum.each(fn(system) ->
-      Registry.find_by_name(system)
-      |> GenServer.call({:start, args})
+      {:ok, _} = Supervisor.start_child(Exmud.SystemSup, [system, args])
     end)
 
     systems
@@ -108,11 +89,26 @@ defmodule Exmud.System do
     GenServer.start_link(__MODULE__, {system, args})
   end
 
+  def stata(systems) do
+    systems
+    |> Enum.map(fn(system) ->
+      state = :global.whereis_name(system)
+      |> GenServer.call(:state)
+      {system, state}
+    end)
+  end
+
+  def state(system) do
+    state([system])
+    |> hd()
+    |> elem(1)
+  end
+
   def stop(systems, args \\ %{})
   def stop(systems, args) when is_list(systems) do
     systems
     |> Enum.each(fn(system) ->
-      Registry.find_by_name(system)
+      :global.whereis_name(system)
       |> GenServer.call({:stop, args})
     end)
 
@@ -121,44 +117,47 @@ defmodule Exmud.System do
 
   def stop(system, args), do: hd(stop([system], args))
 
+
   #
   # GenServer Callbacks
   #
 
-  def init({module, args}) do
-    Registry.register_name(module)
 
-    state = Execs.transaction(fn ->
-      case Execs.find_with_all(__MODULE__) do
-        [entity] -> {entity, Execs.read(entity, __MODULE__, :state)}
-        [] ->
-          entity = Execs.create()
-          |> Execs.write(__MODULE__, :state, %{})
-          {entity, %{}}
+  def init({module, args}) do
+    result = Execs.transaction(fn ->
+      case Execs.find_with_all(module) do
+        [entity] -> {entity, Execs.read(entity, module, :state)}
+        [] -> nil
       end
     end)
-    state = module.initialize(args, state)
 
-    {:ok, %{state: state, module: module, running: false}}
+    {entity, state} = case result do
+      nil ->
+        initial_state = module.initialize(args)
+        Execs.transaction(fn ->
+          entity = Execs.create()
+          |> Execs.write(module, :state, initial_state)
+          {entity, initial_state}
+        end)
+       result -> result
+    end
+
+    :global.trans({module, self()}, fn -> :global.register_name(module, self()) end)
+
+    IO.inspect "launched"
+
+    {:ok, %{entity: entity, module: module, state: state}}
   end
 
-  def handle_call(:running?, _from, %{running: running} = data) do
-    {:reply, running, data}
-  end
-
-  def handle_call({:terminate, args}, _from, %{state: state, module: module} = data) do
-    new_state = module.terminate(args, state)
-    {:stop, :normal, :ok, Map.merge(data, %{state: new_state, running: false})}
-  end
-
-  def handle_call({:start, args}, _from, %{state: state, module: module} = data) do
-    new_state = module.start(args, state)
-    {:reply, :ok, Map.merge(data, %{state: new_state, running: true})}
+  def handle_call(:state, _from, %{state: state} = data) do
+    IO.inspect state
+    {:reply, state, data}
   end
 
   def handle_call({:stop, args}, _from, %{state: state, module: module} = data) do
     new_state = module.stop(args, state)
-    {:reply, :ok, Map.merge(data, %{state: new_state, running: false})}
+    :global.trans({module, self()}, fn -> :global.unregister_name(module) end)
+    {:stop, :normal, :ok, Map.put(data, :state, new_state)}
   end
 
   def handle_call({:message, message}, _from, %{state: state, module: module} = data) do
@@ -169,8 +168,4 @@ defmodule Exmud.System do
   def handle_cast({:message, message}, %{state: state, module: module} = data) do
     {_response, new_state} = module.handle_message(message, state)
     {:noreply, Map.put(data, :state, new_state)}  end
-
-  def terminate(_reason, %{module: module} = _data) do
-    Registry.unregister_name(module)
-  end
 end

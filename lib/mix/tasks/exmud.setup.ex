@@ -6,8 +6,7 @@ defmodule Mix.Tasks.Exmud.Setup do
   @doc false
   def run(_) do
     IO.puts "Creating databases"
-    Mix.Task.run "execs.schema.create"
-    Mix.Task.run "execs.database.create"
+    Mix.Task.run "execs.setup"
     IO.puts "Finished creating databases"
   end
 end
