@@ -8,7 +8,7 @@ defmodule Exmud.System.Example do
   end
 
   def initialize(_args) do
-    :ok
+    %{}
   end
 
   def start(_args, state) do

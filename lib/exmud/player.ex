@@ -6,37 +6,64 @@ defmodule Exmud.Player do
   Exmud to decide.
   """
 
-
+  alias Exmud.Component
+  alias Exmud.Component.Player
+  alias Exmud.Db
   alias Exmud.PlayerSup
   alias Exmud.Registry
   require Logger
   use GenServer
 
+
   #
   # API
   #
 
-  # manage the existence of players within the system
 
-  def is_registered?(name) do
+  # player management
 
+  def add(name) do
+    Db.create()
+    |> Component.add(Player)
   end
 
-  def register(name) do
-
+  def exists?(name) do
+    Component.find_with_value(fn(value) -> value == name end) != []
   end
 
-  def unregister(name) do
+  def remove(name) do
     # Other then killing active sessions, the scope of this function is limited.
     # References to the player will not be sought out and changed and logic must
     # account for players going missing.
   end
 
-  # manage sessions and the information about sessions
+  # player data management
 
-  def end_session do
-    # Ending a session also ends the connection to any of the puppets the player had.
+  def delete(entity, key) do
+    Db.transaction(fn ->
+      Db.delete(entity, Player, key)
+    end)
   end
+
+  def get(entity, key) do
+    Db.transaction(fn ->
+      Db.read(entity, Player, key)
+    end)
+  end
+
+  def has?(entity, key) do
+    Db.transaction(fn ->
+      Db.has_all?(entity, Player, key)
+    end)
+  end
+
+  def put(entity, key, value) do
+    Db.transaction(fn ->
+      Db.write(entity, Player, key, value)
+    end)
+  end
+
+  # player session management
 
   def get_session_history do
 
@@ -46,13 +73,57 @@ defmodule Exmud.Player do
 
   end
 
-  def has_active_session? do
-
+  def has_active_session?(player) do
+    Registry.name_registered?(player)
   end
 
-  def start_session do
-
+  def start_session(player) do
+    player
   end
+
+  def start_session(players, args \\ %{})
+  def start_session(players, args) when is_list(players) do
+    players
+    |> Enum.each(fn(player) ->
+      {:ok, _} = Supervisor.start_child(Exmud.PlayerSup, [player, args])
+    end)
+
+    players
+  end
+
+  def start_session(player, args), do: hd(start([player], args))
+
+  def start_link(player, args) do
+    GenServer.start_link(__MODULE__, {player, args})
+  end
+
+  def state(players) when is_list(players) do
+    players
+    |> Enum.map(fn(player) ->
+      state = Registry.whereis_name(player)
+      |> GenServer.call(:state)
+      {player, state}
+    end)
+  end
+
+  def state(player) do
+    state([player])
+    |> hd()
+    |> elem(1)
+  end
+
+  def stop_session(players, args \\ %{})
+  def stop_session(players, args) when is_list(players) do
+    players
+    |> Enum.each(fn(system) ->
+      Registry.whereis_name(system)
+      |> GenServer.call({:stop, args})
+    end)
+
+    systems
+  end
+
+  def stop_session(player, args), do: hd(stop([player], args))
 
   # manage player puppets and access information about them
 

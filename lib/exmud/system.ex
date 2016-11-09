@@ -4,6 +4,8 @@ defmodule Exmud.System do
   actions, covering everything from weather effects to triggering AI actions.
   """
 
+  alias Exmud.Db
+  alias Exmud.Registry
   use GenServer
 
 
@@ -15,7 +17,7 @@ defmodule Exmud.System do
   def call(systems, message) when is_list(systems) do
     systems
     |> Enum.map(fn(system) ->
-      response = :global.whereis_name(system)
+      response = Registry.whereis_name(system)
       |> GenServer.call({:message, message})
 
       {system, response}
@@ -31,7 +33,7 @@ defmodule Exmud.System do
   def cast(systems, message) when is_list(systems) do
     systems
     |> Enum.map(fn(system) ->
-      :global.whereis_name(system)
+      Registry.whereis_name(system)
       |> GenServer.cast({:message, message})
       system
     end)
@@ -43,11 +45,11 @@ defmodule Exmud.System do
   end
 
   def purge(systems) when is_list(systems) do
-    Execs.transaction(fn ->
+    Db.transaction(fn ->
       systems
       |> Enum.each(fn(system) ->
-        Execs.find_with_all(system)
-        |> Execs.delete()
+        Db.find_with_all(system)
+        |> Db.delete()
       end)
     end)
 
@@ -63,7 +65,7 @@ defmodule Exmud.System do
   def running?(systems) when is_list(systems) do
     systems
     |> Enum.map(fn(system) ->
-      {system, :global.whereis_name(system) != :undefined}
+      {system, Registry.whereis_name(system) != nil}
     end)
   end
 
@@ -89,10 +91,10 @@ defmodule Exmud.System do
     GenServer.start_link(__MODULE__, {system, args})
   end
 
-  def stata(systems) do
+  def state(systems) when is_list(systems) do
     systems
     |> Enum.map(fn(system) ->
-      state = :global.whereis_name(system)
+      state = Registry.whereis_name(system)
       |> GenServer.call(:state)
       {system, state}
     end)
@@ -108,7 +110,7 @@ defmodule Exmud.System do
   def stop(systems, args) when is_list(systems) do
     systems
     |> Enum.each(fn(system) ->
-      :global.whereis_name(system)
+      Registry.whereis_name(system)
       |> GenServer.call({:stop, args})
     end)
 
@@ -124,9 +126,9 @@ defmodule Exmud.System do
 
 
   def init({module, args}) do
-    result = Execs.transaction(fn ->
-      case Execs.find_with_all(module) do
-        [entity] -> {entity, Execs.read(entity, module, :state)}
+    result = Db.transaction(fn ->
+      case Db.find_with_all(module) do
+        [entity] -> {entity, Db.read(entity, module, :state)}
         [] -> nil
       end
     end)
@@ -134,29 +136,26 @@ defmodule Exmud.System do
     {entity, state} = case result do
       nil ->
         initial_state = module.initialize(args)
-        Execs.transaction(fn ->
-          entity = Execs.create()
-          |> Execs.write(module, :state, initial_state)
+        Db.transaction(fn ->
+          entity = Db.create()
+          |> Db.write(module, :state, initial_state)
           {entity, initial_state}
         end)
        result -> result
     end
 
-    :global.trans({module, self()}, fn -> :global.register_name(module, self()) end)
-
-    IO.inspect "launched"
+    Registry.register_name(module)
 
     {:ok, %{entity: entity, module: module, state: state}}
   end
 
   def handle_call(:state, _from, %{state: state} = data) do
-    IO.inspect state
     {:reply, state, data}
   end
 
   def handle_call({:stop, args}, _from, %{state: state, module: module} = data) do
     new_state = module.stop(args, state)
-    :global.trans({module, self()}, fn -> :global.unregister_name(module) end)
+    Registry.unregister_name(module)
     {:stop, :normal, :ok, Map.put(data, :state, new_state)}
   end
 

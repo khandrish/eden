@@ -9,7 +9,7 @@ defmodule Exmud.SystemTest do
     test "lifecycle", %{callback_module: system} = _context do
       assert System.start(system) == system
       assert System.running?(system) == true
-      assert System.state(system) == true
+      assert System.state(system) == %{}
       assert System.call(system, "foo") == "foo"
       assert System.cast(system, "foo") == system
       assert System.stop(system) == system

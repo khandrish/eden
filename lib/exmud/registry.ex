@@ -5,27 +5,28 @@ defmodule Exmud.Registry do
   registry logic easy in the future.
   """
 
-  def find_by_name(name) do
-    case :gproc.where({:n, :l, name}) do
+  def whereis_name(name) do
+    result = :global.trans({name, self()}, fn -> :global.whereis_name(name) end)
+    case result do
       :undefined -> nil
       pid -> pid
     end
   end
 
   def name_registered?(name) do
-    case :gproc.where({:n, :l, name}) do
-      :undefined -> false
+    case whereis_name(name) do
+      nil -> false
       _ -> true
     end
   end
 
   def register_name(name) do
-    true = :gproc.reg({:n, :l, name})
+    :global.trans({name, self()}, fn -> :global.register_name(name, self()) end)
     name
   end
 
   def unregister_name(name) do
-    true = :gproc.unreg({:n, :l, name})
+    :global.trans({name, self()}, fn -> :global.unregister_name(name) end)
     name
   end
 end
