@@ -17,7 +17,7 @@
   "ecto": {:hex, :ecto, "1.1.5"},
   "ex_doc": {:hex, :ex_doc, "0.14.3", "e61cec6cf9731d7d23d254266ab06ac1decbb7651c3d1568402ec535d387b6f7", [:mix], [{:earmark, "~> 1.0", [hex: :earmark, optional: false]}]},
   "exactor": {:hex, :exactor, "2.2.0"},
-  "execs": {:hex, :execs, "0.3.1", "d3360544c70e3d06abbdea1886956d94bfecf52ce0cdf65fef227db60e9b56a8", [:mix], [{:qlc, "~> 1.0", [hex: :qlc, optional: false]}]},
+  "execs": {:hex, :execs, "0.4.0", "f4c4e2b93197a5847fc97225b377679caa7be1ff91ba26aebb9b9ef5c3aec1b9", [:mix], [{:qlc, "~> 1.0", [hex: :qlc, optional: false]}]},
   "exquisite": {:hex, :exquisite, "0.1.7", "4106503e976f409246731b168cd76eb54262bd04f4facc5cba82c2f53982aaf0", [:mix], []},
   "fs": {:hex, :fs, "0.9.2"},
   "fsm": {:hex, :fsm, "0.2.0", "53bcc0fd4a470c92cbbc3bae2d7f7dd8462898eedd62c37a6be556b94fba0e05", [:mix], []},

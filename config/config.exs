@@ -10,14 +10,6 @@ config :logger, :console,
   format: "$time - $level - $metadata - $message\n",
   metadata: [:module, :function, :line]
 
-config :exmud,
-  systems: [Exmud.System.Scheduler, Exmud.System.World, Exmud.System.Weather]
-
-# These arguments are passed to each system at startup and are available to
-# each system as environment variables.
-config :exmud,
-  system_env: %{foo: "bar"}
-
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

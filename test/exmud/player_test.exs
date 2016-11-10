@@ -1,45 +1,45 @@
 defmodule Exmud.PlayerTest do
   alias Exmud.Player
-  alias Exmud.Registry
   require Logger
   use ExUnit.Case, async: true
 
-  describe "session interaction while player is disconnected: " do
+  describe "player lifecycle tests: " do
     setup [:add_player]
 
-    @tag pending:  true
-    test "end_session", %{player: player} = _context do
-      assert Player.end_session(player) == :ok
-    end
-
-    test "session_exists?", %{player: player} = _context do
-      assert Player.has_active_session?(player) == false
-    end
-
-    test "start_session", %{player: player} = _context do
-      assert Player.start_session(player) == player
+    test "player lifecycle", %{player: player} = _context do
+      assert Player.exists?(player) == true
+      assert Player.remove(player) == player
+      assert Player.exists?(player) == false
+      assert Player.remove(player) == player
+      assert Player.add(player) == player
+      assert Player.exists?(player) == true
+      assert Player.add(player) == player
     end
   end
 
-  describe "session interaction while player is connected:" do
-    setup [:add_player, :start_session]
+  describe "player session tests: " do
+    setup [:add_player]
 
-    @tag pending: true
-    test "verify session process has registered itself", %{player: player} = _context do
-      assert Player.session_exists?(player) == true
+    test "session lifecycle", %{player: player} = _context do
+      assert Player.has_active_session?(player) == false
+      assert Player.stop_session(player) == player
+      assert Player.start_session(player) == player
+      assert Player.has_active_session?(player) == true
+      assert Player.stop_session(player) == player
+      assert Player.has_active_session?(player) == false
     end
+  end
 
-    @tag pending: true
-    test "session process unregisters as part of its terminate", %{player: player} = _context do
-      assert Player.end_session(player) == :ok
-      assert Player.session_exists?(player) == false
-    end
+  describe "player data tests: " do
+    setup [:add_player]
 
-    @tag pending:  true
-    test "use existing session if start_session/1 is called", %{player: player} = _context do
-      session = Registry.find_by_name(player)
-      assert Player.start_session(player) == :ok
-      assert Registry.find_by_name(player) == session
+    test "data lifecycle", %{player: player} = _context do
+      assert Player.has_key?(player, :foo) == false
+      assert Player.put_key(player, :foo, :bar) == player
+      assert Player.has_key?(player, :foo) == true
+      assert Player.get_key(player, :foo) == :bar
+      assert Player.delete_key(player, :foo) == player
+      assert Player.has_key?(player, :foo) == false
     end
   end
 

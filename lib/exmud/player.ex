@@ -6,10 +6,10 @@ defmodule Exmud.Player do
   Exmud to decide.
   """
 
-  alias Exmud.Component
+#  alias Exmud.Component
   alias Exmud.Component.Player
   alias Exmud.Db
-  alias Exmud.PlayerSup
+#  alias Exmud.PlayerSup
   alias Exmud.Registry
   require Logger
   use GenServer
@@ -22,63 +22,96 @@ defmodule Exmud.Player do
 
   # player management
 
+  def add(names) when is_list(names) do
+    Db.transaction(fn ->
+      names
+      |> Enum.each(fn(name) ->
+        Db.create()
+        |> Db.write(__MODULE__, __MODULE__, true)
+        |> Db.write(__MODULE__, :name, name)
+      end)
+    end)
+
+    names
+  end
+
   def add(name) do
-    Db.create()
-    |> Component.add(Player)
+    add([name])
+    |> hd()
+  end
+
+  def exists?(names) when is_list(names) do
+    Db.transaction(fn ->
+      names
+      |> Enum.map(fn(name) ->
+        {name, find(name) != []}
+      end)
+    end)
   end
 
   def exists?(name) do
-    Component.find_with_value(fn(value) -> value == name end) != []
+    exists?([name])
+    |> hd()
+    |> elem(1)
+  end
+
+  def remove(names) when is_list(names) do
+    Db.transaction(fn ->
+      names
+      |> Enum.each(fn(name) ->
+        find(name)
+        |> Db.delete()
+      end)
+    end)
+
+    names
   end
 
   def remove(name) do
-    # Other then killing active sessions, the scope of this function is limited.
-    # References to the player will not be sought out and changed and logic must
-    # account for players going missing.
+    remove([name])
+    |> hd()
   end
 
   # player data management
 
-  def delete(entity, key) do
+  def delete_key(player, key) do
     Db.transaction(fn ->
-      Db.delete(entity, Player, key)
+      find(player)
+      |> Db.delete(Player, key)
+    end)
+
+    player
+  end
+
+  def get_key(player, key) do
+    Db.transaction(fn ->
+      find(player)
+      |> hd()
+      |> Db.read(Player, key)
     end)
   end
 
-  def get(entity, key) do
+  def has_key?(player, key) do
     Db.transaction(fn ->
-      Db.read(entity, Player, key)
+      find(player)
+      |> hd()
+      |> Db.has_all(Player, key)
     end)
   end
 
-  def has?(entity, key) do
+  def put_key(player, key, value) do
     Db.transaction(fn ->
-      Db.has_all?(entity, Player, key)
+      find(player)
+      |> Db.write(Player, key, value)
     end)
-  end
 
-  def put(entity, key, value) do
-    Db.transaction(fn ->
-      Db.write(entity, Player, key, value)
-    end)
+    player
   end
 
   # player session management
 
-  def get_session_history do
-
-  end
-
-  def get_session_info do
-
-  end
-
   def has_active_session?(player) do
     Registry.name_registered?(player)
-  end
-
-  def start_session(player) do
-    player
   end
 
   def start_session(players, args \\ %{})
@@ -91,11 +124,7 @@ defmodule Exmud.Player do
     players
   end
 
-  def start_session(player, args), do: hd(start([player], args))
-
-  def start_link(player, args) do
-    GenServer.start_link(__MODULE__, {player, args})
-  end
+  def start_session(player, args), do: hd(start_session([player], args))
 
   def state(players) when is_list(players) do
     players
@@ -115,15 +144,17 @@ defmodule Exmud.Player do
   def stop_session(players, args \\ %{})
   def stop_session(players, args) when is_list(players) do
     players
-    |> Enum.each(fn(system) ->
-      Registry.whereis_name(system)
-      |> GenServer.call({:stop, args})
+    |> Enum.each(fn(player) ->
+      case Registry.whereis_name(player) do
+        nil -> :ok
+        process -> GenServer.call(process, {:stop, args})
+      end
     end)
 
-    systems
+    players
   end
 
-  def stop_session(player, args), do: hd(stop([player], args))
+  def stop_session(player, args), do: hd(stop_session([player], args))
 
   # manage player puppets and access information about them
 
@@ -146,91 +177,9 @@ defmodule Exmud.Player do
   # worker callback
 
   @doc false
-  def start_link(name) do
-    GenServer.start_link(__MODULE__, name)
+  def start_link(player, args) do
+    GenServer.start_link(__MODULE__, {player, args})
   end
-
-
-  # def new(name) do
-  #   Logger.debug("Creating player with name `#{name}`")
-  #   Entity.transaction(fn ->
-  #     Entity.new()
-  #     |> Entity.add_component(P)
-  #     |> Entity.add_key(P, "name", name)
-  #   end)
-
-  #   name
-  # end
-
-  # def delete(name) do
-  #   Logger.debug("Deleting player with name `#{name}`")
-  #   end_session(name)
-  #   Entity.transaction(fn ->
-  #     Entity.
-  #     Entity.new()
-  #     |> Entity.add_component(P)
-  #     |> Entity.add_key(P, "name", name)
-  #   end)
-  # end
-
-  # def exists?(name) do
-  #   Logger.debug("Checking existance of player `#{name}`")
-  #   Entity.transaction(fn ->
-  #     Entity.value_exists?(P, "name", name)
-  #   end)
-  # end
-
-  # def end_session(name) do
-  #   case Registry.find_by_name(name) do
-  #     nil -> :ok
-  #     player_session -> GenServer.call(player_session, :end_session)
-  #   end
-  # end
-
-  # @doc """
-  # Once a character is connected they can be listened to by any number of
-  # interested parties. This method registers the calling process as being
-  # interested in the output stream for that character.
-
-  # The output stream contains output from the engine meant for the player,
-  # examples being text output during combat, UI updates, chat messages, and
-  # so on.
-  # """
-  # def listen() do
-  #   # Assume character is connected and do the thing
-  # end
-
-  # @doc """
-  # A connected player can puppet entities via this method.
-  # """
-  # def puppet(player, puppet) do
-
-  # end
-
-  # def session_exists?(name) do
-  #   Logger.debug("Checking to see if session exists for player `#{name}`")
-  #   Registry.name_registered?(name)
-  # end
-
-  # def start_session(name) do
-  #   Logger.debug("Starting session for player `#{name}`")
-  #   if exists?(name) do
-  #     Logger.debug("Player `#{name}` exists")
-  #     case session_exists?(name) do
-  #       true ->
-  #         Logger.warn("Session for player `#{name}` already started")
-  #         :ok
-  #       false ->
-  #         Logger.info("Starting session for player `#{name}`")
-  #         PlayerSup.start_player(name)
-  #         :ok
-  #     end
-  #   else
-  #     Logger.warn("Player `#{name}` does not exist")
-  #     {:error, :no_such_player}
-  #   end
-
-  # end
 
 
   #
@@ -238,17 +187,16 @@ defmodule Exmud.Player do
   #
 
 
-  def init(name) do
-    Logger.debug("Player session starting with name `#{name}`")
-    :ok = Registry.register_name(name)
+  def init({name, _args}) do
+    Registry.register_name(name)
     {:ok, %{name: name}}
   end
 
-  # def handle_call(:end_session, _from, state) do
-  #   {:stop, :normal, :ok, state}
-  # end
+  def handle_call({:stop, _args}, _from, state) do
+    {:stop, :normal, :ok, state}
+  end
 
-  def terminate(_reason, %{name: name} = state) do
+  def terminate(_reason, %{name: name} = _state) do
     Registry.unregister_name(name)
     :ok
   end
@@ -256,4 +204,8 @@ defmodule Exmud.Player do
   #
   # Private Functions
   #
+
+  defp find(name) do
+    Db.find_with_all(__MODULE__, :name, &(&1 == name))
+  end
 end

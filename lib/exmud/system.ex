@@ -1,11 +1,12 @@
 defmodule Exmud.System do
-  @moduledoc """
+  @systemdoc """
   systems form the backbone of the engine. They drive time and event based
   actions, covering everything from weather effects to triggering AI actions.
   """
 
   alias Exmud.Db
   alias Exmud.Registry
+  import Exmud.Utils
   use GenServer
 
 
@@ -125,46 +126,59 @@ defmodule Exmud.System do
   #
 
 
-  def init({module, args}) do
+  def init({system, args}) do
     result = Db.transaction(fn ->
-      case Db.find_with_all(module) do
-        [entity] -> {entity, Db.read(entity, module, :state)}
+      case Db.find_with_all(system) do
+        [entity] -> {entity, Db.read(entity, system, :state)}
         [] -> nil
       end
     end)
 
     {entity, state} = case result do
       nil ->
-        initial_state = module.initialize(args)
+        initial_state = system.initialize(args)
         Db.transaction(fn ->
           entity = Db.create()
-          |> Db.write(module, :state, initial_state)
+          |> Db.write(system, :state, initial_state)
           {entity, initial_state}
         end)
        result -> result
     end
 
-    Registry.register_name(module)
+    Registry.register_name(system)
 
-    {:ok, %{entity: entity, module: module, state: state}}
+    {:ok, %{entity: entity, system: system, state: state}, 0}
   end
 
   def handle_call(:state, _from, %{state: state} = data) do
     {:reply, state, data}
   end
 
-  def handle_call({:stop, args}, _from, %{state: state, module: module} = data) do
-    new_state = module.stop(args, state)
-    Registry.unregister_name(module)
+  def handle_call({:stop, args}, _from, %{state: state, system: system} = data) do
+    new_state = system.stop(args, state)
+    Registry.unregister_name(system)
     {:stop, :normal, :ok, Map.put(data, :state, new_state)}
   end
 
-  def handle_call({:message, message}, _from, %{state: state, module: module} = data) do
-    {response, new_state} = module.handle_message(message, state)
+  def handle_call({:message, message}, _from, %{state: state, system: system} = data) do
+    {response, new_state} = system.handle_message(message, state)
     {:reply, response, Map.put(data, :state, new_state)}
   end
 
-  def handle_cast({:message, message}, %{state: state, module: module} = data) do
-    {_response, new_state} = module.handle_message(message, state)
-    {:noreply, Map.put(data, :state, new_state)}  end
+  def handle_cast({:message, message}, %{state: state, system: system} = data) do
+    {_response, new_state} = system.handle_message(message, state)
+    {:noreply, Map.put(data, :state, new_state)}
+  end
+
+  def handle_info(:timeout, %{state: state, system: system} = data) do
+    {new_state, timeout} = run(system, state)
+    {:noreply, Map.put(data, :state, new_state), timeout}
+  end
+
+  defp run(system, state) do
+    case system.run(state) do
+      {_, _} = result -> result
+      new_state -> {new_state, cfg(:default_system_run_timeout)}
+    end
+  end
 end

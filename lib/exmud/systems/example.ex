@@ -11,6 +11,10 @@ defmodule Exmud.System.Example do
     %{}
   end
 
+  def run(state) do
+    state
+  end
+
   def start(_args, state) do
     state
   end

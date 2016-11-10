@@ -16,7 +16,8 @@ defmodule Exmud.Mixfile do
 
   def application do
     [mod: {Exmud, []},
-     applications: [:logger, :calendar, :gproc, :execs]]
+     applications: [:logger, :calendar, :gproc, :execs],
+     env: [default_system_run_timeout: 1000]] # milliseconds
   end
 
   defp elixirc_paths(:test), do: ["lib", "test/support"]
@@ -25,7 +26,7 @@ defmodule Exmud.Mixfile do
   defp deps do
     [{:apex, "~> 0.5.2"},
      {:calendar, "~> 0.16.0"},
-     {:execs, "~> 0.3.1"},
+     {:execs, "~> 0.4.0"},
      {:ex_doc, ">= 0.14.3", only: :dev},
      {:fsm, "~> 0.2.0"},
      {:gproc, "~> 0.6.1"},
