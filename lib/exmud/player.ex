@@ -6,7 +6,7 @@ defmodule Exmud.Player do
   Exmud to decide.
   """
 
-#  alias Exmud.Component
+  alias Exmud.Component
   alias Exmud.Component.Player
   alias Exmud.Db
 #  alias Exmud.PlayerSup
@@ -23,13 +23,10 @@ defmodule Exmud.Player do
   # player management
 
   def add(names) when is_list(names) do
-    Db.transaction(fn ->
-      names
-      |> Enum.each(fn(name) ->
-        Db.create()
-        |> Db.write(__MODULE__, __MODULE__, true)
-        |> Db.write(__MODULE__, :name, name)
-      end)
+    names
+    |> Enum.each(fn(name) ->
+      Db.create()
+      |> Component.add(Player, %{name: name})
     end)
 
     names
@@ -44,7 +41,7 @@ defmodule Exmud.Player do
     Db.transaction(fn ->
       names
       |> Enum.map(fn(name) ->
-        {name, find(name) != []}
+        {name, Player.find(name) != []}
       end)
     end)
   end
@@ -117,16 +114,15 @@ defmodule Exmud.Player do
   def start_session(players, args \\ %{})
   def start_session(players, args) when is_list(players) do
     players
-    |> Enum.each(fn(player) ->
-      {:ok, _} = Supervisor.start_child(Exmud.PlayerSup, [player, args])
+    |> Enum.map(fn(player) ->
+      {:ok, pid} = Supervisor.start_child(Exmud.PlayerSup, [player, args])
+      pid
     end)
-
-    players
   end
 
   def start_session(player, args), do: hd(start_session([player], args))
 
-  def state(players) when is_list(players) do
+  def session_state(players) when is_list(players) do
     players
     |> Enum.map(fn(player) ->
       state = Registry.whereis_name(player)
@@ -135,8 +131,8 @@ defmodule Exmud.Player do
     end)
   end
 
-  def state(player) do
-    state([player])
+  def session_state(player) do
+    session_state([player])
     |> hd()
     |> elem(1)
   end
@@ -206,6 +202,6 @@ defmodule Exmud.Player do
   #
 
   defp find(name) do
-    Db.find_with_all(__MODULE__, :name, &(&1 == name))
+    Db.find_with_all(Player, :name, &(&1 == name))
   end
 end
