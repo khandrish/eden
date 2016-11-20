@@ -46,8 +46,4 @@ defmodule Exmud.PlayerTest do
   defp add_player(_context) do
     %{player: Player.add(UUID.uuid4())}
   end
-
-  defp start_session(%{name: name} = _context) do
-    Player.start_session(name)
-  end
 end

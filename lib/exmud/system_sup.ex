@@ -8,7 +8,7 @@ defmodule Exmud.SystemSup do
 
   def init(:ok) do
     children = [
-      worker(Exmud.System, [])
+      worker(Exmud.System, [], restart: :transient)
     ]
 
     supervise(children, strategy: :simple_one_for_one)

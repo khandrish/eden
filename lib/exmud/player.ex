@@ -115,8 +115,8 @@ defmodule Exmud.Player do
   def start_session(players, args) when is_list(players) do
     players
     |> Enum.map(fn(player) ->
-      {:ok, pid} = Supervisor.start_child(Exmud.PlayerSup, [player, args])
-      pid
+      {:ok, _pid} = Supervisor.start_child(Exmud.PlayerSup, [player, args])
+      player
     end)
   end
 

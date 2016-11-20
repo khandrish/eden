@@ -21,12 +21,10 @@ defmodule Exmud.Registry do
   end
 
   def register_name(name) do
-    :global.trans({name, self()}, fn -> :global.register_name(name, self()) end)
-    name
+    :yes == :global.trans({name, self()}, fn -> :global.register_name(name, self()) end)
   end
 
   def unregister_name(name) do
     :global.trans({name, self()}, fn -> :global.unregister_name(name) end)
-    name
   end
 end

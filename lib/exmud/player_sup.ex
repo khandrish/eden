@@ -7,7 +7,7 @@ defmodule Exmud.PlayerSup do
 
   def init(_) do
     children = [
-      worker(Exmud.Player, [])
+      worker(Exmud.Player, [], restart: :transient)
     ]
 
     supervise(children, strategy: :simple_one_for_one)
