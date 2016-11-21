@@ -1,19 +1,111 @@
 defmodule Exmud.System do
-  @systemdoc """
+  @moduledoc """
+  A behaviour module for implementing a system within the Exmud engine.
+  
   Systems form the backbone of the engine. They drive time and event based
   actions, covering everything from weather effects to triggering AI actions.
   
   Systems do not have to run on a set schedule and instead can only react to
-  events, and vice versa. 
+  events, and vice versa. See documentation for `c:initialize/1` for details.
+  
+  ## Callbacks
+  There are 5 callbacks required to be implemented in a system. By adding
+  `use Exmud.System` to your module, Elixir will automatically define all
+  5 callbacks for you, leaving it up to you to implement the ones
+  you want to customize.
   """
 
-  alias Exmud.Db
-  alias Exmud.Registry
+
+  #
+  # Behavior definition and default callback setup
+  #
+
+
+  @doc """
+  Invoked when a message has been sent to the service.
+  
+  Must return a tuple in the form of `{reply, state}`. If the message was sent
+  as a cast the value of `reply` is ignored.
+  """
+  @callback handle_message(message, state) :: {reply, state}
+  
+  @doc """
+  Invoked the first time a service is started. This callback will be invoked
+  before `start/2`.
+  
+  Must return a new state. This will be the state used by all other callbacks.
+  """
+  @callback initialize(args) :: state
+  
+  @doc """
+  Invoked when the main loop of the service is to be run again.
+  
+  Must return a new state.
+  """
+  @callback run(args) :: state
+  
+  @doc """
+  Invoked when the service is being started.
+  
+  Must return a new state.
+  """
+  @callback start(args, state) :: state
+  
+  @doc """
+  Invoked when the service is being stopped.
+  
+  Must return a new state.
+  """
+  @callback stop(args, state) :: state
+
+  @typedoc "Arguments passed through to a callback module."
+  @type args :: term
+  
+  @typedoc "A message passed through to a callback module."
+  @type message :: term
+  
+  @typedoc "A reply passed through to the caller."
+  @type reply :: term
+  
+  @typedoc "State used by the callback module."
+  @type state :: term
+  
+  @doc false
+  defmacro __using__(_) do
+    quote location: :keep do
+      @behaviour Exmud.System
+      
+      @doc false
+      def handle_message(message, state), do: {message, state}
+      
+      @doc false
+      def initialize(args), do: Map.new()
+      
+      @doc false
+      def run(state), do: state
+      
+      @doc false
+      def start(_args, state), do: state
+      
+      @doc false
+      def stop(_args, state), do: state
+
+      defoverridable [handle_message: 2,
+                      initialize: 1,
+                      run: 1,
+                      start: 2,
+                      stop: 2]
+    end
+  end
 
 
   #
   # API
   #
+  
+
+  alias Exmud.Db
+  alias Exmud.Registry
 
 
   def call(systems, message) when is_list(systems) do
@@ -111,10 +203,8 @@ defmodule Exmud.System do
             Db.transaction(fn ->
               case Db.find_with_all(name) do
                 [] -> nil
-                entities ->
-                  entities
-                  |> hd()
-                  |> Db.read(name, :state)
+                [entity] ->
+                  Db.read(entity, name, :state)
               end
             end)
           pid ->

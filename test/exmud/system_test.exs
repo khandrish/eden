@@ -9,7 +9,9 @@ defmodule Exmud.SystemTest do
     test "lifecycle", %{callback_module: system} = _context do
 
       assert System.start(system) == system
-      assert System.start(system) == {:error, :already_started} # Can't start two of the same
+      assert System.start(system) == {:error, :already_started} # Can't start two of the same name
+      assert System.start({:foobar, system}) == :foobar # Can start same system with custom name, though
+      assert System.stop(:foobar) == :foobar
       assert System.running?(system) == true
       assert System.state(system) == %{}
       assert System.call(system, "foo") == "foo"
@@ -32,28 +34,10 @@ end
 
 defmodule Exmud.SystemTest.ExampleSystem do
   @moduledoc """
-  A barebones example of a system  for testing.
+  A barebones example of a system for testing.
   """
-
-  def handle_message(message, state) do
-    {message, state}
-  end
-
-  def initialize(_args) do
-    %{}
-  end
-
-  def run(state) do
-    state
-  end
-
-  def start(_args, state) do
-    state
-  end
-
-  def stop(_args, state) do
-    state
-  end
+  
+  use Exmud.System
 end
 
 

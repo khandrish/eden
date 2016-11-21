@@ -36,7 +36,7 @@ defmodule Exmud.SystemRunner do
       {entity, initial_state, timeout} =
         case data do
           nil ->
-            {initial_state, timeout} = callback_module.initialize(args) |> normalize_result()
+            {initial_state, timeout} = callback_module.initialize(args) |>  normalize_result()
             entity = 
               Db.transaction(fn ->
                 Db.create()

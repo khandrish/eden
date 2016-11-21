@@ -5,7 +5,7 @@
 
 Exmud is a framework and game agnostic M.U.D. engine.
 
-**WARNING:** Exmud is in the prototyping stage and is likely to change rapidly and dramatically without warning. It is not ready to be used.
+**WARNING:** Exmud is in the prototyping stage and is likely to change rapidly and dramatically without warning. It is not ready to be used. Documentation is sparse and possibly outdated.
 
 ## What does framework agnostic mean?
 It means that in an effort to, among other things, limit the scope the following restrictions are in place:
@@ -18,7 +18,16 @@ It means that in an effort to, among other things, limit the scope the following
 **NOTE:** The above list is is need of updating and refinement. 
 
 ## Using Exmud
-With absolutely no scientific proof to back this up, the most common use case is likely to be embedding Exmud within another Elixir application. In which case integrating is simple. Simply add Exmud as a dependency, and add the callback modules via the provided API's in the applications initialization code. Once a process is registered with the still-to-be-written-code as the external representation of a player, messages will begin to be routed to this external (to the engine) process.
+Exmud is designed to be used as a dependency in another project, with that project providing all of the game specific logic.
+
+To start, include as a dependency:
+```elixir
+defp deps do
+  [{:exmud, ">= 0.0.0"}]
+end
+```
+
+Add `:exmud` to the list of applications to start and then register/add/start the M.U.D. specific systems, command sets, and players to get the ball rolling. See documentation for more detailed information.
 
 ## Callback modules?
 The design isn't complete yet, but the gist is that there are a core set of concepts that if adhered to define the basic logical flow of a M.U.D. engine. By providing behavior definitions and API's to register callback modules with the engine, these custom bits of logic can then be executed by a solid core engine that abstracts away the logistics of executing that work. This will also allow the core engine and game specific logic to be updated independently of each other.
