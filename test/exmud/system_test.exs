@@ -1,13 +1,12 @@
 defmodule Exmud.SystemTest do
   alias Exmud.System
-  use ExUnit.Case, async: true
+  use ExUnit.Case
   doctest Exmud.System
 
-  describe "system tests" do
-    setup [:setup_context]
+  describe "system tests: " do
+    setup [:do_setup]
 
     test "lifecycle", %{callback_module: system} = _context do
-
       assert System.start(system) == system
       assert System.start(system) == {:error, :already_started} # Can't start two of the same name
       assert System.start({:foobar, system}) == :foobar # Can start same system with custom name, though
@@ -25,9 +24,18 @@ defmodule Exmud.SystemTest do
       assert System.purge(system) == %{} # Current state is returned on purge
       assert System.state(system) == nil
     end
+    
+    test "calls with invalid system", %{callback_module: system} = _context do
+      assert System.stop(system) == {:error, :no_such_system}
+      assert System.running?(system) == false
+      assert System.state(system) == nil
+      assert System.call(system, "foo") == {:error, :no_such_system}
+      assert System.cast(system, "foo") == {:error, :no_such_system}
+      assert System.purge(system) == nil
+    end
   end
 
-  defp setup_context(_context) do
+  defp do_setup(_context) do
     %{callback_module: Exmud.SystemTest.ExampleSystem}
   end
 end

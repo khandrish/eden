@@ -22,7 +22,7 @@ defmodule Exmud.System do
 
 
   @doc """
-  Invoked when a message has been sent to the service.
+  Invoked when a message has been sent to the system.
   
   Must return a tuple in the form of `{reply, state}`. If the message was sent
   as a cast the value of `reply` is ignored.
@@ -30,7 +30,7 @@ defmodule Exmud.System do
   @callback handle_message(message, state) :: {reply, state}
   
   @doc """
-  Invoked the first time a service is started. This callback will be invoked
+  Invoked the first time a system is started. This callback will be invoked
   before `start/2`.
   
   Must return a new state. This will be the state used by all other callbacks.
@@ -38,21 +38,21 @@ defmodule Exmud.System do
   @callback initialize(args) :: state
   
   @doc """
-  Invoked when the main loop of the service is to be run again.
+  Invoked when the main loop of the system is to be run again.
   
   Must return a new state.
   """
   @callback run(args) :: state
   
   @doc """
-  Invoked when the service is being started.
+  Invoked when the system is being started.
   
   Must return a new state.
   """
   @callback start(args, state) :: state
   
   @doc """
-  Invoked when the service is being stopped.
+  Invoked when the system is being stopped.
   
   Must return a new state.
   """
@@ -111,8 +111,12 @@ defmodule Exmud.System do
   def call(systems, message) when is_list(systems) do
     systems
     |> Enum.map(fn(system) ->
-      response = Registry.whereis_name(system)
-      |> GenServer.call({:message, message})
+      response =
+        case Registry.whereis_name(system) do
+          nil -> {:error, :no_such_system}
+          pid ->
+            GenServer.call(pid, {:message, message})
+        end
 
       {system, response}
     end)
@@ -127,9 +131,12 @@ defmodule Exmud.System do
   def cast(systems, message) when is_list(systems) do
     systems
     |> Enum.map(fn(system) ->
-      Registry.whereis_name(system)
-      |> GenServer.cast({:message, message})
-      system
+      case Registry.whereis_name(system) do
+        nil -> {:error, :no_such_system}
+        pid ->
+          GenServer.cast(pid, {:message, message})
+          system
+      end
     end)
   end
 
@@ -138,19 +145,22 @@ defmodule Exmud.System do
     |> hd()
   end
 
-  def purge(names) when is_list(names) do
+  def purge(systems) when is_list(systems) do
+    initial_results = for system <- systems, into: %{}, do: {system, nil}
+  
     Db.transaction(fn ->
-      entities = Db.find_with_any(names)
-      data = Db.read(entities, names)
-      Db.delete(entities, names)
+      entities = Db.find_with_any(systems)
+      data = Db.read(entities, systems)
+      Db.delete(entities, systems)
       data
     end)
-    |> Enum.map(fn(entity) ->
+    |> Enum.reduce(initial_results, fn(entity, results) ->
       components = entity.components
-      name = Map.keys(components) |> hd()
+      system = Map.keys(components) |> hd()
       state = Map.values(components) |> hd() |> Map.get(:state)
-      {name, state}
+      Map.put(results, system, state)
     end)
+    |> Map.to_list()
   end
 
   def purge(system) do
@@ -159,15 +169,15 @@ defmodule Exmud.System do
     |> elem(1)
   end
 
-  def running?(names) when is_list(names) do
-    names
-    |> Enum.map(fn(name) ->
-      {name, Registry.whereis_name(name) != nil}
+  def running?(systems) when is_list(systems) do
+    systems
+    |> Enum.map(fn(system) ->
+      {system, Registry.whereis_name(system) != nil}
     end)
   end
 
-  def running?(name) do
-    running?([name])
+  def running?(system) do
+    running?([system])
     |> hd()
     |> elem(1)
   end
@@ -176,14 +186,14 @@ defmodule Exmud.System do
   def start(definitions, args) when is_list(definitions) do
     definitions
     |> Enum.map(fn(definition) ->
-      {name, callback_module} =
+      {system, callback_module} =
         case definition do
           {_, _} = result -> result
           callback_module -> {callback_module, callback_module}
         end
         
-      case Supervisor.start_child(Exmud.SystemSup, [name, callback_module, args]) do
-        {:ok, _} -> name
+      case Supervisor.start_child(Exmud.SystemSup, [system, callback_module, args]) do
+        {:ok, _} -> system
         {:error, {_, reason}} -> {:error, reason}
       end
     end)
@@ -194,43 +204,44 @@ defmodule Exmud.System do
     |> hd()
   end
 
-  def state(names) when is_list(names) do
-    names
-    |> Enum.map(fn(name) ->
+  def state(systems) when is_list(systems) do
+    systems
+    |> Enum.map(fn(system) ->
       state = 
-        case Registry.whereis_name(name) do
+        case Registry.whereis_name(system) do
           nil ->
             Db.transaction(fn ->
-              case Db.find_with_all(name) do
+              case Db.find_with_all(system) do
                 [] -> nil
                 [entity] ->
-                  Db.read(entity, name, :state)
+                  Db.read(entity, system, :state)
               end
             end)
           pid ->
             GenServer.call(pid, :state)
         end
       
-      {name, state}
+      {system, state}
     end)
   end
 
-  def state(name) do
-    state([name])
+  def state(system) do
+    state([system])
     |> hd()
     |> elem(1)
   end
 
-  def stop(names, args \\ %{})
-  def stop(names, args) when is_list(names) do
-    names
-    |> Enum.each(fn(name) ->
-      Registry.whereis_name(name)
-      |> GenServer.call({:stop, args})
+  def stop(systems, args \\ %{})
+  def stop(systems, args) when is_list(systems) do
+    Enum.map(systems, fn(system) ->
+      case Registry.whereis_name(system) do
+        nil -> {:error, :no_such_system}
+        pid ->
+          GenServer.call(pid, {:stop, args})
+          system
+      end
     end)
-
-    names
   end
 
-  def stop(name, args), do: hd(stop([name], args))
+  def stop(system, args), do: hd(stop([system], args))
 end
