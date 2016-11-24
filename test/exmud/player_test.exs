@@ -25,6 +25,13 @@ defmodule Exmud.PlayerTest do
       assert Player.stop_session(player) == player
       assert Player.start_session(player) == player
       assert Player.has_active_session?(player) == true
+      me = self()
+      assert Player.stream_session_output(player, fn(message) -> send(me, {:message, message}) end) == player
+      assert Player.send_output(player, :foo) == player
+      assert (receive do
+        {:message, message} -> message
+        after 500 -> :error
+      end) == :foo
       assert Player.stop_session(player) == player
       assert Player.has_active_session?(player) == false
     end

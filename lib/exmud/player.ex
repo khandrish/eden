@@ -9,7 +9,7 @@ defmodule Exmud.Player do
   alias Exmud.Component
   alias Exmud.Component.Player
   alias Exmud.Db
-#  alias Exmud.PlayerSup
+  alias Exmud.PlayerSessionSup
   alias Exmud.Registry
   require Logger
   use GenServer
@@ -25,7 +25,7 @@ defmodule Exmud.Player do
   def add(names) when is_list(names) do
     names
     |> Enum.each(fn(name) ->
-      Db.create()
+      Db.create() # Mnesia client can create ids outside transaction, may break if client changes.
       |> Component.add(Player, %{name: name})
     end)
 
@@ -110,17 +110,20 @@ defmodule Exmud.Player do
   def has_active_session?(player) do
     Registry.name_registered?(player)
   end
-
-  def start_session(players, args \\ %{})
-  def start_session(players, args) when is_list(players) do
+  
+  def send_output(players, output) when is_list(players) do
     players
-    |> Enum.map(fn(player) ->
-      {:ok, _pid} = Supervisor.start_child(Exmud.PlayerSup, [player, args])
-      player
+    |> Enum.each(fn(player) ->
+      Registry.whereis_name(player)
+      |> GenServer.call({:send_output, output})
     end)
+    players
   end
-
-  def start_session(player, args), do: hd(start_session([player], args))
+  
+  def send_output(player, output) do
+    send_output([player], output)
+    |> hd()
+  end
 
   def session_state(players) when is_list(players) do
     players
@@ -137,6 +140,21 @@ defmodule Exmud.Player do
     |> elem(1)
   end
 
+  def start_session(players, args \\ %{})
+  def start_session(players, args) when is_list(players) do
+    players
+    |> Enum.map(fn(player) ->
+      if exists?(player) === true do
+        {:ok, _pid} = Supervisor.start_child(PlayerSessionSup, [player, args])
+        player
+      else
+        {:error, :no_such_player}
+      end
+    end)
+  end
+
+  def start_session(player, args), do: hd(start_session([player], args))
+
   def stop_session(players, args \\ %{})
   def stop_session(players, args) when is_list(players) do
     players
@@ -151,6 +169,25 @@ defmodule Exmud.Player do
   end
 
   def stop_session(player, args), do: hd(stop_session([player], args))
+  
+  def stream_session_output(players, handler_fun) when is_list(players) do
+    players
+    |> Enum.map(fn(player) ->
+      case Registry.whereis_name(player) do
+        nil -> {player, {:error, :no_such_player}}
+        process ->
+          :ok = GenServer.call(process, {:stream_output, handler_fun})
+          player
+      end
+    end)
+  end
+  
+  def stream_session_output(player, handler_fun) do
+    case hd(stream_session_output([player], handler_fun)) do
+      {player, error} -> error
+      player -> player
+    end
+  end
 
   # manage player puppets and access information about them
 
@@ -170,36 +207,11 @@ defmodule Exmud.Player do
 
   end
 
-  # worker callback
-
-  @doc false
-  def start_link(player, args) do
-    GenServer.start_link(__MODULE__, {player, args})
-  end
-
-
-  #
-  # GenServer Callbacks
-  #
-
-
-  def init({name, _args}) do
-    Registry.register_name(name)
-    {:ok, %{name: name}}
-  end
-
-  def handle_call({:stop, _args}, _from, state) do
-    {:stop, :normal, :ok, state}
-  end
-
-  def terminate(_reason, %{name: name} = _state) do
-    Registry.unregister_name(name)
-    :ok
-  end
 
   #
   # Private Functions
   #
+
 
   defp find(name) do
     Db.find_with_all(Player, :name, &(&1 == name))

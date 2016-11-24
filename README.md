@@ -31,3 +31,8 @@ Add `:exmud` to the list of applications to start and then register/add/start th
 
 ## Callback modules?
 The design isn't complete yet, but the gist is that there are a core set of concepts that if adhered to define the basic logical flow of a M.U.D. engine. By providing behavior definitions and API's to register callback modules with the engine, these custom bits of logic can then be executed by a solid core engine that abstracts away the logistics of executing that work. This will also allow the core engine and game specific logic to be updated independently of each other.
+
+## Inspiration
+Many of the concepts present in Exmud are inspired by or directly copied from Evennia. I wanted to do a fun project in Elixir, and as part of the preperation for that I looked at what others had done. Evennia stood out as an interesting project with a lot of solid ideas that could be adapated to fit my needs. While there has been a lot of adaptation, and there will undoubtedly be more, Evennia was definitely the go-to starting-point for several pieces of core logic.
+
+If you're interested in something that you can get up and running now, are just curious in seeing what's cooking over in Python land, or just want to see what inspired some of the design of Exmud, I highly recommend you head on over to the [Evennia website](http://www.evennia.com/).

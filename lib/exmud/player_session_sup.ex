@@ -1,4 +1,4 @@
-defmodule Exmud.PlayerSup do
+defmodule Exmud.PlayerSessionSup do
   use Supervisor
 
   def start_link do
@@ -7,7 +7,7 @@ defmodule Exmud.PlayerSup do
 
   def init(_) do
     children = [
-      worker(Exmud.Player, [], restart: :transient)
+      worker(Exmud.PlayerSession, [], restart: :transient)
     ]
 
     supervise(children, strategy: :simple_one_for_one)
