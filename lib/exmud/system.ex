@@ -106,26 +106,17 @@ defmodule Exmud.System do
 
   alias Exmud.Db
   alias Exmud.Registry
+  alias Exmud.Repo
+  alias Exmud.Schema.System, as: S
+  import Ecto.Query
 
 
-  def call(systems, message) when is_list(systems) do
-    systems
-    |> Enum.map(fn(system) ->
-      response =
-        case Registry.whereis_name(system) do
-          nil -> {:error, :no_such_system}
-          pid ->
-            GenServer.call(pid, {:message, message})
-        end
-
-      {system, response}
-    end)
-  end
-
-  def call(system, message) do
-    call([system], message)
-    |> hd()
-    |> elem(1)
+  def call(name, message) do
+    case Registry.whereis_name(name) do
+      nil -> {:error, :no_such_system}
+      pid ->
+        GenServer.call(pid, {:message, message})
+    end
   end
 
   def cast(systems, message) when is_list(systems) do
@@ -135,7 +126,7 @@ defmodule Exmud.System do
         nil -> {:error, :no_such_system}
         pid ->
           GenServer.cast(pid, {:message, message})
-          system
+          :ok
       end
     end)
   end
@@ -145,103 +136,36 @@ defmodule Exmud.System do
     |> hd()
   end
 
-  def purge(systems) when is_list(systems) do
-    initial_results = for system <- systems, into: %{}, do: {system, nil}
-  
-    Db.transaction(fn ->
-      entities = Db.find_with_any(systems)
-      data = Db.read(entities, systems)
-      Db.delete(entities, systems)
-      data
-    end)
-    |> Enum.reduce(initial_results, fn(entity, results) ->
-      components = entity.components
-      system = Map.keys(components) |> hd()
-      state = Map.values(components) |> hd() |> Map.get(:state)
-      Map.put(results, system, state)
-    end)
-    |> Map.to_list()
-  end
-
-  def purge(system) do
-    purge([system])
-    |> hd()
-    |> elem(1)
-  end
-
-  def running?(systems) when is_list(systems) do
-    systems
-    |> Enum.map(fn(system) ->
-      {system, Registry.whereis_name(system) != nil}
-    end)
+  def purge(name) do
+    Repo.one(
+      from system in S,
+      where: system.key == ^name,
+      select: system
+    )
+    |> case do
+      nil -> {:error, :no_such_system}
+      system ->
+        {:ok, _} = Repo.delete(system)
+        {:ok, :erlang.binary_to_term(system.state)}
+    end
   end
 
   def running?(system) do
-    running?([system])
-    |> hd()
-    |> elem(1)
+    Registry.whereis_name(system) != nil
   end
 
-  def start(definitions, args \\ %{})
-  def start(definitions, args) when is_list(definitions) do
-    definitions
-    |> Enum.map(fn(definition) ->
-      {system, callback_module} =
-        case definition do
-          {_, _} = result -> result
-          callback_module -> {callback_module, callback_module}
-        end
-        
-      case Supervisor.start_child(Exmud.SystemSup, [system, callback_module, args]) do
-        {:ok, _} -> system
-        {:error, {_, reason}} -> {:error, reason}
-      end
-    end)
+  def start(name, callback_module, args \\ %{}) do
+    case Supervisor.start_child(Exmud.SystemSup, [name, callback_module, args]) do
+      {:ok, _} -> {:ok, name}
+      {:error, {_, reason}} -> {:error, reason}
+    end
   end
 
-  def start(definition, args) do
-    start([definition], args)
-    |> hd()
+  def stop(name, args \\ %{}) do
+    case Registry.whereis_name(name) do
+      nil -> {:error, :no_such_system}
+      pid ->
+        GenServer.call(pid, {:stop, args})
+    end
   end
-
-  def state(systems) when is_list(systems) do
-    systems
-    |> Enum.map(fn(system) ->
-      state = 
-        case Registry.whereis_name(system) do
-          nil ->
-            Db.transaction(fn ->
-              case Db.find_with_all(system) do
-                [] -> nil
-                [entity] ->
-                  Db.read(entity, system, :state)
-              end
-            end)
-          pid ->
-            GenServer.call(pid, :state)
-        end
-      
-      {system, state}
-    end)
-  end
-
-  def state(system) do
-    state([system])
-    |> hd()
-    |> elem(1)
-  end
-
-  def stop(systems, args \\ %{})
-  def stop(systems, args) when is_list(systems) do
-    Enum.map(systems, fn(system) ->
-      case Registry.whereis_name(system) do
-        nil -> {:error, :no_such_system}
-        pid ->
-          GenServer.call(pid, {:stop, args})
-          system
-      end
-    end)
-  end
-
-  def stop(system, args), do: hd(stop([system], args))
 end

@@ -8,12 +8,12 @@ defmodule Exmud.PlayerTest do
 
     test "player lifecycle", %{player: player} = _context do
       assert Player.exists?(player) == true
-      assert Player.remove(player) == player
+      assert Player.remove(player) == :ok
       assert Player.exists?(player) == false
-      assert Player.remove(player) == player
-      assert Player.add(player) == player
+      assert Player.remove(player) == :ok
+      assert Player.add(player) == {:ok, player}
       assert Player.exists?(player) == true
-      assert Player.add(player) == player
+      assert Player.add(player) == {:error, :key_in_use}
     end
   end
 
@@ -41,16 +41,22 @@ defmodule Exmud.PlayerTest do
     setup [:add_player]
 
     test "data lifecycle", %{player: player} = _context do
-      assert Player.has_key?(player, :foo) == false
-      assert Player.put_key(player, :foo, :bar) == player
-      assert Player.has_key?(player, :foo) == true
-      assert Player.get_key(player, :foo) == :bar
-      assert Player.delete_key(player, :foo) == player
-      assert Player.has_key?(player, :foo) == false
+      assert Player.has_key?(player, "foo") == false
+      assert Player.put_key(player, "foo", :bar) == {:ok, player}
+      assert Player.has_key?(player, "foo") == true
+      assert Player.get_key(player, "foo") == :bar
+      assert Player.delete_key(player, "foo") == :bar
+      assert Player.has_key?(player, "foo") == false
+      assert Player.delete_key(player, "foobar") == {:ok, nil}
+      assert Player.put_key("invalid player", "foo", :bar) == {:error, :no_such_player}
+      assert Player.put_key(player, :invalid_key, :bar) == {:error, [key: {"is invalid", [type: :string]}]}
+      assert Player.has_key?("invalid player", "foo") == false
+      assert Player.delete_key("invalid player", "foobar") == {:ok, nil}
     end
   end
 
   defp add_player(_context) do
-    %{player: Player.add(UUID.uuid4())}
+    {:ok, player} = Player.add(UUID.uuid4())
+    %{player: player}
   end
 end

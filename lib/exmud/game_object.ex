@@ -1,4 +1,14 @@
 defmodule Exmud.GameObject do
+  @opaque oid :: integer
+  @type destination :: oid
+  @type subject :: oid
+  @type initial_location :: oid
+  @type accessor :: oid
+  @type access_type :: String
+  @type traversing_object :: oid
+  @type args :: term
+  @type result :: boolean
+  
   @doc """
   Called if the move is not quiet. This is called immediately before moving,
   while the subject is still in the old location.
@@ -9,7 +19,7 @@ defmodule Exmud.GameObject do
   Called if the move is not quiet. This is called immediately after moving,
   when the subject is in the new location.
   """
-  @callback announce_move_to(subject, source_location) :: subject
+  @callback announce_move_to(subject, initial_location) :: subject
   
   @doc """
   Called with the result of an access call, along with any args used for the call.
@@ -22,13 +32,13 @@ defmodule Exmud.GameObject do
   @doc """
   Called after a move has been completed, whether or not it was quiet.
   """
-  @callback at_after_move(subject, source_location) :: subject
+  @callback at_after_move(subject, initial_location) :: subject
   
   @doc """
   Called after an object has successfully used this object to traverse
   to another object.
   """
-  @callback at_after_traverse(subject, traversing_object, source_location) :: term
+  @callback at_after_traverse(subject, traversing_object, initial_location) :: term
   
   @doc """
   Called just before moving an object to its destination.
@@ -46,4 +56,15 @@ defmodule Exmud.GameObject do
   Called if an object fails to traverse this object.
   """
   @callback at_failed_traverse(subject, traversing_object) :: term
+  
+  @doc """
+  Called the very first time an object is created and saved. This is generally
+  not overloaded.
+  """
+  @callback at_first_save(subject, traversing_object) :: term
+  
+  @doc """
+  Called if an object fails to traverse this object.
+  """
+  @callback at_get(subject, traversing_object) :: term
 end

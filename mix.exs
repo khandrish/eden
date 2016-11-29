@@ -16,8 +16,8 @@ defmodule Exmud.Mixfile do
 
   def application do
     [mod: {Exmud, []},
-     applications: [:logger, :calendar, :gproc, :execs],
-     env: [default_system_run_timeout: 1000]] # milliseconds
+     applications: [:logger, :calendar, :gproc, :postgrex, :ecto],
+     env: []]
   end
 
   defp elixirc_paths(:test), do: ["lib", "test/support"]
@@ -26,19 +26,21 @@ defmodule Exmud.Mixfile do
   defp deps do
     [{:apex, "~> 0.5.2"},
      {:calendar, "~> 0.16.0"},
+     {:ecto, "~> 2.0.0"},
      {:execs, "~> 0.4.0"},
      {:ex_doc, ">= 0.14.3", only: :dev},
      {:fsm, "~> 0.2.0"},
      {:gproc, "~> 0.6.1"},
      {:inch_ex, ">= 0.0.0", only: :docs},
      {:pipe, "~> 0.0.2"},
+     {:postgrex, "~> 0.12.0"},
      {:timex, "~> 3.0"},
      {:uuid, "~> 1.1"}]
   end
 
   defp description do
     """
-    A M.U.D. engine implemented in Elixir.
+    A toolkit for building and an engine for running text-based MU* games implemented in Elixir.
     """
   end
 
@@ -48,6 +50,6 @@ defmodule Exmud.Mixfile do
      files: ["lib", "mix.exs", "README*", "LICENSE*"],
      maintainers: ["Chris Hicks"],
      licenses: ["MIT"],
-     links: %{"GitHub" => "https://github.com/mononym/eden"}]
+     links: %{"GitHub" => "https://github.com/mononym/exmud"}]
   end
 end

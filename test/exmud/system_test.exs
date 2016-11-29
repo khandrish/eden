@@ -6,37 +6,30 @@ defmodule Exmud.SystemTest do
   describe "system tests: " do
     setup [:do_setup]
 
-    test "lifecycle", %{callback_module: system} = _context do
-      assert System.start(system) == system
-      assert System.start(system) == {:error, :already_started} # Can't start two of the same name
-      assert System.start({:foobar, system}) == :foobar # Can start same system with custom name, though
-      assert System.stop(:foobar) == :foobar
-      assert System.running?(system) == true
-      assert System.state(system) == %{}
-      assert System.call(system, "foo") == "foo"
-      assert System.cast(system, "foo") == system
-      assert System.stop(system) == system
-      assert System.running?(system) == false
-      assert System.start(system) == system # Start again just to make sure everything was shutdown/deregistered
-      assert System.stop(system) == system
-      assert System.running?(system) == false
-      assert System.state(system) == %{} # Check state while system stopped
-      assert System.purge(system) == %{} # Current state is returned on purge
-      assert System.state(system) == nil
+    test "lifecycle", %{callback_module: callback_module, name: name} = _context do
+      assert System.start(name, callback_module) == {:ok, name}
+      assert System.start(name, callback_module) == {:error, :already_started} # Can't start two of the same name
+      assert System.running?(name) == true
+      assert System.call(name, "foo") == "foo"
+      assert System.cast(name, "foo") == :ok
+      assert System.stop(name) == :ok
+      assert System.running?(name) == false
+      assert System.start(name, callback_module) == {:ok, name} # Start again just to make sure everything was shutdown/deregistered
+      assert System.stop(name) == :ok
+      assert System.running?(name) == false
+      assert System.purge(name) == {:ok, %{}}
     end
     
-    test "calls with invalid system", %{callback_module: system} = _context do
-      assert System.stop(system) == {:error, :no_such_system}
-      assert System.running?(system) == false
-      assert System.state(system) == nil
-      assert System.call(system, "foo") == {:error, :no_such_system}
-      assert System.cast(system, "foo") == {:error, :no_such_system}
-      assert System.purge(system) == nil
+    test "calls with invalid system", _context do
+      assert System.stop("foo") == {:error, :no_such_system}
+      assert System.call("foo", "foo") == {:error, :no_such_system}
+      assert System.cast("foo", "foo") == {:error, :no_such_system}
+      assert System.purge("foo") == {:error, :no_such_system}
     end
   end
 
   defp do_setup(_context) do
-    %{callback_module: Exmud.SystemTest.ExampleSystem}
+    %{callback_module: Exmud.SystemTest.ExampleSystem, name: "ExampleSystem"}
   end
 end
 

@@ -5,6 +5,7 @@ defmodule Exmud do
     import Supervisor.Spec, warn: false
 
     children = [
+      worker(Exmud.Repo, []),
       supervisor(Task.Supervisor, [[name: Exmud.TaskSupervisor]]),
       supervisor(Exmud.PlayerSessionSup, []),
       supervisor(Exmud.SystemSup, [])

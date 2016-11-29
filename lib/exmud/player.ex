@@ -11,6 +11,10 @@ defmodule Exmud.Player do
   alias Exmud.Db
   alias Exmud.PlayerSessionSup
   alias Exmud.Registry
+  alias Exmud.Repo
+  alias Exmud.Schema.Player, as: P
+  alias Exmud.Schema.PlayerData, as: PD
+  import Ecto.Query
   require Logger
   use GenServer
 
@@ -22,87 +26,87 @@ defmodule Exmud.Player do
 
   # player management
 
-  def add(names) when is_list(names) do
-    names
-    |> Enum.each(fn(name) ->
-      Db.create() # Mnesia client can create ids outside transaction, may break if client changes.
-      |> Component.add(Player, %{name: name})
-    end)
-
-    names
+  def add(key) do
+    case Repo.insert(P.changeset(%P{}, %{key: key})) do
+      {:ok, _} -> {:ok, key}
+      {:error, changeset} ->
+        {:error, elem(Keyword.get(changeset.errors, :key), 0)}
+    end
   end
 
-  def add(name) do
-    add([name])
-    |> hd()
+  def exists?(key) do
+    find(key) != nil
   end
 
-  def exists?(names) when is_list(names) do
-    Db.transaction(fn ->
-      names
-      |> Enum.map(fn(name) ->
-        {name, Player.find(name) != []}
-      end)
-    end)
-  end
-
-  def exists?(name) do
-    exists?([name])
-    |> hd()
-    |> elem(1)
-  end
-
-  def remove(names) when is_list(names) do
-    Db.transaction(fn ->
-      names
-      |> Enum.each(fn(name) ->
-        find(name)
-        |> Db.delete()
-      end)
-    end)
-
-    names
-  end
-
-  def remove(name) do
-    remove([name])
-    |> hd()
+  def remove(key) do
+    case find(key) do
+      nil -> :ok
+      player ->
+        case Repo.delete(player) do
+          {:ok, _} -> :ok
+          result -> result
+        end
+    end
   end
 
   # player data management
 
   def delete_key(player, key) do
-    Db.transaction(fn ->
-      find(player)
-      |> Db.delete(Player, key)
-    end)
-
-    player
+    Repo.one(
+      from data in PD,
+      inner_join: player in assoc(data, :player), on: data.player_id == player.id,
+      where: data.key == ^key,
+      where: player.key == ^player,
+      select: data
+    )
+    |> case do
+      nil -> {:ok, nil}
+      data ->
+        case Repo.delete(data) do
+          {:ok, data} -> :erlang.binary_to_term(data.value)
+          result -> result
+        end
+    end
   end
 
   def get_key(player, key) do
-    Db.transaction(fn ->
-      find(player)
-      |> hd()
-      |> Db.read(Player, key)
-    end)
+    Repo.one(
+      from player in P,
+      inner_join: data in assoc(player, :player_data), on: data.player_id == player.id,
+      where: data.key == ^key,
+      where: player.key == ^player,
+      select: data.value
+    )
+    |> case do
+      nil -> nil
+      result -> :erlang.binary_to_term(result)
+    end
   end
 
   def has_key?(player, key) do
-    Db.transaction(fn ->
-      find(player)
-      |> hd()
-      |> Db.has_all(Player, key)
-    end)
+    Repo.one(
+      from player in P,
+      inner_join: data in assoc(player, :player_data), on: data.player_id == player.id,
+      where: data.key == ^key,
+      where: player.key == ^player,
+      select: player.id
+    ) != nil
   end
 
   def put_key(player, key, value) do
-    Db.transaction(fn ->
-      find(player)
-      |> Db.write(Player, key, value)
-    end)
-
-    player
+    find(player)
+    |> case do
+      nil -> {:error, :no_such_player}
+      player ->
+        id = player.id
+        value = :erlang.term_to_binary(value)
+        changeset = PD.changeset(%PD{}, %{player_id: id, key: key, value: value})
+        case Repo.insert(changeset) do
+          {:ok, _} -> {:ok, player.key}
+          {:error, changeset} ->
+            {:error, changeset.errors}
+        end
+    end
   end
 
   # player session management
@@ -211,9 +215,20 @@ defmodule Exmud.Player do
   #
   # Private Functions
   #
+  
+  
+  defp do_get_key(player, key) do
+    Repo.one(
+      from player in P,
+      inner_join: data in assoc(player, :player_data), on: data.player_id == player.id,
+      where: data.key == ^key,
+      where: player.key == ^player,
+      select: data.value
+    )
+  end
 
 
-  defp find(name) do
-    Db.find_with_all(Player, :name, &(&1 == name))
+  defp find(key) do
+    Repo.get_by(P, key: key)
   end
 end

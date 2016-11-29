@@ -9,6 +9,19 @@ use Mix.Config
 config :logger, :console,
   format: "$time - $level - $metadata - $message\n",
   metadata: [:module, :function, :line]
+  
+config :exmud, ecto_repos: [Exmud.Repo]
+
+config :exmud, Exmud.Repo,
+  adapter: Ecto.Adapters.Postgres,
+  database: "exmud_repo",
+  username: "exmud_user",
+  password: "exmud_password",
+  hostname: "localhost",
+  port: "5432"
+  
+config :exmud, :engine,
+  default_system_run_timeout: 1000 # milliseconds
 
 
 # Import environment specific config. This must remain at the bottom
