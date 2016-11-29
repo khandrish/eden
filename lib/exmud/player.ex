@@ -6,9 +6,6 @@ defmodule Exmud.Player do
   Exmud to decide.
   """
 
-  alias Exmud.Component
-  alias Exmud.Component.Player
-  alias Exmud.Db
   alias Exmud.PlayerSessionSup
   alias Exmud.Registry
   alias Exmud.Repo
@@ -28,7 +25,7 @@ defmodule Exmud.Player do
 
   def add(key) do
     case Repo.insert(P.changeset(%P{}, %{key: key})) do
-      {:ok, _} -> {:ok, key}
+      {:ok, _} -> :ok
       {:error, changeset} ->
         {:error, elem(Keyword.get(changeset.errors, :key), 0)}
     end
@@ -102,7 +99,7 @@ defmodule Exmud.Player do
         value = :erlang.term_to_binary(value)
         changeset = PD.changeset(%PD{}, %{player_id: id, key: key, value: value})
         case Repo.insert(changeset) do
-          {:ok, _} -> {:ok, player.key}
+          {:ok, _} -> :ok
           {:error, changeset} ->
             {:error, changeset.errors}
         end
@@ -115,81 +112,31 @@ defmodule Exmud.Player do
     Registry.name_registered?(player)
   end
   
-  def send_output(players, output) when is_list(players) do
-    players
-    |> Enum.each(fn(player) ->
-      Registry.whereis_name(player)
-      |> GenServer.call({:send_output, output})
-    end)
-    players
-  end
-  
   def send_output(player, output) do
-    send_output([player], output)
-    |> hd()
+    Registry.whereis_name(player)
+    |> GenServer.call({:send_output, output})
   end
 
-  def session_state(players) when is_list(players) do
-    players
-    |> Enum.map(fn(player) ->
-      state = Registry.whereis_name(player)
-      |> GenServer.call(:state)
-      {player, state}
-    end)
+  def start_session(player, args \\ %{}) do
+    if exists?(player) === true do
+      {:ok, _pid} = Supervisor.start_child(PlayerSessionSup, [player, args])
+      :ok
+    else
+      {:error, :no_such_player}
+    end
   end
 
-  def session_state(player) do
-    session_state([player])
-    |> hd()
-    |> elem(1)
+  def stop_session(player, args \\ %{}) do
+    case Registry.whereis_name(player) do
+      nil -> {:error, :no_session_active}
+      process -> GenServer.call(process, {:stop, args})
+    end
   end
 
-  def start_session(players, args \\ %{})
-  def start_session(players, args) when is_list(players) do
-    players
-    |> Enum.map(fn(player) ->
-      if exists?(player) === true do
-        {:ok, _pid} = Supervisor.start_child(PlayerSessionSup, [player, args])
-        player
-      else
-        {:error, :no_such_player}
-      end
-    end)
-  end
-
-  def start_session(player, args), do: hd(start_session([player], args))
-
-  def stop_session(players, args \\ %{})
-  def stop_session(players, args) when is_list(players) do
-    players
-    |> Enum.each(fn(player) ->
-      case Registry.whereis_name(player) do
-        nil -> :ok
-        process -> GenServer.call(process, {:stop, args})
-      end
-    end)
-
-    players
-  end
-
-  def stop_session(player, args), do: hd(stop_session([player], args))
-  
-  def stream_session_output(players, handler_fun) when is_list(players) do
-    players
-    |> Enum.map(fn(player) ->
-      case Registry.whereis_name(player) do
-        nil -> {player, {:error, :no_such_player}}
-        process ->
-          :ok = GenServer.call(process, {:stream_output, handler_fun})
-          player
-      end
-    end)
-  end
-  
   def stream_session_output(player, handler_fun) do
-    case hd(stream_session_output([player], handler_fun)) do
-      {player, error} -> error
-      player -> player
+    case Registry.whereis_name(player) do
+      nil -> {player, {:error, :no_such_player}}
+      process -> GenServer.call(process, {:stream_output, handler_fun})
     end
   end
 
@@ -215,17 +162,6 @@ defmodule Exmud.Player do
   #
   # Private Functions
   #
-  
-  
-  defp do_get_key(player, key) do
-    Repo.one(
-      from player in P,
-      inner_join: data in assoc(player, :player_data), on: data.player_id == player.id,
-      where: data.key == ^key,
-      where: player.key == ^player,
-      select: data.value
-    )
-  end
 
 
   defp find(key) do

@@ -11,7 +11,7 @@ defmodule Exmud.PlayerTest do
       assert Player.remove(player) == :ok
       assert Player.exists?(player) == false
       assert Player.remove(player) == :ok
-      assert Player.add(player) == {:ok, player}
+      assert Player.add(player) == :ok
       assert Player.exists?(player) == true
       assert Player.add(player) == {:error, :key_in_use}
     end
@@ -22,17 +22,17 @@ defmodule Exmud.PlayerTest do
 
     test "session lifecycle", %{player: player} = _context do
       assert Player.has_active_session?(player) == false
-      assert Player.stop_session(player) == player
-      assert Player.start_session(player) == player
+      assert Player.stop_session(player) == {:error, :no_session_active}
+      assert Player.start_session(player) == :ok
       assert Player.has_active_session?(player) == true
       me = self()
-      assert Player.stream_session_output(player, fn(message) -> send(me, {:message, message}) end) == player
-      assert Player.send_output(player, :foo) == player
+      assert Player.stream_session_output(player, fn(message) -> send(me, {:message, message}) end) == :ok
+      assert Player.send_output(player, :foo) == :ok
       assert (receive do
         {:message, message} -> message
         after 500 -> :error
       end) == :foo
-      assert Player.stop_session(player) == player
+      assert Player.stop_session(player) == :ok
       assert Player.has_active_session?(player) == false
     end
   end
@@ -42,7 +42,7 @@ defmodule Exmud.PlayerTest do
 
     test "data lifecycle", %{player: player} = _context do
       assert Player.has_key?(player, "foo") == false
-      assert Player.put_key(player, "foo", :bar) == {:ok, player}
+      assert Player.put_key(player, "foo", :bar) == :ok
       assert Player.has_key?(player, "foo") == true
       assert Player.get_key(player, "foo") == :bar
       assert Player.delete_key(player, "foo") == :bar
@@ -56,7 +56,8 @@ defmodule Exmud.PlayerTest do
   end
 
   defp add_player(_context) do
-    {:ok, player} = Player.add(UUID.uuid4())
-    %{player: player}
+    key = UUID.uuid4()
+    :ok = Player.add(key)
+    %{player: key}
   end
 end
