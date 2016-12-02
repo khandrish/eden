@@ -1,7 +1,8 @@
 defmodule Exmud.PlayerTest do
   alias Exmud.Player
+  alias Exmud.Repo
   require Logger
-  use ExUnit.Case, async: true
+  use ExUnit.Case
 
   describe "player lifecycle tests: " do
     setup [:add_player]

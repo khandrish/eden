@@ -14,15 +14,22 @@ defmodule Exmud.Repo.Migrations.CreateDatabases do
     
     create table(:game_object) do
       add :key, :string
-      add :location, references(:game_object)
-      add :home, references(:game_object)
       add :date_created, :datetime
-      add :type, :string
     end
     create index(:game_object, [:key])
-    create index(:game_object, [:location])
-    create index(:game_object, [:home])
-    create index(:game_object, [:type])
+    create index(:game_object, [:date_created])
+    
+    create table(:game_object_home) do
+      add :object_id, references(:game_object)
+      add :home, references(:game_object)
+    end
+    create index(:game_object_home, [:home])
+    
+    create table(:game_object_location) do
+      add :object_id, references(:game_object)
+      add :location, references(:game_object)
+    end
+    create index(:game_object_location, [:location])
     
     create table(:system) do
       add :key, :string
@@ -75,12 +82,12 @@ defmodule Exmud.Repo.Migrations.CreateDatabases do
     create index(:tag, [:tag])
     create unique_index(:tag, [:game_object_id, :tag])
     
-    create table(:game_object_data) do
+    create table(:attribute) do
       add :game_object_id, references(:game_object, [on_delete: :delete_all])
-      add :key, :string
-      add :value, :binary
+      add :name, :string
+      add :data, :binary
     end
-    create index(:game_object_data, [:key])
-    create unique_index(:game_object_data, [:game_object_id, :key])
+    create index(:attribute, [:name])
+    create unique_index(:attribute, [:game_object_id, :name])
   end
 end

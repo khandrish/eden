@@ -1,4 +1,5 @@
 defmodule Exmud.SystemTest do
+  alias Exmud.Repo
   alias Exmud.System
   use ExUnit.Case
   doctest Exmud.System
