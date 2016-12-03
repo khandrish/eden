@@ -29,6 +29,7 @@
   "mailgun": {:hex, :mailgun, "0.1.2"},
   "metrics": {:hex, :metrics, "1.0.1", "25f094dea2cda98213cecc3aeff09e940299d950904393b2a29d191c346a8486", [:rebar3], []},
   "mimerl": {:hex, :mimerl, "1.0.2", "993f9b0e084083405ed8252b99460c4f0563e41729ab42d9074fd5e52439be88", [:rebar3], []},
+  "named_args": {:hex, :named_args, "0.1.0", "457a4f85ec97329f137d395df0483a777bf679fff2a12b557af465855073f648", [:mix], []},
   "phoenix": {:hex, :phoenix, "1.1.4"},
   "phoenix_calendar": {:hex, :phoenix_calendar, "0.1.2"},
   "phoenix_ecto": {:hex, :phoenix_ecto, "2.0.1"},

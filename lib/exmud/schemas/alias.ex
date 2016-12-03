@@ -4,12 +4,12 @@ defmodule Exmud.Schema.Alias do
   
   schema "alias" do
     field :alias, :string
-    belongs_to :game_object, Exmud.Schema.GameObject
+    belongs_to :game_object, Exmud.Schema.GameObject, foreign_key: :oid
   end
   
   def changeset(al, params \\ %{}) do
     al
-    |> cast(params, [:game_object_id, :alias])
-    |> validate_required([:game_object_id, :alias])
+    |> cast(params, [:alias, :oid])
+    |> validate_required([:alias, :oid])
   end
 end

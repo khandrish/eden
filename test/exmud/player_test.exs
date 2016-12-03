@@ -1,6 +1,5 @@
 defmodule Exmud.PlayerTest do
   alias Exmud.Player
-  alias Exmud.Repo
   require Logger
   use ExUnit.Case, async: true
 
@@ -14,7 +13,7 @@ defmodule Exmud.PlayerTest do
       assert Player.remove(player) == :ok
       assert Player.add(player) == :ok
       assert Player.exists?(player) == true
-      assert Player.add(player) == {:error, :key_in_use}
+      assert Player.add(player) == {:error, :player_already_exists}
     end
   end
 
@@ -42,23 +41,26 @@ defmodule Exmud.PlayerTest do
     setup [:add_player]
 
     test "data lifecycle", %{player: player} = _context do
-      assert Player.has_key?(player, "foo") == false
-      assert Player.put_key(player, "foo", :bar) == :ok
-      assert Player.has_key?(player, "foo") == true
-      assert Player.get_key(player, "foo") == :bar
-      assert Player.delete_key(player, "foo") == :bar
-      assert Player.has_key?(player, "foo") == false
-      assert Player.delete_key(player, "foobar") == {:ok, nil}
-      assert Player.put_key("invalid player", "foo", :bar) == {:error, :no_such_player}
-      assert Player.put_key(player, :invalid_key, :bar) == {:error, [key: {"is invalid", [type: :string]}]}
-      assert Player.has_key?("invalid player", "foo") == false
-      assert Player.delete_key("invalid player", "foobar") == {:ok, nil}
+      assert Player.has_attribute?(player, "foo") == {:ok, false}
+      assert Player.has_attribute?("invalid player", "foo") == {:error, :no_such_player}
+      assert Player.add_attribute(player, "foo", :bar) == :ok
+      assert Player.add_attribute("invalid player", "foo", :bar) == {:error, :no_such_player}
+      assert Player.remove_attribute("invalid player", "foo") == {:error, :no_such_player}
+      assert Player.has_attribute?(player, "foo") == {:ok, true}
+      assert Player.get_attribute(player, "foo") == {:ok, :bar}
+      assert Player.get_attribute("invalid player", "foo") == {:error, :no_such_player}
+      assert Player.remove_attribute(player, "foo") == :ok
+      assert Player.has_attribute?(player, "foo") == {:ok, false}
+      assert Player.remove_attribute(player, "foobar") == :ok
+      assert Player.add_attribute("invalid player", "foo", :bar) == {:error, :no_such_player}
+      assert Player.add_attribute(player, :invalid_attribute, :bar) == {:error, [name: {"is invalid", [type: :string]}]}
+      assert Player.has_attribute?("invalid player", "foo") == {:error, :no_such_player}
     end
   end
 
   defp add_player(_context) do
-    key = UUID.uuid4()
-    :ok = Player.add(key)
-    %{player: key}
+    attribute = UUID.uuid4()
+    :ok = Player.add(attribute)
+    %{player: attribute}
   end
 end

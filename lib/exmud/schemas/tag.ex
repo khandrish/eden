@@ -4,12 +4,12 @@ defmodule Exmud.Schema.Tag do
   
   schema "tag" do
     field :tag, :string
-    belongs_to :game_object, Exmud.Schema.GameObject
+    belongs_to :game_object, Exmud.Schema.GameObject, foreign_key: :oid
   end
   
   def changeset(tag, params \\ %{}) do
     tag
-    |> cast(params, [:game_object_id, :tag])
-    |> validate_required([:game_object_id, :tag])
+    |> cast(params, [:oid, :tag])
+    |> validate_required([:oid, :tag])
   end
 end

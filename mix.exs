@@ -32,6 +32,7 @@ defmodule Exmud.Mixfile do
      {:fsm, "~> 0.2.0"},
      {:gproc, "~> 0.6.1"},
      {:inch_ex, ">= 0.0.0", only: :docs},
+     {:named_args, "~> 0.1.0"},
      {:pipe, "~> 0.0.2"},
      {:postgrex, "~> 0.12.0"},
      {:timex, "~> 3.0"},

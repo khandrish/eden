@@ -5,12 +5,12 @@ defmodule Exmud.Schema.GameObject do
   schema "game_object" do
     field :key, :string
     field :date_created, Ecto.DateTime
-    has_one :location, Exmud.Schema.GameObject
-    has_one :home, Exmud.Schema.GameObject
-    has_many :aliases, Exmud.Schema.Alias
-    has_many :locks, Exmud.Schema.Lock
-    has_many :tags, Exmud.Schema.Tag
-    has_many :attributes, Exmud.Schema.GameObjectAttribute
+    has_many :location, Exmud.Schema.Location, foreign_key: :oid
+    has_many :home, Exmud.Schema.Home, foreign_key: :oid
+    has_many :aliases, Exmud.Schema.Alias, foreign_key: :oid
+    has_many :locks, Exmud.Schema.Lock, foreign_key: :oid
+    has_many :tags, Exmud.Schema.Tag, foreign_key: :oid
+    has_many :attributes, Exmud.Schema.Attribute, foreign_key: :oid
   end
   
   def changeset(object, params \\ %{}) do

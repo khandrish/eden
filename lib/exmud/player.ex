@@ -6,14 +6,18 @@ defmodule Exmud.Player do
   Exmud to decide.
   """
 
+  alias Exmud.GameObject
   alias Exmud.PlayerSessionSup
   alias Exmud.Registry
   alias Exmud.Repo
+  alias Exmud.Schema.GameObject, as: GO
   alias Exmud.Schema.Player, as: P
   alias Exmud.Schema.PlayerData, as: PD
   import Ecto.Query
   require Logger
   use GenServer
+  
+  @player_tag "__PLAYER__"
 
 
   #
@@ -24,10 +28,13 @@ defmodule Exmud.Player do
   # player management
 
   def add(key) do
-    case Repo.insert(P.changeset(%P{}, %{key: key})) do
-      {:ok, _} -> :ok
-      {:error, changeset} ->
-        {:error, elem(Keyword.get(changeset.errors, :key), 0)}
+    case exists?(key) do
+      true -> {:error, :player_already_exists}
+      false ->
+        with {:ok, oid} <- GameObject.new(key),
+             :ok <- GameObject.add_tag(oid, @player_tag),
+             :ok <- GameObject.add_alias(oid, key),
+          do: :ok
     end
   end
 
@@ -38,104 +45,62 @@ defmodule Exmud.Player do
   def remove(key) do
     case find(key) do
       nil -> :ok
-      player ->
-        case Repo.delete(player) do
-          {:ok, _} -> :ok
-          result -> result
-        end
+      oid -> GameObject.delete(oid)
     end
   end
 
   # player data management
 
-  def delete_key(player, key) do
-    Repo.one(
-      from data in PD,
-      inner_join: player in assoc(data, :player), on: data.player_id == player.id,
-      where: data.key == ^key,
-      where: player.key == ^player,
-      select: data
-    )
-    |> case do
-      nil -> {:ok, nil}
-      data ->
-        case Repo.delete(data) do
-          {:ok, data} -> :erlang.binary_to_term(data.value)
-          result -> result
-        end
-    end
+  def get_attribute(key, name) do
+    f = &GameObject.get_attribute/2
+    passthrough(f, [find(key), name])
   end
-
-  def get_key(player, key) do
-    Repo.one(
-      from player in P,
-      inner_join: data in assoc(player, :player_data), on: data.player_id == player.id,
-      where: data.key == ^key,
-      where: player.key == ^player,
-      select: data.value
-    )
-    |> case do
-      nil -> nil
-      result -> :erlang.binary_to_term(result)
-    end
+  
+  def has_attribute?(key, name) do
+    f = &GameObject.has_attribute?/2
+    passthrough(f, [find(key), name])
   end
-
-  def has_key?(player, key) do
-    Repo.one(
-      from player in P,
-      inner_join: data in assoc(player, :player_data), on: data.player_id == player.id,
-      where: data.key == ^key,
-      where: player.key == ^player,
-      select: player.id
-    ) != nil
+  
+  def add_attribute(key, name, data) do
+    f = &GameObject.add_attribute/3
+    passthrough(f, [find(key), name, data])
   end
-
-  def put_key(player, key, value) do
-    find(player)
-    |> case do
-      nil -> {:error, :no_such_player}
-      player ->
-        id = player.id
-        value = :erlang.term_to_binary(value)
-        changeset = PD.changeset(%PD{}, %{player_id: id, key: key, value: value})
-        case Repo.insert(changeset) do
-          {:ok, _} -> :ok
-          {:error, changeset} ->
-            {:error, changeset.errors}
-        end
-    end
+  
+  def remove_attribute(key, name) do
+    f = &GameObject.remove_attribute/2
+    passthrough(f, [find(key), name])
   end
 
   # player session management
 
-  def has_active_session?(player) do
-    Registry.name_registered?(player)
+  def has_active_session?(key) do
+    Registry.name_registered?(key)
   end
   
-  def send_output(player, output) do
-    Registry.whereis_name(player)
+  def send_output(key, output) do
+    Registry.whereis_name(key)
     |> GenServer.call({:send_output, output})
   end
 
-  def start_session(player, args \\ %{}) do
-    if exists?(player) === true do
-      {:ok, _pid} = Supervisor.start_child(PlayerSessionSup, [player, args])
+  def start_session(key, args \\ %{}) do
+    if exists?(key) === true do
+      {:ok, _pid} = Supervisor.start_child(PlayerSessionSup, [key, args])
       :ok
     else
       {:error, :no_such_player}
     end
   end
 
-  def stop_session(player, args \\ %{}) do
-    case Registry.whereis_name(player) do
+  def stop_session(key, args \\ %{}) do
+    case Registry.whereis_name(key) do
       nil -> {:error, :no_session_active}
       process -> GenServer.call(process, {:stop, args})
     end
   end
 
-  def stream_session_output(player, handler_fun) do
-    case Registry.whereis_name(player) do
-      nil -> {player, {:error, :no_such_player}}
+  def stream_session_output(key, handler_fun) do
+    case Registry.whereis_name(key) do
+      nil -> {key, {:error, :no_such_player}}
       process -> GenServer.call(process, {:stream_output, handler_fun})
     end
   end
@@ -162,9 +127,17 @@ defmodule Exmud.Player do
   #
   # Private Functions
   #
-
+  
 
   defp find(key) do
-    Repo.get_by(P, key: key)
+    case GameObject.list(keys: key, tags: @player_tag) do
+      [] -> nil
+      objects -> hd(objects).id
+    end
+  end
+  
+  defp passthrough(_, [nil|_]), do: {:error, :no_such_player}
+  defp passthrough(function, args) do
+     apply(function, args)
   end
 end
