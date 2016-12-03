@@ -1,7 +1,7 @@
 defmodule Exmud.SystemTest do
   alias Exmud.Repo
   alias Exmud.System
-  use ExUnit.Case
+  use ExUnit.Case # Can't be async otherwise it won't load the test system
   doctest Exmud.System
 
   describe "system tests: " do
