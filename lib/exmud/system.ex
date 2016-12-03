@@ -104,7 +104,6 @@ defmodule Exmud.System do
   #
   
 
-  alias Exmud.Db
   alias Exmud.Registry
   alias Exmud.Repo
   alias Exmud.Schema.System, as: S

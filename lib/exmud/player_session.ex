@@ -25,7 +25,7 @@ defmodule Exmud.PlayerSession do
     {:ok, %{name: name, event_manager: pid}}
   end
 
-  def handle_call({:stream_output, handler_fun}, {process, _}, %{event_manager: pid} = state) do
+  def handle_call({:stream_output, handler_fun}, _from, %{event_manager: pid} = state) do
     {:reply, GenEvent.add_handler(pid, PlayerSessionOutputHandler, handler_fun), state}
   end
 

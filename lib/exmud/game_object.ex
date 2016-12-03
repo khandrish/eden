@@ -1,21 +1,22 @@
 defmodule Exmud.GameObject do
   alias Exmud.Repo
   alias Exmud.Schema.Alias
-  alias Exmud.Schema.GameObject, as: GO
   alias Exmud.Schema.Attribute
+  alias Exmud.Schema.GameObject, as: GO
+  alias Exmud.Schema.Home
+  alias Exmud.Schema.Location
   alias Exmud.Schema.Tag
   import Ecto.Query
-  import Exmud.Utils
   use NamedArgs
   
   
-  def access(accessor, type) do
+  def access(_accessor, _type) do
   
   end
   
   @default_move_args %{quiet: false}
-  def move(traversing_object, traversed_object, args \\ @default_move_args) do
-    args = normalize_args(@default_move_args, args)
+  def move(_traversing_object, _traversed_object, args \\ @default_move_args) do
+    normalize_args(@default_move_args, args)
     # if Hook.call_hook(traversing_object, "before_move", [traversing_object, args]) do
     #   if Hook.call_hook(traversing_object, "before_traverse", [traversing_object, traversed_object, args]) do
     #     if args.quiet != true do
@@ -56,7 +57,7 @@ defmodule Exmud.GameObject do
   
   def add_attribute(oid, name, data) do
     case Repo.insert(Attribute.changeset(%Attribute{}, %{name: name, data: :erlang.term_to_binary(data), oid: oid})) do
-      {:ok, object} -> :ok
+      {:ok, _object} -> :ok
       {:error, changeset} ->
         {:error, changeset.errors}
     end
@@ -94,10 +95,11 @@ defmodule Exmud.GameObject do
     end
   end
   
-  def list(options) do
+  def list(options) when is_list(options) do
     list(:and, options)
   end
   
+  def list(type, options \\ [aliases: [], attributes: [], homes: [], keys: [], locations: [], tags: []])
   def list(:and, aliases: aliases) do
     aliases = List.wrap(aliases)
     required_count = length(aliases)
@@ -176,7 +178,7 @@ defmodule Exmud.GameObject do
   
 
   # TODO: Find a hell of a lot better way to do this
-  def list(type, options \\ [aliases: [], attributes: [], homes: [], keys: [], locations: [], tags: []]) do
+  def list(type, options) do
     aliases = List.wrap(options[:aliases])
     aliases_required_count = length(aliases)
     attributes = List.wrap(options[:attributes])
@@ -184,7 +186,6 @@ defmodule Exmud.GameObject do
     homes = List.wrap(options[:homes])
     homes_required_count = length(homes)
     keys = List.wrap(options[:keys])
-    keys_required_count = length(keys)
     locations = List.wrap(options[:locations])
     locations_required_count = length(locations)
     tags = List.wrap(options[:tags])
@@ -285,7 +286,7 @@ defmodule Exmud.GameObject do
   
   def add_alias(oid, alias) do
     case Repo.insert(Alias.changeset(%Alias{}, %{date_created: Ecto.DateTime.utc(), oid: oid, alias: alias})) do
-      {:ok, object} -> :ok
+      {:ok, _object} -> :ok
       {:error, changeset} ->
         {:error, changeset.errors}
     end
@@ -311,7 +312,7 @@ defmodule Exmud.GameObject do
   
   def add_tag(oid, tag) do
     case Repo.insert(Tag.changeset(%Tag{}, %{date_created: Ecto.DateTime.utc(), oid: oid, tag: tag})) do
-      {:ok, object} -> :ok
+      {:ok, _object} -> :ok
       {:error, changeset} ->
         {:error, changeset.errors}
     end

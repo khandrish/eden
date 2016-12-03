@@ -9,11 +9,6 @@ defmodule Exmud.Player do
   alias Exmud.GameObject
   alias Exmud.PlayerSessionSup
   alias Exmud.Registry
-  alias Exmud.Repo
-  alias Exmud.Schema.GameObject, as: GO
-  alias Exmud.Schema.Player, as: P
-  alias Exmud.Schema.PlayerData, as: PD
-  import Ecto.Query
   require Logger
   use GenServer
   
