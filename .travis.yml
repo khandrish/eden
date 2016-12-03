@@ -7,6 +7,7 @@ services:
   - postgresql
 before_script:
   - psql -c 'create database exmud_test_repo;' -U postgres
+  - mix ecto.migrate
 after_script:
   - mix deps.get --only docs
   - MIX_ENV=docs mix inch.report
