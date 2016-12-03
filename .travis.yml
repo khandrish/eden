@@ -3,6 +3,10 @@ elixir:
   - 1.3.3
 otp_release:
   - 19.0
+services:
+  - postgresql
+before_script:
+  - psql -c 'create database exmud_test_repo;' -U postgres
 after_script:
   - mix deps.get --only docs
   - MIX_ENV=docs mix inch.report
