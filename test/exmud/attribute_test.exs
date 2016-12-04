@@ -7,9 +7,7 @@ defmodule Exmud.AttributeTest do
   describe "attribute tests: " do
     setup [:create_new_game_object]
 
-    test "valid cases", %{oid: oid} = _context do
-      assert Attribute.has?(oid, "foo") == {:ok, false}
-      assert Attribute.get(oid, "foo") == {:error, :no_such_attribute}
+    test "livecycle", %{oid: oid} = _context do
       assert Attribute.add(oid, "foo", "bar") == :ok
       assert Attribute.get(oid, "foo") == {:ok, "bar"}
       assert Attribute.has?(oid, "foo") == {:ok, true}
@@ -18,7 +16,6 @@ defmodule Exmud.AttributeTest do
       assert Attribute.has?(oid, "foo") == {:ok, false}
     end
 
-    @tag wip: true
     test "invalid cases", %{oid: oid} = _context do
       assert Attribute.get(oid, "foo") == {:error, :no_such_attribute}
       assert Attribute.add("invalid id", :invalid_name, "bar") ==

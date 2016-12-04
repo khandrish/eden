@@ -8,7 +8,7 @@ defmodule Exmud.TagTest do
     setup [:create_new_game_object]
 
     @tag wip: true
-    test "tag tests", %{oid: oid} = _context do
+    test "lifecycle", %{oid: oid} = _context do
       assert Tag.has?(oid, "foo") == {:ok, false}
       assert Tag.has?(oid, "foo", "bar") == {:ok, false}
       assert Tag.add(oid, "foo") == :ok
@@ -18,6 +18,15 @@ defmodule Exmud.TagTest do
       assert Tag.remove(oid, "foo") == :ok
       assert Tag.has?(oid, "foo") == {:ok, false}
       assert Tag.has?(oid, "foo", "bar") == {:ok, true}
+    end
+    
+    test "invalid cases", %{oid: oid} = _context do
+      assert Tag.add("invalid id", :invalid_tag, "bar") ==
+        {:error,
+          [oid: {"is invalid", [type: :id]},
+           tag: {"is invalid", [type: :string]}]}
+      assert Tag.has?(0, "foo") == {:error, :no_such_game_object}
+      assert Tag.remove(0, "foo") == {:error, :no_such_tag}
     end
   end
 
