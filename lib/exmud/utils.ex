@@ -12,5 +12,12 @@ defmodule Exmud.Utils do
   
   def deserialize(term), do: :erlang.binary_to_term(term)
   def serialize(term), do: :erlang.term_to_binary(term)
+  
+  def normalize_noreturn_result({:ok, _object}), do: :ok
+  def normalize_noreturn_result({:error, changeset}), do: {:error, changeset.errors}
+  
+  def normalize_return_result({:ok, _object}), do: :ok
+  def normalize_return_result({:error, changeset}), do: {:error, changeset.errors}
+  
 
 end

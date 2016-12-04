@@ -2,9 +2,12 @@ defmodule Exmud.GameObject do
   alias Exmud.Repo
   alias Exmud.Schema.Alias
   alias Exmud.Schema.Attribute
+  alias Exmud.Schema.Callback
+  alias Exmud.Schema.CommandSet
   alias Exmud.Schema.GameObject, as: GO
-  alias Exmud.Schema.Home
-  alias Exmud.Schema.Location
+  alias Exmud.Schema.Lock
+  alias Exmud.Schema.Relationship
+  alias Exmud.Schema.Script
   alias Exmud.Schema.Tag
   import Ecto.Query
   use NamedArgs
@@ -36,44 +39,6 @@ defmodule Exmud.GameObject do
   
   end
   
-  # Attribute management
-  
-  def get_attribute(oid, name) do
-    Repo.one(
-      from attribute in Attribute,
-        where: attribute.name == ^name,
-        where: attribute.oid == ^oid,
-        select: attribute.data
-    )
-    |> case do
-      nil -> {:error, :no_such_attribute}
-      result -> {:ok, :erlang.binary_to_term(result)}
-    end
-  end
-  
-  def has_attribute?(oid, name) do
-    {:ok, find_attribute(oid, name) != nil}
-  end
-  
-  def add_attribute(oid, name, data) do
-    case Repo.insert(Attribute.changeset(%Attribute{}, %{name: name, data: :erlang.term_to_binary(data), oid: oid})) do
-      {:ok, _object} -> :ok
-      {:error, changeset} ->
-        {:error, changeset.errors}
-    end
-  end
-  
-  def remove_attribute(oid, name) do
-    case find_attribute(oid, name) do
-      nil -> :ok
-      attribute ->
-        case Repo.delete(attribute) do
-          {:ok, _} -> :ok
-          result -> result
-        end
-    end
-  end
-  
   # Game Object management
   
   def new(key) do
@@ -95,11 +60,13 @@ defmodule Exmud.GameObject do
     end
   end
   
+  # TODO: Revisit the whole list concept before finishing work on it
   def list(options) when is_list(options) do
     list(:and, options)
   end
   
-  def list(type, options \\ [aliases: [], attributes: [], homes: [], keys: [], locations: [], tags: []])
+  def list(type, options \\ [attributes: [], callbacks: [], command_sets: [], keys: [], locks: [], relationships: [], scripts: [], tags: []])
+  
   def list(:and, aliases: aliases) do
     aliases = List.wrap(aliases)
     required_count = length(aliases)
@@ -113,26 +80,6 @@ defmodule Exmud.GameObject do
     )
   end
   
-  def list(:or, aliases: aliases) do
-    aliases = List.wrap(aliases)
-    
-    Repo.all(
-      from alias in Alias,
-        where: alias.alias in ^aliases,
-        select: alias.oid
-    )
-  end
-  
-  def list(_type, homes: homes) do
-    homes = List.wrap(homes)
-    
-    Repo.all(
-      from home in Home,
-        where: home.id in ^homes,
-        select: home.id
-    )
-  end
-  
   def list(_type, keys: keys) do
     keys = List.wrap(keys)
     
@@ -140,16 +87,6 @@ defmodule Exmud.GameObject do
       from object in GO,
         where: object.key in ^keys,
         select: object.id
-    )
-  end
-  
-  def list(_type, locations: locations) do
-    locations = List.wrap(locations)
-    
-    Repo.all(
-      from location in Location,
-        where: location.id in ^locations,
-        select: location.id
     )
   end
   
@@ -282,87 +219,10 @@ defmodule Exmud.GameObject do
     Repo.all(query)
   end
   
-  # Alias management
-  
-  def add_alias(oid, alias) do
-    case Repo.insert(Alias.changeset(%Alias{}, %{date_created: Ecto.DateTime.utc(), oid: oid, alias: alias})) do
-      {:ok, _object} -> :ok
-      {:error, changeset} ->
-        {:error, changeset.errors}
-    end
-  end
-  
-  def has_alias?(oid, alias) do
-    find_alias(oid, alias) != nil
-  end
-  
-  def remove_alias(oid, alias) do
-    find_alias(oid, alias)
-    |> case do
-      nil -> :ok
-      object ->
-        case Repo.delete(object) do
-          {:ok, _} -> :ok
-          result -> result
-        end
-    end
-  end
-  
-  # Tag management
-  
-  def add_tag(oid, tag) do
-    case Repo.insert(Tag.changeset(%Tag{}, %{date_created: Ecto.DateTime.utc(), oid: oid, tag: tag})) do
-      {:ok, _object} -> :ok
-      {:error, changeset} ->
-        {:error, changeset.errors}
-    end
-  end
-  
-  def has_tag?(oid, tag) do
-    find_tag(oid, tag) != nil
-  end
-  
-  def remove_tag(oid, tag) do
-    find_tag(oid, tag)
-    |> case do
-      nil -> :ok
-      object ->
-        case Repo.delete(object) do
-          {:ok, _} -> :ok
-          result -> result
-        end
-    end
-  end
-  
   
   #
   # Private functions
   #
-  
-  
-  defp find_alias(oid, alias) do
-    Repo.one(
-      from alias in Alias,
-      where: alias.alias == ^alias,
-      where: alias.oid == ^oid
-    )
-  end
-  
-  defp find_attribute(oid, name) do
-    Repo.one(
-      from attribute in Attribute,
-      where: attribute.name == ^name,
-      where: attribute.oid == ^oid
-    )
-  end
-  
-  defp find_tag(oid, tag) do
-    Repo.one(
-      from tag in Tag,
-      where: tag.tag == ^tag,
-      where: tag.oid == ^oid
-    )
-  end
   
   defp normalize_args(default, args) do
     Map.merge(default, args)

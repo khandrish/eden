@@ -6,13 +6,17 @@ defmodule Exmud.Player do
   Exmud to decide.
   """
 
+  alias Exmud.Attribute
   alias Exmud.GameObject
   alias Exmud.PlayerSessionSup
   alias Exmud.Registry
+  alias Exmud.Tag
   require Logger
   use GenServer
   
+  @alias_category "__ALIAS__"
   @player_tag "__PLAYER__"
+  @tag_category "__SYSTEM_TAG__"
 
 
   #
@@ -27,8 +31,9 @@ defmodule Exmud.Player do
       true -> {:error, :player_already_exists}
       false ->
         with {:ok, oid} <- GameObject.new(key),
-             :ok <- GameObject.add_tag(oid, @player_tag),
-             :ok <- GameObject.add_alias(oid, key),
+             :ok <- Tag.add(oid, @player_tag, @tag_category),
+             :ok <- Tag.add(oid, key, @alias_category),
+             # TODO: Add command sets for a player
           do: :ok
     end
   end
@@ -45,25 +50,25 @@ defmodule Exmud.Player do
   end
 
   # player data management
+  
+  def add_attribute(key, name, data) do
+    passthrough(&Attribute.add/3, [find(key), name, data])
+  end
 
   def get_attribute(key, name) do
-    f = &GameObject.get_attribute/2
-    passthrough(f, [find(key), name])
+    passthrough(&Attribute.get/2, [find(key), name])
   end
   
   def has_attribute?(key, name) do
-    f = &GameObject.has_attribute?/2
-    passthrough(f, [find(key), name])
-  end
-  
-  def add_attribute(key, name, data) do
-    f = &GameObject.add_attribute/3
-    passthrough(f, [find(key), name, data])
+    passthrough(&Attribute.has?/2, [find(key), name])
   end
   
   def remove_attribute(key, name) do
-    f = &GameObject.remove_attribute/2
-    passthrough(f, [find(key), name])
+    passthrough(&Attribute.remove/2, [find(key), name])
+  end
+  
+  def update_attribute(key, name, data) do
+    passthrough(&Attribute.update/3, [find(key), name, data])
   end
 
   # player session management
