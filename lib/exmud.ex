@@ -6,6 +6,7 @@ defmodule Exmud do
 
     children = [
       worker(Exmud.Repo, []),
+      worker(Exmud.Registry, []),
       supervisor(Task.Supervisor, [[name: Exmud.TaskSupervisor]]),
       supervisor(Exmud.PlayerSessionSup, []),
       supervisor(Exmud.SystemSup, [])

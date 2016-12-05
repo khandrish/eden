@@ -7,7 +7,6 @@ defmodule Exmud.TagTest do
   describe "tag tests: " do
     setup [:create_new_game_object]
 
-    @tag wip: true
     test "lifecycle", %{oid: oid} = _context do
       assert Tag.has?(oid, "foo") == {:ok, false}
       assert Tag.has?(oid, "foo", "bar") == {:ok, false}

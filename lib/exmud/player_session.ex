@@ -20,7 +20,7 @@ defmodule Exmud.PlayerSession do
 
 
   def init({name, _args}) do
-    true = Registry.register_name(name)
+    :ok = Registry.register_key(name, self())
     {:ok, pid} = GenEvent.start_link([])
     {:ok, %{name: name, event_manager: pid}}
   end
@@ -39,6 +39,6 @@ defmodule Exmud.PlayerSession do
   end
 
   def terminate(_reason, %{name: name} = _state) do
-    Registry.unregister_name(name)
+    Registry.unregister_key(name)
   end
 end

@@ -24,7 +24,7 @@ defmodule Exmud.SystemRunner do
 
 
   def init({name, callback_module, args}) do
-    if Registry.register_name(name) == true do
+    if Registry.register_key(name, self()) == :ok do
       Repo.one(
         from system in S,
         where: system.key == ^name,
@@ -70,7 +70,7 @@ defmodule Exmud.SystemRunner do
 
   def handle_call({:stop, args}, _from, %{callback_module: callback_module, system: system, state: state} = _data) do
     new_state = callback_module.stop(args, state)
-    :ok = Registry.unregister_name(Changeset.get_field(system, :key))
+    :ok = Registry.unregister_key(Changeset.get_field(system, :key))
     serialized_state = :erlang.term_to_binary(new_state)
     
     Changeset.put_change(system, :state, serialized_state)

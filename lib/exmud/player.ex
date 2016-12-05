@@ -74,12 +74,14 @@ defmodule Exmud.Player do
   # player session management
 
   def has_active_session?(key) do
-    Registry.name_registered?(key)
+    Registry.key_registered?(key)
   end
   
   def send_output(key, output) do
-    Registry.whereis_name(key)
-    |> GenServer.call({:send_output, output})
+    case Registry.read_key(key) do
+      {:ok, pid} ->  GenServer.call(pid, {:send_output, output})
+      {:error, :no_such_key} -> {:error, :no_such_player}
+    end
   end
 
   def start_session(key, args \\ %{}) do
@@ -92,16 +94,16 @@ defmodule Exmud.Player do
   end
 
   def stop_session(key, args \\ %{}) do
-    case Registry.whereis_name(key) do
-      nil -> {:error, :no_session_active}
-      process -> GenServer.call(process, {:stop, args})
+    case Registry.read_key(key) do
+      {:error, :no_such_key} -> {:error, :no_session_active}
+      {:ok, process} -> GenServer.call(process, {:stop, args})
     end
   end
 
   def stream_session_output(key, handler_fun) do
-    case Registry.whereis_name(key) do
-      nil -> {key, {:error, :no_such_player}}
-      process -> GenServer.call(process, {:stream_output, handler_fun})
+    case Registry.read_key(key) do
+      {:error, :no_such_key} -> {key, {:error, :no_such_player}}
+      {:ok, process} -> GenServer.call(process, {:stream_output, handler_fun})
     end
   end
 

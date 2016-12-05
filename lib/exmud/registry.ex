@@ -4,27 +4,53 @@ defmodule Exmud.Registry do
   concise given this applications use cases. Also makes creating pluggable
   registry logic easy in the future.
   """
-
-  def whereis_name(name) do
-    result = :global.trans({name, self()}, fn -> :global.whereis_name(name) end)
-    case result do
-      :undefined -> nil
-      pid -> pid
+  
+  use GenServer
+  
+  @registry_table :registry
+  
+  def read_key(key) do
+    case :ets.lookup(@registry_table, key) do
+      [] -> {:error, :no_such_key}
+      [{_key, value}] -> {:ok, value}
     end
   end
-
-  def name_registered?(name) do
-    case whereis_name(name) do
-      nil -> false
-      _ -> true
+  
+  def register_key(key, value) do
+    case :ets.insert_new(@registry_table, {key, value}) do
+      true -> :ok
+      false -> :error
     end
   end
-
-  def register_name(name) do
-    :yes == :global.trans({name, self()}, fn -> :global.register_name(name, self()) end)
+  
+  def unregister_key(key) do
+    true = :ets.delete(@registry_table, key)
+    :ok
   end
-
-  def unregister_name(name) do
-    :global.trans({name, self()}, fn -> :global.unregister_name(name) end)
+  
+  def key_registered?(key) do
+    :ets.member(@registry_table, key)
+  end
+  
+  
+  #
+  # Worker callback
+  #
+  
+  
+  @doc false
+  def start_link() do
+    GenServer.start_link(__MODULE__, [])
+  end
+  
+  
+  #
+  # GenServer Callbacks
+  #
+  
+  
+  def init(_) do
+    table = :ets.new(@registry_table, [:set, :named_table, :public])
+    {:ok, table}
   end
 end

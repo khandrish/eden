@@ -111,9 +111,9 @@ defmodule Exmud.System do
 
 
   def call(name, message) do
-    case Registry.whereis_name(name) do
-      nil -> {:error, :no_such_system}
-      pid ->
+    case Registry.read_key(name) do
+      {:error, :no_such_key} -> {:error, :no_such_system}
+      {:ok, pid} ->
         GenServer.call(pid, {:message, message})
     end
   end
@@ -121,9 +121,9 @@ defmodule Exmud.System do
   def cast(systems, message) when is_list(systems) do
     systems
     |> Enum.map(fn(system) ->
-      case Registry.whereis_name(system) do
-        nil -> {:error, :no_such_system}
-        pid ->
+      case Registry.read_key(system) do
+        {:error, :no_such_key} -> {:error, :no_such_system}
+        {:ok, pid} ->
           GenServer.cast(pid, {:message, message})
           :ok
       end
@@ -150,7 +150,8 @@ defmodule Exmud.System do
   end
 
   def running?(system) do
-    Registry.whereis_name(system) != nil
+    {result, _reply} = Registry.read_key(system)
+    result == :ok
   end
 
   def start(name, callback_module, args \\ %{}) do
@@ -161,10 +162,9 @@ defmodule Exmud.System do
   end
 
   def stop(name, args \\ %{}) do
-    case Registry.whereis_name(name) do
-      nil -> {:error, :no_such_system}
-      pid ->
-        GenServer.call(pid, {:stop, args})
+    case Registry.read_key(name) do
+      {:ok, pid} ->  GenServer.call(pid, {:stop, args})
+      {:error, :no_such_key} -> {:error, :no_such_system}
     end
   end
 end
