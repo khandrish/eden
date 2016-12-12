@@ -12,5 +12,6 @@ defmodule Exmud.Schema.Attribute do
     attribute
     |> cast(params, [:data, :name, :oid])
     |> validate_required([:data, :name, :oid])
+    |> foreign_key_constraint(:oid)
   end
 end

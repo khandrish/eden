@@ -5,15 +5,16 @@ defmodule Exmud.RegistryTest do
 
   describe "registry tests: " do
   
-    @tag wip: true
     test "lifecycle" do
-      assert Registry.key_registered?("foo") == false
-      assert Registry.read_key("foo") == {:error, :no_such_key}
-      assert Registry.register_key("foo", "bar") == :ok
-      assert Registry.key_registered?("foo") == true
-      assert Registry.read_key("foo") == {:ok, "bar"}
-      assert Registry.unregister_key("foo") == :ok
-      assert Registry.key_registered?("foo") == false
+      assert Registry.read_key("foo", "system") == {:error, :no_such_key}
+      assert Registry.key_registered?("foo", "system") == false
+      assert Registry.register_key("foo", "system", "bar") == :ok
+      assert Registry.register_key("foo", "systemsystem", "bar") == :ok
+      assert Registry.key_registered?("foo", "system") == true
+      assert Registry.read_key("foo", "system") == {:ok, "bar"}
+      assert Registry.unregister_key("foo", "system") == :ok
+      assert Registry.key_registered?("foo", "system") == false
+      assert Registry.key_registered?("foo", "systemsystem") == true
     end
   end
 end

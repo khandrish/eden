@@ -6,15 +6,16 @@ defmodule Exmud.SystemTest do
   describe "system tests: " do
     setup [:do_setup]
 
+
     test "lifecycle", %{callback_module: callback_module, name: name} = _context do
-      assert System.start(name, callback_module) == {:ok, name}
+      assert System.start(name, callback_module) == :ok
       assert System.start(name, callback_module) == {:error, :already_started} # Can't start two of the same name
       assert System.running?(name) == true
       assert System.call(name, "foo") == "foo"
       assert System.cast(name, "foo") == :ok
       assert System.stop(name) == :ok
       assert System.running?(name) == false
-      assert System.start(name, callback_module) == {:ok, name} # Start again just to make sure everything was shutdown/deregistered
+      assert System.start(name, callback_module) == :ok # Start again just to make sure everything was shutdown/deregistered
       assert System.stop(name) == :ok
       assert System.running?(name) == false
       assert System.purge(name) == {:ok, %{}}

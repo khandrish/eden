@@ -19,7 +19,7 @@ defmodule Exmud.TagTest do
       assert Tag.has?(oid, "foo", "bar") == {:ok, true}
     end
     
-    test "invalid cases", %{oid: oid} = _context do
+    test "invalid cases" do
       assert Tag.add("invalid id", :invalid_tag, "bar") ==
         {:error,
           [oid: {"is invalid", [type: :id]},

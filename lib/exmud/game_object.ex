@@ -67,19 +67,6 @@ defmodule Exmud.GameObject do
   
   def list(type, options \\ [attributes: [], callbacks: [], command_sets: [], keys: [], locks: [], relationships: [], scripts: [], tags: []])
   
-  def list(:and, aliases: aliases) do
-    aliases = List.wrap(aliases)
-    required_count = length(aliases)
-    
-    Repo.all(
-      from alias in Alias,
-        where: alias.alias in ^aliases,
-        group_by: alias.oid,
-        having: count(alias.oid) == ^required_count,
-        select: alias.oid
-    )
-  end
-  
   def list(_type, keys: keys) do
     keys = List.wrap(keys)
     

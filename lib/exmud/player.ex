@@ -15,6 +15,7 @@ defmodule Exmud.Player do
   use GenServer
   
   @alias_category "__ALIAS__"
+  @player_category "player"
   @player_tag "__PLAYER__"
   @tag_category "__SYSTEM_TAG__"
 
@@ -44,7 +45,7 @@ defmodule Exmud.Player do
 
   def remove(key) do
     case find(key) do
-      nil -> :ok
+      nil -> {:error, :no_such_player}
       oid -> GameObject.delete(oid)
     end
   end
@@ -74,11 +75,11 @@ defmodule Exmud.Player do
   # player session management
 
   def has_active_session?(key) do
-    Registry.key_registered?(key)
+    Registry.key_registered?(key, @player_category)
   end
   
   def send_output(key, output) do
-    case Registry.read_key(key) do
+    case Registry.read_key(key, @player_category) do
       {:ok, pid} ->  GenServer.call(pid, {:send_output, output})
       {:error, :no_such_key} -> {:error, :no_such_player}
     end
@@ -94,15 +95,15 @@ defmodule Exmud.Player do
   end
 
   def stop_session(key, args \\ %{}) do
-    case Registry.read_key(key) do
+    case Registry.read_key(key, @player_category) do
       {:error, :no_such_key} -> {:error, :no_session_active}
       {:ok, process} -> GenServer.call(process, {:stop, args})
     end
   end
 
   def stream_session_output(key, handler_fun) do
-    case Registry.read_key(key) do
-      {:error, :no_such_key} -> {key, {:error, :no_such_player}}
+    case Registry.read_key(key, @player_category) do
+      {:error, :no_such_key} -> {:error, :no_such_player}
       {:ok, process} -> GenServer.call(process, {:stream_output, handler_fun})
     end
   end

@@ -2,6 +2,8 @@ defmodule Exmud.PlayerSession do
   alias Exmud.PlayerSessionOutputHandler
   alias Exmud.Registry
   
+  @player_category "player"
+  
   
   #
   # Worker callback
@@ -19,10 +21,10 @@ defmodule Exmud.PlayerSession do
   #
 
 
-  def init({name, _args}) do
-    :ok = Registry.register_key(name, self())
+  def init({key, _args}) do
+    :ok = Registry.register_key(key, @player_category, self())
     {:ok, pid} = GenEvent.start_link([])
-    {:ok, %{name: name, event_manager: pid}}
+    {:ok, %{key: key, event_manager: pid}}
   end
 
   def handle_call({:stream_output, handler_fun}, _from, %{event_manager: pid} = state) do
@@ -38,7 +40,7 @@ defmodule Exmud.PlayerSession do
     {:stop, :normal, :ok, state}
   end
 
-  def terminate(_reason, %{name: name} = _state) do
-    Registry.unregister_key(name)
+  def terminate(_reason, %{key: key} = _state) do
+    Registry.unregister_key(key, @player_category)
   end
 end

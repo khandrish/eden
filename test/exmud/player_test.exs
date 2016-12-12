@@ -10,7 +10,7 @@ defmodule Exmud.PlayerTest do
       assert Player.exists?(player) == true
       assert Player.remove(player) == :ok
       assert Player.exists?(player) == false
-      assert Player.remove(player) == :ok
+      assert Player.remove(player) == {:error, :no_such_player}
       assert Player.add(player) == :ok
       assert Player.exists?(player) == true
       assert Player.add(player) == {:error, :player_already_exists}

@@ -108,37 +108,31 @@ defmodule Exmud.System do
   alias Exmud.Repo
   alias Exmud.Schema.System, as: S
   import Ecto.Query
+  
+  @system_category "system"
 
 
-  def call(name, message) do
-    case Registry.read_key(name) do
+  def call(key, message) do
+    case Registry.read_key(key, @system_category) do
       {:error, :no_such_key} -> {:error, :no_such_system}
       {:ok, pid} ->
         GenServer.call(pid, {:message, message})
     end
   end
 
-  def cast(systems, message) when is_list(systems) do
-    systems
-    |> Enum.map(fn(system) ->
-      case Registry.read_key(system) do
-        {:error, :no_such_key} -> {:error, :no_such_system}
-        {:ok, pid} ->
-          GenServer.cast(pid, {:message, message})
-          :ok
-      end
-    end)
-  end
-
   def cast(system, message) do
-    cast([system], message)
-    |> hd()
+    case Registry.read_key(system, @system_category) do
+      {:error, :no_such_key} -> {:error, :no_such_system}
+      {:ok, pid} ->
+        GenServer.cast(pid, {:message, message})
+        :ok
+    end
   end
 
-  def purge(name) do
+  def purge(key) do
     Repo.one(
       from system in S,
-      where: system.key == ^name,
+      where: system.key == ^key,
       select: system
     )
     |> case do
@@ -149,22 +143,38 @@ defmodule Exmud.System do
     end
   end
 
-  def running?(system) do
-    {result, _reply} = Registry.read_key(system)
+  def running?(key) do
+    {result, _reply} = Registry.read_key(key, @system_category)
     result == :ok
   end
 
-  def start(name, callback_module, args \\ %{}) do
-    case Supervisor.start_child(Exmud.SystemSup, [name, callback_module, args]) do
-      {:ok, _} -> {:ok, name}
-      {:error, {_, reason}} -> {:error, reason}
+  def start(key, callback_module, args \\ %{}) do
+    if running?(key) do
+      {:error, :already_started}
+    else
+      {:ok, _} = Supervisor.start_child(Exmud.SystemSup, [key, callback_module, args])
+      :ok
     end
   end
 
-  def stop(name, args \\ %{}) do
-    case Registry.read_key(name) do
+  def stop(key, args \\ %{}) do
+    case Registry.read_key(key, @system_category) do
       {:ok, pid} ->  GenServer.call(pid, {:stop, args})
       {:error, :no_such_key} -> {:error, :no_such_system}
+    end
+  end
+  
+  
+  #
+  # Internal Functions
+  #
+  
+  
+  def send_message(method, key, message) do
+    case Registry.read_key(key, @system_category) do
+      {:error, :no_such_key} -> {:error, :no_such_system}
+      {:ok, pid} ->
+        apply(GenServer, method, [pid, {:message, message}])
     end
   end
 end

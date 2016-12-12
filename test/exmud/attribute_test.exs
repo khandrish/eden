@@ -22,6 +22,7 @@ defmodule Exmud.AttributeTest do
         {:error,
           [name: {"is invalid", [type: :string]},
            oid: {"is invalid", [type: :id]}]}
+      assert Attribute.add(0, "foo", "bar") == {:error, [oid: {"does not exist", []}]}
       assert Attribute.has?(0, "foo") == {:error, :no_such_game_object}
       assert Attribute.remove(0, "foo") == {:error, :no_such_attribute}
       assert Attribute.get(0, "foo") == {:error, :no_such_game_object}

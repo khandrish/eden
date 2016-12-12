@@ -5,31 +5,34 @@ defmodule Exmud.Registry do
   registry logic easy in the future.
   """
   
+  require Logger
   use GenServer
-  
+
   @registry_table :registry
   
-  def read_key(key) do
-    case :ets.lookup(@registry_table, key) do
+  def read_key(key, category) do
+    Logger.debug("Reading key `#{key}` in category `#{category}`")
+    case :ets.lookup(@registry_table, {key, category}) do
+      [{_, data}] -> {:ok, data}
       [] -> {:error, :no_such_key}
-      [{_key, value}] -> {:ok, value}
     end
   end
-  
-  def register_key(key, value) do
-    case :ets.insert_new(@registry_table, {key, value}) do
-      true -> :ok
-      false -> :error
-    end
-  end
-  
-  def unregister_key(key) do
-    true = :ets.delete(@registry_table, key)
+
+  def register_key(key, category, value) do
+    Logger.debug("Registering key `#{key}` in category `#{category}`")
+    true = :ets.insert(@registry_table, {{key, category}, value})
     :ok
   end
   
-  def key_registered?(key) do
-    :ets.member(@registry_table, key)
+  def unregister_key(key, category) do
+    Logger.debug("Unregistering key `#{key}` in category `#{category}`")
+    true = :ets.delete(@registry_table, {key, category})
+    :ok
+  end
+  
+  def key_registered?(key, category) do
+    Logger.debug("Checking if key `#{key}` is registered in category `#{category}`")
+    :ets.member(@registry_table, {key, category})
   end
   
   
@@ -39,8 +42,8 @@ defmodule Exmud.Registry do
   
   
   @doc false
-  def start_link() do
-    GenServer.start_link(__MODULE__, [])
+  def start_link do
+    GenServer.start_link(__MODULE__, nil)
   end
   
   
@@ -51,6 +54,7 @@ defmodule Exmud.Registry do
   
   def init(_) do
     table = :ets.new(@registry_table, [:set, :named_table, :public])
+    Logger.info("Registry table created.")
     {:ok, table}
   end
 end

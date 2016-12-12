@@ -20,6 +20,8 @@ defmodule Exmud.Callback do
   import Ecto.Query
   import Exmud.Utils
   
+  @callback_category "callback"
+  
   
   #
   # API
@@ -33,19 +35,19 @@ defmodule Exmud.Callback do
   callback module must be registered with the engine via a unique key.
   """
   def register(key, callback_module) do
-    Registry.register_key({:callback, key}, callback_module)
+    Registry.register_key(key, @callback_category, callback_module)
   end
   
   def registered?(key) do
-    Registry.key_registered?({:callback, key})
+    Registry.key_registered?(key, @callback_category)
   end
   
   def which_module(key) do
-    Registry.read_key({:callback, key})
+    Registry.read_key(key, @callback_category)
   end
   
   def unregister(key) do
-    Registry.unregister_key({:callback, key})
+    Registry.unregister_key(key, @callback_category)
   end
   
   # Manipulation of callbacks on an object

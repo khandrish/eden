@@ -6,7 +6,10 @@ defmodule Exmud.SystemRunner do
   alias Exmud.Schema.System, as: S
   import Ecto.Query
   import Exmud.Utils
+  require Logger
   use GenServer
+  
+  @system_category "system"
   
   #
   # Worker Callback
@@ -23,19 +26,18 @@ defmodule Exmud.SystemRunner do
   #
 
 
-  def init({name, callback_module, args}) do
-    if Registry.register_key(name, self()) == :ok do
+  def init({key, callback_module, args}) do
+    if Registry.register_key(key, @system_category, self()) == :ok do
       Repo.one(
         from system in S,
-        where: system.key == ^name,
+        where: system.key == ^key,
         select: system
       )
       |> case do
         nil ->
           initial_state = callback_module.initialize(args)
           serialized_state = :erlang.term_to_binary(initial_state)
-          serialized_callback = :erlang.term_to_binary(callback_module)
-          S.changeset(%S{}, %{key: name, state: serialized_state, callback: serialized_callback})
+          S.changeset(%S{}, %{key: key, state: serialized_state})
           |> Repo.insert()
           |> case do
             {:ok, system} ->
@@ -53,10 +55,9 @@ defmodule Exmud.SystemRunner do
             |> Changeset.get_field(:state)
             |> :erlang.binary_to_term()
             
-          serialized_callback = :erlang.term_to_binary(callback_module)
           {state, timeout} = callback_module.start(args, initial_state) |> normalize_result()
           maybe_queue_run(timeout)
-          system = Changeset.put_change(system, :callback, serialized_callback)
+          Logger.info("System started with key `#{key}` and callback module `#{callback_module}`")
           {:ok, %{callback_module: callback_module, state: state, system: system}}
       end
     else
@@ -70,7 +71,7 @@ defmodule Exmud.SystemRunner do
 
   def handle_call({:stop, args}, _from, %{callback_module: callback_module, system: system, state: state} = _data) do
     new_state = callback_module.stop(args, state)
-    :ok = Registry.unregister_key(Changeset.get_field(system, :key))
+    :ok = Registry.unregister_key(Changeset.get_field(system, :key), @system_category)
     serialized_state = :erlang.term_to_binary(new_state)
     
     Changeset.put_change(system, :state, serialized_state)
