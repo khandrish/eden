@@ -36,9 +36,8 @@ defmodule Exmud.Callback do
   callback module must be registered with the engine via a unique key.
   """
   def register(key, callback_module) do
-    :ok = Registry.register_key(key, @callback_category, callback_module)
-    Logger.info("Callback has been registered for key `#{key}` with module `#{callback_module}`")
-    :ok
+    Logger.debug("Registering callback for key `#{key}` with module `#{callback_module}`")
+    Registry.register_key(key, @callback_category, callback_module)
   end
   
   def registered?(key) do
@@ -68,6 +67,7 @@ defmodule Exmud.Callback do
     |> case do
       {:error, errors} ->
         if Keyword.has_key?(errors, :oid) do
+          Logger.warn("Attempt to add callback onto non existing object `#{oid}` failed")
           {:error, :no_such_game_object}
         else
           {:error, errors}
@@ -82,9 +82,9 @@ defmodule Exmud.Callback do
       nil -> {:error, :no_such_game_object}
       object ->
         if length(object.callbacks) == 1 do
-           which_module(hd(object.callbacks).key)
+          which_module(hd(object.callbacks).key)
         else
-          {:ok, default}
+          which_module(default)
         end
     end
   end

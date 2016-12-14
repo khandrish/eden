@@ -22,7 +22,7 @@ defmodule Exmud.CallbackTest do
       assert Callback.has?(oid, "foo") == {:ok, false}
       assert Callback.add(oid, "foo", "foo") == :ok
       assert Callback.has?(oid, "foo") == {:ok, true}
-      assert Callback.get(oid, "foo", IO) == {:ok, EC}
+      assert Callback.get(oid, "foo", "foobar") == {:ok, EC}
       assert Callback.delete(oid, "foo") == :ok
       assert Callback.has?(oid, "foo") == {:ok, false}
     end
@@ -30,9 +30,10 @@ defmodule Exmud.CallbackTest do
     test "invalid cases", %{oid: oid} = _context do
       assert Callback.has?(0, "foo") == {:error, :no_such_game_object}
       assert Callback.add(0, "foo", "foo") == {:error, :no_such_game_object}
-      assert Callback.get(0, "foo", IO) == {:error, :no_such_game_object}
+      assert Callback.get(0, "foo", "foobar") == {:error, :no_such_game_object}
       assert Callback.delete(0, "foo") == {:error, :no_such_callback}
-      assert Callback.get(oid, "foo", IO) == {:ok, IO}
+      assert Callback.register("foobar", IO) == :ok
+      assert Callback.get(oid, "foo", "foobar") == {:ok, IO}
     end
   end
 
