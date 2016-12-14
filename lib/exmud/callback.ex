@@ -19,6 +19,7 @@ defmodule Exmud.Callback do
   alias Exmud.Schema.GameObject
   import Ecto.Query
   import Exmud.Utils
+  require Logger
   
   @callback_category "callback"
   
@@ -35,7 +36,9 @@ defmodule Exmud.Callback do
   callback module must be registered with the engine via a unique key.
   """
   def register(key, callback_module) do
-    Registry.register_key(key, @callback_category, callback_module)
+    :ok = Registry.register_key(key, @callback_category, callback_module)
+    Logger.info("Callback has been registered for key `#{key}` with module `#{callback_module}`")
+    :ok
   end
   
   def registered?(key) do
@@ -43,7 +46,13 @@ defmodule Exmud.Callback do
   end
   
   def which_module(key) do
-    Registry.read_key(key, @callback_category)
+    Logger.debug("Finding callback module for key `#{key}`")
+    case Registry.read_key(key, @callback_category) do
+      {:error, _} ->
+        Logger.warn("Attempt to find callback module for key `#{key}` failed")
+        {:error, :no_such_callback}
+      result -> result
+    end
   end
   
   def unregister(key) do
@@ -52,10 +61,32 @@ defmodule Exmud.Callback do
   
   # Manipulation of callbacks on an object
   
-  def put(oid, callback, key) do
+  def add(oid, callback, key) do
     args = %{callback: callback, key: key, oid: oid}
     Repo.insert(Callback.changeset(%Callback{}, args))
     |> normalize_noreturn_result()
+    |> case do
+      {:error, errors} ->
+        if Keyword.has_key?(errors, :oid) do
+          {:error, :no_such_game_object}
+        else
+          {:error, errors}
+        end
+      result ->
+        result
+    end
+  end
+  
+  def get(oid, callback, default) do
+    case Repo.one(find_callback_query(oid, callback)) do
+      nil -> {:error, :no_such_game_object}
+      object ->
+        if length(object.callbacks) == 1 do
+           which_module(hd(object.callbacks).key)
+        else
+          {:ok, default}
+        end
+    end
   end
   
   def has?(oid, callback) do

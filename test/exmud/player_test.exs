@@ -42,15 +42,18 @@ defmodule Exmud.PlayerTest do
 
     test "data lifecycle", %{player: player} = _context do
       assert Player.has_attribute?(player, "foo") == {:ok, false}
-      assert Player.has_attribute?("invalid player", "foo") == {:error, :no_such_player}
       assert Player.add_attribute(player, "foo", :bar) == :ok
-      assert Player.add_attribute("invalid player", "foo", :bar) == {:error, :no_such_player}
-      assert Player.remove_attribute("invalid player", "foo") == {:error, :no_such_player}
       assert Player.has_attribute?(player, "foo") == {:ok, true}
       assert Player.get_attribute(player, "foo") == {:ok, :bar}
-      assert Player.get_attribute("invalid player", "foo") == {:error, :no_such_player}
       assert Player.remove_attribute(player, "foo") == :ok
       assert Player.has_attribute?(player, "foo") == {:ok, false}
+    end
+    
+    test "invalid data tests", %{player: player} = _context do
+      assert Player.has_attribute?("invalid player", "foo") == {:error, :no_such_player}
+      assert Player.add_attribute("invalid player", "foo", :bar) == {:error, :no_such_player}
+      assert Player.remove_attribute("invalid player", "foo") == {:error, :no_such_player}
+      assert Player.get_attribute("invalid player", "foo") == {:error, :no_such_player}
       assert Player.remove_attribute(player, "foobar") == {:error, :no_such_attribute}
       assert Player.add_attribute("invalid player", "foo", :bar) == {:error, :no_such_player}
       assert Player.add_attribute(player, :invalid_attribute, :bar) == {:error, [name: {"is invalid", [type: :string]}]}

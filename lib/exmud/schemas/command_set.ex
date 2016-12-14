@@ -11,5 +11,6 @@ defmodule Exmud.Schema.CommandSet do
     tag
     |> cast(params, [:key, :oid])
     |> validate_required([:key, :oid])
+    |> foreign_key_constraint(:oid)
   end
 end

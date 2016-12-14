@@ -12,5 +12,6 @@ defmodule Exmud.Schema.Lock do
     tag
     |> cast(params, [:definition, :oid, :type])
     |> validate_required([:definition, :oid, :type])
+    |> foreign_key_constraint(:oid)
   end
 end

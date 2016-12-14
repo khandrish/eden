@@ -12,5 +12,6 @@ defmodule Exmud.Schema.Relationship do
     location
     |> cast(params, [:object, :relationship, :subject])
     |> validate_required([:object, :relationship, :subject])
+    |> foreign_key_constraint(:oid)
   end
 end

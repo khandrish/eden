@@ -7,7 +7,7 @@ defmodule Exmud.AttributeTest do
   describe "attribute tests: " do
     setup [:create_new_game_object]
 
-    test "livecycle", %{oid: oid} = _context do
+    test "lifecycle", %{oid: oid} = _context do
       assert Attribute.add(oid, "foo", "bar") == :ok
       assert Attribute.get(oid, "foo") == {:ok, "bar"}
       assert Attribute.has?(oid, "foo") == {:ok, true}

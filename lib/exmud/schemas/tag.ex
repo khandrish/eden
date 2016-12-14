@@ -12,5 +12,6 @@ defmodule Exmud.Schema.Tag do
     tag
     |> cast(params, [:category, :oid, :tag])
     |> validate_required([:category, :oid, :tag])
+    |> foreign_key_constraint(:oid)
   end
 end

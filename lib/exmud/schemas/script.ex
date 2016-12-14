@@ -12,5 +12,6 @@ defmodule Exmud.Schema.Script do
     script
     |> cast(params, [:state, :key, :oid])
     |> validate_required([:state, :key, :oid])
+    |> foreign_key_constraint(:oid)
   end
 end

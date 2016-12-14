@@ -12,5 +12,6 @@ defmodule Exmud.Schema.Callback do
     tag
     |> cast(params, [:callback, :key, :oid])
     |> validate_required([:callback, :key, :oid])
+    |> foreign_key_constraint(:oid)
   end
 end
