@@ -20,7 +20,6 @@ defmodule Exmud.Tag do
   
   def add(oid, tag, category \\ "__DEFAULT__") do
     args = %{category: category,
-             date_created: Ecto.DateTime.utc(),
              oid: oid,
              tag: tag}
     Repo.insert(Tag.changeset(%Tag{}, args))
