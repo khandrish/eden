@@ -19,7 +19,7 @@ defmodule Exmud.GameObject do
   
   @default_move_args %{quiet: false}
   def move(_traversing_object, _traversed_object, args \\ @default_move_args) do
-    normalize_args(@default_move_args, args)
+   # normalize_args(@default_move_args, args)
     # if Hook.call_hook(traversing_object, "before_move", [traversing_object, args]) do
     #   if Hook.call_hook(traversing_object, "before_traverse", [traversing_object, traversed_object, args]) do
     #     if args.quiet != true do
@@ -60,150 +60,14 @@ defmodule Exmud.GameObject do
     end
   end
   
-  # TODO: Revisit the whole list concept before finishing work on it
-  def list(options) when is_list(options) do
-    list(:and, options)
-  end
-  
-  def list(type, options \\ [attributes: [], callbacks: [], command_sets: [], keys: [], locks: [], relationships: [], scripts: [], tags: []])
-  
-  def list(_type, keys: keys) do
-    keys = List.wrap(keys)
-    
-    Repo.all(
+  def list(options \\ [attributes: [], callbacks: [], command_sets: [], keys: [], locks: [], relationships: [], scripts: [], tags: []]) do
+    query =
       from object in GO,
-        where: object.key in ^keys,
+        #group_by: object.id,
         select: object.id
-    )
-  end
-  
-  def list(:and, tags: tags) do
-    tags = List.wrap(tags)
-    required_count = length(tags)
     
-    Repo.all(
-      from tag in Tag,
-        where: tag.tag in ^tags,
-        group_by: tag.oid,
-        having: count(tag.oid) == ^required_count,
-        select: tag.oid
-    )
-  end
-  
-  def list(:or, tags: tags) do
-    tags = List.wrap(tags)
-    
-    Repo.all(
-      from tag in Tag,
-        where: tag.tag in ^tags,
-        select: tag.oid
-    )
-  end
-  
-
-  # TODO: Find a hell of a lot better way to do this
-  def list(type, options) do
-    aliases = List.wrap(options[:aliases])
-    aliases_required_count = length(aliases)
-    attributes = List.wrap(options[:attributes])
-    attributes_required_count = length(attributes)
-    homes = List.wrap(options[:homes])
-    homes_required_count = length(homes)
-    keys = List.wrap(options[:keys])
-    locations = List.wrap(options[:locations])
-    locations_required_count = length(locations)
-    tags = List.wrap(options[:tags])
-    tags_required_count = length(tags)
-    
-    query =
-      from object in GO,
-        group_by: object.id,
-        select: object
-        
-    query =
-      case {query, type, length(aliases) > 0} do
-        {query, :and, true} ->
-          from object in query,
-            inner_join: alias in assoc(object, :aliases), on: object.id == alias.oid,
-            where: alias.alias in ^aliases,
-            group_by: alias.oid,
-            having: count(alias.oid) == ^aliases_required_count
-        {query, :or, true} ->
-          from object in query,
-            inner_join: alias in assoc(object, :aliases), on: object.id == alias.oid,
-            where: alias.alias in ^aliases
-        {query, _, _} -> query
-      end
-      
-    query =
-      case {query, type, length(attributes) > 0} do
-        {query, :and, true} ->
-          from object in query,
-            inner_join: attribute in assoc(object, :attributes), on: object.id == attribute.oid,
-            where: attribute.name in ^attributes,
-            group_by: attribute.oid,
-            having: count(attribute.oid) == ^attributes_required_count
-        {query, :or, true} ->
-          from object in query,
-            inner_join: attribute in assoc(object, :attributes), on: object.id == attribute.oid,
-            where: attribute.name in ^attributes
-        {query, _, _} -> query
-      end
-      
-    query =
-      case {query, type, length(homes) > 0} do
-        {query, :and, true} ->
-          from object in query,
-            inner_join: home in assoc(object, :homes), on: object.id == home.oid,
-            where: home.homes in ^homes,
-            group_by: home.oid,
-            having: count(home.oid) == ^homes_required_count
-        {query, :or, true} ->
-          from object in query,
-            inner_join: home in assoc(object, :homes), on: object.id == home.oid,
-            where: home.homes in ^homes
-        {query, _, _} -> query
-      end
-      
-    query =
-      case {query, type, length(keys) > 0} do
-        {query, _, true} ->
-          from object in query,
-            where: object.key in ^keys
-        {query, _, _} -> query
-      end
-      
-    query =
-      case {query, type, length(locations) > 0} do
-        {query, :and, true} ->
-          from object in query,
-            inner_join: location in assoc(object, :locations), on: object.id == location.oid,
-            where: location.location in ^locations,
-            group_by: location.oid,
-            having: count(location.oid) == ^locations_required_count
-        {query, :or, true} ->
-          from object in query,
-            inner_join: location in assoc(object, :locations), on: object.id == location.oid,
-            where: location.location in ^locations
-        {query, _, _} -> query
-      end
-      
-    query =
-      case {query, type, length(tags) > 0} do
-        {query, :and, true} ->
-          from object in query,
-            inner_join: tag in assoc(object, :tags), on: object.id == tag.oid,
-            where: tag.tag in ^tags,
-            group_by: tag.oid,
-            having: count(tag.oid) == ^tags_required_count
-        {query, :or, true} ->
-          from object in query,
-            inner_join: tag in assoc(object, :tags), on: object.id == tag.oid,
-            where: tag.tag in ^tags
-        {query, _, _} -> query
-      end
-      
-    Repo.all(query)
+    build_query(query, options)
+    |> Repo.all()
   end
   
   
@@ -211,7 +75,104 @@ defmodule Exmud.GameObject do
   # Private functions
   #
   
-  defp normalize_args(default, args) do
-    Map.merge(default, args)
+  
+  defp build_query(query, []), do: query
+  
+  defp build_query(query, [{:or_attributes, [{:or, attribute} | _] = attributes} | options]) do
+    build_attribute_query(query, {{:attributes, attributes}, options})
+  end
+  
+  defp build_query(query, [{:or_attributes, [attribute | attributes]} | options]) do
+    build_attribute_query(query, {{:attributes, [{:or, attribute} | attributes]}, options})
+  end
+  
+  # Attributes query builder
+  
+  defp build_attribute_query(query, {[], options}) do
+    build_query(query, options)
+  end
+  
+  defp build_attribute_query(query, {{:attributes, attributes}, options}) do
+    query = 
+      from object in query,
+        inner_join: attribute in assoc(object, :attributes), on: object.id == attribute.oid
+    
+    build_attribute_query(query, {attributes, options})
+  end
+  
+  defp build_attribute_query(query, {[{:or, attribute} | attributes], options}) do
+    query = 
+      from object in query,
+        or_where: attribute.key == ^attribute
+    
+    build_attribute_query(query, {attributes, options})
+  end
+  
+  defp build_attribute_query(query, {[attribute | attributes], options}) do
+    query = 
+      from object in query,
+        where: attribute.key == ^attribute
+    
+    build_attribute_query(query, {attributes, options})
+  end
+  
+  # Callbacks query builder
+  
+  defp build_callback_query(query, {[], options}) do
+    build_query(query, options)
+  end
+  
+  defp build_callback_query(query, {{:callbacks, callbacks}, options}) do
+    query = 
+      from object in query,
+        inner_join: callback in assoc(object, :callbacks), on: object.id == callback.oid
+    
+    build_callback_query(query, {callbacks, options})
+  end
+  
+  defp build_callback_query(query, {[{:or, callback} | callbacks], options}) do
+    query = 
+      from object in query,
+        or_where: callback.key == ^callback
+    
+    build_callback_query(query, {callbacks, options})
+  end
+  
+  defp build_callback_query(query, {[callback | callbacks], options}) do
+    query = 
+      from object in query,
+        where: callback.key == ^callback
+    
+    build_callback_query(query, {callbacks, options})
+  end
+  
+  # Tags query builder
+  
+  defp build_tag_query(query, {[], options}) do
+    build_query(query, options)
+  end
+  
+  defp build_tag_query(query, {{:tags, tags}, options}) do
+    query = 
+      from object in query,
+        inner_join: tag in assoc(object, :tags), on: object.id == tag.oid
+    
+    build_tag_query(query, {tags, options})
+  end
+  
+  defp build_tag_query(query, {[{:or, {key, category}} | tags], options}) do
+    query = 
+      from object in query,
+        or_where: [key: ^key, category: ^category]
+    
+    build_tag_query(query, {tags, options})
+  end
+  
+  defp build_tag_query(query, {[{key, category} | tags], options}) do
+    query = 
+      from object in query,
+        where: [key: ^key, category: ^category]
+    
+    build_tag_query(query, {tags, options})
   end
 end

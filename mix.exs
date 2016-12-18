@@ -26,7 +26,7 @@ defmodule Exmud.Mixfile do
   defp deps do
     [{:apex, "~> 0.5.2"},
      {:calendar, "~> 0.16.0"},
-     {:ecto, "~> 2.0.0"},
+     {:ecto, "~> 2.1.0"},
      {:execs, "~> 0.4.0"},
      {:ex_doc, ">= 0.14.3", only: :dev},
      {:fsm, "~> 0.2.0"},
@@ -34,7 +34,7 @@ defmodule Exmud.Mixfile do
      {:inch_ex, ">= 0.0.0", only: :docs},
      {:named_args, "~> 0.1.0"},
      {:pipe, "~> 0.0.2"},
-     {:postgrex, "~> 0.12.0"},
+     {:postgrex, "~> 0.13.0"},
      {:timex, "~> 3.0"},
      {:uuid, "~> 1.1"}]
   end

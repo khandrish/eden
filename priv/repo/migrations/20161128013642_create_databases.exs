@@ -19,11 +19,11 @@ defmodule Exmud.Repo.Migrations.CreateDatabases do
     
     create table(:attribute) do
       add :oid, references(:game_object, [on_delete: :delete_all])
-      add :name, :string
+      add :key, :string
       add :data, :binary
     end
-    create index(:attribute, [:name])
-    create unique_index(:attribute, [:oid, :name])
+    create index(:attribute, [:key])
+    create unique_index(:attribute, [:oid, :key])
     
     create table(:callback) do
       add :oid, references(:game_object, [on_delete: :delete_all])

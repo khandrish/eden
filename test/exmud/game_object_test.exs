@@ -10,6 +10,11 @@ defmodule Exmud.GameObjectTest do
       assert GameObject.delete(oid) == :ok
       assert GameObject.delete(0) == :ok
     end
+
+    @tag wip: true
+    test "list tests", %{oid: oid} = _context do
+      assert GameObject.list(attributes: ["foo"]) == :ok
+    end
   end
 
   defp create_new_game_object(_context) do
