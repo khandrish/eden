@@ -16,7 +16,6 @@ defmodule Exmud.Callback do
   alias Exmud.Registry
   alias Exmud.Repo
   alias Exmud.Schema.Callback
-  alias Exmud.Schema.GameObject
   import Ecto.Query
   import Exmud.Utils
   require Logger
@@ -87,7 +86,7 @@ defmodule Exmud.Callback do
   def has?(oid, callback) do
     case Repo.one(callback_query(oid, callback)) do
       nil -> {:ok, false}
-      object -> {:ok, true}
+      _object -> {:ok, true}
     end
   end
   

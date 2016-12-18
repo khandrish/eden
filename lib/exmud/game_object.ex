@@ -1,14 +1,6 @@
 defmodule Exmud.GameObject do
   alias Exmud.Repo
-  alias Exmud.Schema.Alias
-  alias Exmud.Schema.Attribute
-  alias Exmud.Schema.Callback
-  alias Exmud.Schema.CommandSet
   alias Exmud.Schema.GameObject, as: GO
-  alias Exmud.Schema.Lock
-  alias Exmud.Schema.Relationship
-  alias Exmud.Schema.Script
-  alias Exmud.Schema.Tag
   import Ecto.Query
   use NamedArgs
   
@@ -18,7 +10,7 @@ defmodule Exmud.GameObject do
   end
   
   @default_move_args %{quiet: false}
-  def move(_traversing_object, _traversed_object, args \\ @default_move_args) do
+  def move(_traversing_object, _traversed_object, _args \\ @default_move_args) do
     # normalize_args(@default_move_args, args)
     # if Hook.call_hook(traversing_object, "before_move", [traversing_object, args]) do
     #   if Hook.call_hook(traversing_object, "before_traverse", [traversing_object, traversed_object, args]) do
@@ -83,7 +75,7 @@ defmodule Exmud.GameObject do
   defp list(query, []), do: query
   defp list(query, [{_, []} | options]), do: list(query, options)
   
-  defp list(query, [{:or_attributes, [{:or, attribute} | _] = attributes} | options]) do
+  defp list(query, [{:or_attributes, [{:or, _} | _] = attributes} | options]) do
     list(query, [{:attributes, attributes} | options])
   end
   
@@ -111,7 +103,7 @@ defmodule Exmud.GameObject do
   
   # Callbacks
   
-  defp list(query, [{:or_callbacks, [{:or, callback} | _] = callbacks} | options]) do
+  defp list(query, [{:or_callbacks, [{:or, _} | _] = callbacks} | options]) do
     list(query, [{:callbacks, callbacks} | options])
   end
   
@@ -139,7 +131,7 @@ defmodule Exmud.GameObject do
   
   # Keys
   
-  defp list(query, [{:or_keys, [{:or, key} | _] = keys} | options]) do
+  defp list(query, [{:or_keys, [{:or, _} | _] = keys} | options]) do
     list(query, [{:keys, keys} | options])
   end
   
@@ -165,7 +157,7 @@ defmodule Exmud.GameObject do
   
   # Tags
   
-  defp list(query, [{:or_tags, [{:or, tag} | _] = tags} | options]) do
+  defp list(query, [{:or_tags, [{:or, _} | _] = tags} | options]) do
     list(query, [{:tags, tags} | options])
   end
   

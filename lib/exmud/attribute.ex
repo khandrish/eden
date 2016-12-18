@@ -12,7 +12,6 @@ defmodule Exmud.Attribute do
   
   alias Exmud.Repo
   alias Exmud.Schema.Attribute
-  alias Exmud.Schema.GameObject
   import Ecto.Query
   import Exmud.Utils
   
@@ -39,7 +38,7 @@ defmodule Exmud.Attribute do
   def has?(oid, key) do
     case Repo.one(attribute_query(oid, key)) do
       nil -> {:ok, false}
-      object -> {:ok, true}
+      _object -> {:ok, true}
     end
   end
   

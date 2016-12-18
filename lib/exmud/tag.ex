@@ -29,7 +29,7 @@ defmodule Exmud.Tag do
   def has?(oid, key, category \\ "__DEFAULT__") do
     case Repo.one(find_tag_query(oid, key, category)) do
       nil -> {:ok, false}
-      object -> {:ok, true}
+      _object -> {:ok, true}
     end
   end
   
