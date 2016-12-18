@@ -20,16 +20,16 @@ defmodule Exmud.Attribute do
   # API
   #
   
-  def add(oid, name, data) do
+  def add(oid, key, data) do
     args = %{data: :erlang.term_to_binary(data),
-             name: name,
+             key: key,
              oid: oid}
     Repo.insert(Attribute.changeset(%Attribute{}, args))
     |> normalize_noreturn_result()
   end
   
-  def get(oid, name) do
-    case Repo.one(find_attribute_query(oid, name)) do
+  def get(oid, key) do
+    case Repo.one(find_attribute_query(oid, key)) do
       nil -> {:error, :no_such_game_object}
       object ->
         if length(object.attributes) == 1 do
@@ -40,18 +40,22 @@ defmodule Exmud.Attribute do
     end
   end
   
-  def has?(oid, name) do
-    case Repo.one(find_attribute_query(oid, name)) do
+  def has?(oid, key) do
+    case Repo.one(find_attribute_query(oid, key)) do
       nil -> {:error, :no_such_game_object}
       object -> {:ok, length(object.attributes) == 1}
     end
   end
   
-  def remove(oid, name) do
+  def list(attributes) do
+    Exmud.GameObject.list(attributes: List.wrap(attributes))
+  end
+  
+  def remove(oid, key) do
     Repo.delete_all(
       from attribute in Attribute,
         where: attribute.oid == ^oid,
-        where: attribute.name == ^name
+        where: attribute.key == ^key
     )
     |> case do
       {1, _} -> :ok
@@ -60,9 +64,9 @@ defmodule Exmud.Attribute do
     end
   end
   
-  def update(oid, name, data) do
+  def update(oid, key, data) do
     args = %{data: data,
-             name: name,
+             key: key,
              oid: oid}
     Repo.update(Attribute.changeset(%Attribute{}, args))
     |> normalize_noreturn_result()
@@ -74,10 +78,10 @@ defmodule Exmud.Attribute do
   #
   
   
-  defp find_attribute_query(oid, name) do
+  defp find_attribute_query(oid, key) do
     from object in GameObject,
       left_join: attribute in assoc(object, :attributes), on: object.id == attribute.oid,
-      where: object.id == ^oid or attribute.name == ^name and object.id == ^oid,
+      where: object.id == ^oid or attribute.key == ^key and object.id == ^oid,
       preload: [attributes: attribute]
   end
 end

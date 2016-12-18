@@ -1,4 +1,5 @@
 defmodule Exmud.PlayerTest do
+  alias Ecto.UUID
   alias Exmud.Player
   require Logger
   use ExUnit.Case, async: true
@@ -6,6 +7,7 @@ defmodule Exmud.PlayerTest do
   describe "player lifecycle tests: " do
     setup [:add_player]
 
+    @tag player: true
     test "player lifecycle", %{player: player} = _context do
       assert Player.exists?(player) == true
       assert Player.remove(player) == :ok
@@ -20,6 +22,7 @@ defmodule Exmud.PlayerTest do
   describe "player session tests: " do
     setup [:add_player]
 
+    @tag player: true
     test "session lifecycle", %{player: player} = _context do
       assert Player.has_active_session?(player) == false
       assert Player.stop_session(player) == {:error, :no_session_active}
@@ -40,6 +43,7 @@ defmodule Exmud.PlayerTest do
   describe "player data tests: " do
     setup [:add_player]
 
+    @tag player: true
     test "data lifecycle", %{player: player} = _context do
       assert Player.has_attribute?(player, "foo") == {:ok, false}
       assert Player.add_attribute(player, "foo", :bar) == :ok
@@ -49,6 +53,7 @@ defmodule Exmud.PlayerTest do
       assert Player.has_attribute?(player, "foo") == {:ok, false}
     end
     
+    @tag player: true
     test "invalid data tests", %{player: player} = _context do
       assert Player.has_attribute?("invalid player", "foo") == {:error, :no_such_player}
       assert Player.add_attribute("invalid player", "foo", :bar) == {:error, :no_such_player}
@@ -56,13 +61,13 @@ defmodule Exmud.PlayerTest do
       assert Player.get_attribute("invalid player", "foo") == {:error, :no_such_player}
       assert Player.remove_attribute(player, "foobar") == {:error, :no_such_attribute}
       assert Player.add_attribute("invalid player", "foo", :bar) == {:error, :no_such_player}
-      assert Player.add_attribute(player, :invalid_attribute, :bar) == {:error, [name: {"is invalid", [type: :string]}]}
+      assert Player.add_attribute(player, :invalid_attribute, :bar) == {:error, [key: {"is invalid", [type: :string, validation: :cast]}]}
       assert Player.has_attribute?("invalid player", "foo") == {:error, :no_such_player}
     end
   end
 
   defp add_player(_context) do
-    attribute = UUID.uuid4()
+    attribute = UUID.generate()
     :ok = Player.add(attribute)
     %{player: attribute}
   end
