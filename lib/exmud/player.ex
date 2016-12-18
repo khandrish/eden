@@ -133,14 +133,14 @@ defmodule Exmud.Player do
   
 
   defp find(key) do
-    case GameObject.list(keys: key, tags: @player_tag) do
+    case GameObject.list(keys: [key], tags: [{@player_tag, @tag_category}]) do
       [] -> nil
-      objects -> hd(objects).id
+      objects -> hd(objects)
     end
   end
   
   defp passthrough(_, [nil|_]), do: {:error, :no_such_player}
   defp passthrough(function, args) do
-     apply(function, args)
+    apply(function, args)
   end
 end

@@ -19,7 +19,7 @@ defmodule Exmud.GameObject do
   
   @default_move_args %{quiet: false}
   def move(_traversing_object, _traversed_object, args \\ @default_move_args) do
-   # normalize_args(@default_move_args, args)
+    # normalize_args(@default_move_args, args)
     # if Hook.call_hook(traversing_object, "before_move", [traversing_object, args]) do
     #   if Hook.call_hook(traversing_object, "before_traverse", [traversing_object, traversed_object, args]) do
     #     if args.quiet != true do
@@ -42,7 +42,7 @@ defmodule Exmud.GameObject do
   # Game Object management
   
   def new(key) do
-    case Repo.insert(GO.changeset(%GO{}, %{key: key, date_created: Ecto.DateTime.utc()})) do
+    case Repo.insert(GO.changeset(%GO{}, %{key: key, date_created: DateTime.utc_now()})) do
       {:ok, object} -> {:ok, object.id}
       {:error, changeset} ->
         {:error, changeset.errors}
@@ -60,13 +60,15 @@ defmodule Exmud.GameObject do
     end
   end
   
-  def list(options \\ [attributes: [], callbacks: [], command_sets: [], keys: [], locks: [], relationships: [], scripts: [], tags: []]) do
+  def list(options \\ [attributes: [], callbacks: [], command_sets: [], keys: [], locks: [], relationships: [], scripts: [], tags: []])
+  
+  def list(options) do
     query =
       from object in GO,
-        #group_by: object.id,
+        group_by: object.id,
         select: object.id
     
-    build_query(query, options)
+    list(query, options)
     |> Repo.all()
   end
   
@@ -76,103 +78,118 @@ defmodule Exmud.GameObject do
   #
   
   
-  defp build_query(query, []), do: query
+  # Attributes
   
-  defp build_query(query, [{:or_attributes, [{:or, attribute} | _] = attributes} | options]) do
-    build_attribute_query(query, {{:attributes, attributes}, options})
+  defp list(query, []), do: query
+  defp list(query, [{_, []} | options]), do: list(query, options)
+  
+  defp list(query, [{:or_attributes, [{:or, attribute} | _] = attributes} | options]) do
+    list(query, [{:attributes, attributes} | options])
   end
   
-  defp build_query(query, [{:or_attributes, [attribute | attributes]} | options]) do
-    build_attribute_query(query, {{:attributes, [{:or, attribute} | attributes]}, options})
+  defp list(query, [{:or_attributes, [attribute | attributes]} | options]) do
+    list(query, [{:attributes, [{:or, attribute} | attributes]} | options])
   end
   
-  # Attributes query builder
-  
-  defp build_attribute_query(query, {[], options}) do
-    build_query(query, options)
-  end
-  
-  defp build_attribute_query(query, {{:attributes, attributes}, options}) do
+  defp list(query, [{:attributes, [{:or, attribute} | attributes]} | options]) do
     query = 
       from object in query,
-        inner_join: attribute in assoc(object, :attributes), on: object.id == attribute.oid
-    
-    build_attribute_query(query, {attributes, options})
-  end
-  
-  defp build_attribute_query(query, {[{:or, attribute} | attributes], options}) do
-    query = 
-      from object in query,
+        inner_join: attribute in assoc(object, :attributes), on: object.id == attribute.oid,
         or_where: attribute.key == ^attribute
     
-    build_attribute_query(query, {attributes, options})
+    list(query, [{:attributes, attributes} | options])
   end
   
-  defp build_attribute_query(query, {[attribute | attributes], options}) do
+  defp list(query, [{:attributes, [attribute | attributes]} | options]) do
     query = 
       from object in query,
+        inner_join: attribute in assoc(object, :attributes), on: object.id == attribute.oid,
         where: attribute.key == ^attribute
     
-    build_attribute_query(query, {attributes, options})
+    list(query, [{:attributes, attributes} | options])
   end
   
-  # Callbacks query builder
+  # Callbacks
   
-  defp build_callback_query(query, {[], options}) do
-    build_query(query, options)
+  defp list(query, [{:or_callbacks, [{:or, callback} | _] = callbacks} | options]) do
+    list(query, [{:callbacks, callbacks} | options])
   end
   
-  defp build_callback_query(query, {{:callbacks, callbacks}, options}) do
+  defp list(query, [{:or_callbacks, [callback | callbacks]} | options]) do
+    list(query, [{:callbacks, [{:or, callback} | callbacks]} | options])
+  end
+  
+  defp list(query, [{:callbacks, [{:or, callback} | callbacks]} | options]) do
     query = 
       from object in query,
-        inner_join: callback in assoc(object, :callbacks), on: object.id == callback.oid
+        inner_join: callback in assoc(object, :callbacks), on: object.id == callback.oid,
+        or_where: callback.callback == ^callback
     
-    build_callback_query(query, {callbacks, options})
+    list(query, [{:callbacks, callbacks} | options])
   end
   
-  defp build_callback_query(query, {[{:or, callback} | callbacks], options}) do
+  defp list(query, [{:callbacks, [callback | callbacks]} | options]) do
     query = 
       from object in query,
-        or_where: callback.key == ^callback
+        inner_join: callback in assoc(object, :callbacks), on: object.id == callback.oid,
+        where: callback.callback == ^callback
     
-    build_callback_query(query, {callbacks, options})
+    list(query, [{:callbacks, callbacks} | options])
   end
   
-  defp build_callback_query(query, {[callback | callbacks], options}) do
+  # Keys
+  
+  defp list(query, [{:or_keys, [{:or, key} | _] = keys} | options]) do
+    list(query, [{:keys, keys} | options])
+  end
+  
+  defp list(query, [{:or_keys, [key | keys]} | options]) do
+    list(query, [{:keys, [{:or, key} | keys]} | options])
+  end
+  
+  defp list(query, [{:keys, [{:or, key} | keys]} | options]) do
     query = 
       from object in query,
-        where: callback.key == ^callback
+        or_where: object.key == ^key
     
-    build_callback_query(query, {callbacks, options})
+    list(query, [{:keys, keys} | options])
   end
   
-  # Tags query builder
-  
-  defp build_tag_query(query, {[], options}) do
-    build_query(query, options)
-  end
-  
-  defp build_tag_query(query, {{:tags, tags}, options}) do
+  defp list(query, [{:keys, [key | keys]} | options]) do
     query = 
       from object in query,
-        inner_join: tag in assoc(object, :tags), on: object.id == tag.oid
+        where: object.key == ^key
     
-    build_tag_query(query, {tags, options})
+    list(query, [{:keys, keys} | options])
   end
   
-  defp build_tag_query(query, {[{:or, {key, category}} | tags], options}) do
-    query = 
-      from object in query,
-        or_where: [key: ^key, category: ^category]
-    
-    build_tag_query(query, {tags, options})
+  # Tags
+  
+  defp list(query, [{:or_tags, [{:or, tag} | _] = tags} | options]) do
+    list(query, [{:tags, tags} | options])
   end
   
-  defp build_tag_query(query, {[{key, category} | tags], options}) do
+  defp list(query, [{:or_tags, [tag | tags]} | options]) do
+    list(query, [{:tags, [{:or, tag} | tags]} | options])
+  end
+  
+  defp list(query, [{:tags, [{:or, {key, category}} | tags]} | options]) do
     query = 
       from object in query,
-        where: [key: ^key, category: ^category]
+        inner_join: tag in assoc(object, :tags), on: object.id == tag.oid,
+        or_where: tag.key == ^key,
+        where: tag.category == ^category
     
-    build_tag_query(query, {tags, options})
+    list(query, [{:tags, tags} | options])
+  end
+  
+  defp list(query, [{:tags, [{key, category} | tags]} | options]) do
+    query = 
+      from object in query,
+        inner_join: tag in assoc(object, :tags), on: object.id == tag.oid,
+        where: tag.key == ^key,
+        where: tag.category == ^category
+    
+    list(query, [{:tags, tags} | options])
   end
 end

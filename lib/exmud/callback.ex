@@ -96,6 +96,10 @@ defmodule Exmud.Callback do
     end
   end
   
+  def list(callbacks) do
+    Exmud.GameObject.list(callbacks: List.wrap(callbacks))
+  end
+  
   def delete(oid, callback) do
     Repo.delete_all(
       from callback in Callback,

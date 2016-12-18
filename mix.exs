@@ -35,8 +35,7 @@ defmodule Exmud.Mixfile do
      {:named_args, "~> 0.1.0"},
      {:pipe, "~> 0.0.2"},
      {:postgrex, "~> 0.13.0"},
-     {:timex, "~> 3.0"},
-     {:uuid, "~> 1.1"}]
+     {:timex, "~> 3.0"}]
   end
 
   defp description do

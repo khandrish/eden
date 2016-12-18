@@ -18,32 +18,30 @@ defmodule Exmud.Tag do
   # API
   #
   
-  def add(oid, tag, category \\ "__DEFAULT__") do
+  def add(oid, key, category \\ "__DEFAULT__") do
     args = %{category: category,
              oid: oid,
-             tag: tag}
+             key: key}
     Repo.insert(Tag.changeset(%Tag{}, args))
     |> normalize_noreturn_result()
   end
   
-  def has?(oid, tag, category \\ "__DEFAULT__") do
-    case Repo.one(find_tag_query(oid, tag, category)) do
-      nil -> {:error, :no_such_game_object}
-      object ->
-        length =
-          object.tags
-          |> filter(category)
-          |> length()
-        filter(object.tags, category)
-        {:ok, length > 0}
+  def has?(oid, key, category \\ "__DEFAULT__") do
+    case Repo.one(find_tag_query(oid, key, category)) do
+      nil -> {:ok, false}
+      object -> {:ok, true}
     end
   end
   
-  def remove(oid, tag, category \\ "__DEFAULT__") do
+  def list(tags) do
+    Exmud.GameObject.list(tags: List.wrap(tags))
+  end
+  
+  def remove(oid, key, category \\ "__DEFAULT__") do
     Repo.delete_all(
       from tag in Tag,
         where: tag.oid == ^oid,
-        where: tag.tag == ^tag,
+        where: tag.key == ^key,
         where: tag.category == ^category
     )
     |> case do
@@ -57,27 +55,11 @@ defmodule Exmud.Tag do
   #
   # Private functions
   #
-
-  
-  defp filter([], _, results), do: results
-  
-  defp filter([tag|tags], category, results) do
-    if tag.category == category do
-      filter(tags, category, [tag|results])
-    else
-      filter(tags, category, results)
-    end
-  end
-  
-  defp filter(tags, category, results \\ []) do
-    filter(tags, category, results)
-  end
   
   
-  defp find_tag_query(oid, tag, category) do
+  defp find_tag_query(oid, key, category) do
     from object in GameObject,
       left_join: tag in assoc(object, :tags), on: object.id == tag.oid,
-      where: object.id == ^oid or tag.tag == ^tag and object.id == ^oid,
-      preload: [tags: tag]
+      where: tag.key == ^key and tag.category == ^category and object.id == ^oid
   end
 end

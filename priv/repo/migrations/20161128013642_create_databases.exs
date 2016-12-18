@@ -11,7 +11,7 @@ defmodule Exmud.Repo.Migrations.CreateDatabases do
     
     # Tables related to game objects
     create table(:game_object) do
-      add :date_created, :datetime
+      add :date_created, :timestamptz
       add :key, :string
     end
     create index(:game_object, [:key])
@@ -68,10 +68,10 @@ defmodule Exmud.Repo.Migrations.CreateDatabases do
     create table(:tag) do
       add :category, :string
       add :oid, references(:game_object, [on_delete: :delete_all])
-      add :tag, :string
-      add :type, :string
+      add :key, :string
     end
-    create index(:tag, [:tag]) 
-    create index(:tag, [:type])
+    create index(:tag, [:key]) 
+    create index(:tag, [:category])
+    create unique_index(:tag, [:oid, :key, :category])
   end
 end

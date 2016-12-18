@@ -47,6 +47,10 @@ defmodule Exmud.Attribute do
     end
   end
   
+  def list(attributes) do
+    Exmud.GameObject.list(attributes: List.wrap(attributes))
+  end
+  
   def remove(oid, key) do
     Repo.delete_all(
       from attribute in Attribute,
