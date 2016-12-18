@@ -133,7 +133,7 @@ defmodule Exmud.Player do
   
 
   defp find(key) do
-    case GameObject.list(keys: [key], tags: [{@player_tag, @tag_category}]) do
+    case GameObject.list(objects: [key], tags: [{@player_tag, @tag_category}]) do
       [] -> nil
       objects -> hd(objects)
     end

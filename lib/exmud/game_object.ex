@@ -52,7 +52,7 @@ defmodule Exmud.GameObject do
     end
   end
   
-  def list(options \\ [attributes: [], callbacks: [], command_sets: [], keys: [], locks: [], relationships: [], scripts: [], tags: []])
+  def list(options \\ [attributes: [], callbacks: [], command_sets: [], objects: [], locks: [], relationships: [], scripts: [], tags: []])
   
   def list(options) do
     query =
@@ -131,28 +131,28 @@ defmodule Exmud.GameObject do
   
   # Keys
   
-  defp list(query, [{:or_keys, [{:or, _} | _] = keys} | options]) do
-    list(query, [{:keys, keys} | options])
+  defp list(query, [{:or_objects, [{:or, _} | _] = keys} | options]) do
+    list(query, [{:objects, keys} | options])
   end
   
-  defp list(query, [{:or_keys, [key | keys]} | options]) do
-    list(query, [{:keys, [{:or, key} | keys]} | options])
+  defp list(query, [{:or_objects, [key | keys]} | options]) do
+    list(query, [{:objects, [{:or, key} | keys]} | options])
   end
   
-  defp list(query, [{:keys, [{:or, key} | keys]} | options]) do
+  defp list(query, [{:objects, [{:or, key} | keys]} | options]) do
     query = 
       from object in query,
         or_where: object.key == ^key
     
-    list(query, [{:keys, keys} | options])
+    list(query, [{:objects, keys} | options])
   end
   
-  defp list(query, [{:keys, [key | keys]} | options]) do
+  defp list(query, [{:objects, [key | keys]} | options]) do
     query = 
       from object in query,
         where: object.key == ^key
     
-    list(query, [{:keys, keys} | options])
+    list(query, [{:objects, keys} | options])
   end
   
   # Tags
