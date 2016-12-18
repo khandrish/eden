@@ -78,21 +78,16 @@ defmodule Exmud.Callback do
   end
   
   def get(oid, callback, default) do
-    case Repo.one(find_callback_query(oid, callback)) do
-      nil -> {:error, :no_such_game_object}
-      object ->
-        if length(object.callbacks) == 1 do
-          which_module(hd(object.callbacks).key)
-        else
-          which_module(default)
-        end
+    case Repo.one(callback_query(oid, callback)) do
+      nil -> which_module(default)
+      callback -> which_module(callback.key)
     end
   end
   
   def has?(oid, callback) do
-    case Repo.one(find_callback_query(oid, callback)) do
-      nil -> {:error, :no_such_game_object}
-      object -> {:ok, length(object.callbacks) == 1}
+    case Repo.one(callback_query(oid, callback)) do
+      nil -> {:ok, false}
+      object -> {:ok, true}
     end
   end
   
@@ -101,11 +96,7 @@ defmodule Exmud.Callback do
   end
   
   def delete(oid, callback) do
-    Repo.delete_all(
-      from callback in Callback,
-        where: callback.oid == ^oid,
-        where: callback.callback == ^callback
-    )
+    Repo.delete_all(callback_query(oid, callback))
     |> case do
       {1, _} -> :ok
       {0, _} -> {:error, :no_such_callback}
@@ -119,10 +110,9 @@ defmodule Exmud.Callback do
   #
   
   
-  defp find_callback_query(oid, callback) do
-    from object in GameObject,
-      left_join: callback in assoc(object, :callbacks), on: object.id == callback.oid,
-      where: object.id == ^oid or callback.callback == ^callback and object.id == ^oid,
-      preload: [callbacks: callback]
+  defp callback_query(oid, callback) do
+    from callback in Callback,
+      where: callback.callback == ^callback,
+      where: callback.oid == ^oid
   end
 end

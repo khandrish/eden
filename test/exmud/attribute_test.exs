@@ -11,10 +11,13 @@ defmodule Exmud.AttributeTest do
     @tag attribute: true
     test "lifecycle", %{oid: oid} = _context do
       attribute = UUID.generate()
+      attribute2 = UUID.generate()
       assert Attribute.add(oid, attribute, "bar") == :ok
+      assert Attribute.add(oid, attribute2, "bar") == :ok
       assert Attribute.get(oid, attribute) == {:ok, "bar"}
       assert Attribute.has?(oid, attribute) == {:ok, true}
       assert Attribute.list(attribute) == [oid]
+      assert Attribute.list([attribute, attribute2]) == [oid]
       assert Attribute.remove(oid, attribute) == :ok
       assert Attribute.get(oid, attribute) == {:error, :no_such_attribute}
       assert Attribute.has?(oid, attribute) == {:ok, false}
@@ -28,9 +31,9 @@ defmodule Exmud.AttributeTest do
           [key: {"is invalid", [type: :string, validation: :cast]},
            oid: {"is invalid", [type: :id, validation: :cast]}]}
       assert Attribute.add(0, "foo", "bar") == {:error, [oid: {"does not exist", []}]}
-      assert Attribute.has?(0, "foo") == {:error, :no_such_game_object}
+      assert Attribute.has?(0, "foo") == {:ok, false}
       assert Attribute.remove(0, "foo") == {:error, :no_such_attribute}
-      assert Attribute.get(0, "foo") == {:error, :no_such_game_object}
+      assert Attribute.get(0, "foo") == {:error, :no_such_attribute}
     end
   end
 

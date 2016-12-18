@@ -29,21 +29,17 @@ defmodule Exmud.Attribute do
   end
   
   def get(oid, key) do
-    case Repo.one(find_attribute_query(oid, key)) do
-      nil -> {:error, :no_such_game_object}
+    case Repo.one(attribute_query(oid, key)) do
+      nil -> {:error, :no_such_attribute}
       object ->
-        if length(object.attributes) == 1 do
-          {:ok, :erlang.binary_to_term(hd(object.attributes).data)}
-        else
-          {:error, :no_such_attribute}
-        end
+        {:ok, :erlang.binary_to_term(object.data)}
     end
   end
   
   def has?(oid, key) do
-    case Repo.one(find_attribute_query(oid, key)) do
-      nil -> {:error, :no_such_game_object}
-      object -> {:ok, length(object.attributes) == 1}
+    case Repo.one(attribute_query(oid, key)) do
+      nil -> {:ok, false}
+      object -> {:ok, true}
     end
   end
   
@@ -52,11 +48,7 @@ defmodule Exmud.Attribute do
   end
   
   def remove(oid, key) do
-    Repo.delete_all(
-      from attribute in Attribute,
-        where: attribute.oid == ^oid,
-        where: attribute.key == ^key
-    )
+    Repo.delete_all(attribute_query(oid, key))
     |> case do
       {1, _} -> :ok
       {0, _} -> {:error, :no_such_attribute}
@@ -78,10 +70,9 @@ defmodule Exmud.Attribute do
   #
   
   
-  defp find_attribute_query(oid, key) do
-    from object in GameObject,
-      left_join: attribute in assoc(object, :attributes), on: object.id == attribute.oid,
-      where: object.id == ^oid or attribute.key == ^key and object.id == ^oid,
-      preload: [attributes: attribute]
+  defp attribute_query(oid, key) do
+    from attribute in Attribute,
+      where: attribute.oid == ^oid,
+      where: attribute.key == ^key
   end
 end

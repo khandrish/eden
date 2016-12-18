@@ -10,13 +10,13 @@ defmodule Exmud.GameObjectTest do
   describe "game object tests: " do
     setup [:create_new_game_object]
 
-    @tag game_objects: true
+    @tag game_object: true
     test "delete tests", %{oid: oid} = _context do
       assert GameObject.delete(oid) == :ok
       assert GameObject.delete(0) == :ok
     end
 
-    @tag game_objects: true
+    @tag game_object: true
     test "attribute list tests", %{oid: oid} = _context do
       attribute1 = UUID.generate()
       attribute2 = UUID.generate()
@@ -29,7 +29,7 @@ defmodule Exmud.GameObjectTest do
     end
 
 
-    @tag game_objects: true
+    @tag game_object: true
     test "callback list tests", %{oid: oid} = _context do
       callback1 = UUID.generate()
       callback2 = UUID.generate()
@@ -42,7 +42,7 @@ defmodule Exmud.GameObjectTest do
     end
 
 
-    @tag game_objects: true
+    @tag game_object: true
     test "tag list tests", %{oid: oid} = _context do
       tag1 = UUID.generate()
       tag2 = UUID.generate()
@@ -56,7 +56,7 @@ defmodule Exmud.GameObjectTest do
     end
 
 
-    @tag game_objects: true
+    @tag game_object: true
     test "complex list tests", %{oid: oid} = _context do
       attribute1 = UUID.generate()
       attribute2 = UUID.generate()
