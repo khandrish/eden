@@ -20,7 +20,7 @@ defmodule Exmud.CallbackTest do
       assert Callback.registered?(callback) == false
     end
     
-    @tag callbacs: true
+    @tag callback: true
     test "lifecycle", %{oid: oid} = _context do
       assert Callback.register("foo", EC) == :ok
       assert Callback.has?(oid, "foo") == {:ok, false}

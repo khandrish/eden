@@ -43,6 +43,19 @@ defmodule Exmud.GameObjectTest do
 
 
     @tag game_object: true
+    test "command_set list tests", %{oid: oid} = _context do
+      command_set1 = UUID.generate()
+      command_set2 = UUID.generate()
+      assert GameObject.list(command_sets: [command_set1]) == []
+      assert CommandSet.add(oid, command_set1) == :ok
+      assert CommandSet.add(oid, command_set2) == :ok
+      assert GameObject.list(command_sets: [command_set1]) == [oid]
+      assert GameObject.list(command_sets: [command_set2]) == [oid]
+      assert GameObject.list(command_sets: [command_set1, command_set2]) == [oid]
+    end
+
+
+    @tag game_object: true
     test "tag list tests", %{oid: oid} = _context do
       tag1 = UUID.generate()
       tag2 = UUID.generate()

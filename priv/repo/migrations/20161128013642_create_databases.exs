@@ -38,7 +38,8 @@ defmodule Exmud.Repo.Migrations.CreateDatabases do
       add :oid, references(:game_object, [on_delete: :delete_all])
       add :key, :string
     end
-    create unique_index(:command_set, [:key])
+    create index(:callback, [:oid])
+    create unique_index(:command_set, [:key, :oid])
     
     create table(:lock) do
       add :oid, references(:game_object, [on_delete: :delete_all])

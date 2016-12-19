@@ -129,6 +129,38 @@ defmodule Exmud.GameObject do
     list(query, [{:callbacks, callbacks} | options])
   end
   
+  
+  # Command Set
+  
+  defp list(query, []), do: query
+  defp list(query, [{_, []} | options]), do: list(query, options)
+  
+  defp list(query, [{:or_command_sets, [{:or, _} | _] = command_sets} | options]) do
+    list(query, [{:command_sets, command_sets} | options])
+  end
+  
+  defp list(query, [{:or_command_sets, [command_set | command_sets]} | options]) do
+    list(query, [{:command_sets, [{:or, command_set} | command_sets]} | options])
+  end
+  
+  defp list(query, [{:command_sets, [{:or, command_set} | command_sets]} | options]) do
+    query = 
+      from object in query,
+        inner_join: command_set in assoc(object, :command_sets), on: object.id == command_set.oid,
+        or_where: command_set.key == ^command_set
+    
+    list(query, [{:command_sets, command_sets} | options])
+  end
+  
+  defp list(query, [{:command_sets, [command_set | command_sets]} | options]) do
+    query = 
+      from object in query,
+        inner_join: command_set in assoc(object, :command_sets), on: object.id == command_set.oid,
+        where: command_set.key == ^command_set
+    
+    list(query, [{:command_sets, command_sets} | options])
+  end
+  
   # Keys
   
   defp list(query, [{:or_objects, [{:or, _} | _] = keys} | options]) do
