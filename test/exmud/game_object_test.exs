@@ -2,6 +2,7 @@ defmodule Exmud.GameObjectTest do
   alias Ecto.UUID
   alias Exmud.Attribute
   alias Exmud.Callback
+  alias Exmud.CommandSet
   alias Exmud.GameObject
   alias Exmud.Tag
   require Logger
