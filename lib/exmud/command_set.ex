@@ -100,7 +100,7 @@ defmodule Exmud.CommandSet do
   end
   
   def get(key, object \\ nil) do
-    Logger.debug("Finding callback module for command set with key `#{key}`")
+    Logger.debug("Getting command set for key `#{key}`")
     case Registry.read_key(key, @command_set_category) do
       # Dynamic command set
       {:ok, {callback_module, true}} -> callback_module.init(object)

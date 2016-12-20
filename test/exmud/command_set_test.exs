@@ -55,8 +55,10 @@ end
 
 defmodule Exmud.CommandSetTest.ExampleCommandSet do
   @moduledoc """
-  A barebones example of a command_set for testing.
+  A barebones example of a command set for testing.
   """
+  
+  @behavior Exmud.CommandSet
   
   def init(_oid) do
     {:ok, Exmud.CommandSet.new()}
