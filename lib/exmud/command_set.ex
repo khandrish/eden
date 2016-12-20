@@ -1,29 +1,67 @@
 defmodule Exmud.CommandSet do
   @moduledoc """
+  A command set determines what commands a player has access to.
+  
   An `Exmud.GameObject` can have an arbitrary number of command sets associated
   with it.
   
-  These command sets provide the building blocks for determining which commands
-  a player, or anything controlling/issuing commands for an object, has access
-  to.
-  
   A command set, in this context, is a module which implements the
-  `Exmud.CommandSet` behavior and which is registered with the engine. When a
-  command is being processed, the command sets from the current context (more
-  on this later) are gathered and then merged to determine the final set of
-  commands that are available. Only then is the command checked against these
-  available commands and then executed, or not, as logic dictates.
+  `Exmud.CommandSet` behavior. This command set can only be used once it is
+  registered with the engine and a command set object has been initialized.
+  When a command is sent by a player, the engine gathers the relevant command
+  sets from the current context and merges them together to form a single
+  command set. The incoming command is then checked against the commands,
+  using both their keys and aliases, and then executed, or not, as logic
+  dictates.
+  
+  Please note than when determining whether commands match during a merge,
+  both the keys and aliases will be checked and any match will mean two
+  commands are treated as the same.
   """
+  
+  
+  #
+  # Behavior definition
+  #
+  
+  
+  @doc """
+  Initialize a new command set.
+  
+  All custom logic to build a command set takes place here. In most cases
+  this involves creating a command set object and adding the desired commands.
+  In complex cases a dynamic command set can be built if the desired effect
+  can't be achieved with the normal merge rules and options.
+  
+  The 'init' method is only called with an object id if the command set was
+  registered as a dynamic command set, and will be called with an explicit
+  nil otherwise. Dynamic command sets will have their init method called each
+  time the command set is accessed. See the docs on the registration function
+  for the full warning.
+  """
+  @callback init(object) :: {:ok, command_set} | {:error, reason}
+  
+  @typedoc "The id of the object that the command set is being built for."
+  @type object :: term | nil
+  
+  @typedoc "A command set object."
+  @type command_set :: term
+  
+  @typedoc "The reason for the failure."
+  @type reason :: term
+  
   
   alias Exmud.GameObject
   alias Exmud.Registry
   alias Exmud.Repo
-  alias Exmud.Schema.CommandSet
+  alias Exmud.Schema.CommandSet, as: CS
   import Ecto.Query
   import Exmud.Utils
   require Logger
   
   @command_set_category "command_set"
+  
+  defstruct priority: 0, merge_type_overrides: %{}, allow_duplicates: false
   
   
   #
@@ -34,25 +72,43 @@ defmodule Exmud.CommandSet do
   # Management of command sets within the engine
   
   @doc """
-  In order for the engine to map command sets to callback modules, each
-  callback module must be registered with the engine via a unique key.
+  In order for the engine to map command sets to command set objects or
+  callback modules, each command set must be registered with the engine
+  via a unique key.
   """
-  def register(key, callback_module) do
-    Logger.debug("Registering command set for key `#{key}` with module `#{callback_module}`")
-    Registry.register_key(key, @command_set_category, callback_module)
+  def register(key, callback_module, dynamic \\ false)
+  
+  def register(key, callback_module, false) do
+    Logger.debug("Initializing command set for key `#{key}` with module `#{callback_module}`")
+    case callback_module.init(nil) do
+      {:ok, command_set} ->
+        Logger.debug("Registering static command set for key `#{key}` with module `#{callback_module}`")
+        Registry.register_key(key, @command_set_category, {command_set, false})
+      {:error, reason} = error ->
+        Logger.error("Unable to initilize command set for key `#{key}` with module `#{callback_module} because `#{reason}`")
+        error
+    end
+  end
+  
+  def register(key, callback_module, true) do
+    Logger.debug("Registering dynamic command set for key `#{key}` with module `#{callback_module}`")
+    Registry.register_key(key, @command_set_category, {callback_module, true})
   end
   
   def registered?(key) do
     Registry.key_registered?(key, @command_set_category)
   end
   
-  def which_module(key) do
+  def get(key, object \\ nil) do
     Logger.debug("Finding callback module for command set with key `#{key}`")
     case Registry.read_key(key, @command_set_category) do
+      # Dynamic command set
+      {:ok, {callback_module, true}} -> callback_module.init(object)
+      # Static command set
+      {:ok, {command_set, false}} -> {:ok, command_set}
       {:error, _} ->
         Logger.warn("Attempt to find callback module for command set with key `#{key}` failed")
         {:error, :no_such_command_set}
-      result -> result
     end
   end
   
@@ -64,7 +120,7 @@ defmodule Exmud.CommandSet do
   
   def add(oid, key) do
     args = %{key: key, oid: oid}
-    Repo.insert(CommandSet.changeset(%CommandSet{}, args))
+    Repo.insert(CS.changeset(%CS{}, args))
     |> normalize_noreturn_result()
     |> case do
       {:error, errors} ->
@@ -99,6 +155,10 @@ defmodule Exmud.CommandSet do
     end
   end
   
+  # Just plain old manipulation
+  
+  def new, do: %Exmud.CommandSet{}
+  
   
   #
   # Private functions
@@ -106,7 +166,7 @@ defmodule Exmud.CommandSet do
   
   
   defp command_set_query(oid, key) do
-    from command_set in CommandSet,
+    from command_set in CS,
       where: command_set.key == ^key,
       where: command_set.oid == ^oid
   end

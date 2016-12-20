@@ -12,10 +12,13 @@ defmodule Exmud.CommandSetTest do
     @tag command_set: true
     test "engine registration" do
       command_set = UUID.generate()
+      command_set2 = UUID.generate()
       assert CommandSet.registered?(command_set) == false
       assert CommandSet.register(command_set, EC) == :ok
+      assert CommandSet.register(command_set2, EC, true) == :ok
+      assert CommandSet.get(command_set) == {:ok, %Exmud.CommandSet{}}
+      assert CommandSet.get(command_set2) == {:ok, %Exmud.CommandSet{}}
       assert CommandSet.registered?(command_set) == true
-      assert CommandSet.which_module(command_set) == {:ok, EC}
       assert CommandSet.unregister(command_set) == :ok
       assert CommandSet.registered?(command_set) == false
     end
@@ -40,7 +43,6 @@ defmodule Exmud.CommandSetTest do
       assert CommandSet.has?(0, "foo") == {:ok, false}
       assert CommandSet.add(0, "foo") == {:error, :no_such_game_object}
       assert CommandSet.delete(0, "foo") == {:error, :no_such_command_set}
-      assert CommandSet.register("foobar", IO) == :ok
     end
   end
 
@@ -56,7 +58,7 @@ defmodule Exmud.CommandSetTest.ExampleCommandSet do
   A barebones example of a command_set for testing.
   """
   
-  def run(_oid) do
-    :ok
+  def init(_oid) do
+    {:ok, Exmud.CommandSet.new()}
   end
 end
