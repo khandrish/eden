@@ -61,7 +61,11 @@ defmodule Exmud.CommandSet do
   
   @command_set_category "command_set"
   
-  defstruct priority: 0, merge_type_overrides: %{}, allow_duplicates: false
+  defstruct allow_duplicates: false,
+            commands: MapSet.new(),
+            merge_type: :union,
+            merge_type_overrides: %{},
+            priority: 0
   
   
   #
@@ -155,19 +159,158 @@ defmodule Exmud.CommandSet do
     end
   end
   
-  # Just plain old manipulation
+  # Manipulate commands on a command set
+  
+  def add_command(command_set, command) do
+    %{command_set | commands: MapSet.put(command_set.commands, command)}
+  end
+  
+  def has_command?(command_set, command), do: MapSet.member?(command_set.commands, command)
+  
+  def remove_command(command_set, command) do
+    %{command_set | commands: MapSet.delete(command_set.commands, command)}
+  end
+  
+  # Merge type overrides
+  
+  def add_override(command_set, key, merge_type) do
+    %{command_set | merge_type_overrides: Map.put(command_set.merge_type_overrides, key, merge_type)}
+  end
+  
+  def has_override?(command_set, key), do: Map.has_key?(command_set.merge_type_overrides, key)
+  
+  def remove_override(command_set, key) do
+    %{command_set | merge_type_overrides: Map.delete(command_set.merge_type_overrides, key)}
+  end
+  
+  # Merging command sets
+  
+  def merge(%Exmud.CommandSet{priority: priority1} = command_set1,
+            %Exmud.CommandSet{priority: priority2} = command_set2) when priority1 >= priority2 do
+    do_merge(command_set2, command_set1)
+  end
+  
+  def merge(%Exmud.CommandSet{priority: priority1} = command_set1,
+            %Exmud.CommandSet{priority: priority2} = command_set2) when priority1 < priority2 do
+    do_merge(command_set1, command_set2)
+  end
+  
+  # Other command set manipulation
   
   def new, do: %Exmud.CommandSet{}
+  
+  def set_allow_duplicates(command_set, maybe), do: %{command_set | allow_duplicates: maybe}
+  
+  def set_merge_type(command_set, merge_type), do: %{command_set | merge_type: merge_type}
+  
+  def set_priority(command_set, priority), do: %{command_set | priority: priority}
   
   
   #
   # Private functions
   #
   
-  
+  # Return the query used to find a specific command set mapped to a specific object.
   defp command_set_query(oid, key) do
     from command_set in CS,
       where: command_set.key == ^key,
       where: command_set.oid == ^oid
+  end
+  
+  # Given a command struct, create a map where the keys are the combined aliases and
+  # command set key and all of the values are the command struct itself.
+  defp create_commands_map(commands) do
+    Enum.reduce(commands, %{}, fn(command, map) ->
+      Enum.reduce(command.aliases, map, fn(a, mapping) ->
+        Map.put(mapping, a, command)
+      end)
+      |> Map.put(command.key, command)
+    end)
+  end
+  
+  # Perform the merge of two command sets.
+  defp do_merge(old_cs, new_cs) do
+    merge_type = get_merge_type(new_cs, old_cs.key)
+    
+    conflicts = find_conflicting_commands(old_cs.commands, new_cs.commands)
+    
+    do_merge(old_cs.commands, new_cs.commands, conflicts, merge_type, new_cs.allow_duplicates)
+  end
+  
+  # Perform a union merge when no duplicates are allowed.
+  defp do_merge(old_commands, new_commands, conflicts, :union, false) do
+    filtered_old_commands = filter_commands(old_commands, conflicts, 0)
+    MapSet.union(filtered_old_commands, new_commands)
+  end
+  
+  # Perform a union merge when duplicates are allowed.
+  defp do_merge(old_commands, new_commands, _, :union, true) do
+    MapSet.union(old_commands, new_commands)
+  end
+  
+  # Perform an intersection merge when duplicates are not allowed.
+  defp do_merge(old_commands, new_commands, conflicts, :intersect, false) do
+    Enum.reduce(conflicts, MapSet.new(), &(MapSet.put(&2, elem(&1, 1))))
+  end
+  
+  # Perform an intersection merge when duplicates are allowed.
+  defp do_merge(old_commands, new_commands, conflicts, :intersect, true) do
+    Enum.reduce(conflicts, MapSet.new(), fn({old_command, new_command}, map) ->
+      map
+      |> MapSet.put(old_command)
+      |> MapSet.put(new_command)
+    end)
+  end
+  
+  # Perform a remove merge where the matching commands from the higher priority
+  # command set are removed from the lower priority command set.
+  defp do_merge(old_commands, new_commands, conflicts, :remove, _) do
+    filter_commands(old_commands, conflicts, 0)
+  end
+  
+  # Perform a replace merge where the new command set completely replaces the
+  # old one without even checking for matches.
+  defp do_merge(_, new_commands, _, :replace, _) do
+    new_commands
+  end
+  
+  # Given a set of commands, a tuple of old/new commands in conflict, and an
+  # index specifying which of the conflicting commands to use, filter the
+  # provided set of commands.
+  defp filter_commands(commands, conflicts, index) do
+    conflicting_commands = Enum.reduce(conflicts, MapSet.new(), &(MapSet.put(&2, elem(&1, index))))
+    MapSet.difference(commands, conflicting_commands)
+  end
+  
+  # Given two command sets, find the commands that would cause duplicate match errors and
+  # return the commands from both sets that caused the error.
+  defp find_conflicting_commands(old_commands, new_commands) do
+    old_commands_mapping = create_commands_map(old_commands)
+    new_commands_mapping = create_commands_map(new_commands)
+    
+    all_old_keys = MapSet.new(Map.keys(old_commands_mapping))
+    all_new_keys = MapSet.new(Map.keys(new_commands_mapping))
+    
+    Enum.reduce(all_new_keys, MapSet.new(), fn(key, conflicting_commands) ->
+      if MapSet.member?(all_old_keys, key) do
+        MapSet.put(conflicting_commands, {old_commands_mapping[key], new_commands_mapping[key]})
+      else
+        conflicting_commands
+      end
+    end)
+  end
+  
+  # Given a command set and a key against which to check, determine what the
+  # merge type should be.
+  defp get_merge_type(command_set, key) do
+    command_set.merge_type_overrides
+    |> Map.keys()
+    |> MapSet.new()
+    |> MapSet.member?(key)
+    |> if do
+      command_set.merge_type_overrides[key]
+    else
+      command_set.merge_type
+    end
   end
 end
