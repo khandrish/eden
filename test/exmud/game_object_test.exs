@@ -2,12 +2,13 @@ defmodule Exmud.GameObjectTest do
   alias Ecto.UUID
   alias Exmud.Attribute
   alias Exmud.Callback
-  alias Exmud.CallbackTest.ExampleCallback, as: EC
+  alias Exmud.CallbackTest.ExampleCallback, as: ECA
+  alias Exmud.CommandSetTest.ExampleCommandSet, as: ECO
   alias Exmud.CommandSet
   alias Exmud.GameObject
   alias Exmud.Tag
   require Logger
-  use ExUnit.Case, async: true
+  use ExUnit.Case
 
   describe "game object tests: " do
     setup [:create_new_game_object]
@@ -94,17 +95,43 @@ defmodule Exmud.GameObjectTest do
       assert GameObject.delete_callback(0, "foo") == {:error, :no_such_callback}
     end
 
+    @tag command_set: true
     @tag game_object: true
     test "command_set list tests", %{oid: oid} = _context do
       command_set1 = UUID.generate()
       command_set2 = UUID.generate()
       assert GameObject.list(command_sets: [command_set1]) == []
-      assert CommandSet.add(oid, command_set1) == :ok
-      assert CommandSet.add(oid, command_set2) == :ok
+      assert GameObject.add_command_set(oid, command_set1) == :ok
+      assert GameObject.add_command_set(oid, command_set2) == :ok
       assert GameObject.list(command_sets: [command_set1]) == [oid]
       assert GameObject.list(command_sets: [command_set2]) == [oid]
       assert GameObject.list(command_sets: [command_set1, command_set2]) == [oid]
     end
+    
+    @tag command_set: true
+    @tag game_object: true
+    test "command set on object lifecycle", %{oid: oid} = _context do
+      command_set = UUID.generate()
+      command_set2 = UUID.generate()
+      assert CommandSet.register(command_set, ECO) == :ok
+      assert GameObject.has_command_set?(oid, command_set) == {:ok, false}
+      assert GameObject.add_command_set(oid, command_set) == :ok
+      assert GameObject.add_command_set(oid, command_set2) == :ok
+      assert GameObject.has_command_set?(oid, command_set) == {:ok, true}
+      assert GameObject.delete_command_set(oid, command_set) == :ok
+      assert GameObject.has_command_set?(oid, command_set) == {:ok, false}
+    end
+    
+    @tag command_set: true
+    @tag game_object: true
+    test "command set invalid cases" do
+      assert GameObject.has_command_set?(0, "foo") == {:ok, false}
+      assert GameObject.add_command_set(0, "foo") == {:error, :no_such_game_object}
+      assert GameObject.delete_command_set(0, "foo") == {:error, :no_such_command_set}
+    end
+    
+    
+    
 
 
     @tag game_object: true

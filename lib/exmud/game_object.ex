@@ -2,13 +2,18 @@ defmodule Exmud.GameObject do
   alias Exmud.Repo
   alias Exmud.Schema.Attribute
   alias Exmud.Schema.Callback
+  alias Exmud.Schema.CommandSet
   alias Exmud.Schema.GameObject, as: GO
   import Ecto.Query
   import Exmud.Utils
   require Logger
   use NamedArgs
   
+  
+  #
   # General game object functions
+  #
+  
   
   def new(key) do
     case Repo.insert(GO.changeset(%GO{}, %{key: key, date_created: DateTime.utc_now()})) do
@@ -39,9 +44,11 @@ defmodule Exmud.GameObject do
     |> Repo.all()
   end
   
+  
   #
   # Attribute related functions
   #
+  
   
   def add_attribute(oid, key, data) do
     args = %{data: :erlang.term_to_binary(data),
@@ -83,9 +90,11 @@ defmodule Exmud.GameObject do
     |> normalize_noreturn_result()
   end
   
+  
   #
   # Callback related functions
   #
+  
   
   def add_callback(oid, callback, key) do
     args = %{callback: callback, key: key, oid: oid}
@@ -129,11 +138,50 @@ defmodule Exmud.GameObject do
   
   
   #
+  # Command set related functions
+  #
+  
+  
+  def add_command_set(oid, key) do
+    args = %{key: key, oid: oid}
+    Repo.insert(CommandSet.changeset(%CommandSet{}, args))
+    |> normalize_noreturn_result()
+    |> case do
+      {:error, errors} ->
+        if Keyword.has_key?(errors, :oid) do
+          Logger.warn("Attempt to add command set onto non existing object `#{oid}` failed")
+          {:error, :no_such_game_object}
+        else
+          {:error, errors}
+        end
+      result ->
+        result
+    end
+  end
+  
+  def has_command_set?(oid, key) do
+    case Repo.one(command_set_query(oid, key)) do
+      nil -> {:ok, false}
+      _object -> {:ok, true}
+    end
+  end
+  
+  def delete_command_set(oid, key) do
+    Repo.delete_all(command_set_query(oid, key))
+    |> case do
+      {1, _} -> :ok
+      {0, _} -> {:error, :no_such_command_set}
+      _ -> {:error, :unknown}
+    end
+  end
+  
+  
+  #
   # Private functions
   #
   
   
-  # Attributes
+  # List Attributes
   
   defp list(query, []), do: query
   defp list(query, [{_, []} | options]), do: list(query, options)
@@ -164,7 +212,7 @@ defmodule Exmud.GameObject do
     list(query, [{:attributes, attributes} | options])
   end
   
-  # Callbacks
+  # List Callbacks
   
   defp list(query, [{:or_callbacks, [{:or, _} | _] = callbacks} | options]) do
     list(query, [{:callbacks, callbacks} | options])
@@ -193,7 +241,7 @@ defmodule Exmud.GameObject do
   end
   
   
-  # Command Set
+  # List Command Set
   
   defp list(query, []), do: query
   defp list(query, [{_, []} | options]), do: list(query, options)
@@ -225,7 +273,7 @@ defmodule Exmud.GameObject do
   end
   
   
-  # Keys
+  # List Keys
   
   defp list(query, [{:or_objects, [{:or, _} | _] = keys} | options]) do
     list(query, [{:objects, keys} | options])
@@ -252,7 +300,7 @@ defmodule Exmud.GameObject do
   end
   
   
-  # Tags
+  # List Tags
   
   defp list(query, [{:or_tags, [{:or, _} | _] = tags} | options]) do
     list(query, [{:tags, tags} | options])
@@ -284,15 +332,24 @@ defmodule Exmud.GameObject do
   
   # Queries
   
+  # Return the query used to find a specific attribute mapped to a specific object.
   defp attribute_query(oid, key) do
     from attribute in Attribute,
       where: attribute.key == ^key,
       where: attribute.oid == ^oid
   end
   
+  # Return the query used to find a specific callback mapped to a specific object.
   defp callback_query(oid, callback) do
     from callback in Callback,
       where: callback.callback == ^callback,
       where: callback.oid == ^oid
+  end
+  
+  # Return the query used to find a specific command set mapped to a specific object.
+  defp command_set_query(oid, key) do
+    from command_set in CommandSet,
+      where: command_set.key == ^key,
+      where: command_set.oid == ^oid
   end
 end
