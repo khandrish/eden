@@ -37,22 +37,30 @@ defmodule Exmud.Command do
   @typedoc "The reason for the failure."
   @type reason :: term
   
+  @typedoc "The raw arguments string. This is everything after the command itself."
+  @type args_string :: String.t
+  
+  @typedoc "The regex string used to parse the arguments."
+  @type arg_regex :: term
+  
   # This struct is for use when a command is being executed
-  defstruct aliases: MapSet.new(),
-            arg_parse_result: nil,
-            arg_regex: nil,
-            auto_help: true,
-            callback_module: nil,
-            caller: nil,
-            help_category: "General",
-            key: nil,
-            matched_command_args: nil,
-            matched_command_key: nil,
-            merged_command_set: nil,
-            oid: nil
-            player: nil,
-            raw_input: nil,
-            session_id: nil,
+  defstruct(
+    aliases: MapSet.new(),
+    arg_parse_result: nil,
+    arg_regex: nil,
+    auto_help: true,
+    callback_module: nil,
+    caller: nil,
+    help_category: "General",
+    key: nil,
+    matched_command_args: nil,
+    matched_command_key: nil,
+    merged_command_set: nil,
+    oid: nil,
+    player: nil,
+    raw_input: nil,
+    session_id: nil
+  )
             
   def new, do: %Exmud.Command{}
             
