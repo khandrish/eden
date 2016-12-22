@@ -1,9 +1,11 @@
 defmodule Exmud.GameObject do
   alias Exmud.Repo
   alias Exmud.Schema.Attribute
+  alias Exmud.Schema.Callback
   alias Exmud.Schema.GameObject, as: GO
   import Ecto.Query
   import Exmud.Utils
+  require Logger
   use NamedArgs
   
   # General game object functions
@@ -79,6 +81,50 @@ defmodule Exmud.GameObject do
              oid: oid}
     Repo.update(Attribute.changeset(%Attribute{}, args))
     |> normalize_noreturn_result()
+  end
+  
+  #
+  # Callback related functions
+  #
+  
+  def add_callback(oid, callback, key) do
+    args = %{callback: callback, key: key, oid: oid}
+    Repo.insert(Callback.changeset(%Callback{}, args))
+    |> normalize_noreturn_result()
+    |> case do
+      {:error, errors} ->
+        if Keyword.has_key?(errors, :oid) do
+          Logger.warn("Attempt to add callback onto non existing object `#{oid}` failed")
+          {:error, :no_such_game_object}
+        else
+          {:error, errors}
+        end
+      result ->
+        result
+    end
+  end
+  
+  def get_callback(oid, callback, default) do
+    case Repo.one(callback_query(oid, callback)) do
+      nil -> Exmud.Callback.which_module(default)
+      callback -> Exmud.Callback.which_module(callback.key)
+    end
+  end
+  
+  def has_callback?(oid, callback) do
+    case Repo.one(callback_query(oid, callback)) do
+      nil -> {:ok, false}
+      _object -> {:ok, true}
+    end
+  end
+  
+  def delete_callback(oid, callback) do
+    Repo.delete_all(callback_query(oid, callback))
+    |> case do
+      {1, _} -> :ok
+      {0, _} -> {:error, :no_such_callback}
+      _ -> {:error, :unknown}
+    end
   end
   
   
@@ -240,7 +286,13 @@ defmodule Exmud.GameObject do
   
   defp attribute_query(oid, key) do
     from attribute in Attribute,
-      where: attribute.oid == ^oid,
-      where: attribute.key == ^key
+      where: attribute.key == ^key,
+      where: attribute.oid == ^oid
+  end
+  
+  defp callback_query(oid, callback) do
+    from callback in Callback,
+      where: callback.callback == ^callback,
+      where: callback.oid == ^oid
   end
 end

@@ -2,6 +2,7 @@ defmodule Exmud.GameObjectTest do
   alias Ecto.UUID
   alias Exmud.Attribute
   alias Exmud.Callback
+  alias Exmud.CallbackTest.ExampleCallback, as: EC
   alias Exmud.CommandSet
   alias Exmud.GameObject
   alias Exmud.Tag
@@ -58,18 +59,40 @@ defmodule Exmud.GameObjectTest do
       assert GameObject.get_attribute(0, "foo") == {:error, :no_such_attribute}
     end
 
+    @tag callback: true
     @tag game_object: true
     test "callback list tests", %{oid: oid} = _context do
       callback1 = UUID.generate()
       callback2 = UUID.generate()
       assert GameObject.list(callbacks: [callback1]) == []
-      assert Callback.add(oid, callback1, "bar") == :ok
-      assert Callback.add(oid, callback2, "bar") == :ok
+      assert GameObject.add_callback(oid, callback1, "bar") == :ok
+      assert GameObject.add_callback(oid, callback2, "bar") == :ok
       assert GameObject.list(callbacks: [callback1]) == [oid]
       assert GameObject.list(callbacks: [callback2]) == [oid]
       assert GameObject.list(callbacks: [callback1, callback2]) == [oid]
     end
-
+    
+    @tag callback: true
+    @tag game_object: true
+    test "callback lifecycle", %{oid: oid} = _context do
+      assert Callback.register("foo", EC) == :ok
+      assert GameObject.has_callback?(oid, "foo") == {:ok, false}
+      assert GameObject.add_callback(oid, "foo", "foo") == :ok
+      assert GameObject.add_callback(oid, "foobar", "foo") == :ok
+      assert GameObject.has_callback?(oid, "foo") == {:ok, true}
+      assert GameObject.get_callback(oid, "foo", "foobar") == {:ok, EC}
+      assert GameObject.delete_callback(oid, "foo") == :ok
+      assert GameObject.has_callback?(oid, "foo") == {:ok, false}
+    end
+    
+    @tag callback: true
+    @tag game_object: true
+    test "callback invalid cases", %{oid: oid} = _context do
+      assert GameObject.has_callback?(0, "foo") == {:ok, false}
+      assert GameObject.add_callback(0, "foo", "foo") == {:error, :no_such_game_object}
+      assert GameObject.get_callback(0, "foo", "foobar") == {:error, :no_such_callback}
+      assert GameObject.delete_callback(0, "foo") == {:error, :no_such_callback}
+    end
 
     @tag game_object: true
     test "command_set list tests", %{oid: oid} = _context do
