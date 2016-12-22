@@ -1,10 +1,12 @@
 defmodule Exmud.GameObject do
   alias Exmud.Repo
+  alias Exmud.Schema.Attribute
   alias Exmud.Schema.GameObject, as: GO
   import Ecto.Query
+  import Exmud.Utils
   use NamedArgs
   
-  # Game Object management
+  # General game object functions
   
   def new(key) do
     case Repo.insert(GO.changeset(%GO{}, %{key: key, date_created: DateTime.utc_now()})) do
@@ -33,6 +35,50 @@ defmodule Exmud.GameObject do
     
     list(query, options)
     |> Repo.all()
+  end
+  
+  #
+  # Attribute related functions
+  #
+  
+  def add_attribute(oid, key, data) do
+    args = %{data: :erlang.term_to_binary(data),
+             key: key,
+             oid: oid}
+    Repo.insert(Attribute.changeset(%Attribute{}, args))
+    |> normalize_noreturn_result()
+  end
+  
+  def get_attribute(oid, key) do
+    case Repo.one(attribute_query(oid, key)) do
+      nil -> {:error, :no_such_attribute}
+      object ->
+        {:ok, :erlang.binary_to_term(object.data)}
+    end
+  end
+  
+  def has_attribute?(oid, key) do
+    case Repo.one(attribute_query(oid, key)) do
+      nil -> {:ok, false}
+      _object -> {:ok, true}
+    end
+  end
+  
+  def remove_attribute(oid, key) do
+    Repo.delete_all(attribute_query(oid, key))
+    |> case do
+      {1, _} -> :ok
+      {0, _} -> {:error, :no_such_attribute}
+      _ -> {:error, :unknown}
+    end
+  end
+  
+  def update_attribute(oid, key, data) do
+    args = %{data: data,
+             key: key,
+             oid: oid}
+    Repo.update(Attribute.changeset(%Attribute{}, args))
+    |> normalize_noreturn_result()
   end
   
   
@@ -132,6 +178,7 @@ defmodule Exmud.GameObject do
     list(query, [{:command_sets, command_sets} | options])
   end
   
+  
   # Keys
   
   defp list(query, [{:or_objects, [{:or, _} | _] = keys} | options]) do
@@ -157,6 +204,7 @@ defmodule Exmud.GameObject do
     
     list(query, [{:objects, keys} | options])
   end
+  
   
   # Tags
   
@@ -186,5 +234,13 @@ defmodule Exmud.GameObject do
         where: tag.category == ^category
     
     list(query, [{:tags, tags} | options])
+  end
+  
+  # Queries
+  
+  defp attribute_query(oid, key) do
+    from attribute in Attribute,
+      where: attribute.oid == ^oid,
+      where: attribute.key == ^key
   end
 end

@@ -17,18 +17,46 @@ defmodule Exmud.GameObjectTest do
       assert GameObject.delete(0) == :ok
     end
 
+    @tag attribute: true
+    @tag game_object: true
+    test "attribute lifecycle", %{oid: oid} = _context do
+      attribute = UUID.generate()
+      attribute2 = UUID.generate()
+      assert GameObject.add_attribute(oid, attribute, "bar") == :ok
+      assert GameObject.add_attribute(oid, attribute2, "bar") == :ok
+      assert GameObject.get_attribute(oid, attribute) == {:ok, "bar"}
+      assert GameObject.has_attribute?(oid, attribute) == {:ok, true}
+      assert GameObject.remove_attribute(oid, attribute) == :ok
+      assert GameObject.get_attribute(oid, attribute) == {:error, :no_such_attribute}
+      assert GameObject.has_attribute?(oid, attribute) == {:ok, false}
+    end
+
+    @tag attribute: true
     @tag game_object: true
     test "attribute list tests", %{oid: oid} = _context do
       attribute1 = UUID.generate()
       attribute2 = UUID.generate()
       assert GameObject.list(attributes: [attribute1]) == []
-      assert Attribute.add(oid, attribute1, "bar") == :ok
-      assert Attribute.add(oid, attribute2, "bar") == :ok
+      assert GameObject.add_attribute(oid, attribute1, "bar") == :ok
+      assert GameObject.add_attribute(oid, attribute2, "bar") == :ok
       assert GameObject.list(attributes: [attribute1]) == [oid]
       assert GameObject.list(attributes: [attribute2]) == [oid]
       assert GameObject.list(attributes: [attribute1, attribute2]) == [oid]
     end
 
+    @tag attribute: true
+    @tag game_object: true
+    test "attribute invalid cases", %{oid: oid} = _context do
+      assert GameObject.get_attribute(oid, "foo") == {:error, :no_such_attribute}
+      assert GameObject.add_attribute("invalid id", :invalid_name, "bar") ==
+        {:error,
+          [key: {"is invalid", [type: :string, validation: :cast]},
+           oid: {"is invalid", [type: :id, validation: :cast]}]}
+      assert GameObject.add_attribute(0, "foo", "bar") == {:error, [oid: {"does not exist", []}]}
+      assert GameObject.has_attribute?(0, "foo") == {:ok, false}
+      assert GameObject.remove_attribute(0, "foo") == {:error, :no_such_attribute}
+      assert GameObject.get_attribute(0, "foo") == {:error, :no_such_attribute}
+    end
 
     @tag game_object: true
     test "callback list tests", %{oid: oid} = _context do
@@ -82,8 +110,8 @@ defmodule Exmud.GameObjectTest do
       tag2 = UUID.generate()
       tag3 = UUID.generate()
       category = UUID.generate()
-      assert Attribute.add(oid, attribute1, "bar") == :ok
-      assert Attribute.add(oid, attribute2, "bar") == :ok
+      assert GameObject.add_attribute(oid, attribute1, "bar") == :ok
+      assert GameObject.add_attribute(oid, attribute2, "bar") == :ok
       assert Callback.add(oid, callback1, "bar") == :ok
       assert Callback.add(oid, callback2, "bar") == :ok
       assert Tag.add(oid, tag1, category) == :ok

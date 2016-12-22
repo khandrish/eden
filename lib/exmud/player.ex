@@ -53,23 +53,23 @@ defmodule Exmud.Player do
   # player data management
   
   def add_attribute(key, name, data) do
-    passthrough(&Attribute.add/3, [find(key), name, data])
+    passthrough(&GameObject.add_attribute/3, [find(key), name, data])
   end
 
   def get_attribute(key, name) do
-    passthrough(&Attribute.get/2, [find(key), name])
+    passthrough(&GameObject.get_attribute/2, [find(key), name])
   end
   
   def has_attribute?(key, name) do
-    passthrough(&Attribute.has?/2, [find(key), name])
+    passthrough(&GameObject.has_attribute?/2, [find(key), name])
   end
   
   def remove_attribute(key, name) do
-    passthrough(&Attribute.remove/2, [find(key), name])
+    passthrough(&GameObject.remove_attribute/2, [find(key), name])
   end
   
   def update_attribute(key, name, data) do
-    passthrough(&Attribute.update/3, [find(key), name, data])
+    passthrough(&GameObject.update_attribute/3, [find(key), name, data])
   end
 
   # player session management
