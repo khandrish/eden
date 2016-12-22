@@ -4,33 +4,6 @@ defmodule Exmud.GameObject do
   import Ecto.Query
   use NamedArgs
   
-  
-  def access(_accessor, _type) do
-  
-  end
-  
-  @default_move_args %{quiet: false}
-  def move(_traversing_object, _traversed_object, _args \\ @default_move_args) do
-    # normalize_args(@default_move_args, args)
-    # if Hook.call_hook(traversing_object, "before_move", [traversing_object, args]) do
-    #   if Hook.call_hook(traversing_object, "before_traverse", [traversing_object, traversed_object, args]) do
-    #     if args.quiet != true do
-    #       message =  Hook.call_hook(traversing_object, "announce_move_from", [traversing_object, args])
-    #       puppets = get all puppeted objects in the current traversing_object location
-    #       send message to sessions puppeting the puppets
-    #     end
-    #     get destination from traversed_object
-    #     update location for traversing_object to destination
-    #     if args.quiet != true do
-    #       message =  Hook.call_hook(traversing_object, "announce_move_to", [traversing_object, args])
-    #       puppets = get all puppeted objects in the current traversing_object location
-    #       send message to sessions puppeting the puppets
-    #     end
-    #   Hook.call_hook(traversed_object, "after_traverse", [traversed_object, args])
-    #   Hook.call_hook(traversing_object, "after_traverse", [traversing_object, args])
-  
-  end
-  
   # Game Object management
   
   def new(key) do
@@ -51,8 +24,6 @@ defmodule Exmud.GameObject do
         end
     end
   end
-  
-  def list(options \\ [attributes: [], callbacks: [], command_sets: [], objects: [], locks: [], relationships: [], scripts: [], tags: []])
   
   def list(options) do
     query =
