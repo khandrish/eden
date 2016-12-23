@@ -1,37 +1,20 @@
 defmodule Exmud.GameObject do
   alias Exmud.Repo
+  alias Exmud.Schema.Attribute
+  alias Exmud.Schema.Callback
+  alias Exmud.Schema.CommandSet
   alias Exmud.Schema.GameObject, as: GO
+  alias Exmud.Schema.Tag
   import Ecto.Query
+  import Exmud.Utils
+  require Logger
   use NamedArgs
   
   
-  def access(_accessor, _type) do
+  #
+  # General game object functions
+  #
   
-  end
-  
-  @default_move_args %{quiet: false}
-  def move(_traversing_object, _traversed_object, _args \\ @default_move_args) do
-    # normalize_args(@default_move_args, args)
-    # if Hook.call_hook(traversing_object, "before_move", [traversing_object, args]) do
-    #   if Hook.call_hook(traversing_object, "before_traverse", [traversing_object, traversed_object, args]) do
-    #     if args.quiet != true do
-    #       message =  Hook.call_hook(traversing_object, "announce_move_from", [traversing_object, args])
-    #       puppets = get all puppeted objects in the current traversing_object location
-    #       send message to sessions puppeting the puppets
-    #     end
-    #     get destination from traversed_object
-    #     update location for traversing_object to destination
-    #     if args.quiet != true do
-    #       message =  Hook.call_hook(traversing_object, "announce_move_to", [traversing_object, args])
-    #       puppets = get all puppeted objects in the current traversing_object location
-    #       send message to sessions puppeting the puppets
-    #     end
-    #   Hook.call_hook(traversed_object, "after_traverse", [traversed_object, args])
-    #   Hook.call_hook(traversing_object, "after_traverse", [traversing_object, args])
-  
-  end
-  
-  # Game Object management
   
   def new(key) do
     case Repo.insert(GO.changeset(%GO{}, %{key: key, date_created: DateTime.utc_now()})) do
@@ -52,8 +35,6 @@ defmodule Exmud.GameObject do
     end
   end
   
-  def list(options \\ [attributes: [], callbacks: [], command_sets: [], objects: [], locks: [], relationships: [], scripts: [], tags: []])
-  
   def list(options) do
     query =
       from object in GO,
@@ -66,11 +47,176 @@ defmodule Exmud.GameObject do
   
   
   #
+  # Attribute related functions
+  #
+  
+  
+  def add_attribute(oid, key, data) do
+    args = %{data: :erlang.term_to_binary(data),
+             key: key,
+             oid: oid}
+    Repo.insert(Attribute.changeset(%Attribute{}, args))
+    |> normalize_noreturn_result()
+  end
+  
+  def get_attribute(oid, key) do
+    case Repo.one(attribute_query(oid, key)) do
+      nil -> {:error, :no_such_attribute}
+      object ->
+        {:ok, :erlang.binary_to_term(object.data)}
+    end
+  end
+  
+  def has_attribute?(oid, key) do
+    case Repo.one(attribute_query(oid, key)) do
+      nil -> {:ok, false}
+      _object -> {:ok, true}
+    end
+  end
+  
+  def remove_attribute(oid, key) do
+    Repo.delete_all(attribute_query(oid, key))
+    |> case do
+      {1, _} -> :ok
+      {0, _} -> {:error, :no_such_attribute}
+      _ -> {:error, :unknown}
+    end
+  end
+  
+  def update_attribute(oid, key, data) do
+    args = %{data: data,
+             key: key,
+             oid: oid}
+    Repo.update(Attribute.changeset(%Attribute{}, args))
+    |> normalize_noreturn_result()
+  end
+  
+  
+  #
+  # Callback related functions
+  #
+  
+  
+  def add_callback(oid, callback, key) do
+    args = %{callback: callback, key: key, oid: oid}
+    Repo.insert(Callback.changeset(%Callback{}, args))
+    |> normalize_noreturn_result()
+    |> case do
+      {:error, errors} ->
+        if Keyword.has_key?(errors, :oid) do
+          Logger.warn("Attempt to add callback onto non existing object `#{oid}` failed")
+          {:error, :no_such_game_object}
+        else
+          {:error, errors}
+        end
+      result ->
+        result
+    end
+  end
+  
+  def get_callback(oid, callback, default) do
+    case Repo.one(callback_query(oid, callback)) do
+      nil -> Exmud.Callback.which_module(default)
+      callback -> Exmud.Callback.which_module(callback.key)
+    end
+  end
+  
+  def has_callback?(oid, callback) do
+    case Repo.one(callback_query(oid, callback)) do
+      nil -> {:ok, false}
+      _object -> {:ok, true}
+    end
+  end
+  
+  def delete_callback(oid, callback) do
+    Repo.delete_all(callback_query(oid, callback))
+    |> case do
+      {1, _} -> :ok
+      {0, _} -> {:error, :no_such_callback}
+      _ -> {:error, :unknown}
+    end
+  end
+  
+  
+  #
+  # Command set related functions
+  #
+  
+  
+  def add_command_set(oid, key) do
+    args = %{key: key, oid: oid}
+    Repo.insert(CommandSet.changeset(%CommandSet{}, args))
+    |> normalize_noreturn_result()
+    |> case do
+      {:error, errors} ->
+        if Keyword.has_key?(errors, :oid) do
+          Logger.warn("Attempt to add command set onto non existing object `#{oid}` failed")
+          {:error, :no_such_game_object}
+        else
+          {:error, errors}
+        end
+      result ->
+        result
+    end
+  end
+  
+  def has_command_set?(oid, key) do
+    case Repo.one(command_set_query(oid, key)) do
+      nil -> {:ok, false}
+      _object -> {:ok, true}
+    end
+  end
+  
+  def delete_command_set(oid, key) do
+    Repo.delete_all(command_set_query(oid, key))
+    |> case do
+      {1, _} -> :ok
+      {0, _} -> {:error, :no_such_command_set}
+      _ -> {:error, :unknown}
+    end
+  end
+  
+  
+  #
+  # Tag related functions
+  #
+  
+  def add_tag(oid, key, category \\ "__DEFAULT__") do
+    args = %{category: category,
+             oid: oid,
+             key: key}
+    Repo.insert(Tag.changeset(%Tag{}, args))
+    |> normalize_noreturn_result()
+  end
+  
+  def has_tag?(oid, key, category \\ "__DEFAULT__") do
+    case Repo.one(find_tag_query(oid, key, category)) do
+      nil -> {:ok, false}
+      _object -> {:ok, true}
+    end
+  end
+  
+  def remove_tag(oid, key, category \\ "__DEFAULT__") do
+    Repo.delete_all(
+      from tag in Tag,
+        where: tag.oid == ^oid,
+        where: tag.key == ^key,
+        where: tag.category == ^category
+    )
+    |> case do
+      {num, _} when num > 0 -> :ok
+      {0, _} -> {:error, :no_such_tag}
+      _ -> {:error, :unknown}
+    end
+  end
+  
+  
+  #
   # Private functions
   #
   
   
-  # Attributes
+  # List Attributes
   
   defp list(query, []), do: query
   defp list(query, [{_, []} | options]), do: list(query, options)
@@ -101,7 +247,7 @@ defmodule Exmud.GameObject do
     list(query, [{:attributes, attributes} | options])
   end
   
-  # Callbacks
+  # List Callbacks
   
   defp list(query, [{:or_callbacks, [{:or, _} | _] = callbacks} | options]) do
     list(query, [{:callbacks, callbacks} | options])
@@ -130,7 +276,7 @@ defmodule Exmud.GameObject do
   end
   
   
-  # Command Set
+  # List Command Set
   
   defp list(query, []), do: query
   defp list(query, [{_, []} | options]), do: list(query, options)
@@ -161,7 +307,8 @@ defmodule Exmud.GameObject do
     list(query, [{:command_sets, command_sets} | options])
   end
   
-  # Keys
+  
+  # List Keys
   
   defp list(query, [{:or_objects, [{:or, _} | _] = keys} | options]) do
     list(query, [{:objects, keys} | options])
@@ -187,7 +334,8 @@ defmodule Exmud.GameObject do
     list(query, [{:objects, keys} | options])
   end
   
-  # Tags
+  
+  # List Tags
   
   defp list(query, [{:or_tags, [{:or, _} | _] = tags} | options]) do
     list(query, [{:tags, tags} | options])
@@ -215,5 +363,35 @@ defmodule Exmud.GameObject do
         where: tag.category == ^category
     
     list(query, [{:tags, tags} | options])
+  end
+  
+  # Queries
+  
+  # Return the query used to find a specific attribute mapped to a specific object.
+  defp attribute_query(oid, key) do
+    from attribute in Attribute,
+      where: attribute.key == ^key,
+      where: attribute.oid == ^oid
+  end
+  
+  # Return the query used to find a specific callback mapped to a specific object.
+  defp callback_query(oid, callback) do
+    from callback in Callback,
+      where: callback.callback == ^callback,
+      where: callback.oid == ^oid
+  end
+  
+  # Return the query used to find a specific command set mapped to a specific object.
+  defp command_set_query(oid, key) do
+    from command_set in CommandSet,
+      where: command_set.key == ^key,
+      where: command_set.oid == ^oid
+  end
+  
+  defp find_tag_query(oid, key, category) do
+    from tag in Tag,
+      where: tag.category == ^category,
+      where: tag.key == ^key,
+      where: tag.oid == ^oid
   end
 end

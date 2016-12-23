@@ -120,45 +120,6 @@ defmodule Exmud.CommandSet do
     Registry.unregister_key(key, @command_set_category)
   end
   
-  # Manipulation of command sets on an object
-  
-  def add(oid, key) do
-    args = %{key: key, oid: oid}
-    Repo.insert(CS.changeset(%CS{}, args))
-    |> normalize_noreturn_result()
-    |> case do
-      {:error, errors} ->
-        if Keyword.has_key?(errors, :oid) do
-          Logger.warn("Attempt to add command set onto non existing object `#{oid}` failed")
-          {:error, :no_such_game_object}
-        else
-          {:error, errors}
-        end
-      result ->
-        result
-    end
-  end
-  
-  def has?(oid, key) do
-    case Repo.one(command_set_query(oid, key)) do
-      nil -> {:ok, false}
-      _object -> {:ok, true}
-    end
-  end
-  
-  def list(keys) do
-    GameObject.list(command_sets: List.wrap(keys))
-  end
-  
-  def delete(oid, key) do
-    Repo.delete_all(command_set_query(oid, key))
-    |> case do
-      {1, _} -> :ok
-      {0, _} -> {:error, :no_such_command_set}
-      _ -> {:error, :unknown}
-    end
-  end
-  
   # Manipulate commands on a command set
   
   def add_command(command_set, command) do
@@ -209,13 +170,6 @@ defmodule Exmud.CommandSet do
   #
   # Private functions
   #
-  
-  # Return the query used to find a specific command set mapped to a specific object.
-  defp command_set_query(oid, key) do
-    from command_set in CS,
-      where: command_set.key == ^key,
-      where: command_set.oid == ^oid
-  end
   
   # Given a command struct, create a map where the keys are the combined aliases and
   # command set key and all of the values are the command struct itself.

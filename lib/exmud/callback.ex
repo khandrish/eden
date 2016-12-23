@@ -27,9 +27,6 @@ defmodule Exmud.Callback do
   # API
   #
   
-  
-  # Management of callbacks within the engine
-  
   @doc """
   In order for the engine to map callback strings to callback modules, each
   callback module must be registered with the engine via a unique key.
@@ -55,63 +52,5 @@ defmodule Exmud.Callback do
   
   def unregister(key) do
     Registry.unregister_key(key, @callback_category)
-  end
-  
-  # Manipulation of callbacks on an object
-  
-  def add(oid, callback, key) do
-    args = %{callback: callback, key: key, oid: oid}
-    Repo.insert(Callback.changeset(%Callback{}, args))
-    |> normalize_noreturn_result()
-    |> case do
-      {:error, errors} ->
-        if Keyword.has_key?(errors, :oid) do
-          Logger.warn("Attempt to add callback onto non existing object `#{oid}` failed")
-          {:error, :no_such_game_object}
-        else
-          {:error, errors}
-        end
-      result ->
-        result
-    end
-  end
-  
-  def get(oid, callback, default) do
-    case Repo.one(callback_query(oid, callback)) do
-      nil -> which_module(default)
-      callback -> which_module(callback.key)
-    end
-  end
-  
-  def has?(oid, callback) do
-    case Repo.one(callback_query(oid, callback)) do
-      nil -> {:ok, false}
-      _object -> {:ok, true}
-    end
-  end
-  
-  def list(callbacks) do
-    Exmud.GameObject.list(callbacks: List.wrap(callbacks))
-  end
-  
-  def delete(oid, callback) do
-    Repo.delete_all(callback_query(oid, callback))
-    |> case do
-      {1, _} -> :ok
-      {0, _} -> {:error, :no_such_callback}
-      _ -> {:error, :unknown}
-    end
-  end
-  
-  
-  #
-  # Private functions
-  #
-  
-  
-  defp callback_query(oid, callback) do
-    from callback in Callback,
-      where: callback.callback == ^callback,
-      where: callback.oid == ^oid
   end
 end

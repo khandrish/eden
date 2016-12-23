@@ -24,21 +24,6 @@ defmodule Exmud.CommandSetTest do
     end
     
     @tag command_set: true
-    test "command set on object lifecycle", %{oid: oid} = _context do
-      command_set = UUID.generate()
-      command_set2 = UUID.generate()
-      assert CommandSet.register(command_set, EC) == :ok
-      assert CommandSet.has?(oid, command_set) == {:ok, false}
-      assert CommandSet.add(oid, command_set) == :ok
-      assert CommandSet.add(oid, command_set2) == :ok
-      assert CommandSet.list(command_set) == [oid]
-      assert CommandSet.list([command_set, command_set2]) == [oid]
-      assert CommandSet.has?(oid, command_set) == {:ok, true}
-      assert CommandSet.delete(oid, command_set) == :ok
-      assert CommandSet.has?(oid, command_set) == {:ok, false}
-    end
-    
-    @tag command_set: true
     test "command set manipulation with commands" do
       command_set = CommandSet.new()
       command_set = CommandSet.add_command(command_set, :foo)
@@ -87,14 +72,6 @@ defmodule Exmud.CommandSetTest do
         |> CommandSet.add_command(:high_bar)
         
         
-    end
-    
-    
-    @tag command_set: true
-    test "invalid cases" do
-      assert CommandSet.has?(0, "foo") == {:ok, false}
-      assert CommandSet.add(0, "foo") == {:error, :no_such_game_object}
-      assert CommandSet.delete(0, "foo") == {:error, :no_such_command_set}
     end
   end
 
