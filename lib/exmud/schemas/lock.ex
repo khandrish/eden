@@ -5,7 +5,7 @@ defmodule Exmud.Schema.Lock do
   schema "lock" do
     field :type, :string
     field :definition, :string
-    belongs_to :game_object, Exmud.Schema.GameObject, foreign_key: :oid
+    belongs_to :object, Exmud.Schema.Object, foreign_key: :oid
   end
   
   def changeset(tag, params \\ %{}) do
