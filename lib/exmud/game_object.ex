@@ -4,6 +4,7 @@ defmodule Exmud.GameObject do
   alias Exmud.Schema.Callback
   alias Exmud.Schema.CommandSet
   alias Exmud.Schema.GameObject, as: GO
+  alias Exmud.Schema.Tag
   import Ecto.Query
   import Exmud.Utils
   require Logger
@@ -171,6 +172,40 @@ defmodule Exmud.GameObject do
     |> case do
       {1, _} -> :ok
       {0, _} -> {:error, :no_such_command_set}
+      _ -> {:error, :unknown}
+    end
+  end
+  
+  
+  #
+  # Tag related functions
+  #
+  
+  def add_tag(oid, key, category \\ "__DEFAULT__") do
+    args = %{category: category,
+             oid: oid,
+             key: key}
+    Repo.insert(Tag.changeset(%Tag{}, args))
+    |> normalize_noreturn_result()
+  end
+  
+  def has_tag?(oid, key, category \\ "__DEFAULT__") do
+    case Repo.one(find_tag_query(oid, key, category)) do
+      nil -> {:ok, false}
+      _object -> {:ok, true}
+    end
+  end
+  
+  def remove_tag(oid, key, category \\ "__DEFAULT__") do
+    Repo.delete_all(
+      from tag in Tag,
+        where: tag.oid == ^oid,
+        where: tag.key == ^key,
+        where: tag.category == ^category
+    )
+    |> case do
+      {num, _} when num > 0 -> :ok
+      {0, _} -> {:error, :no_such_tag}
       _ -> {:error, :unknown}
     end
   end
@@ -351,5 +386,12 @@ defmodule Exmud.GameObject do
     from command_set in CommandSet,
       where: command_set.key == ^key,
       where: command_set.oid == ^oid
+  end
+  
+  defp find_tag_query(oid, key, category) do
+    from tag in Tag,
+      where: tag.category == ^category,
+      where: tag.key == ^key,
+      where: tag.oid == ^oid
   end
 end

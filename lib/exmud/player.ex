@@ -32,8 +32,8 @@ defmodule Exmud.Player do
       true -> {:error, :player_already_exists}
       false ->
         with {:ok, oid} <- GameObject.new(key),
-             :ok <- Tag.add(oid, @player_tag, @tag_category),
-             :ok <- Tag.add(oid, key, @alias_category),
+             :ok <- GameObject.add_tag(oid, @player_tag, @tag_category),
+             :ok <- GameObject.add_tag(oid, key, @alias_category),
              # TODO: Add command sets for a player
           do: :ok
     end

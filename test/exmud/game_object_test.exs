@@ -19,6 +19,34 @@ defmodule Exmud.GameObjectTest do
       assert GameObject.delete(0) == :ok
     end
 
+    @tag game_object: true
+    test "complex list tests", %{oid: oid} = _context do
+      attribute1 = UUID.generate()
+      attribute2 = UUID.generate()
+      attribute3 = UUID.generate()
+      callback1 = UUID.generate()
+      callback2 = UUID.generate()
+      callback3 = UUID.generate()
+      tag1 = UUID.generate()
+      tag2 = UUID.generate()
+      tag3 = UUID.generate()
+      category = UUID.generate()
+      assert GameObject.add_attribute(oid, attribute1, "bar") == :ok
+      assert GameObject.add_attribute(oid, attribute2, "bar") == :ok
+      assert GameObject.add_callback(oid, callback1, "bar") == :ok
+      assert GameObject.add_callback(oid, callback2, "bar") == :ok
+      assert GameObject.add_tag(oid, tag1, category) == :ok
+      assert GameObject.add_tag(oid, tag2, category) == :ok
+      assert GameObject.list(attributes: [attribute1], tags: [{tag1, category}]) == [oid]
+      assert GameObject.list(attributes: [attribute1], tags: [{tag3, category}]) == []
+      assert GameObject.list(attributes: [attribute1], or_tags: [{tag1, category}]) == [oid]
+      assert GameObject.list(attributes: [attribute1], tags: [{:or, {tag3, category}}]) == [oid]
+      assert GameObject.list(attributes: [attribute3], tags: [{:or, {tag3, category}}]) == []
+      assert GameObject.list(attributes: [attribute3, {:or, attribute2}], tags: [{:or, {tag3, category}}]) == [oid]
+      assert GameObject.list(attributes: [attribute3, {:or, attribute2}], callbacks: [callback1], tags: [{:or, {tag3, category}}]) == [oid]
+      assert GameObject.list(attributes: [attribute3, {:or, attribute2}], callbacks: [callback3], tags: [{:or, {tag3, category}}]) == []
+    end
+
     @tag attribute: true
     @tag game_object: true
     test "attribute lifecycle", %{oid: oid} = _context do
@@ -130,50 +158,43 @@ defmodule Exmud.GameObjectTest do
       assert GameObject.delete_command_set(0, "foo") == {:error, :no_such_command_set}
     end
     
+    @tag tag: true
+    @tag game_object: true
+    test "tag lifecycle", %{oid: oid} = _context do
+      assert GameObject.has_tag?(oid, "foo") == {:ok, false}
+      assert GameObject.has_tag?(oid, "foo", "bar") == {:ok, false}
+      assert GameObject.add_tag(oid, "foo") == :ok
+      assert GameObject.add_tag(oid, "foo", "bar") == :ok
+      assert GameObject.has_tag?(oid, "foo") == {:ok, true}
+      assert GameObject.has_tag?(oid, "foo", "bar") == {:ok, true}
+      assert GameObject.remove_tag(oid, "foo") == :ok
+      assert GameObject.has_tag?(oid, "foo") == {:ok, false}
+      assert GameObject.has_tag?(oid, "foo", "bar") == {:ok, true}
+    end
     
+    @tag tag: true
+    @tag game_object: true
+    test "tag invalid cases" do
+      assert GameObject.add_tag("invalid id", :invalid_tag, "bar") ==
+        {:error,
+          [oid: {"is invalid", [type: :id, validation: :cast]},
+           key: {"is invalid", [type: :string, validation: :cast]}]}
+      assert GameObject.has_tag?(0, "foo") == {:ok, false}
+      assert GameObject.remove_tag(0, "foo") == {:error, :no_such_tag}
+    end
     
-
-
+    @tag tag: true
     @tag game_object: true
     test "tag list tests", %{oid: oid} = _context do
       tag1 = UUID.generate()
       tag2 = UUID.generate()
       category = UUID.generate()
       assert GameObject.list(tags: [{tag1, category}]) == []
-      assert Tag.add(oid, tag1, category) == :ok
-      assert Tag.add(oid, tag2, category) == :ok
+      assert GameObject.add_tag(oid, tag1, category) == :ok
+      assert GameObject.add_tag(oid, tag2, category) == :ok
       assert GameObject.list(tags: [{tag1, category}]) == [oid]
       assert GameObject.list(tags: [{tag2, category}]) == [oid]
       assert GameObject.list(tags: [{tag1, category}, {tag2, category}]) == [oid]
-    end
-
-
-    @tag game_object: true
-    test "complex list tests", %{oid: oid} = _context do
-      attribute1 = UUID.generate()
-      attribute2 = UUID.generate()
-      attribute3 = UUID.generate()
-      callback1 = UUID.generate()
-      callback2 = UUID.generate()
-      callback3 = UUID.generate()
-      tag1 = UUID.generate()
-      tag2 = UUID.generate()
-      tag3 = UUID.generate()
-      category = UUID.generate()
-      assert GameObject.add_attribute(oid, attribute1, "bar") == :ok
-      assert GameObject.add_attribute(oid, attribute2, "bar") == :ok
-      assert Callback.add(oid, callback1, "bar") == :ok
-      assert Callback.add(oid, callback2, "bar") == :ok
-      assert Tag.add(oid, tag1, category) == :ok
-      assert Tag.add(oid, tag2, category) == :ok
-      assert GameObject.list(attributes: [attribute1], tags: [{tag1, category}]) == [oid]
-      assert GameObject.list(attributes: [attribute1], tags: [{tag3, category}]) == []
-      assert GameObject.list(attributes: [attribute1], or_tags: [{tag1, category}]) == [oid]
-      assert GameObject.list(attributes: [attribute1], tags: [{:or, {tag3, category}}]) == [oid]
-      assert GameObject.list(attributes: [attribute3], tags: [{:or, {tag3, category}}]) == []
-      assert GameObject.list(attributes: [attribute3, {:or, attribute2}], tags: [{:or, {tag3, category}}]) == [oid]
-      assert GameObject.list(attributes: [attribute3, {:or, attribute2}], callbacks: [callback1], tags: [{:or, {tag3, category}}]) == [oid]
-      assert GameObject.list(attributes: [attribute3, {:or, attribute2}], callbacks: [callback3], tags: [{:or, {tag3, category}}]) == []
     end
   end
 
