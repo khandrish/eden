@@ -22,8 +22,6 @@ defmodule Exmud.GameObject do
       {:error, changeset} ->
         {:error, changeset.errors}
     end
-    #Multi.new
-    #|> Multi.insert(:ob)
   end
   
   def delete(oid) do
