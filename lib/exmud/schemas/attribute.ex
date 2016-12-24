@@ -5,7 +5,7 @@ defmodule Exmud.Schema.Attribute do
   schema "attribute" do
     field :key, :string
     field :data, :binary
-    belongs_to :game_object, Exmud.Schema.GameObject, foreign_key: :oid
+    belongs_to :object, Exmud.Schema.Object, foreign_key: :oid
   end
   
   def changeset(attribute, params \\ %{}) do

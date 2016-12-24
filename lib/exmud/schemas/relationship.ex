@@ -4,8 +4,8 @@ defmodule Exmud.Schema.Relationship do
   
   schema "relationship" do
     field :relationship, :string
-    belongs_to :subject_object, Exmud.Schema.GameObject, foreign_key: :subject
-    belongs_to :object_object, Exmud.Schema.GameObject, foreign_key: :object
+    belongs_to :subject_object, Exmud.Schema.Object, foreign_key: :subject
+    belongs_to :object_object, Exmud.Schema.Object, foreign_key: :object
   end
   
   def changeset(location, params \\ %{}) do

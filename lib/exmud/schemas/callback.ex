@@ -5,7 +5,7 @@ defmodule Exmud.Schema.Callback do
   schema "callback" do
     field :callback, :string
     field :key, :string
-    belongs_to :game_object, Exmud.Schema.GameObject, foreign_key: :oid
+    belongs_to :object, Exmud.Schema.Object, foreign_key: :oid
   end
   
   def changeset(tag, params \\ %{}) do

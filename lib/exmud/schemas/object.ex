@@ -1,8 +1,8 @@
-defmodule Exmud.Schema.GameObject do
+defmodule Exmud.Schema.Object do
   import Ecto.Changeset
   use Ecto.Schema
   
-  schema "game_object" do
+  schema "object" do
     field :key, :string
     field :date_created, :utc_datetime
     has_many :attributes, Exmud.Schema.Attribute, foreign_key: :oid

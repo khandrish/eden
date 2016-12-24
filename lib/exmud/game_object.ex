@@ -3,7 +3,7 @@ defmodule Exmud.GameObject do
   alias Exmud.Schema.Attribute
   alias Exmud.Schema.Callback
   alias Exmud.Schema.CommandSet
-  alias Exmud.Schema.GameObject, as: GO
+  alias Exmud.Schema.Object, as: Object
   alias Exmud.Schema.Tag
   import Ecto.Query
   import Exmud.Utils
@@ -17,7 +17,7 @@ defmodule Exmud.GameObject do
   
   
   def new(key) do
-    case Repo.insert(GO.changeset(%GO{}, %{key: key, date_created: DateTime.utc_now()})) do
+    case Repo.insert(Object.changeset(%Object{}, %{key: key, date_created: DateTime.utc_now()})) do
       {:ok, object} -> {:ok, object.id}
       {:error, changeset} ->
         {:error, changeset.errors}
@@ -25,7 +25,7 @@ defmodule Exmud.GameObject do
   end
   
   def delete(oid) do
-    case Repo.get(GO, oid) do
+    case Repo.get(Object, oid) do
       nil -> :ok
       object ->
         case Repo.delete(object) do
@@ -37,7 +37,7 @@ defmodule Exmud.GameObject do
   
   def list(options) do
     query =
-      from object in GO,
+      from object in Object,
         group_by: object.id,
         select: object.id
     
