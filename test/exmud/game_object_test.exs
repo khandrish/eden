@@ -17,7 +17,9 @@ defmodule Exmud.GameObjectTest do
     @tag game_object: true
     test "delete tests", %{oid: oid} = _context do
       assert GameObject.delete(oid) == :ok
-      assert GameObject.delete(0) == :ok
+      assert_raise Ecto.StaleEntryError, fn ->
+        Repo.transaction(GameObject.delete(0))
+      end
     end
 
     @tag game_object: true
@@ -203,7 +205,6 @@ defmodule Exmud.GameObjectTest do
     setup [:create_new_game_object_multi]
 
     @tag game_object: true
-    @tag wip: true
     test "delete tests", %{multi: multi, oid: oid} = _context do
       assert Repo.transaction(GameObject.delete(multi, oid)) # Just needs to not fail
       assert_raise Ecto.StaleEntryError, fn ->

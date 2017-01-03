@@ -30,13 +30,9 @@ defmodule Exmud.GameObject do
   end
   
   def delete(oid) do
-    case Repo.get(Object, oid) do
-      nil -> :ok
-      object ->
-        case Repo.delete(object) do
-          {:ok, _} -> :ok
-          result -> result
-        end
+    case Repo.delete(%Object{id: oid}) do
+      {:ok, _} -> :ok
+      result -> result
     end
   end
   
