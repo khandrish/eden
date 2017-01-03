@@ -6,11 +6,12 @@ defmodule Exmud.GameObjectTest do
   alias Exmud.CommandSetTest.ExampleCommandSet, as: ECO
   alias Exmud.CommandSet
   alias Exmud.GameObject
+  alias Exmud.Repo
   alias Exmud.Tag
   require Logger
   use ExUnit.Case
 
-  describe "game object tests: " do
+  describe "Standard Ecto usage tests for game object: " do
     setup [:create_new_game_object]
 
     @tag game_object: true
@@ -197,10 +198,32 @@ defmodule Exmud.GameObjectTest do
       assert GameObject.list(tags: [{tag1, category}, {tag2, category}]) == [oid]
     end
   end
+    
+  describe "Multi Ecto usage tests for game object: " do
+    setup [:create_new_game_object_multi]
+
+    @tag game_object: true
+    @tag wip: true
+    test "delete tests", %{multi: multi, oid: oid} = _context do
+      assert Repo.transaction(GameObject.delete(multi, oid)) # Just needs to not fail
+      assert_raise Ecto.StaleEntryError, fn ->
+        Repo.transaction(GameObject.delete(multi, 0))
+      end
+    end
+  end
 
   defp create_new_game_object(_context) do
     key = UUID.generate()
     {:ok, oid} = GameObject.new(key)
     %{key: key, oid: oid}
+  end
+
+  defp create_new_game_object_multi(_context) do
+    key = UUID.generate()
+    {:ok, results} = Ecto.Multi.new()
+    |> GameObject.new("new_game_object", key)
+    |> Repo.transaction()
+    
+    %{key: key, multi: Ecto.Multi.new(), oid: results["new_game_object"].id}
   end
 end

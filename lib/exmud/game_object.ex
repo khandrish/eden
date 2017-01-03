@@ -1,4 +1,5 @@
 defmodule Exmud.GameObject do
+  alias Ecto.Multi
   alias Exmud.Repo
   alias Exmud.Schema.Attribute
   alias Exmud.Schema.Callback
@@ -17,11 +18,15 @@ defmodule Exmud.GameObject do
   
   
   def new(key) do
-    case Repo.insert(Object.changeset(%Object{}, %{key: key, date_created: DateTime.utc_now()})) do
+    case Repo.insert(new_changeset(key)) do
       {:ok, object} -> {:ok, object.id}
       {:error, changeset} ->
         {:error, changeset.errors}
     end
+  end
+  
+  def new(%Ecto.Multi{} = multi, multi_key \\ :new_game_object, key) do
+    Multi.insert(multi, multi_key, new_changeset(key))
   end
   
   def delete(oid) do
@@ -33,6 +38,10 @@ defmodule Exmud.GameObject do
           result -> result
         end
     end
+  end
+  
+  def delete(%Ecto.Multi{} = multi, multi_key \\ :delete_game_object, oid) do
+    Multi.delete(multi, multi_key, %Object{id: oid})
   end
   
   def list(options) do
@@ -363,6 +372,10 @@ defmodule Exmud.GameObject do
         where: tag.category == ^category
     
     list(query, [{:tags, tags} | options])
+  end
+  
+  defp new_changeset(key) do
+    Object.changeset(%Object{}, %{key: key, date_created: DateTime.utc_now()})
   end
   
   # Queries
