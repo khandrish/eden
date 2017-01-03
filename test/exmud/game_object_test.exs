@@ -211,6 +211,36 @@ defmodule Exmud.GameObjectTest do
         Repo.transaction(GameObject.delete(multi, 0))
       end
     end
+    
+    @tag game_object: true
+    test "complex list tests", %{multi: multi, oid: oid} = _context do
+      attribute1 = UUID.generate()
+      attribute2 = UUID.generate()
+      attribute3 = UUID.generate()
+      callback1 = UUID.generate()
+      callback2 = UUID.generate()
+      callback3 = UUID.generate()
+      tag1 = UUID.generate()
+      tag2 = UUID.generate()
+      tag3 = UUID.generate()
+      category = UUID.generate()
+      assert GameObject.add_attribute(oid, attribute1, "bar") == :ok
+      assert GameObject.add_attribute(oid, attribute2, "bar") == :ok
+      assert GameObject.add_callback(oid, callback1, "bar") == :ok
+      assert GameObject.add_callback(oid, callback2, "bar") == :ok
+      assert GameObject.add_tag(oid, tag1, category) == :ok
+      assert GameObject.add_tag(oid, tag2, category) == :ok
+      
+      assert Repo.transaction(GameObject.list(multi, "list attribute", attributes: [attribute1], tags: [{tag1, category}])) == {:ok, %{"list attribute" => [oid]}}
+      assert Repo.transaction(GameObject.list(multi, "list attribute", attributes: [attribute1], or_tags: [{tag1, category}])) == {:ok, %{"list attribute" => [oid]}}
+      assert Repo.transaction(GameObject.list(multi, "list attribute", attributes: [attribute1], tags: [{tag3, category}])) == {:ok, %{"list attribute" => []}}
+      assert Repo.transaction(GameObject.list(multi, "list attribute", attributes: [attribute1], or_tags: [{tag1, category}])) == {:ok, %{"list attribute" => [oid]}}
+      assert Repo.transaction(GameObject.list(multi, "list attribute", attributes: [attribute1], tags: [{:or, {tag3, category}}])) == {:ok, %{"list attribute" => [oid]}}
+      assert Repo.transaction(GameObject.list(multi, "list attribute", attributes: [attribute3], tags: [{:or, {tag3, category}}])) == {:ok, %{"list attribute" => []}}
+      assert Repo.transaction(GameObject.list(multi, "list attribute", attributes: [attribute3, {:or, attribute2}], tags: [{:or, {tag3, category}}])) == {:ok, %{"list attribute" => [oid]}}
+      assert Repo.transaction(GameObject.list(multi, "list attribute", attributes: [attribute3, {:or, attribute2}], callbacks: [callback1], tags: [{:or, {tag3, category}}])) == {:ok, %{"list attribute" => [oid]}}
+      assert Repo.transaction(GameObject.list(multi, "list attribute", attributes: [attribute3, {:or, attribute2}], callbacks: [callback3], tags: [{:or, {tag3, category}}])) == {:ok, %{"list attribute" => []}}
+    end
   end
 
   defp create_new_game_object(_context) do
