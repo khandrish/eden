@@ -357,7 +357,6 @@ defmodule Exmud.GameObjectTest do
     
     @tag tag: true
     @tag game_object: true
-    @tag wip: true
     test "tag lifecycle", %{multi: multi, oid: oid} = _context do
       assert Repo.transaction(GameObject.has_tag?(multi, "has tag", oid, "foo")) == {:ok, %{"has tag" => false}}
       assert Repo.transaction(GameObject.has_tag?(multi, "has tag", oid, "foo", "bar")) == {:ok, %{"has tag" => false}}
@@ -372,7 +371,6 @@ defmodule Exmud.GameObjectTest do
     
     @tag tag: true
     @tag game_object: true
-    @tag wip: true
     test "tag invalid cases", %{multi: multi, oid: oid} = _context do
       assert Repo.transaction(GameObject.add_tag(multi, "add tag", "invalid id", :invalid_tag, "bar")) ==
         {:error, "add tag",
@@ -384,7 +382,6 @@ defmodule Exmud.GameObjectTest do
     
     @tag tag: true
     @tag game_object: true
-    @tag wip: true
     test "tag list tests", %{multi: multi, oid: oid} = _context do
       tag1 = UUID.generate()
       tag2 = UUID.generate()
