@@ -77,6 +77,14 @@ defmodule Exmud.GameObject do
     |> normalize_noreturn_result()
   end
   
+  
+  def add_attribute(%Ecto.Multi{} = multi, multi_key \\ :add_attribute, oid, key, data) do
+    Multi.run(multi, multi_key, fn(_) ->
+      add_attribute(oid, key, data)
+      |> wrap_result_for_multi()
+    end)
+  end
+  
   def get_attribute(oid, key) do
     case Repo.one(attribute_query(oid, key)) do
       nil -> {:error, :no_such_attribute}
@@ -85,11 +93,23 @@ defmodule Exmud.GameObject do
     end
   end
   
+  def get_attribute(%Ecto.Multi{} = multi, multi_key \\ :get_attribute, oid, key) do
+    Multi.run(multi, multi_key, fn(_) ->
+      get_attribute(oid, key)
+    end)
+  end
+  
   def has_attribute?(oid, key) do
     case Repo.one(attribute_query(oid, key)) do
       nil -> {:ok, false}
       _object -> {:ok, true}
     end
+  end
+  
+  def has_attribute?(%Ecto.Multi{} = multi, multi_key \\ :has_attribute, oid, key) do
+    Multi.run(multi, multi_key, fn(_) ->
+      has_attribute?(oid, key)
+    end)
   end
   
   def remove_attribute(oid, key) do
@@ -101,12 +121,26 @@ defmodule Exmud.GameObject do
     end
   end
   
+  def remove_attribute(%Ecto.Multi{} = multi, multi_key \\ :remove_attribute, oid, key) do
+    Multi.run(multi, multi_key, fn(_) ->
+      remove_attribute(oid, key)
+      |> wrap_result_for_multi()
+    end)
+  end
+  
   def update_attribute(oid, key, data) do
     args = %{data: data,
              key: key,
              oid: oid}
     Repo.update(Attribute.changeset(%Attribute{}, args))
     |> normalize_noreturn_result()
+  end
+  
+  def update_attribute(%Ecto.Multi{} = multi, multi_key \\ :update_attribute, oid, key, data) do
+    Multi.run(multi, multi_key, fn(_) ->
+      update_attribute(oid, key, data)
+      |> wrap_result_for_multi()
+    end)
   end
   
   
@@ -416,4 +450,7 @@ defmodule Exmud.GameObject do
       where: tag.key == ^key,
       where: tag.oid == ^oid
   end
+  
+  def wrap_result_for_multi(:ok), do: {:ok, :ok}
+  def wrap_result_for_multi(result), do: result
 end

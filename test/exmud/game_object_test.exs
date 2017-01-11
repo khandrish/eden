@@ -241,6 +241,49 @@ defmodule Exmud.GameObjectTest do
       assert Repo.transaction(GameObject.list(multi, "list attribute", attributes: [attribute3, {:or, attribute2}], callbacks: [callback1], tags: [{:or, {tag3, category}}])) == {:ok, %{"list attribute" => [oid]}}
       assert Repo.transaction(GameObject.list(multi, "list attribute", attributes: [attribute3, {:or, attribute2}], callbacks: [callback3], tags: [{:or, {tag3, category}}])) == {:ok, %{"list attribute" => []}}
     end
+    
+    
+
+    @tag attribute: true
+    @tag game_object: true
+    test "attribute lifecycle", %{multi: multi, oid: oid} = _context do
+      attribute = UUID.generate()
+      attribute2 = UUID.generate()
+      assert Repo.transaction(GameObject.add_attribute(multi, "add attribute", oid, attribute, "bar")) == {:ok, %{"add attribute" => :ok}}
+      assert Repo.transaction(GameObject.add_attribute(multi, "add attribute", oid, attribute2, "bar")) == {:ok, %{"add attribute" => :ok}}
+      assert Repo.transaction(GameObject.get_attribute(multi, "get attribute", oid, attribute)) == {:ok, %{"get attribute" => "bar"}}
+      assert Repo.transaction(GameObject.has_attribute?(multi, "has attribute", oid, attribute)) == {:ok, %{"has attribute" => true}}
+      assert Repo.transaction(GameObject.remove_attribute(multi, "remove attribute", oid, attribute)) == {:ok, %{"remove attribute" => :ok}}
+      assert Repo.transaction(GameObject.get_attribute(multi, "get attribute", oid, attribute)) == {:error, "get attribute", :no_such_attribute, %{}}
+      assert Repo.transaction(GameObject.has_attribute?(multi, "has attribute", oid, attribute)) == {:ok, %{"has attribute" => false}}
+    end
+
+    @tag attribute: true
+    @tag game_object: true
+    test "attribute list tests", %{multi: multi, oid: oid} = _context do
+      attribute1 = UUID.generate()
+      attribute2 = UUID.generate()
+      assert Repo.transaction(GameObject.list(multi, "list attribute", attributes: [attribute1])) == {:ok, %{"list attribute" => []}}
+      assert Repo.transaction(GameObject.add_attribute(multi, "add attribute", oid, attribute1, "bar")) == {:ok, %{"add attribute" => :ok}}
+      assert Repo.transaction(GameObject.add_attribute(multi, "add attribute", oid, attribute2, "bar")) == {:ok, %{"add attribute" => :ok}}
+      assert Repo.transaction(GameObject.list(multi, "list attribute", attributes: [attribute1])) == {:ok, %{"list attribute" => [oid]}}
+      assert Repo.transaction(GameObject.list(multi, "list attribute", attributes: [attribute2])) == {:ok, %{"list attribute" => [oid]}}
+      assert Repo.transaction(GameObject.list(multi, "list attribute", attributes: [attribute1, attribute2])) == {:ok, %{"list attribute" => [oid]}}
+    end
+
+    @tag attribute: true
+    @tag game_object: true
+    test "attribute invalid cases", %{multi: multi, oid: oid} = _context do
+      assert Repo.transaction(GameObject.get_attribute(multi, "get attribute", oid, "foo")) == {:error, "get attribute", :no_such_attribute, %{}}
+      assert Repo.transaction(GameObject.add_attribute(multi, "add attribute", "invalid id", :invalid_name, "bar")) ==
+        {:error, "add attribute",
+          [key: {"is invalid", [type: :string, validation: :cast]},
+          oid: {"is invalid", [type: :id, validation: :cast]}], %{}}
+      assert Repo.transaction(GameObject.add_attribute(multi, "add attribute", 0, "foo", "bar")) == {:error, "add attribute", [oid: {"does not exist", []}], %{}}
+      assert Repo.transaction(GameObject.has_attribute?(multi, "has attribute", 0, "foo")) == {:ok, %{"has attribute" => false}}
+      assert Repo.transaction(GameObject.remove_attribute(multi, "remove attribute", 0, "foo")) == {:error, "remove attribute", :no_such_attribute, %{}}
+      assert Repo.transaction(GameObject.get_attribute(multi, "get attribute", 0, "foo")) == {:error, "get attribute", :no_such_attribute, %{}}
+    end
   end
 
   defp create_new_game_object(_context) do
