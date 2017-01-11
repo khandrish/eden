@@ -238,11 +238,24 @@ defmodule Exmud.GameObject do
     end
   end
   
+  def add_command_set(%Ecto.Multi{} = multi, multi_key \\ :add_command_set, oid, key) do
+    Multi.run(multi, multi_key, fn(_) ->
+      add_command_set(oid, key)
+      |> wrap_result_for_multi()
+    end)
+  end
+  
   def has_command_set?(oid, key) do
     case Repo.one(command_set_query(oid, key)) do
       nil -> {:ok, false}
       _object -> {:ok, true}
     end
+  end
+  
+  def has_command_set?(%Ecto.Multi{} = multi, multi_key \\ :has_command_set, oid, key) do
+    Multi.run(multi, multi_key, fn(_) ->
+      has_command_set?(oid, key)
+    end)
   end
   
   def delete_command_set(oid, key) do
@@ -252,6 +265,13 @@ defmodule Exmud.GameObject do
       {0, _} -> {:error, :no_such_command_set}
       _ -> {:error, :unknown}
     end
+  end
+  
+  def delete_command_set(%Ecto.Multi{} = multi, multi_key \\ :delete_command_set, oid, key) do
+    Multi.run(multi, multi_key, fn(_) ->
+      delete_command_set(oid, key)
+      |> wrap_result_for_multi()
+    end)
   end
   
   

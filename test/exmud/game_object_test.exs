@@ -319,6 +319,44 @@ defmodule Exmud.GameObjectTest do
       assert Repo.transaction(GameObject.get_callback(multi, "get callback", 0, "foo", "foobar")) == {:error, "get callback", :no_such_callback, %{}}
       assert Repo.transaction(GameObject.delete_callback(multi, "delete callback", 0, "foo")) == {:error, "delete callback", :no_such_callback, %{}}
     end
+    
+    @tag command_set: true
+    @tag game_object: true
+    @tag wip: true
+    test "command_set list tests", %{multi: multi, oid: oid} = _context do
+      command_set1 = UUID.generate()
+      command_set2 = UUID.generate()
+      assert Repo.transaction(GameObject.list(multi, "list command set", command_sets: [command_set1])) == {:ok, %{"list command set" => []}}
+      assert Repo.transaction(GameObject.add_command_set(multi, "add command set", oid, command_set1)) == {:ok, %{"add command set" => :ok}}
+      assert Repo.transaction(GameObject.add_command_set(multi, "add command set", oid, command_set2)) == {:ok, %{"add command set" => :ok}}
+      assert Repo.transaction(GameObject.list(multi, "list command set", command_sets: [command_set1])) == {:ok, %{"list command set" => [oid]}}
+      assert Repo.transaction(GameObject.list(multi, "list command set", command_sets: [command_set2])) == {:ok, %{"list command set" => [oid]}}
+      assert Repo.transaction(GameObject.list(multi, "list command set", command_sets: [command_set1, command_set2])) == {:ok, %{"list command set" => [oid]}}
+    end
+    
+    @tag command_set: true
+    @tag game_object: true
+    @tag wip: true
+    test "command set on object lifecycle", %{multi: multi, oid: oid} = _context do
+      command_set = UUID.generate()
+      command_set2 = UUID.generate()
+      assert CommandSet.register(command_set, ECO) == :ok
+      assert Repo.transaction(GameObject.has_command_set?(multi, "has command set", oid, command_set)) == {:ok, %{"has command set" => false}}
+      assert Repo.transaction(GameObject.add_command_set(multi, "add command set", oid, command_set)) == {:ok, %{"add command set" => :ok}}
+      assert Repo.transaction(GameObject.add_command_set(multi, "add command set", oid, command_set2)) == {:ok, %{"add command set" => :ok}}
+      assert Repo.transaction(GameObject.has_command_set?(multi, "has command set", oid, command_set)) == {:ok, %{"has command set" => true}}
+      assert Repo.transaction(GameObject.delete_command_set(multi, "delete command set", oid, command_set)) == {:ok, %{"delete command set" => :ok}}
+      assert Repo.transaction(GameObject.has_command_set?(multi, "has command set", oid, command_set)) == {:ok, %{"has command set" => false}}
+    end
+    
+    @tag command_set: true
+    @tag game_object: true
+    @tag wip: true
+    test "command set invalid cases", %{multi: multi, oid: oid} = _context do
+      assert Repo.transaction(GameObject.has_command_set?(multi, "has command set", 0, "foo")) == {:ok, %{"has command set" => false}}
+      assert Repo.transaction(GameObject.add_command_set(multi, "add command set", 0, "foo")) == {:error, "add command set", :no_such_game_object, %{}}
+      assert Repo.transaction(GameObject.delete_command_set(multi, "delete command set", 0, "foo")) == {:error, "delete command set", :no_such_command_set, %{}}
+    end
   end
 
   defp create_new_game_object(_context) do
