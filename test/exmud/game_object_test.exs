@@ -322,7 +322,6 @@ defmodule Exmud.GameObjectTest do
     
     @tag command_set: true
     @tag game_object: true
-    @tag wip: true
     test "command_set list tests", %{multi: multi, oid: oid} = _context do
       command_set1 = UUID.generate()
       command_set2 = UUID.generate()
@@ -336,7 +335,6 @@ defmodule Exmud.GameObjectTest do
     
     @tag command_set: true
     @tag game_object: true
-    @tag wip: true
     test "command set on object lifecycle", %{multi: multi, oid: oid} = _context do
       command_set = UUID.generate()
       command_set2 = UUID.generate()
@@ -351,11 +349,52 @@ defmodule Exmud.GameObjectTest do
     
     @tag command_set: true
     @tag game_object: true
-    @tag wip: true
     test "command set invalid cases", %{multi: multi, oid: oid} = _context do
       assert Repo.transaction(GameObject.has_command_set?(multi, "has command set", 0, "foo")) == {:ok, %{"has command set" => false}}
       assert Repo.transaction(GameObject.add_command_set(multi, "add command set", 0, "foo")) == {:error, "add command set", :no_such_game_object, %{}}
       assert Repo.transaction(GameObject.delete_command_set(multi, "delete command set", 0, "foo")) == {:error, "delete command set", :no_such_command_set, %{}}
+    end
+    
+    @tag tag: true
+    @tag game_object: true
+    @tag wip: true
+    test "tag lifecycle", %{multi: multi, oid: oid} = _context do
+      assert Repo.transaction(GameObject.has_tag?(multi, "has tag", oid, "foo")) == {:ok, %{"has tag" => false}}
+      assert Repo.transaction(GameObject.has_tag?(multi, "has tag", oid, "foo", "bar")) == {:ok, %{"has tag" => false}}
+      assert Repo.transaction(GameObject.add_tag(multi, "add tag", oid, "foo")) == {:ok, %{"add tag" => :ok}}
+      assert Repo.transaction(GameObject.add_tag(multi, "add tag", oid, "foo", "bar")) == {:ok, %{"add tag" => :ok}}
+      assert Repo.transaction(GameObject.has_tag?(multi, "has tag", oid, "foo")) == {:ok, %{"has tag" => true}}
+      assert Repo.transaction(GameObject.has_tag?(multi, "has tag", oid, "foo", "bar")) == {:ok, %{"has tag" => true}}
+      assert Repo.transaction(GameObject.remove_tag(multi, "", oid, "foo")) == {:ok, %{"" => :ok}}
+      assert Repo.transaction(GameObject.has_tag?(multi, "has tag", oid, "foo")) == {:ok, %{"has tag" => false}}
+      assert Repo.transaction(GameObject.has_tag?(multi, "has tag", oid, "foo", "bar")) == {:ok, %{"has tag" => true}}
+    end
+    
+    @tag tag: true
+    @tag game_object: true
+    @tag wip: true
+    test "tag invalid cases", %{multi: multi, oid: oid} = _context do
+      assert Repo.transaction(GameObject.add_tag(multi, "add tag", "invalid id", :invalid_tag, "bar")) ==
+        {:error, "add tag",
+          [oid: {"is invalid", [type: :id, validation: :cast]},
+           key: {"is invalid", [type: :string, validation: :cast]}], %{}}
+      assert Repo.transaction(GameObject.has_tag?(multi, "has tag", 0, "foo")) == {:ok, %{"has tag" => false}}
+      assert Repo.transaction(GameObject.remove_tag(multi, "remove tag", 0, "foo")) == {:error, "remove tag", :no_such_tag, %{}}
+    end
+    
+    @tag tag: true
+    @tag game_object: true
+    @tag wip: true
+    test "tag list tests", %{multi: multi, oid: oid} = _context do
+      tag1 = UUID.generate()
+      tag2 = UUID.generate()
+      category = UUID.generate()
+      assert Repo.transaction(GameObject.list(multi, "list tag", tags: [{tag1, category}])) == {:ok, %{"list tag" => []}}
+      assert Repo.transaction(GameObject.add_tag(multi, "add tag", oid, tag1, category)) == {:ok, %{"add tag" => :ok}}
+      assert Repo.transaction(GameObject.add_tag(multi, "add tag", oid, tag2, category)) == {:ok, %{"add tag" => :ok}}
+      assert Repo.transaction(GameObject.list(multi, "list tag", tags: [{tag1, category}])) == {:ok, %{"list tag" => [oid]}}
+      assert Repo.transaction(GameObject.list(multi, "list tag", tags: [{tag2, category}])) == {:ok, %{"list tag" => [oid]}}
+      assert Repo.transaction(GameObject.list(multi, "list tag", tags: [{tag1, category}, {tag2, category}])) == {:ok, %{"list tag" => [oid]}}
     end
   end
 

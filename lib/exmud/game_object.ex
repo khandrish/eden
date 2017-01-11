@@ -25,7 +25,7 @@ defmodule Exmud.GameObject do
     end
   end
   
-  def new(%Ecto.Multi{} = multi, multi_key \\ :new_game_object, key) do
+  def new(%Ecto.Multi{} = multi, multi_key, key) do
     Multi.insert(multi, multi_key, new_changeset(key))
   end
   
@@ -36,7 +36,7 @@ defmodule Exmud.GameObject do
     end
   end
   
-  def delete(%Ecto.Multi{} = multi, multi_key \\ :delete_game_object, oid) do
+  def delete(%Ecto.Multi{} = multi, multi_key, oid) do
     Multi.delete(multi, multi_key, %Object{id: oid})
   end
   
@@ -50,7 +50,7 @@ defmodule Exmud.GameObject do
     |> Repo.all()
   end
   
-  def list(%Ecto.Multi{} = multi, multi_key \\ :list_game_objects, options) do
+  def list(%Ecto.Multi{} = multi, multi_key, options) do
     query =
       from object in Object,
         group_by: object.id,
@@ -78,7 +78,7 @@ defmodule Exmud.GameObject do
   end
   
   
-  def add_attribute(%Ecto.Multi{} = multi, multi_key \\ :add_attribute, oid, key, data) do
+  def add_attribute(%Ecto.Multi{} = multi, multi_key, oid, key, data) do
     Multi.run(multi, multi_key, fn(_) ->
       add_attribute(oid, key, data)
       |> wrap_result_for_multi()
@@ -93,7 +93,7 @@ defmodule Exmud.GameObject do
     end
   end
   
-  def get_attribute(%Ecto.Multi{} = multi, multi_key \\ :get_attribute, oid, key) do
+  def get_attribute(%Ecto.Multi{} = multi, multi_key, oid, key) do
     Multi.run(multi, multi_key, fn(_) ->
       get_attribute(oid, key)
     end)
@@ -106,7 +106,7 @@ defmodule Exmud.GameObject do
     end
   end
   
-  def has_attribute?(%Ecto.Multi{} = multi, multi_key \\ :has_attribute, oid, key) do
+  def has_attribute?(%Ecto.Multi{} = multi, multi_key, oid, key) do
     Multi.run(multi, multi_key, fn(_) ->
       has_attribute?(oid, key)
     end)
@@ -121,7 +121,7 @@ defmodule Exmud.GameObject do
     end
   end
   
-  def remove_attribute(%Ecto.Multi{} = multi, multi_key \\ :remove_attribute, oid, key) do
+  def remove_attribute(%Ecto.Multi{} = multi, multi_key, oid, key) do
     Multi.run(multi, multi_key, fn(_) ->
       remove_attribute(oid, key)
       |> wrap_result_for_multi()
@@ -136,7 +136,7 @@ defmodule Exmud.GameObject do
     |> normalize_noreturn_result()
   end
   
-  def update_attribute(%Ecto.Multi{} = multi, multi_key \\ :update_attribute, oid, key, data) do
+  def update_attribute(%Ecto.Multi{} = multi, multi_key, oid, key, data) do
     Multi.run(multi, multi_key, fn(_) ->
       update_attribute(oid, key, data)
       |> wrap_result_for_multi()
@@ -166,7 +166,7 @@ defmodule Exmud.GameObject do
     end
   end
   
-  def add_callback(%Ecto.Multi{} = multi, multi_key \\ :add_callback, oid, callback, key) do
+  def add_callback(%Ecto.Multi{} = multi, multi_key, oid, callback, key) do
     Multi.run(multi, multi_key, fn(_) ->
       add_callback(oid, callback, key)
       |> wrap_result_for_multi()
@@ -180,7 +180,7 @@ defmodule Exmud.GameObject do
     end
   end
   
-  def get_callback(%Ecto.Multi{} = multi, multi_key \\ :get_callback, oid, callback, default) do
+  def get_callback(%Ecto.Multi{} = multi, multi_key, oid, callback, default) do
     Multi.run(multi, multi_key, fn(_) ->
       get_callback(oid, callback, default)
     end)
@@ -193,7 +193,7 @@ defmodule Exmud.GameObject do
     end
   end
   
-  def has_callback?(%Ecto.Multi{} = multi, multi_key \\ :has_callback, oid, callback) do
+  def has_callback?(%Ecto.Multi{} = multi, multi_key, oid, callback) do
     Multi.run(multi, multi_key, fn(_) ->
       has_callback?(oid, callback)
     end)
@@ -208,7 +208,7 @@ defmodule Exmud.GameObject do
     end
   end
   
-  def delete_callback(%Ecto.Multi{} = multi, multi_key \\ :delete_callback, oid, callback) do
+  def delete_callback(%Ecto.Multi{} = multi, multi_key, oid, callback) do
     Multi.run(multi, multi_key, fn(_) ->
       delete_callback(oid, callback)
       |> wrap_result_for_multi()
@@ -238,7 +238,7 @@ defmodule Exmud.GameObject do
     end
   end
   
-  def add_command_set(%Ecto.Multi{} = multi, multi_key \\ :add_command_set, oid, key) do
+  def add_command_set(%Ecto.Multi{} = multi, multi_key, oid, key) do
     Multi.run(multi, multi_key, fn(_) ->
       add_command_set(oid, key)
       |> wrap_result_for_multi()
@@ -252,7 +252,7 @@ defmodule Exmud.GameObject do
     end
   end
   
-  def has_command_set?(%Ecto.Multi{} = multi, multi_key \\ :has_command_set, oid, key) do
+  def has_command_set?(%Ecto.Multi{} = multi, multi_key, oid, key) do
     Multi.run(multi, multi_key, fn(_) ->
       has_command_set?(oid, key)
     end)
@@ -267,7 +267,7 @@ defmodule Exmud.GameObject do
     end
   end
   
-  def delete_command_set(%Ecto.Multi{} = multi, multi_key \\ :delete_command_set, oid, key) do
+  def delete_command_set(%Ecto.Multi{} = multi, multi_key, oid, key) do
     Multi.run(multi, multi_key, fn(_) ->
       delete_command_set(oid, key)
       |> wrap_result_for_multi()
@@ -287,11 +287,24 @@ defmodule Exmud.GameObject do
     |> normalize_noreturn_result()
   end
   
+  def add_tag(%Ecto.Multi{} = multi, multi_key, oid, key, category \\ "__DEFAULT__") do
+    Multi.run(multi, multi_key, fn(_) ->
+      add_tag(oid, key, category)
+      |> wrap_result_for_multi()
+    end)
+  end
+  
   def has_tag?(oid, key, category \\ "__DEFAULT__") do
     case Repo.one(find_tag_query(oid, key, category)) do
       nil -> {:ok, false}
       _object -> {:ok, true}
     end
+  end
+  
+  def has_tag?(%Ecto.Multi{} = multi, multi_key, oid, key, category \\ "__DEFAULT__") do
+    Multi.run(multi, multi_key, fn(_) ->
+      has_tag?(oid, key, category)
+    end)
   end
   
   def remove_tag(oid, key, category \\ "__DEFAULT__") do
@@ -306,6 +319,13 @@ defmodule Exmud.GameObject do
       {0, _} -> {:error, :no_such_tag}
       _ -> {:error, :unknown}
     end
+  end
+  
+  def remove_tag(%Ecto.Multi{} = multi, multi_key, oid, key, category \\ "__DEFAULT__") do
+    Multi.run(multi, multi_key, fn(_) ->
+      remove_tag(oid, key, category)
+      |> wrap_result_for_multi()
+    end)
   end
   
   
