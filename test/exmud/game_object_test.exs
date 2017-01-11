@@ -284,6 +284,41 @@ defmodule Exmud.GameObjectTest do
       assert Repo.transaction(GameObject.remove_attribute(multi, "remove attribute", 0, "foo")) == {:error, "remove attribute", :no_such_attribute, %{}}
       assert Repo.transaction(GameObject.get_attribute(multi, "get attribute", 0, "foo")) == {:error, "get attribute", :no_such_attribute, %{}}
     end
+    
+    @tag callback: true
+    @tag game_object: true
+    test "callback list tests", %{multi: multi, oid: oid} = _context do
+      callback1 = UUID.generate()
+      callback2 = UUID.generate()
+      assert Repo.transaction(GameObject.list(multi, "list callback", callbacks: [callback1])) == {:ok, %{"list callback" => []}}
+      assert Repo.transaction(GameObject.add_callback(multi, "add callback", oid, callback1, "bar")) == {:ok, %{"add callback" => :ok}}
+      assert Repo.transaction(GameObject.add_callback(multi, "add callback", oid, callback2, "bar")) == {:ok, %{"add callback" => :ok}}
+      assert Repo.transaction(GameObject.list(multi, "list callback", callbacks: [callback1])) == {:ok, %{"list callback" => [oid]}}
+      assert Repo.transaction(GameObject.list(multi, "list callback", callbacks: [callback2])) == {:ok, %{"list callback" => [oid]}}
+      assert Repo.transaction(GameObject.list(multi, "list callback", callbacks: [callback1, callback2])) == {:ok, %{"list callback" => [oid]}}
+    end
+    
+    @tag callback: true
+    @tag game_object: true
+    test "callback lifecycle", %{multi: multi, oid: oid} = _context do
+      assert Callback.register("foo", EC) == :ok
+      assert Repo.transaction(GameObject.has_callback?(multi, "has callback", oid, "foo")) == {:ok, %{"has callback" => false}}
+      assert Repo.transaction(GameObject.add_callback(multi, "add callback", oid, "foo", "foo")) == {:ok, %{"add callback" => :ok}}
+      assert Repo.transaction(GameObject.add_callback(multi, "add callback", oid, "foobar", "foo")) == {:ok, %{"add callback" => :ok}}
+      assert Repo.transaction(GameObject.has_callback?(multi, "has callback", oid, "foo")) == {:ok, %{"has callback" => true}}
+      assert Repo.transaction(GameObject.get_callback(multi, "get callback", oid, "foo", "foobar")) == {:ok, %{"get callback" => EC}}
+      assert Repo.transaction(GameObject.delete_callback(multi, "delete callback", oid, "foo")) == {:ok, %{"delete callback" => :ok}}
+      assert Repo.transaction(GameObject.has_callback?(multi, "has callback", oid, "foo")) == {:ok, %{"has callback" => false}}
+    end
+    
+    @tag callback: true
+    @tag game_object: true
+    test "callback invalid cases", %{multi: multi, oid: oid} = _context do
+      assert Repo.transaction(GameObject.has_callback?(multi, "has callback", 0, "foo")) == {:ok, %{"has callback" => false}}
+      assert Repo.transaction(GameObject.add_callback(multi, "add callback", 0, "foo", "foo")) == {:error, "add callback", :no_such_game_object, %{}}
+      assert Repo.transaction(GameObject.get_callback(multi, "get callback", 0, "foo", "foobar")) == {:error, "get callback", :no_such_callback, %{}}
+      assert Repo.transaction(GameObject.delete_callback(multi, "delete callback", 0, "foo")) == {:error, "delete callback", :no_such_callback, %{}}
+    end
   end
 
   defp create_new_game_object(_context) do

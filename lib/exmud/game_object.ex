@@ -166,11 +166,24 @@ defmodule Exmud.GameObject do
     end
   end
   
+  def add_callback(%Ecto.Multi{} = multi, multi_key \\ :add_callback, oid, callback, key) do
+    Multi.run(multi, multi_key, fn(_) ->
+      add_callback(oid, callback, key)
+      |> wrap_result_for_multi()
+    end)
+  end
+  
   def get_callback(oid, callback, default) do
     case Repo.one(callback_query(oid, callback)) do
       nil -> Exmud.Callback.which_module(default)
       callback -> Exmud.Callback.which_module(callback.key)
     end
+  end
+  
+  def get_callback(%Ecto.Multi{} = multi, multi_key \\ :get_callback, oid, callback, default) do
+    Multi.run(multi, multi_key, fn(_) ->
+      get_callback(oid, callback, default)
+    end)
   end
   
   def has_callback?(oid, callback) do
@@ -180,13 +193,26 @@ defmodule Exmud.GameObject do
     end
   end
   
+  def has_callback?(%Ecto.Multi{} = multi, multi_key \\ :has_callback, oid, callback) do
+    Multi.run(multi, multi_key, fn(_) ->
+      has_callback?(oid, callback)
+    end)
+  end
+  
   def delete_callback(oid, callback) do
     Repo.delete_all(callback_query(oid, callback))
     |> case do
       {1, _} -> :ok
       {0, _} -> {:error, :no_such_callback}
-      _ -> {:error, :unknown}
+      _ -> {:error, :unknown} # What are the error conditions? What needs to be handled?
     end
+  end
+  
+  def delete_callback(%Ecto.Multi{} = multi, multi_key \\ :delete_callback, oid, callback) do
+    Multi.run(multi, multi_key, fn(_) ->
+      delete_callback(oid, callback)
+      |> wrap_result_for_multi()
+    end)
   end
   
   
