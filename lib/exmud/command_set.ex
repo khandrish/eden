@@ -171,6 +171,7 @@ defmodule Exmud.CommandSet do
   # Private functions
   #
   
+  
   # Given a command struct, create a map where the keys are the combined aliases and
   # command set key and all of the values are the command struct itself.
   defp create_commands_map(commands) do

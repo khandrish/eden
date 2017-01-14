@@ -13,6 +13,8 @@ defmodule Exmud.Callback do
   is not found the engine will fall back to a default implementation.
   """
   
+  # TODO: write callback behavior/spec
+  
   alias Exmud.Registry
   alias Exmud.Repo
   alias Exmud.Schema.Callback
@@ -30,6 +32,10 @@ defmodule Exmud.Callback do
   @doc """
   In order for the engine to map callback strings to callback modules, each
   callback module must be registered with the engine via a unique key.
+  
+  For example: A 'light' command on a torch might expect the object to have
+  before_light, on_light, and after_light callbacks for flow control and
+  customization.
   """
   def register(key, callback_module) do
     Logger.debug("Registering callback for key `#{key}` with module `#{callback_module}`")

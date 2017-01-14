@@ -1,4 +1,5 @@
 defmodule Exmud.GameObject do
+  alias Ecto.Multi
   alias Exmud.Repo
   alias Exmud.Schema.Attribute
   alias Exmud.Schema.Callback
@@ -17,22 +18,26 @@ defmodule Exmud.GameObject do
   
   
   def new(key) do
-    case Repo.insert(Object.changeset(%Object{}, %{key: key, date_created: DateTime.utc_now()})) do
+    case Repo.insert(new_changeset(key)) do
       {:ok, object} -> {:ok, object.id}
       {:error, changeset} ->
         {:error, changeset.errors}
     end
   end
   
+  def new(%Ecto.Multi{} = multi, multi_key, key) do
+    Multi.insert(multi, multi_key, new_changeset(key))
+  end
+  
   def delete(oid) do
-    case Repo.get(Object, oid) do
-      nil -> :ok
-      object ->
-        case Repo.delete(object) do
-          {:ok, _} -> :ok
-          result -> result
-        end
+    case Repo.delete(%Object{id: oid}) do
+      {:ok, _} -> :ok
+      result -> result
     end
+  end
+  
+  def delete(%Ecto.Multi{} = multi, multi_key, oid) do
+    Multi.delete(multi, multi_key, %Object{id: oid})
   end
   
   def list(options) do
@@ -41,8 +46,21 @@ defmodule Exmud.GameObject do
         group_by: object.id,
         select: object.id
     
-    list(query, options)
+    build_list_query(query, options)
     |> Repo.all()
+  end
+  
+  def list(%Ecto.Multi{} = multi, multi_key, options) do
+    query =
+      from object in Object,
+        group_by: object.id,
+        select: object.id
+    
+    query = build_list_query(query, options)
+    
+    Multi.run(multi, multi_key, fn(_) ->
+      {:ok, Repo.all(query)}
+    end)
   end
   
   
@@ -59,6 +77,14 @@ defmodule Exmud.GameObject do
     |> normalize_noreturn_result()
   end
   
+  
+  def add_attribute(%Ecto.Multi{} = multi, multi_key, oid, key, data) do
+    Multi.run(multi, multi_key, fn(_) ->
+      add_attribute(oid, key, data)
+      |> wrap_result_for_multi()
+    end)
+  end
+  
   def get_attribute(oid, key) do
     case Repo.one(attribute_query(oid, key)) do
       nil -> {:error, :no_such_attribute}
@@ -67,11 +93,23 @@ defmodule Exmud.GameObject do
     end
   end
   
+  def get_attribute(%Ecto.Multi{} = multi, multi_key, oid, key) do
+    Multi.run(multi, multi_key, fn(_) ->
+      get_attribute(oid, key)
+    end)
+  end
+  
   def has_attribute?(oid, key) do
     case Repo.one(attribute_query(oid, key)) do
       nil -> {:ok, false}
       _object -> {:ok, true}
     end
+  end
+  
+  def has_attribute?(%Ecto.Multi{} = multi, multi_key, oid, key) do
+    Multi.run(multi, multi_key, fn(_) ->
+      has_attribute?(oid, key)
+    end)
   end
   
   def remove_attribute(oid, key) do
@@ -83,12 +121,26 @@ defmodule Exmud.GameObject do
     end
   end
   
+  def remove_attribute(%Ecto.Multi{} = multi, multi_key, oid, key) do
+    Multi.run(multi, multi_key, fn(_) ->
+      remove_attribute(oid, key)
+      |> wrap_result_for_multi()
+    end)
+  end
+  
   def update_attribute(oid, key, data) do
     args = %{data: data,
              key: key,
              oid: oid}
     Repo.update(Attribute.changeset(%Attribute{}, args))
     |> normalize_noreturn_result()
+  end
+  
+  def update_attribute(%Ecto.Multi{} = multi, multi_key, oid, key, data) do
+    Multi.run(multi, multi_key, fn(_) ->
+      update_attribute(oid, key, data)
+      |> wrap_result_for_multi()
+    end)
   end
   
   
@@ -114,11 +166,24 @@ defmodule Exmud.GameObject do
     end
   end
   
+  def add_callback(%Ecto.Multi{} = multi, multi_key, oid, callback, key) do
+    Multi.run(multi, multi_key, fn(_) ->
+      add_callback(oid, callback, key)
+      |> wrap_result_for_multi()
+    end)
+  end
+  
   def get_callback(oid, callback, default) do
     case Repo.one(callback_query(oid, callback)) do
       nil -> Exmud.Callback.which_module(default)
       callback -> Exmud.Callback.which_module(callback.key)
     end
+  end
+  
+  def get_callback(%Ecto.Multi{} = multi, multi_key, oid, callback, default) do
+    Multi.run(multi, multi_key, fn(_) ->
+      get_callback(oid, callback, default)
+    end)
   end
   
   def has_callback?(oid, callback) do
@@ -128,13 +193,26 @@ defmodule Exmud.GameObject do
     end
   end
   
+  def has_callback?(%Ecto.Multi{} = multi, multi_key, oid, callback) do
+    Multi.run(multi, multi_key, fn(_) ->
+      has_callback?(oid, callback)
+    end)
+  end
+  
   def delete_callback(oid, callback) do
     Repo.delete_all(callback_query(oid, callback))
     |> case do
       {1, _} -> :ok
       {0, _} -> {:error, :no_such_callback}
-      _ -> {:error, :unknown}
+      _ -> {:error, :unknown} # What are the error conditions? What needs to be handled?
     end
+  end
+  
+  def delete_callback(%Ecto.Multi{} = multi, multi_key, oid, callback) do
+    Multi.run(multi, multi_key, fn(_) ->
+      delete_callback(oid, callback)
+      |> wrap_result_for_multi()
+    end)
   end
   
   
@@ -160,11 +238,24 @@ defmodule Exmud.GameObject do
     end
   end
   
+  def add_command_set(%Ecto.Multi{} = multi, multi_key, oid, key) do
+    Multi.run(multi, multi_key, fn(_) ->
+      add_command_set(oid, key)
+      |> wrap_result_for_multi()
+    end)
+  end
+  
   def has_command_set?(oid, key) do
     case Repo.one(command_set_query(oid, key)) do
       nil -> {:ok, false}
       _object -> {:ok, true}
     end
+  end
+  
+  def has_command_set?(%Ecto.Multi{} = multi, multi_key, oid, key) do
+    Multi.run(multi, multi_key, fn(_) ->
+      has_command_set?(oid, key)
+    end)
   end
   
   def delete_command_set(oid, key) do
@@ -174,6 +265,13 @@ defmodule Exmud.GameObject do
       {0, _} -> {:error, :no_such_command_set}
       _ -> {:error, :unknown}
     end
+  end
+  
+  def delete_command_set(%Ecto.Multi{} = multi, multi_key, oid, key) do
+    Multi.run(multi, multi_key, fn(_) ->
+      delete_command_set(oid, key)
+      |> wrap_result_for_multi()
+    end)
   end
   
   
@@ -189,11 +287,24 @@ defmodule Exmud.GameObject do
     |> normalize_noreturn_result()
   end
   
+  def add_tag(%Ecto.Multi{} = multi, multi_key, oid, key, category \\ "__DEFAULT__") do
+    Multi.run(multi, multi_key, fn(_) ->
+      add_tag(oid, key, category)
+      |> wrap_result_for_multi()
+    end)
+  end
+  
   def has_tag?(oid, key, category \\ "__DEFAULT__") do
     case Repo.one(find_tag_query(oid, key, category)) do
       nil -> {:ok, false}
       _object -> {:ok, true}
     end
+  end
+  
+  def has_tag?(%Ecto.Multi{} = multi, multi_key, oid, key, category \\ "__DEFAULT__") do
+    Multi.run(multi, multi_key, fn(_) ->
+      has_tag?(oid, key, category)
+    end)
   end
   
   def remove_tag(oid, key, category \\ "__DEFAULT__") do
@@ -210,6 +321,13 @@ defmodule Exmud.GameObject do
     end
   end
   
+  def remove_tag(%Ecto.Multi{} = multi, multi_key, oid, key, category \\ "__DEFAULT__") do
+    Multi.run(multi, multi_key, fn(_) ->
+      remove_tag(oid, key, category)
+      |> wrap_result_for_multi()
+    end)
+  end
+  
   
   #
   # Private functions
@@ -218,151 +336,155 @@ defmodule Exmud.GameObject do
   
   # List Attributes
   
-  defp list(query, []), do: query
-  defp list(query, [{_, []} | options]), do: list(query, options)
+  defp build_list_query(query, []), do: query
+  defp build_list_query(query, [{_, []} | options]), do: build_list_query(query, options)
   
-  defp list(query, [{:or_attributes, [{:or, _} | _] = attributes} | options]) do
-    list(query, [{:attributes, attributes} | options])
+  defp build_list_query(query, [{:or_attributes, [{:or, _} | _] = attributes} | options]) do
+    build_list_query(query, [{:attributes, attributes} | options])
   end
   
-  defp list(query, [{:or_attributes, [attribute | attributes]} | options]) do
-    list(query, [{:attributes, [{:or, attribute} | attributes]} | options])
+  defp build_list_query(query, [{:or_attributes, [attribute | attributes]} | options]) do
+    build_list_query(query, [{:attributes, [{:or, attribute} | attributes]} | options])
   end
   
-  defp list(query, [{:attributes, [{:or, attribute} | attributes]} | options]) do
+  defp build_list_query(query, [{:attributes, [{:or, attribute} | attributes]} | options]) do
     query = 
       from object in query,
         inner_join: attribute in assoc(object, :attributes), on: object.id == attribute.oid,
         or_where: attribute.key == ^attribute
     
-    list(query, [{:attributes, attributes} | options])
+    build_list_query(query, [{:attributes, attributes} | options])
   end
   
-  defp list(query, [{:attributes, [attribute | attributes]} | options]) do
+  defp build_list_query(query, [{:attributes, [attribute | attributes]} | options]) do
     query = 
       from object in query,
         inner_join: attribute in assoc(object, :attributes), on: object.id == attribute.oid,
         where: attribute.key == ^attribute
     
-    list(query, [{:attributes, attributes} | options])
+    build_list_query(query, [{:attributes, attributes} | options])
   end
   
   # List Callbacks
   
-  defp list(query, [{:or_callbacks, [{:or, _} | _] = callbacks} | options]) do
-    list(query, [{:callbacks, callbacks} | options])
+  defp build_list_query(query, [{:or_callbacks, [{:or, _} | _] = callbacks} | options]) do
+    build_list_query(query, [{:callbacks, callbacks} | options])
   end
   
-  defp list(query, [{:or_callbacks, [callback | callbacks]} | options]) do
-    list(query, [{:callbacks, [{:or, callback} | callbacks]} | options])
+  defp build_list_query(query, [{:or_callbacks, [callback | callbacks]} | options]) do
+    build_list_query(query, [{:callbacks, [{:or, callback} | callbacks]} | options])
   end
   
-  defp list(query, [{:callbacks, [{:or, callback} | callbacks]} | options]) do
+  defp build_list_query(query, [{:callbacks, [{:or, callback} | callbacks]} | options]) do
     query = 
       from object in query,
         inner_join: callback in assoc(object, :callbacks), on: object.id == callback.oid,
         or_where: callback.callback == ^callback
     
-    list(query, [{:callbacks, callbacks} | options])
+    build_list_query(query, [{:callbacks, callbacks} | options])
   end
   
-  defp list(query, [{:callbacks, [callback | callbacks]} | options]) do
+  defp build_list_query(query, [{:callbacks, [callback | callbacks]} | options]) do
     query = 
       from object in query,
         inner_join: callback in assoc(object, :callbacks), on: object.id == callback.oid,
         where: callback.callback == ^callback
     
-    list(query, [{:callbacks, callbacks} | options])
+    build_list_query(query, [{:callbacks, callbacks} | options])
   end
   
   
   # List Command Set
   
-  defp list(query, []), do: query
-  defp list(query, [{_, []} | options]), do: list(query, options)
+  defp build_list_query(query, []), do: query
+  defp build_list_query(query, [{_, []} | options]), do: build_list_query(query, options)
   
-  defp list(query, [{:or_command_sets, [{:or, _} | _] = command_sets} | options]) do
-    list(query, [{:command_sets, command_sets} | options])
+  defp build_list_query(query, [{:or_command_sets, [{:or, _} | _] = command_sets} | options]) do
+    build_list_query(query, [{:command_sets, command_sets} | options])
   end
   
-  defp list(query, [{:or_command_sets, [command_set | command_sets]} | options]) do
-    list(query, [{:command_sets, [{:or, command_set} | command_sets]} | options])
+  defp build_list_query(query, [{:or_command_sets, [command_set | command_sets]} | options]) do
+    build_list_query(query, [{:command_sets, [{:or, command_set} | command_sets]} | options])
   end
   
-  defp list(query, [{:command_sets, [{:or, command_set} | command_sets]} | options]) do
+  defp build_list_query(query, [{:command_sets, [{:or, command_set} | command_sets]} | options]) do
     query = 
       from object in query,
         inner_join: command_set in assoc(object, :command_sets), on: object.id == command_set.oid,
         or_where: command_set.key == ^command_set
     
-    list(query, [{:command_sets, command_sets} | options])
+    build_list_query(query, [{:command_sets, command_sets} | options])
   end
   
-  defp list(query, [{:command_sets, [command_set | command_sets]} | options]) do
+  defp build_list_query(query, [{:command_sets, [command_set | command_sets]} | options]) do
     query = 
       from object in query,
         inner_join: command_set in assoc(object, :command_sets), on: object.id == command_set.oid,
         where: command_set.key == ^command_set
     
-    list(query, [{:command_sets, command_sets} | options])
+    build_list_query(query, [{:command_sets, command_sets} | options])
   end
   
   
   # List Keys
   
-  defp list(query, [{:or_objects, [{:or, _} | _] = keys} | options]) do
-    list(query, [{:objects, keys} | options])
+  defp build_list_query(query, [{:or_objects, [{:or, _} | _] = keys} | options]) do
+    build_list_query(query, [{:objects, keys} | options])
   end
   
-  defp list(query, [{:or_objects, [key | keys]} | options]) do
-    list(query, [{:objects, [{:or, key} | keys]} | options])
+  defp build_list_query(query, [{:or_objects, [key | keys]} | options]) do
+    build_list_query(query, [{:objects, [{:or, key} | keys]} | options])
   end
   
-  defp list(query, [{:objects, [{:or, key} | keys]} | options]) do
+  defp build_list_query(query, [{:objects, [{:or, key} | keys]} | options]) do
     query = 
       from object in query,
         or_where: object.key == ^key
     
-    list(query, [{:objects, keys} | options])
+    build_list_query(query, [{:objects, keys} | options])
   end
   
-  defp list(query, [{:objects, [key | keys]} | options]) do
+  defp build_list_query(query, [{:objects, [key | keys]} | options]) do
     query = 
       from object in query,
         where: object.key == ^key
     
-    list(query, [{:objects, keys} | options])
+    build_list_query(query, [{:objects, keys} | options])
   end
   
   
   # List Tags
   
-  defp list(query, [{:or_tags, [{:or, _} | _] = tags} | options]) do
-    list(query, [{:tags, tags} | options])
+  defp build_list_query(query, [{:or_tags, [{:or, _} | _] = tags} | options]) do
+    build_list_query(query, [{:tags, tags} | options])
   end
   
-  defp list(query, [{:or_tags, [tag | tags]} | options]) do
-    list(query, [{:tags, [{:or, tag} | tags]} | options])
+  defp build_list_query(query, [{:or_tags, [tag | tags]} | options]) do
+    build_list_query(query, [{:tags, [{:or, tag} | tags]} | options])
   end
   
-  defp list(query, [{:tags, [{:or, {key, category}} | tags]} | options]) do
+  defp build_list_query(query, [{:tags, [{:or, {key, category}} | tags]} | options]) do
     query = 
       from object in query,
         inner_join: tag in assoc(object, :tags), on: object.id == tag.oid,
         or_where: tag.key == ^key,
         where: tag.category == ^category
     
-    list(query, [{:tags, tags} | options])
+    build_list_query(query, [{:tags, tags} | options])
   end
   
-  defp list(query, [{:tags, [{key, category} | tags]} | options]) do
+  defp build_list_query(query, [{:tags, [{key, category} | tags]} | options]) do
     query = 
       from object in query,
         inner_join: tag in assoc(object, :tags), on: object.id == tag.oid,
         where: tag.key == ^key,
         where: tag.category == ^category
     
-    list(query, [{:tags, tags} | options])
+    build_list_query(query, [{:tags, tags} | options])
+  end
+  
+  defp new_changeset(key) do
+    Object.changeset(%Object{}, %{key: key, date_created: DateTime.utc_now()})
   end
   
   # Queries
@@ -388,10 +510,14 @@ defmodule Exmud.GameObject do
       where: command_set.oid == ^oid
   end
   
+  # Return the query used to find a specific tag mapped to a specific object.
   defp find_tag_query(oid, key, category) do
     from tag in Tag,
       where: tag.category == ^category,
       where: tag.key == ^key,
       where: tag.oid == ^oid
   end
+  
+  def wrap_result_for_multi(:ok), do: {:ok, :ok}
+  def wrap_result_for_multi(result), do: result
 end
