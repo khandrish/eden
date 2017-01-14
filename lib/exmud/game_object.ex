@@ -510,6 +510,7 @@ defmodule Exmud.GameObject do
       where: command_set.oid == ^oid
   end
   
+  # Return the query used to find a specific tag mapped to a specific object.
   defp find_tag_query(oid, key, category) do
     from tag in Tag,
       where: tag.category == ^category,
