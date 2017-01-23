@@ -1,8 +1,8 @@
 # Exmud
 
 [![Build Status](https://travis-ci.org/mononym/exmud.svg?branch=master)](https://travis-ci.org/mononym/exmud)
+[![Coverage Status](https://coveralls.io/repos/github/mononym/exmud/badge.svg?branch=master)](https://coveralls.io/github/mononym/exmud?branch=master)
 [![Inline docs](http://inch-ci.org/github/mononym/exmud.svg)](http://inch-ci.org/github/mononym/exmud)
-[![Ebert](https://ebertapp.io/github/mononym/exmud.svg)](https://ebertapp.io/github/mononym/exmud)
 
 Exmud is a framework and game agnostic M.U.D. engine.
 

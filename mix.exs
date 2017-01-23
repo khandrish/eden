@@ -3,15 +3,17 @@ defmodule Exmud.Mixfile do
 
   def project do
     [app: :exmud,
-     version: "0.0.1",
+     build_embedded: Mix.env == :prod,
+     compilers: Mix.compilers,
+     deps: deps,
      elixir: "~> 1.3",
      elixirc_paths: elixirc_paths(Mix.env),
-     compilers: Mix.compilers,
-     build_embedded: Mix.env == :prod,
-     start_permanent: Mix.env == :prod,
-     deps: deps,
      description: description(),
-     package: package()]
+     package: package(),
+     preferred_cli_env: ["coveralls": :test, "coveralls.detail": :test, "coveralls.post": :test, "coveralls.html": :test],
+     start_permanent: Mix.env == :prod,
+     test_coverage: [tool: ExCoveralls],
+     version: "0.0.1",]
   end
 
   def application do
@@ -26,7 +28,9 @@ defmodule Exmud.Mixfile do
   defp deps do
     [{:apex, "~> 0.5.2"},
      {:calendar, "~> 0.16.0"},
+     {:e_queue, "~> 1.0.1"},
      {:ecto, "~> 2.1.0"},
+     {:excoveralls, "~> 0.5", only: :test},
      {:execs, "~> 0.4.0"},
      {:ex_doc, ">= 0.14.3", only: :dev},
      {:fsm, "~> 0.2.0"},
