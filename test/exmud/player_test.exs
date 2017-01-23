@@ -8,7 +8,7 @@ defmodule Exmud.PlayerTest do
     setup [:add_player]
 
     @tag player: true
-    test "player lifecycle", %{key: key, oid: oid} = _context do
+    test "player lifecycle", %{key: key} = _context do
       assert Player.exists?(key) == true
       assert Player.remove(key) == {:ok, key}
       assert Player.exists?(key) == false
@@ -44,12 +44,12 @@ defmodule Exmud.PlayerTest do
     setup [:add_player]
 
     @tag player: true
-    test "data lifecycle", %{key: key} = _context do
+    test "data lifecycle", %{key: key, oid: oid} = _context do
       assert Player.has_attribute?(key, "foo") == {:ok, false}
-      assert Player.add_attribute(key, "foo", :bar) == :ok
+      assert Player.add_attribute(key, "foo", :bar) == {:ok, oid}
       assert Player.has_attribute?(key, "foo") == {:ok, true}
       assert Player.get_attribute(key, "foo") == {:ok, :bar}
-      assert Player.remove_attribute(key, "foo") == :ok
+      assert Player.remove_attribute(key, "foo") == {:ok, oid}
       assert Player.has_attribute?(key, "foo") == {:ok, false}
     end
 
@@ -61,7 +61,7 @@ defmodule Exmud.PlayerTest do
       assert Player.get_attribute("invalid player", "foo") == {:error, :no_such_player}
       assert Player.remove_attribute(key, "foobar") == {:error, :no_such_attribute}
       assert Player.add_attribute("invalid player", "foo", :bar) == {:error, :no_such_player}
-      assert Player.add_attribute(key, :invalid_attribute, :bar) == {:error, [key: {"is invalid", [type: :string, validation: :cast]}]}
+      assert Player.add_attribute(key, :invalid_attribute, :bar) == {:error, [key: "is invalid"]}
       assert Player.has_attribute?("invalid player", "foo") == {:error, :no_such_player}
     end
   end

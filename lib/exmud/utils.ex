@@ -13,12 +13,8 @@ defmodule Exmud.Utils do
   def deserialize(term), do: :erlang.binary_to_term(term)
   def serialize(term), do: :erlang.term_to_binary(term)
 
-  def normalize_noreturn_result({:ok, _object}), do: :ok
-  def normalize_noreturn_result({:error, changeset}), do: {:error, changeset.errors}
+  def normalize_ecto_errors(errors), do: Enum.map(errors, fn({key, {error, _}}) -> {key, error} end)
 
-  def wrap_ok_result_for_multi(:ok), do: {:ok, :ok}
-  def wrap_ok_result_for_multi(result), do: result
-
-  def unwrap_multi_ok_result({:ok, result}, multi_key), do: {:ok, result[multi_key]}
-  def unwrap_multi_ok_result(error, _), do: error
+  def normalize_ok_result({:ok, _}, desired_result), do: {:ok, desired_result}
+  def normalize_ok_result({:error, changeset}, _offender), do: {:error, normalize_ecto_errors(changeset.errors)}
 end

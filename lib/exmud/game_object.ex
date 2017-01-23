@@ -20,8 +20,7 @@ defmodule Exmud.GameObject do
   def new(key) do
     case Repo.insert(new_changeset(key)) do
       {:ok, object} -> {:ok, object.id}
-      {:error, changeset} ->
-        {:error, changeset.errors}
+      {:error, changeset} -> {:error, changeset.errors}
     end
   end
 
@@ -72,22 +71,20 @@ defmodule Exmud.GameObject do
              key: key,
              oid: oid}
     Repo.insert(Attribute.changeset(%Attribute{}, args))
-    |> normalize_noreturn_result()
+    |> normalize_ok_result(oid)
   end
 
 
   def add_attribute(%Ecto.Multi{} = multi, multi_key, oid, key, data) do
     Multi.run(multi, multi_key, fn(_) ->
       add_attribute(oid, key, data)
-      |> wrap_ok_result_for_multi()
     end)
   end
 
   def get_attribute(oid, key) do
     case Repo.one(attribute_query(oid, key)) do
       nil -> {:error, :no_such_attribute}
-      object ->
-        {:ok, :erlang.binary_to_term(object.data)}
+      object -> {:ok, :erlang.binary_to_term(object.data)}
     end
   end
 
@@ -113,7 +110,7 @@ defmodule Exmud.GameObject do
   def remove_attribute(oid, key) do
     Repo.delete_all(attribute_query(oid, key))
     |> case do
-      {1, _} -> :ok
+      {1, _} -> {:ok, oid}
       {0, _} -> {:error, :no_such_attribute}
       _ -> {:error, :unknown}
     end
@@ -122,7 +119,6 @@ defmodule Exmud.GameObject do
   def remove_attribute(%Ecto.Multi{} = multi, multi_key, oid, key) do
     Multi.run(multi, multi_key, fn(_) ->
       remove_attribute(oid, key)
-      |> wrap_ok_result_for_multi()
     end)
   end
 
@@ -131,13 +127,12 @@ defmodule Exmud.GameObject do
              key: key,
              oid: oid}
     Repo.update(Attribute.changeset(%Attribute{}, args))
-    |> normalize_noreturn_result()
+    |> normalize_ok_result(oid)
   end
 
   def update_attribute(%Ecto.Multi{} = multi, multi_key, oid, key, data) do
     Multi.run(multi, multi_key, fn(_) ->
       update_attribute(oid, key, data)
-      |> wrap_ok_result_for_multi()
     end)
   end
 
@@ -150,32 +145,31 @@ defmodule Exmud.GameObject do
   def add_callback(oid, callback, key) do
     args = %{callback: callback, key: key, oid: oid}
     Repo.insert(Callback.changeset(%Callback{}, args))
-    |> normalize_noreturn_result()
+    |> normalize_ok_result(oid)
     |> case do
       {:error, errors} ->
         if Keyword.has_key?(errors, :oid) do
-          Logger.warn("Attempt to add callback onto non existing object `#{oid}` failed")
+          Logger.warn("Attempt to add callback onto non existing object `#{oid}`")
           {:error, :no_such_game_object}
         else
           {:error, errors}
         end
-      result ->
-        result
+      result -> result
     end
   end
 
   def add_callback(%Ecto.Multi{} = multi, multi_key, oid, callback, key) do
     Multi.run(multi, multi_key, fn(_) ->
       add_callback(oid, callback, key)
-      |> wrap_ok_result_for_multi()
     end)
   end
 
   def get_callback(oid, callback, default) do
     case Repo.one(callback_query(oid, callback)) do
-      nil -> Exmud.Callback.which_module(default)
-      callback -> Exmud.Callback.which_module(callback.key)
+      nil -> default
+      callback -> callback.key
     end
+    |> Exmud.Callback.which_module()
   end
 
   def get_callback(%Ecto.Multi{} = multi, multi_key, oid, callback, default) do
@@ -200,7 +194,7 @@ defmodule Exmud.GameObject do
   def delete_callback(oid, callback) do
     Repo.delete_all(callback_query(oid, callback))
     |> case do
-      {1, _} -> :ok
+      {1, _} -> {:ok, oid}
       {0, _} -> {:error, :no_such_callback}
       _ -> {:error, :unknown} # What are the error conditions? What needs to be handled?
     end
@@ -209,7 +203,6 @@ defmodule Exmud.GameObject do
   def delete_callback(%Ecto.Multi{} = multi, multi_key, oid, callback) do
     Multi.run(multi, multi_key, fn(_) ->
       delete_callback(oid, callback)
-      |> wrap_ok_result_for_multi()
     end)
   end
 
@@ -222,11 +215,11 @@ defmodule Exmud.GameObject do
   def add_command_set(oid, key) do
     args = %{key: key, oid: oid}
     Repo.insert(CommandSet.changeset(%CommandSet{}, args))
-    |> normalize_noreturn_result()
+    |> normalize_ok_result(oid)
     |> case do
       {:error, errors} ->
         if Keyword.has_key?(errors, :oid) do
-          Logger.warn("Attempt to add command set onto non existing object `#{oid}` failed")
+          Logger.warn("Attempt to add command set onto non existing object `#{oid}`")
           {:error, :no_such_game_object}
         else
           {:error, errors}
@@ -239,7 +232,6 @@ defmodule Exmud.GameObject do
   def add_command_set(%Ecto.Multi{} = multi, multi_key, oid, key) do
     Multi.run(multi, multi_key, fn(_) ->
       add_command_set(oid, key)
-      |> wrap_ok_result_for_multi()
     end)
   end
 
@@ -259,7 +251,7 @@ defmodule Exmud.GameObject do
   def delete_command_set(oid, key) do
     Repo.delete_all(command_set_query(oid, key))
     |> case do
-      {1, _} -> :ok
+      {1, _} -> {:ok, oid}
       {0, _} -> {:error, :no_such_command_set}
       _ -> {:error, :unknown}
     end
@@ -268,7 +260,6 @@ defmodule Exmud.GameObject do
   def delete_command_set(%Ecto.Multi{} = multi, multi_key, oid, key) do
     Multi.run(multi, multi_key, fn(_) ->
       delete_command_set(oid, key)
-      |> wrap_ok_result_for_multi()
     end)
   end
 
@@ -282,13 +273,23 @@ defmodule Exmud.GameObject do
              oid: oid,
              key: key}
     Repo.insert(Tag.changeset(%Tag{}, args))
-    |> normalize_noreturn_result()
+    |> normalize_ok_result(oid)
+    |> case do
+      {:error, errors} ->
+        if Keyword.has_key?(errors, :oid) do
+          Logger.warn("Attempt to add tag onto non existing object `#{oid}`")
+          {:error, :no_such_game_object}
+        else
+          {:error, errors}
+        end
+      result ->
+        result
+    end
   end
 
   def add_tag(%Ecto.Multi{} = multi, multi_key, oid, key, category \\ "__DEFAULT__") do
     Multi.run(multi, multi_key, fn(_) ->
       add_tag(oid, key, category)
-      |> wrap_ok_result_for_multi()
     end)
   end
 
@@ -313,7 +314,7 @@ defmodule Exmud.GameObject do
         where: tag.category == ^category
     )
     |> case do
-      {num, _} when num > 0 -> :ok
+      {num, _} when num > 0 -> {:ok, oid}
       {0, _} -> {:error, :no_such_tag}
       _ -> {:error, :unknown}
     end
@@ -322,7 +323,6 @@ defmodule Exmud.GameObject do
   def remove_tag(%Ecto.Multi{} = multi, multi_key, oid, key, category \\ "__DEFAULT__") do
     Multi.run(multi, multi_key, fn(_) ->
       remove_tag(oid, key, category)
-      |> wrap_ok_result_for_multi()
     end)
   end
 
