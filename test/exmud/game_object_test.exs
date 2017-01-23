@@ -103,7 +103,7 @@ defmodule Exmud.GameObjectTest do
       assert GameObject.list(callbacks: [callback2]) == [oid]
       assert GameObject.list(callbacks: [callback1, callback2]) == [oid]
     end
-    
+
     @tag callback: true
     @tag game_object: true
     test "callback lifecycle", %{oid: oid} = _context do
@@ -116,7 +116,7 @@ defmodule Exmud.GameObjectTest do
       assert GameObject.delete_callback(oid, "foo") == :ok
       assert GameObject.has_callback?(oid, "foo") == {:ok, false}
     end
-    
+
     @tag callback: true
     @tag game_object: true
     test "callback invalid cases", %{oid: oid} = _context do
@@ -138,7 +138,7 @@ defmodule Exmud.GameObjectTest do
       assert GameObject.list(command_sets: [command_set2]) == [oid]
       assert GameObject.list(command_sets: [command_set1, command_set2]) == [oid]
     end
-    
+
     @tag command_set: true
     @tag game_object: true
     test "command set on object lifecycle", %{oid: oid} = _context do
@@ -152,7 +152,7 @@ defmodule Exmud.GameObjectTest do
       assert GameObject.delete_command_set(oid, command_set) == :ok
       assert GameObject.has_command_set?(oid, command_set) == {:ok, false}
     end
-    
+
     @tag command_set: true
     @tag game_object: true
     test "command set invalid cases" do
@@ -160,7 +160,7 @@ defmodule Exmud.GameObjectTest do
       assert GameObject.add_command_set(0, "foo") == {:error, :no_such_game_object}
       assert GameObject.delete_command_set(0, "foo") == {:error, :no_such_command_set}
     end
-    
+
     @tag tag: true
     @tag game_object: true
     test "tag lifecycle", %{oid: oid} = _context do
@@ -174,7 +174,7 @@ defmodule Exmud.GameObjectTest do
       assert GameObject.has_tag?(oid, "foo") == {:ok, false}
       assert GameObject.has_tag?(oid, "foo", "bar") == {:ok, true}
     end
-    
+
     @tag tag: true
     @tag game_object: true
     test "tag invalid cases" do
@@ -185,7 +185,7 @@ defmodule Exmud.GameObjectTest do
       assert GameObject.has_tag?(0, "foo") == {:ok, false}
       assert GameObject.remove_tag(0, "foo") == {:error, :no_such_tag}
     end
-    
+
     @tag tag: true
     @tag game_object: true
     test "tag list tests", %{oid: oid} = _context do
@@ -200,18 +200,18 @@ defmodule Exmud.GameObjectTest do
       assert GameObject.list(tags: [{tag1, category}, {tag2, category}]) == [oid]
     end
   end
-    
+
   describe "Multi Ecto usage tests for game object: " do
     setup [:create_new_game_object_multi]
 
     @tag game_object: true
     test "delete tests", %{multi: multi, oid: oid} = _context do
-      assert Repo.transaction(GameObject.delete(multi, oid)) # Just needs to not fail
+      assert Repo.transaction(GameObject.delete(multi, "delete", oid)) # Just needs to not fail
       assert_raise Ecto.StaleEntryError, fn ->
-        Repo.transaction(GameObject.delete(multi, 0))
+        Repo.transaction(GameObject.delete(multi, "delete", 0))
       end
     end
-    
+
     @tag game_object: true
     test "complex list tests", %{multi: multi, oid: oid} = _context do
       attribute1 = UUID.generate()
@@ -230,7 +230,7 @@ defmodule Exmud.GameObjectTest do
       assert GameObject.add_callback(oid, callback2, "bar") == :ok
       assert GameObject.add_tag(oid, tag1, category) == :ok
       assert GameObject.add_tag(oid, tag2, category) == :ok
-      
+
       assert Repo.transaction(GameObject.list(multi, "list attribute", attributes: [attribute1], tags: [{tag1, category}])) == {:ok, %{"list attribute" => [oid]}}
       assert Repo.transaction(GameObject.list(multi, "list attribute", attributes: [attribute1], or_tags: [{tag1, category}])) == {:ok, %{"list attribute" => [oid]}}
       assert Repo.transaction(GameObject.list(multi, "list attribute", attributes: [attribute1], tags: [{tag3, category}])) == {:ok, %{"list attribute" => []}}
@@ -241,8 +241,8 @@ defmodule Exmud.GameObjectTest do
       assert Repo.transaction(GameObject.list(multi, "list attribute", attributes: [attribute3, {:or, attribute2}], callbacks: [callback1], tags: [{:or, {tag3, category}}])) == {:ok, %{"list attribute" => [oid]}}
       assert Repo.transaction(GameObject.list(multi, "list attribute", attributes: [attribute3, {:or, attribute2}], callbacks: [callback3], tags: [{:or, {tag3, category}}])) == {:ok, %{"list attribute" => []}}
     end
-    
-    
+
+
 
     @tag attribute: true
     @tag game_object: true
@@ -284,7 +284,7 @@ defmodule Exmud.GameObjectTest do
       assert Repo.transaction(GameObject.remove_attribute(multi, "remove attribute", 0, "foo")) == {:error, "remove attribute", :no_such_attribute, %{}}
       assert Repo.transaction(GameObject.get_attribute(multi, "get attribute", 0, "foo")) == {:error, "get attribute", :no_such_attribute, %{}}
     end
-    
+
     @tag callback: true
     @tag game_object: true
     test "callback list tests", %{multi: multi, oid: oid} = _context do
@@ -297,7 +297,7 @@ defmodule Exmud.GameObjectTest do
       assert Repo.transaction(GameObject.list(multi, "list callback", callbacks: [callback2])) == {:ok, %{"list callback" => [oid]}}
       assert Repo.transaction(GameObject.list(multi, "list callback", callbacks: [callback1, callback2])) == {:ok, %{"list callback" => [oid]}}
     end
-    
+
     @tag callback: true
     @tag game_object: true
     test "callback lifecycle", %{multi: multi, oid: oid} = _context do
@@ -310,7 +310,7 @@ defmodule Exmud.GameObjectTest do
       assert Repo.transaction(GameObject.delete_callback(multi, "delete callback", oid, "foo")) == {:ok, %{"delete callback" => :ok}}
       assert Repo.transaction(GameObject.has_callback?(multi, "has callback", oid, "foo")) == {:ok, %{"has callback" => false}}
     end
-    
+
     @tag callback: true
     @tag game_object: true
     test "callback invalid cases", %{multi: multi, oid: oid} = _context do
@@ -319,7 +319,7 @@ defmodule Exmud.GameObjectTest do
       assert Repo.transaction(GameObject.get_callback(multi, "get callback", 0, "foo", "foobar")) == {:error, "get callback", :no_such_callback, %{}}
       assert Repo.transaction(GameObject.delete_callback(multi, "delete callback", 0, "foo")) == {:error, "delete callback", :no_such_callback, %{}}
     end
-    
+
     @tag command_set: true
     @tag game_object: true
     test "command_set list tests", %{multi: multi, oid: oid} = _context do
@@ -332,7 +332,7 @@ defmodule Exmud.GameObjectTest do
       assert Repo.transaction(GameObject.list(multi, "list command set", command_sets: [command_set2])) == {:ok, %{"list command set" => [oid]}}
       assert Repo.transaction(GameObject.list(multi, "list command set", command_sets: [command_set1, command_set2])) == {:ok, %{"list command set" => [oid]}}
     end
-    
+
     @tag command_set: true
     @tag game_object: true
     test "command set on object lifecycle", %{multi: multi, oid: oid} = _context do
@@ -346,7 +346,7 @@ defmodule Exmud.GameObjectTest do
       assert Repo.transaction(GameObject.delete_command_set(multi, "delete command set", oid, command_set)) == {:ok, %{"delete command set" => :ok}}
       assert Repo.transaction(GameObject.has_command_set?(multi, "has command set", oid, command_set)) == {:ok, %{"has command set" => false}}
     end
-    
+
     @tag command_set: true
     @tag game_object: true
     test "command set invalid cases", %{multi: multi, oid: oid} = _context do
@@ -354,7 +354,7 @@ defmodule Exmud.GameObjectTest do
       assert Repo.transaction(GameObject.add_command_set(multi, "add command set", 0, "foo")) == {:error, "add command set", :no_such_game_object, %{}}
       assert Repo.transaction(GameObject.delete_command_set(multi, "delete command set", 0, "foo")) == {:error, "delete command set", :no_such_command_set, %{}}
     end
-    
+
     @tag tag: true
     @tag game_object: true
     test "tag lifecycle", %{multi: multi, oid: oid} = _context do
@@ -368,7 +368,7 @@ defmodule Exmud.GameObjectTest do
       assert Repo.transaction(GameObject.has_tag?(multi, "has tag", oid, "foo")) == {:ok, %{"has tag" => false}}
       assert Repo.transaction(GameObject.has_tag?(multi, "has tag", oid, "foo", "bar")) == {:ok, %{"has tag" => true}}
     end
-    
+
     @tag tag: true
     @tag game_object: true
     test "tag invalid cases", %{multi: multi, oid: oid} = _context do
@@ -379,7 +379,7 @@ defmodule Exmud.GameObjectTest do
       assert Repo.transaction(GameObject.has_tag?(multi, "has tag", 0, "foo")) == {:ok, %{"has tag" => false}}
       assert Repo.transaction(GameObject.remove_tag(multi, "remove tag", 0, "foo")) == {:error, "remove tag", :no_such_tag, %{}}
     end
-    
+
     @tag tag: true
     @tag game_object: true
     test "tag list tests", %{multi: multi, oid: oid} = _context do
@@ -406,7 +406,7 @@ defmodule Exmud.GameObjectTest do
     {:ok, results} = Ecto.Multi.new()
     |> GameObject.new("new_game_object", key)
     |> Repo.transaction()
-    
-    %{key: key, multi: Ecto.Multi.new(), oid: results["new_game_object"].id}
+
+    %{key: key, multi: Ecto.Multi.new(), oid: results["new_game_object"]}
   end
 end

@@ -26,7 +26,9 @@ defmodule Exmud.GameObject do
   end
   
   def new(%Ecto.Multi{} = multi, multi_key, key) do
-    Multi.insert(multi, multi_key, new_changeset(key))
+    Multi.run(multi, multi_key, fn(_) ->
+      new(key)
+    end)
   end
   
   def delete(oid) do
@@ -81,7 +83,7 @@ defmodule Exmud.GameObject do
   def add_attribute(%Ecto.Multi{} = multi, multi_key, oid, key, data) do
     Multi.run(multi, multi_key, fn(_) ->
       add_attribute(oid, key, data)
-      |> wrap_result_for_multi()
+      |> wrap_ok_result_for_multi()
     end)
   end
   
@@ -124,7 +126,7 @@ defmodule Exmud.GameObject do
   def remove_attribute(%Ecto.Multi{} = multi, multi_key, oid, key) do
     Multi.run(multi, multi_key, fn(_) ->
       remove_attribute(oid, key)
-      |> wrap_result_for_multi()
+      |> wrap_ok_result_for_multi()
     end)
   end
   
@@ -139,7 +141,7 @@ defmodule Exmud.GameObject do
   def update_attribute(%Ecto.Multi{} = multi, multi_key, oid, key, data) do
     Multi.run(multi, multi_key, fn(_) ->
       update_attribute(oid, key, data)
-      |> wrap_result_for_multi()
+      |> wrap_ok_result_for_multi()
     end)
   end
   
@@ -169,7 +171,7 @@ defmodule Exmud.GameObject do
   def add_callback(%Ecto.Multi{} = multi, multi_key, oid, callback, key) do
     Multi.run(multi, multi_key, fn(_) ->
       add_callback(oid, callback, key)
-      |> wrap_result_for_multi()
+      |> wrap_ok_result_for_multi()
     end)
   end
   
@@ -211,7 +213,7 @@ defmodule Exmud.GameObject do
   def delete_callback(%Ecto.Multi{} = multi, multi_key, oid, callback) do
     Multi.run(multi, multi_key, fn(_) ->
       delete_callback(oid, callback)
-      |> wrap_result_for_multi()
+      |> wrap_ok_result_for_multi()
     end)
   end
   
@@ -241,7 +243,7 @@ defmodule Exmud.GameObject do
   def add_command_set(%Ecto.Multi{} = multi, multi_key, oid, key) do
     Multi.run(multi, multi_key, fn(_) ->
       add_command_set(oid, key)
-      |> wrap_result_for_multi()
+      |> wrap_ok_result_for_multi()
     end)
   end
   
@@ -270,7 +272,7 @@ defmodule Exmud.GameObject do
   def delete_command_set(%Ecto.Multi{} = multi, multi_key, oid, key) do
     Multi.run(multi, multi_key, fn(_) ->
       delete_command_set(oid, key)
-      |> wrap_result_for_multi()
+      |> wrap_ok_result_for_multi()
     end)
   end
   
@@ -290,7 +292,7 @@ defmodule Exmud.GameObject do
   def add_tag(%Ecto.Multi{} = multi, multi_key, oid, key, category \\ "__DEFAULT__") do
     Multi.run(multi, multi_key, fn(_) ->
       add_tag(oid, key, category)
-      |> wrap_result_for_multi()
+      |> wrap_ok_result_for_multi()
     end)
   end
   
@@ -324,7 +326,7 @@ defmodule Exmud.GameObject do
   def remove_tag(%Ecto.Multi{} = multi, multi_key, oid, key, category \\ "__DEFAULT__") do
     Multi.run(multi, multi_key, fn(_) ->
       remove_tag(oid, key, category)
-      |> wrap_result_for_multi()
+      |> wrap_ok_result_for_multi()
     end)
   end
   
@@ -517,7 +519,4 @@ defmodule Exmud.GameObject do
       where: tag.key == ^key,
       where: tag.oid == ^oid
   end
-  
-  def wrap_result_for_multi(:ok), do: {:ok, :ok}
-  def wrap_result_for_multi(result), do: result
 end
