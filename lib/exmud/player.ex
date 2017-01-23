@@ -13,7 +13,7 @@ defmodule Exmud.Player do
   alias Exmud.Tag
   require Logger
   use GenServer
-  
+
   @alias_category "__ALIAS__"
   @player_category "player"
   @player_tag "__PLAYER__"
@@ -35,7 +35,7 @@ defmodule Exmud.Player do
              :ok <- GameObject.add_tag(oid, @player_tag, @tag_category),
              :ok <- GameObject.add_tag(oid, key, @alias_category),
              # TODO: Add command sets for a player
-          do: :ok
+          do: {:ok, oid}
     end
   end
 
@@ -46,12 +46,16 @@ defmodule Exmud.Player do
   def remove(key) do
     case find(key) do
       nil -> {:error, :no_such_player}
-      oid -> GameObject.delete(oid)
+      oid ->
+        case GameObject.delete(oid) do
+          {:ok, _} -> {:ok, key}
+          error -> error
+        end
     end
   end
 
   # player data management
-  
+
   def add_attribute(key, name, data) do
     passthrough(&GameObject.add_attribute/3, [find(key), name, data])
   end
@@ -59,15 +63,15 @@ defmodule Exmud.Player do
   def get_attribute(key, name) do
     passthrough(&GameObject.get_attribute/2, [find(key), name])
   end
-  
+
   def has_attribute?(key, name) do
     passthrough(&GameObject.has_attribute?/2, [find(key), name])
   end
-  
+
   def remove_attribute(key, name) do
     passthrough(&GameObject.remove_attribute/2, [find(key), name])
   end
-  
+
   def update_attribute(key, name, data) do
     passthrough(&GameObject.update_attribute/3, [find(key), name, data])
   end
@@ -77,7 +81,7 @@ defmodule Exmud.Player do
   def has_active_session?(key) do
     Registry.key_registered?(key, @player_category)
   end
-  
+
   def send_output(key, output) do
     case Registry.read_key(key, @player_category) do
       {:ok, pid} ->  GenServer.call(pid, {:send_output, output})
@@ -130,15 +134,15 @@ defmodule Exmud.Player do
   #
   # Private Functions
   #
-  
+
 
   defp find(key) do
     case GameObject.list(objects: [key], tags: [{@player_tag, @tag_category}]) do
-      [] -> nil
-      objects -> hd(objects)
+      {:ok, []} -> nil
+      {:ok, objects} -> hd(objects)
     end
   end
-  
+
   defp passthrough(_, [nil|_]), do: {:error, :no_such_player}
   defp passthrough(function, args) do
     apply(function, args)
