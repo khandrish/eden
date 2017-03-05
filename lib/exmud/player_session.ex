@@ -143,6 +143,7 @@ defmodule Exmud.PlayerSession do
     end
   end
 
+  @lint {Credo.Check.Refactor.PipeChainStart, false}
   def handle_call({:stream_output, handler_fun}, _from, state) do
     :ok = GenEvent.add_handler(state.event_manager, PlayerSessionOutputHandler, handler_fun)
 

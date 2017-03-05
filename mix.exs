@@ -27,6 +27,7 @@ defmodule Exmud.Mixfile do
   defp deps do
     [{:apex, "~> 0.7.0"},
      {:calendar, "~> 0.17.1"},
+     {:credo, "~> 0.5", only: [:dev, :test]},
      {:e_queue, "~> 1.0.1"},
      {:ecto, "~> 2.1.3"},
      {:excoveralls, ">= 0.6.1", only: :test},

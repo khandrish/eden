@@ -174,6 +174,7 @@ defmodule Exmud.CommandSet do
 
   # Given a command struct, create a map where the keys are the combined aliases and
   # command set key and all of the values are the command struct itself.
+  @lint {Credo.Check.Refactor.PipeChainStart, false}
   defp create_commands_map(commands) do
     Enum.reduce(commands, %{}, fn(command, map) ->
       Enum.reduce(command.aliases, map, fn(a, mapping) ->

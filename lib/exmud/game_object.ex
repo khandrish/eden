@@ -29,6 +29,7 @@ defmodule Exmud.GameObject do
     end)
   end
 
+  @lint {Credo.Check.Refactor.PipeChainStart, false}
   def delete(oid) do
     Repo.delete(%Object{id: oid})
     |> (fn(_) -> {:ok, oid} end).()
@@ -40,6 +41,7 @@ defmodule Exmud.GameObject do
     end)
   end
 
+  @lint {Credo.Check.Refactor.PipeChainStart, false}
   def list(options) do
     query =
       from object in Object,
@@ -63,6 +65,7 @@ defmodule Exmud.GameObject do
   #
 
 
+  @lint {Credo.Check.Refactor.PipeChainStart, false}
   def add_attribute(oid, key, data) do
     args = %{data: serialize(data),
              key: key,
@@ -104,6 +107,7 @@ defmodule Exmud.GameObject do
     end)
   end
 
+  @lint {Credo.Check.Refactor.PipeChainStart, false}
   def remove_attribute(oid, key) do
     Repo.delete_all(attribute_query(oid, key))
     |> case do
@@ -119,6 +123,7 @@ defmodule Exmud.GameObject do
     end)
   end
 
+  @lint {Credo.Check.Refactor.PipeChainStart, false}
   def update_attribute(oid, key, data) do
     case Repo.one(attribute_query(oid, key)) do
       nil -> {:error, :no_such_attribute}
@@ -141,6 +146,7 @@ defmodule Exmud.GameObject do
   #
 
 
+  @lint {Credo.Check.Refactor.PipeChainStart, false}
   def add_callback(oid, callback, key) do
     args = %{callback: callback, key: key, oid: oid}
     Repo.insert(Callback.changeset(%Callback{}, args))
@@ -163,6 +169,7 @@ defmodule Exmud.GameObject do
     end)
   end
 
+  @lint {Credo.Check.Refactor.PipeChainStart, false}
   def get_callback(oid, callback, default) do
     case Repo.one(callback_query(oid, callback)) do
       nil -> default
@@ -190,6 +197,7 @@ defmodule Exmud.GameObject do
     end)
   end
 
+  @lint {Credo.Check.Refactor.PipeChainStart, false}
   def delete_callback(oid, callback) do
     Repo.delete_all(callback_query(oid, callback))
     |> case do
@@ -211,6 +219,7 @@ defmodule Exmud.GameObject do
   #
 
 
+  @lint {Credo.Check.Refactor.PipeChainStart, false}
   def add_command_set(oid, key) do
     args = %{key: key, oid: oid}
     Repo.insert(CommandSet.changeset(%CommandSet{}, args))
@@ -247,6 +256,7 @@ defmodule Exmud.GameObject do
     end)
   end
 
+  @lint {Credo.Check.Refactor.PipeChainStart, false}
   def delete_command_set(oid, key) do
     Repo.delete_all(command_set_query(oid, key))
     |> case do
@@ -267,6 +277,8 @@ defmodule Exmud.GameObject do
   # Tag related functions
   #
 
+
+  @lint {Credo.Check.Refactor.PipeChainStart, false}
   def add_tag(oid, key, category \\ "__DEFAULT__") do
     args = %{category: category,
              oid: oid,
@@ -305,6 +317,7 @@ defmodule Exmud.GameObject do
     end)
   end
 
+  @lint {Credo.Check.Refactor.PipeChainStart, false}
   def remove_tag(oid, key, category \\ "__DEFAULT__") do
     Repo.delete_all(
       from tag in Tag,

@@ -26,6 +26,7 @@ defmodule Exmud.SystemRunner do
   #
 
 
+  @lint {Credo.Check.Refactor.PipeChainStart, false}
   def init({key, callback_module, args}) do
     if Registry.register_key(key, @system_category, self()) == :ok do
       Repo.one(
@@ -69,6 +70,7 @@ defmodule Exmud.SystemRunner do
     {:reply, state, data}
   end
 
+  @lint {Credo.Check.Refactor.PipeChainStart, false}
   def handle_call({:stop, args}, _from, %{callback_module: callback_module, system: system, state: state} = _data) do
     new_state = callback_module.stop(args, state)
     :ok = Registry.unregister_key(Changeset.get_field(system, :key), @system_category)
@@ -100,6 +102,7 @@ defmodule Exmud.SystemRunner do
     {:noreply, Map.put(data, :state, new_state)}
   end
 
+  @lint {Credo.Check.Refactor.PipeChainStart, false}
   def handle_info(:run, %{callback_module: callback_module, state: state} = data) do
     {new_state, timeout} = callback_module.run(state) |> normalize_result()
     maybe_queue_run(timeout)

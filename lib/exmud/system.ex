@@ -129,6 +129,7 @@ defmodule Exmud.System do
     end
   end
 
+  @lint {Credo.Check.Refactor.PipeChainStart, false}
   def purge(key) do
     Repo.one(
       from system in S,
