@@ -1,8 +1,27 @@
 # Exmud
 
+**Build status**
+
+master:
 [![Build Status](https://travis-ci.org/mononym/exmud.svg?branch=master)](https://travis-ci.org/mononym/exmud)
+develop:
+[![Build Status](https://travis-ci.org/mononym/exmud.svg?branch=develop)](https://travis-ci.org/mononym/exmud)
+
+**Coverage status**
+
+master:
 [![Coverage Status](https://coveralls.io/repos/github/mononym/exmud/badge.svg?branch=master)](https://coveralls.io/github/mononym/exmud?branch=master)
-[![Inline docs](http://inch-ci.org/github/mononym/exmud.svg)](http://inch-ci.org/github/mononym/exmud)
+develop:
+[![Coverage Status](https://coveralls.io/repos/github/mononym/exmud/badge.svg?branch=develop)](https://coveralls.io/github/mononym/exmud?branch=develop)
+
+**Documentation status**
+
+master:
+[![Inline docs](http://inch-ci.org/github/mononym/exmud.svg?branch=master)](http://inch-ci.org/github/mononym/exmud?branch=master)
+develop:
+[![Inline docs](http://inch-ci.org/github/mononym/exmud.svg?branch=develop)](http://inch-ci.org/github/mononym/exmud?branch=develop)
+
+## Overview
 
 Exmud is a framework and game agnostic M.U.D. engine.
 
@@ -16,7 +35,7 @@ It means that in an effort to, among other things, limit the scope the following
 * The engine must only implement the core logic necessary to the running of the engine. Everything else must be delegated and configurable, with well defined API's and protocols for communicating between pieces.
   * There will be no built in systems, world, or game logic of any kind. Any example projects are out of scope and will come in another package.
 
-**NOTE:** The above list is is need of updating and refinement. 
+**NOTE:** The above list is is need of updating and refinement.
 
 ## Using Exmud
 Exmud is designed to be used as a dependency in another project, with that project providing all of the game specific logic.
