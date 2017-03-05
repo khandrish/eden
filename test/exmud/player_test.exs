@@ -5,6 +5,8 @@ defmodule Exmud.PlayerTest do
   require Logger
   use ExUnit.Case, async: true
 
+  doctest Exmud.Player
+
   describe "Standard Ecto usage for player tests: " do
     setup [:add_player]
 

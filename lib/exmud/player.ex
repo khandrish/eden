@@ -35,8 +35,7 @@ defmodule Exmud.Player do
 
   ## Examples
 
-      iex> Exmud.Player.new(:john)
-      :ok
+      Exmud.Player.new(:john)
 
   """
   def add(key) do
