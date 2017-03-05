@@ -6,11 +6,14 @@ defmodule Exmud.Player do
   Exmud to decide.
   """
 
+  alias Ecto.Multi
   alias Exmud.Attribute
   alias Exmud.GameObject
+  alias Exmud.PlayerSession
   alias Exmud.PlayerSessionSup
-  alias Exmud.Registry
+  alias Exmud.Repo
   alias Exmud.Tag
+  import Exmud.Utils
   require Logger
   use GenServer
 
@@ -25,109 +28,74 @@ defmodule Exmud.Player do
   #
 
 
-  # player management
+  @doc """
+  Add a player to the system with the unique `key`.
 
+  Returns `{:ok, object_id}`.
+
+  ## Examples
+
+      iex> Exmud.Player.new(:john)
+      :ok
+
+  """
   def add(key) do
-    case exists?(key) do
-      true -> {:error, :player_already_exists}
-      false ->
-        with {:ok, oid} <- GameObject.new(key),
-             :ok <- GameObject.add_tag(oid, @player_tag, @tag_category),
-             :ok <- GameObject.add_tag(oid, key, @alias_category),
-             # TODO: Add command sets for a player
-          do: {:ok, oid}
+    Multi.new()
+    |> existence_check(key)
+    |> GameObject.new("new", key)
+    |> Multi.run("add tag", fn(%{"new" => oid}) ->
+      GameObject.add_tag(oid, @player_tag, @tag_category)
+    end)
+    |> Repo.transaction()
+    |> normalize_multi_result("new")
+  end
+
+  def add(multi, multi_key \\ "add", key) do
+    Multi.run(multi, multi_key, fn(_) ->
+      add(key)
+    end)
+  end
+
+  def exists(key) do
+    case which(key) do
+      {:ok, _} -> {:ok, true}
+      {:error, _} -> {:ok, false}
     end
   end
 
-  def exists?(key) do
-    find(key) != nil
+  def exists(multi, multi_key \\ "exists", key) do
+    Multi.run(multi, multi_key, fn(_) ->
+      exists(key)
+    end)
   end
 
   def remove(key) do
-    case find(key) do
-      nil -> {:error, :no_such_player}
-      oid ->
-        case GameObject.delete(oid) do
-          {:ok, _} -> {:ok, key}
-          error -> error
-        end
+    Multi.new()
+    |> which(key)
+    |> Multi.run("delete", fn(%{"which" => oid}) ->
+      GameObject.delete(oid)
+    end)
+    |> Repo.transaction()
+    |> normalize_multi_result("which")
+  end
+
+  def remove(multi, multi_key \\ "remove", key) do
+    Multi.run(multi, multi_key, fn(_) ->
+      remove(key)
+    end)
+  end
+
+  def which(key) do
+    case GameObject.list(objects: [key], tags: [{@player_tag, @tag_category}]) do
+      {:ok, []} -> {:error, :no_such_player}
+      {:ok, oids} -> {:ok, hd(oids)}
     end
   end
 
-  # player data management
-
-  def add_attribute(key, name, data) do
-    passthrough(&GameObject.add_attribute/3, [find(key), name, data])
-  end
-
-  def get_attribute(key, name) do
-    passthrough(&GameObject.get_attribute/2, [find(key), name])
-  end
-
-  def has_attribute?(key, name) do
-    passthrough(&GameObject.has_attribute?/2, [find(key), name])
-  end
-
-  def remove_attribute(key, name) do
-    passthrough(&GameObject.remove_attribute/2, [find(key), name])
-  end
-
-  def update_attribute(key, name, data) do
-    passthrough(&GameObject.update_attribute/3, [find(key), name, data])
-  end
-
-  # player session management
-
-  def has_active_session?(key) do
-    Registry.key_registered?(key, @player_category)
-  end
-
-  def send_output(key, output) do
-    case Registry.read_key(key, @player_category) do
-      {:ok, pid} ->  GenServer.call(pid, {:send_output, output})
-      {:error, :no_such_key} -> {:error, :no_such_player}
-    end
-  end
-
-  def start_session(key, args \\ %{}) do
-    if exists?(key) === true do
-      {:ok, _pid} = Supervisor.start_child(PlayerSessionSup, [key, args])
-      :ok
-    else
-      {:error, :no_such_player}
-    end
-  end
-
-  def stop_session(key, args \\ %{}) do
-    case Registry.read_key(key, @player_category) do
-      {:error, :no_such_key} -> {:error, :no_session_active}
-      {:ok, process} -> GenServer.call(process, {:stop, args})
-    end
-  end
-
-  def stream_session_output(key, handler_fun) do
-    case Registry.read_key(key, @player_category) do
-      {:error, :no_such_key} -> {:error, :no_such_player}
-      {:ok, process} -> GenServer.call(process, {:stream_output, handler_fun})
-    end
-  end
-
-  # manage player puppets and access information about them
-
-  def has_puppet? do
-
-  end
-
-  def puppet do
-
-  end
-
-  def unpuppet do
-
-  end
-
-  def which_puppets do
-
+  def which(multi, multi_key \\ "which", key) do
+    Multi.run(multi, multi_key, fn(_) ->
+      which(key)
+    end)
   end
 
 
@@ -136,15 +104,12 @@ defmodule Exmud.Player do
   #
 
 
-  defp find(key) do
-    case GameObject.list(objects: [key], tags: [{@player_tag, @tag_category}]) do
-      {:ok, []} -> nil
-      {:ok, objects} -> hd(objects)
-    end
-  end
-
-  defp passthrough(_, [nil|_]), do: {:error, :no_such_player}
-  defp passthrough(function, args) do
-    apply(function, args)
+  defp existence_check(multi, key) do
+    Multi.run(multi, "existence check", fn(_) ->
+      case exists(key) do
+        {:ok, true} -> {:error, :player_already_exists}
+        _ -> {:ok, key}
+      end
+    end)
   end
 end

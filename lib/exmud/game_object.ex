@@ -9,7 +9,6 @@ defmodule Exmud.GameObject do
   import Ecto.Query
   import Exmud.Utils
   require Logger
-  use NamedArgs
 
 
   #
@@ -20,7 +19,7 @@ defmodule Exmud.GameObject do
   def new(key) do
     case Repo.insert(new_changeset(key)) do
       {:ok, object} -> {:ok, object.id}
-      {:error, changeset} -> {:error, changeset.errors}
+      {:error, changeset} -> {:error, normalize_ecto_errors(changeset.errors)}
     end
   end
 
@@ -31,10 +30,8 @@ defmodule Exmud.GameObject do
   end
 
   def delete(oid) do
-    case Repo.delete(%Object{id: oid}) do
-      {:ok, _} -> {:ok, oid}
-      result -> result
-    end
+    Repo.delete(%Object{id: oid})
+    |> (fn(_) -> {:ok, oid} end).()
   end
 
   def delete(%Ecto.Multi{} = multi, multi_key, oid) do
@@ -67,11 +64,11 @@ defmodule Exmud.GameObject do
 
 
   def add_attribute(oid, key, data) do
-    args = %{data: :erlang.term_to_binary(data),
+    args = %{data: serialize(data),
              key: key,
              oid: oid}
     Repo.insert(Attribute.changeset(%Attribute{}, args))
-    |> normalize_ok_result(oid)
+    |> normalize_repo_result(oid)
   end
 
 
@@ -84,7 +81,7 @@ defmodule Exmud.GameObject do
   def get_attribute(oid, key) do
     case Repo.one(attribute_query(oid, key)) do
       nil -> {:error, :no_such_attribute}
-      object -> {:ok, :erlang.binary_to_term(object.data)}
+      object -> {:ok, deserialize(object.data)}
     end
   end
 
@@ -123,11 +120,13 @@ defmodule Exmud.GameObject do
   end
 
   def update_attribute(oid, key, data) do
-    args = %{data: data,
-             key: key,
-             oid: oid}
-    Repo.update(Attribute.changeset(%Attribute{}, args))
-    |> normalize_ok_result(oid)
+    case Repo.one(attribute_query(oid, key)) do
+      nil -> {:error, :no_such_attribute}
+      object ->
+        serialized_data = serialize(data)
+        Repo.update(Attribute.changeset(object, %{data: serialized_data}))
+        |> normalize_repo_result(oid)
+    end
   end
 
   def update_attribute(%Ecto.Multi{} = multi, multi_key, oid, key, data) do
@@ -145,7 +144,7 @@ defmodule Exmud.GameObject do
   def add_callback(oid, callback, key) do
     args = %{callback: callback, key: key, oid: oid}
     Repo.insert(Callback.changeset(%Callback{}, args))
-    |> normalize_ok_result(oid)
+    |> normalize_repo_result(oid)
     |> case do
       {:error, errors} ->
         if Keyword.has_key?(errors, :oid) do
@@ -215,7 +214,7 @@ defmodule Exmud.GameObject do
   def add_command_set(oid, key) do
     args = %{key: key, oid: oid}
     Repo.insert(CommandSet.changeset(%CommandSet{}, args))
-    |> normalize_ok_result(oid)
+    |> normalize_repo_result(oid)
     |> case do
       {:error, errors} ->
         if Keyword.has_key?(errors, :oid) do
@@ -273,7 +272,7 @@ defmodule Exmud.GameObject do
              oid: oid,
              key: key}
     Repo.insert(Tag.changeset(%Tag{}, args))
-    |> normalize_ok_result(oid)
+    |> normalize_repo_result(oid)
     |> case do
       {:error, errors} ->
         if Keyword.has_key?(errors, :oid) do
@@ -337,12 +336,9 @@ defmodule Exmud.GameObject do
   defp build_list_query(query, []), do: query
   defp build_list_query(query, [{_, []} | options]), do: build_list_query(query, options)
 
-  defp build_list_query(query, [{:or_attributes, [{:or, _} | _] = attributes} | options]) do
+  defp build_list_query(query, [{:or_attributes, attributes} | options]) do
+    attributes = wrap_or_query_params(attributes)
     build_list_query(query, [{:attributes, attributes} | options])
-  end
-
-  defp build_list_query(query, [{:or_attributes, [attribute | attributes]} | options]) do
-    build_list_query(query, [{:attributes, [{:or, attribute} | attributes]} | options])
   end
 
   defp build_list_query(query, [{:attributes, [{:or, attribute} | attributes]} | options]) do
@@ -365,12 +361,9 @@ defmodule Exmud.GameObject do
 
   # List Callbacks
 
-  defp build_list_query(query, [{:or_callbacks, [{:or, _} | _] = callbacks} | options]) do
+  defp build_list_query(query, [{:or_callbacks, callbacks} | options]) do
+    callbacks = wrap_or_query_params(callbacks)
     build_list_query(query, [{:callbacks, callbacks} | options])
-  end
-
-  defp build_list_query(query, [{:or_callbacks, [callback | callbacks]} | options]) do
-    build_list_query(query, [{:callbacks, [{:or, callback} | callbacks]} | options])
   end
 
   defp build_list_query(query, [{:callbacks, [{:or, callback} | callbacks]} | options]) do
@@ -394,15 +387,9 @@ defmodule Exmud.GameObject do
 
   # List Command Set
 
-  defp build_list_query(query, []), do: query
-  defp build_list_query(query, [{_, []} | options]), do: build_list_query(query, options)
-
-  defp build_list_query(query, [{:or_command_sets, [{:or, _} | _] = command_sets} | options]) do
+  defp build_list_query(query, [{:or_command_sets, command_sets} | options]) do
+    command_sets = wrap_or_query_params(command_sets)
     build_list_query(query, [{:command_sets, command_sets} | options])
-  end
-
-  defp build_list_query(query, [{:or_command_sets, [command_set | command_sets]} | options]) do
-    build_list_query(query, [{:command_sets, [{:or, command_set} | command_sets]} | options])
   end
 
   defp build_list_query(query, [{:command_sets, [{:or, command_set} | command_sets]} | options]) do
@@ -426,12 +413,9 @@ defmodule Exmud.GameObject do
 
   # List Keys
 
-  defp build_list_query(query, [{:or_objects, [{:or, _} | _] = keys} | options]) do
-    build_list_query(query, [{:objects, keys} | options])
-  end
-
-  defp build_list_query(query, [{:or_objects, [key | keys]} | options]) do
-    build_list_query(query, [{:objects, [{:or, key} | keys]} | options])
+  defp build_list_query(query, [{:or_objects, objects} | options]) do
+    objects = wrap_or_query_params(objects)
+    build_list_query(query, [{:objects, objects} | options])
   end
 
   defp build_list_query(query, [{:objects, [{:or, key} | keys]} | options]) do
@@ -453,12 +437,9 @@ defmodule Exmud.GameObject do
 
   # List Tags
 
-  defp build_list_query(query, [{:or_tags, [{:or, _} | _] = tags} | options]) do
+  defp build_list_query(query, [{:or_tags, tags} | options]) do
+    tags = wrap_or_query_params(tags)
     build_list_query(query, [{:tags, tags} | options])
-  end
-
-  defp build_list_query(query, [{:or_tags, [tag | tags]} | options]) do
-    build_list_query(query, [{:tags, [{:or, tag} | tags]} | options])
   end
 
   defp build_list_query(query, [{:tags, [{:or, {key, category}} | tags]} | options]) do
@@ -483,6 +464,11 @@ defmodule Exmud.GameObject do
 
   defp new_changeset(key) do
     Object.changeset(%Object{}, %{key: key, date_created: DateTime.utc_now()})
+  end
+
+  defp wrap_or_query_params(params) do
+    Enum.map(params, fn({:ok, _} = element) -> element
+                       (params) -> {:or, params} end)
   end
 
   # Queries

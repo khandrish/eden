@@ -8,6 +8,7 @@ defmodule Exmud do
       worker(Exmud.Repo, []),
       worker(Exmud.Registry, []),
       supervisor(Task.Supervisor, [[name: Exmud.TaskSupervisor]]),
+      supervisor(Registry, [:unique, :player_session_registry]),
       supervisor(Exmud.PlayerSessionSup, []),
       supervisor(Exmud.SystemSup, [])
     ]

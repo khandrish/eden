@@ -1,68 +1,48 @@
 defmodule Exmud.PlayerTest do
   alias Ecto.UUID
   alias Exmud.Player
+  alias Exmud.Repo
   require Logger
   use ExUnit.Case, async: true
 
-  describe "player lifecycle tests: " do
+  describe "Standard Ecto usage for player tests: " do
     setup [:add_player]
 
     @tag player: true
-    test "player lifecycle", %{key: key} = _context do
-      assert Player.exists?(key) == true
-      assert Player.remove(key) == {:ok, key}
-      assert Player.exists?(key) == false
+    test "player lifecycle", %{key: key, oid: oid} = _context do
+      assert Player.exists(key) == {:ok, true}
+      assert Player.remove(key) == {:ok, oid}
+      assert Player.exists(key) == {:ok, false}
       assert Player.remove(key) == {:error, :no_such_player}
-      assert {:ok, _} = Player.add(key)
-      assert Player.exists?(key) == true
+      assert {:ok, oid} = Player.add(key)
+      assert Player.exists(key) == {:ok, true}
+      assert Player.which(key) == {:ok, oid}
       assert Player.add(key) == {:error, :player_already_exists}
     end
-  end
-
-  describe "player session tests: " do
-    setup [:add_player]
 
     @tag player: true
-    test "session lifecycle", %{key: key} = _context do
-      assert Player.has_active_session?(key) == false
-      assert Player.stop_session(key) == {:error, :no_session_active}
-      assert Player.start_session(key) == :ok
-      assert Player.has_active_session?(key) == true
-      me = self()
-      assert Player.stream_session_output(key, fn(message) -> send(me, {:message, message}) end) == :ok
-      assert Player.send_output(key, :foo) == :ok
-      assert (receive do
-        {:message, message} -> message
-        after 500 -> :error
-      end) == :foo
-      assert Player.stop_session(key) == :ok
-      assert Player.has_active_session?(key) == false
+    test "invalid data", %{key: key} = _context do
+      assert_raise Ecto.Query.CastError, fn ->
+        assert Player.add(1)
+      end
     end
   end
 
-  describe "player data tests: " do
-    setup [:add_player]
+  describe "Multi Ecto usage for player tests: " do
+    setup [:add_player_multi]
 
     @tag player: true
-    test "data lifecycle", %{key: key, oid: oid} = _context do
-      assert Player.has_attribute?(key, "foo") == {:ok, false}
-      assert Player.add_attribute(key, "foo", :bar) == {:ok, oid}
-      assert Player.has_attribute?(key, "foo") == {:ok, true}
-      assert Player.get_attribute(key, "foo") == {:ok, :bar}
-      assert Player.remove_attribute(key, "foo") == {:ok, oid}
-      assert Player.has_attribute?(key, "foo") == {:ok, false}
-    end
-
-    @tag player: true
-    test "invalid data tests", %{key: key} = _context do
-      assert Player.has_attribute?("invalid player", "foo") == {:error, :no_such_player}
-      assert Player.add_attribute("invalid player", "foo", :bar) == {:error, :no_such_player}
-      assert Player.remove_attribute("invalid player", "foo") == {:error, :no_such_player}
-      assert Player.get_attribute("invalid player", "foo") == {:error, :no_such_player}
-      assert Player.remove_attribute(key, "foobar") == {:error, :no_such_attribute}
-      assert Player.add_attribute("invalid player", "foo", :bar) == {:error, :no_such_player}
-      assert Player.add_attribute(key, :invalid_attribute, :bar) == {:error, [key: "is invalid"]}
-      assert Player.has_attribute?("invalid player", "foo") == {:error, :no_such_player}
+    test "attribute lifecycle", %{key: key, multi: multi, oid: oid} = _context do
+      attribute = UUID.generate()
+      attribute2 = UUID.generate()
+      assert Repo.transaction(Player.exists(multi, "exists", key)) == {:ok, %{"exists" => true}}
+      assert Repo.transaction(Player.remove(multi, "remove", key)) == {:ok, %{"remove" => oid}}
+      assert Repo.transaction(Player.exists(multi, "exists", key)) == {:ok, %{"exists" => false}}
+      assert Repo.transaction(Player.remove(multi, "remove", key)) == {:error, "remove", :no_such_player, %{}}
+      assert {:ok, %{"add" => noid}} = Repo.transaction(Player.add(multi, "add", key))
+      assert Repo.transaction(Player.exists(multi, "exists", key)) == {:ok, %{"exists" => true}}
+      assert Repo.transaction(Player.which(multi, "which", key)) == {:ok, %{"which" => noid}}
+      assert Repo.transaction(Player.add(multi, "add", key)) == {:error, "add", :player_already_exists, %{}}
     end
   end
 
@@ -70,5 +50,14 @@ defmodule Exmud.PlayerTest do
     key = UUID.generate()
     {:ok, oid} = Player.add(key)
     %{key: key, oid: oid}
+  end
+
+  defp add_player_multi(_context) do
+    key = UUID.generate()
+    {:ok, results} = Ecto.Multi.new()
+    |> Player.add("add", key)
+    |> Repo.transaction()
+
+    %{key: key, multi: Ecto.Multi.new(), oid: results["add"]}
   end
 end
