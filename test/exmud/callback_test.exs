@@ -8,7 +8,7 @@ defmodule Exmud.CallbackTest do
 
   describe "callback tests: " do
     setup [:create_new_game_object]
-    
+
     @tag callback: true
     test "engine registration" do
       callback = UUID.generate()
@@ -32,7 +32,7 @@ defmodule Exmud.CallbackTest.ExampleCallback do
   @moduledoc """
   A barebones example of a callback for testing.
   """
-  
+
   def run(_oid) do
     :ok
   end

@@ -1,12 +1,12 @@
 defmodule Exmud.Schema.System do
   import Ecto.Changeset
   use Ecto.Schema
-  
+
   schema "system" do
     field :key, :string
     field :state, :binary
   end
-  
+
   def changeset(player, params \\ %{}) do
     player
     |> cast(params, [:key, :state])

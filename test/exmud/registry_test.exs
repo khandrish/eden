@@ -4,7 +4,7 @@ defmodule Exmud.RegistryTest do
   use ExUnit.Case, async: true
 
   describe "registry tests: " do
-  
+
     test "lifecycle" do
       assert Registry.read_key("foo", "system") == {:error, :no_such_key}
       assert Registry.key_registered?("foo", "system") == false

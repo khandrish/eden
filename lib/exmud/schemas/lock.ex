@@ -1,13 +1,13 @@
 defmodule Exmud.Schema.Lock do
   import Ecto.Changeset
   use Ecto.Schema
-  
+
   schema "lock" do
     field :type, :string
     field :definition, :string
     belongs_to :object, Exmud.Schema.Object, foreign_key: :oid
   end
-  
+
   def changeset(tag, params \\ %{}) do
     tag
     |> cast(params, [:definition, :oid, :type])

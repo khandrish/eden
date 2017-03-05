@@ -20,7 +20,7 @@ defmodule Exmud.SystemTest do
       assert System.running?(key) == false
       assert System.purge(key) == {:ok, %{}}
     end
-    
+
     test "calls with invalid system", _context do
       assert System.stop("foo") == {:error, :no_such_system}
       assert System.call("foo", "foo") == {:error, :no_such_system}
@@ -38,9 +38,6 @@ defmodule Exmud.SystemTest.ExampleSystem do
   @moduledoc """
   A barebones example of a system for testing.
   """
-  
+
   use Exmud.System
 end
-
-
-

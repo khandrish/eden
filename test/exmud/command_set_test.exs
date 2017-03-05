@@ -8,7 +8,7 @@ defmodule Exmud.CommandSetTest do
 
   describe "command_set tests: " do
     setup [:create_new_game_object]
-    
+
     @tag command_set: true
     test "engine registration" do
       command_set = UUID.generate()
@@ -22,7 +22,7 @@ defmodule Exmud.CommandSetTest do
       assert CommandSet.unregister(command_set) == :ok
       assert CommandSet.registered?(command_set) == false
     end
-    
+
     @tag command_set: true
     test "command set manipulation with commands" do
       command_set = CommandSet.new()
@@ -36,7 +36,7 @@ defmodule Exmud.CommandSetTest do
       assert CommandSet.has_command?(command_set, :bar) == false
       assert command_set == %Exmud.CommandSet{commands: %MapSet{map: %{foo: true}}}
     end
-    
+
     @tag command_set: true
     test "command set manipulation with overrides" do
       command_set = CommandSet.new()
@@ -47,7 +47,7 @@ defmodule Exmud.CommandSetTest do
       command_set = CommandSet.remove_override(command_set, "foobar")
       assert CommandSet.has_override?(command_set, "foobar") == false
     end
-    
+
     @tag command_set: true
     @tag pending: true
     # TODO: Create the command module so a test commands can be used here
@@ -56,22 +56,22 @@ defmodule Exmud.CommandSetTest do
         CommandSet.new()
         |> CommandSet.add_command(:foo)
         |> CommandSet.add_command(:bar)
-        
+
       _low_priority_command_set =
         CommandSet.new()
         |> CommandSet.set_priority(-1)
         |> CommandSet.add_command(:foo)
         |> CommandSet.add_command(:low_foo)
         |> CommandSet.add_command(:low_bar)
-      
+
       _high_priority_command_set =
         CommandSet.new()
         |> CommandSet.set_priority(1)
         |> CommandSet.add_command(:bar)
         |> CommandSet.add_command(:high_foo)
         |> CommandSet.add_command(:high_bar)
-        
-        
+
+
     end
   end
 
@@ -88,9 +88,9 @@ defmodule Exmud.CommandSetTest.ExampleCommandSet do
   @moduledoc """
   A barebones example of a command set for testing.
   """
-  
+
   @behaviour Exmud.CommandSet
-  
+
   def init(_oid) do
     {:ok, Exmud.CommandSet.new()}
   end

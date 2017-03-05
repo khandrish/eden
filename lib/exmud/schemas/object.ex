@@ -1,7 +1,7 @@
 defmodule Exmud.Schema.Object do
   import Ecto.Changeset
   use Ecto.Schema
-  
+
   schema "object" do
     field :key, :string
     field :date_created, :utc_datetime
@@ -13,7 +13,7 @@ defmodule Exmud.Schema.Object do
     has_many :scripts, Exmud.Schema.Script, foreign_key: :oid
     has_many :tags, Exmud.Schema.Tag, foreign_key: :oid
   end
-  
+
   def changeset(object, params \\ %{}) do
     object
     |> cast(params, [:date_created, :key])
