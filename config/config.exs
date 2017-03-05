@@ -9,7 +9,7 @@ use Mix.Config
 config :logger, :console,
   format: "$time - $level - $metadata - $message\n",
   metadata: [:module, :function, :line]
-  
+
 config :exmud, ecto_repos: [Exmud.Repo]
 
 config :exmud, Exmud.Repo,
@@ -19,8 +19,10 @@ config :exmud, Exmud.Repo,
   password: "exmud_password",
   hostname: "localhost",
   port: "5432"
-  
+
 config :exmud, :engine,
+  default_command_context_callback: Exmud.DefaultCommandContext,
+  #default_global_parser_callback: Exmud.DefaultGlobalParser,
   default_system_run_timeout: 1000 # milliseconds
 
 

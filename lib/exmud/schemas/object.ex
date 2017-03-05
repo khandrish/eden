@@ -1,19 +1,19 @@
-defmodule Exmud.Schema.GameObject do
+defmodule Exmud.Schema.Object do
   import Ecto.Changeset
   use Ecto.Schema
-  
-  schema "game_object" do
+
+  schema "object" do
     field :key, :string
-    field :date_created, Ecto.DateTime
+    field :date_created, :utc_datetime
     has_many :attributes, Exmud.Schema.Attribute, foreign_key: :oid
-    has_many :callbacks, Exmud.Schema.Attribute, foreign_key: :oid
-    has_many :command_sets, Exmud.Schema.Attribute, foreign_key: :oid
+    has_many :callbacks, Exmud.Schema.Callback, foreign_key: :oid
+    has_many :command_sets, Exmud.Schema.CommandSet, foreign_key: :oid
     has_many :locks, Exmud.Schema.Lock, foreign_key: :oid
-    has_many :relationships, Exmud.Schema.Tag, foreign_key: :oid
-    has_many :scripts, Exmud.Schema.Tag, foreign_key: :oid
+    has_many :relationships, Exmud.Schema.Relationship, foreign_key: :oid
+    has_many :scripts, Exmud.Schema.Script, foreign_key: :oid
     has_many :tags, Exmud.Schema.Tag, foreign_key: :oid
   end
-  
+
   def changeset(object, params \\ %{}) do
     object
     |> cast(params, [:date_created, :key])

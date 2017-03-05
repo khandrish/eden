@@ -10,35 +10,39 @@ defmodule Exmud.Repo.Migrations.CreateDatabases do
     create unique_index(:system, [:key])
     
     # Tables related to game objects
-    create table(:game_object) do
-      add :date_created, :datetime
+    create table(:object) do
+      add :date_created, :timestamptz
       add :key, :string
     end
-    create index(:game_object, [:key])
-    create index(:game_object, [:date_created])
+    create index(:object, [:key])
+    create index(:object, [:date_created])
     
     create table(:attribute) do
-      add :oid, references(:game_object, [on_delete: :delete_all])
-      add :name, :string
+      add :oid, references(:object, [on_delete: :delete_all])
+      add :key, :string
       add :data, :binary
     end
-    create index(:attribute, [:name])
-    create unique_index(:attribute, [:oid, :name])
+    create index(:attribute, [:key])
+    create unique_index(:attribute, [:oid, :key])
     
     create table(:callback) do
-      add :oid, references(:game_object, [on_delete: :delete_all])
+      add :oid, references(:object, [on_delete: :delete_all])
+      add :callback, :string
       add :key, :string
     end
-    create unique_index(:callback, [:key])
+    create index(:callback, [:callback])
+    create index(:callback, [:key])
+    create unique_index(:callback, [:oid, :callback])
     
     create table(:command_set) do
-      add :oid, references(:game_object, [on_delete: :delete_all])
+      add :oid, references(:object, [on_delete: :delete_all])
       add :key, :string
     end
-    create unique_index(:command_set, [:key])
+    create index(:callback, [:oid])
+    create unique_index(:command_set, [:key, :oid])
     
     create table(:lock) do
-      add :oid, references(:game_object, [on_delete: :delete_all])
+      add :oid, references(:object, [on_delete: :delete_all])
       add :type, :string
       add :definition, :string
     end
@@ -46,16 +50,16 @@ defmodule Exmud.Repo.Migrations.CreateDatabases do
     create index(:lock, [:oid])
     
     create table(:relationship) do
-      add :object, references(:game_object, [on_delete: :delete_all])
+      add :object, references(:object, [on_delete: :delete_all])
       add :relationship, :string
-      add :subject, references(:game_object, [on_delete: :delete_all])
+      add :subject, references(:object, [on_delete: :delete_all])
     end
     create index(:relationship, [:relationship])
     create index(:relationship, [:subject])
     create unique_index(:relationship, [:object, :relationship, :subject])
     
     create table(:script) do
-      add :oid, references(:game_object, [on_delete: :delete_all])
+      add :oid, references(:object, [on_delete: :delete_all])
       add :key, :string
       add :state, :binary
     end
@@ -64,11 +68,11 @@ defmodule Exmud.Repo.Migrations.CreateDatabases do
     
     create table(:tag) do
       add :category, :string
-      add :oid, references(:game_object, [on_delete: :delete_all])
-      add :tag, :string
-      add :type, :string
+      add :oid, references(:object, [on_delete: :delete_all])
+      add :key, :string
     end
-    create index(:tag, [:tag]) 
-    create index(:tag, [:type])
+    create index(:tag, [:key]) 
+    create index(:tag, [:category])
+    create unique_index(:tag, [:oid, :key, :category])
   end
 end
