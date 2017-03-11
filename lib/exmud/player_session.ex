@@ -8,12 +8,16 @@ defmodule Exmud.PlayerSession do
   the player session acts as both a synchronization mechanism as well as a
   bottleneck which can provide backpressure when required to keep the system
   healthy.
-
-  Note: None of the functions in this module are pure. All have side effects.
   """
 
   defmodule State do
-    defstruct event_manager: nil, key: nil, message_queue: EQueue.new(), start_time: nil
+    defstruct active_input: nil, # Input being processed.
+              active_task: nil, # Task processing input.
+              event_manager: nil, # Event manager for output stream.
+              input_queue: EQueue.new(), # Holds all input waiting to be processed.
+              key: nil, # The unique key identifying the player that the session represents.
+              message_queue: EQueue.new(), # Holds all output waiting to be sent, only populated if no listeners.
+              start_time: nil # The time the session was started
   end
 
   alias Exmud.Player
@@ -39,8 +43,24 @@ defmodule Exmud.PlayerSession do
 
       Exmud.PlayerSession.active(:marie_curie)
   """
+  @spec active(any) :: {:ok, boolean}
   def active(key) do
     {:ok, Registry.lookup(@registry, key) != []}
+  end
+
+  @doc """
+  Send input to the game engine on behalf of the player via its active session.
+
+  A successful return from this function guarantees that the player session has
+  received the input. It does not garuntee that the input will be processed.
+
+  ## Examples
+
+      Exmud.PlayerSession.receive_message(:louis_pasteur, "Pasteurization")
+  """
+  @spec receive_message(any, any) :: {:ok, :success} | {:error, :no_session_active}
+  def receive_message(key, input) do
+    forward(key, {:receive_message, input})
   end
 
   @doc """
@@ -55,8 +75,9 @@ defmodule Exmud.PlayerSession do
 
       Exmud.PlayerSession.send_output(:james_watson, "The Double Helix")
   """
-  def send_output(key, output) do
-    send_message(key, {:send_output, output})
+  @spec send_message(key :: any, message :: any) :: {:ok, :success} | {:error, :no_session_active}
+  def send_message(key, message) do
+    forward(key, {:send_message, message})
   end
 
   @doc """
@@ -69,6 +90,7 @@ defmodule Exmud.PlayerSession do
 
       Exmud.PlayerSession.start(:francis_crick)
   """
+  @spec start(key :: any) :: {:ok, :success} | {:error, :no_such_player}
   def start(key) do
     if Player.exists(key) == {:ok, true} do
       {:ok, _pid} = Supervisor.start_child(PlayerSessionSup, [key])
@@ -86,8 +108,9 @@ defmodule Exmud.PlayerSession do
 
       Exmud.PlayerSession.stop(:robert_boyle)
   """
+  @spec stop(any) :: {:ok, :success} | {:error, :no_session_active}
   def stop(key) do
-    send_message(key, :stop)
+    forward(key, :stop)
   end
 
 
@@ -101,10 +124,11 @@ defmodule Exmud.PlayerSession do
 
   ## Examples
 
-      Exmud.PlayerSession.stream_output(:ada_lovelace, &(send_message_somewhere(&1, destination))
+      Exmud.PlayerSession.stream_output(:ada_lovelace, fn message -> send(destination, {:incoming, message}) end)
   """
+  @spec stream_output(any, fun) :: {:ok, :success} | {:error, :no_session_active}
   def stream_output(key, handler_fun) do
-    send_message(key, {:stream_output, handler_fun})
+    forward(key, {:stream_output, handler_fun})
   end
 
 
@@ -114,6 +138,7 @@ defmodule Exmud.PlayerSession do
 
 
   @doc false
+  @spec start_link(any) :: {:ok, pid}
   def start_link(key), do: GenServer.start_link(__MODULE__, :ok, name: via_tuple(@registry, key))
 
 
@@ -123,27 +148,52 @@ defmodule Exmud.PlayerSession do
 
 
   @doc false
+  @spec init(key :: any) :: {:ok, %State{}}
   def init(key) do
     {:ok, pid} = GenEvent.start_link([])
     {:ok, %State{event_manager: pid, key: key, start_time: Calendar.DateTime.now_utc()}}
   end
 
   @doc false
+  @spec handle_call(:stop, any, %State{}) :: {:stop, :normal, :ok, %State{}}
   def handle_call(:stop, _from, state) do
     {:stop, :normal, :ok, state}
   end
 
   @doc false
-  def handle_call({:send_output, output}, _from, state) do
-    if GenEvent.which_handlers(state.event_manager) != [] do
-      :ok = GenEvent.notify(state.event_manager, output)
-      {:reply, :ok, state}
+  @spec handle_call({:receive_message, input :: String.t}, any, %State{}) :: {:reply, :ok, %State{}}
+  def handle_call({:receive_message, input}, _from, state) do
+    if taskActive?(state) do
+      {:reply, :ok, %{state | input_queue: EQueue.push(state.input_queue, input)}}
     else
-      {:reply, :ok, %{state | message_queue: EQueue.push(state.message_queue, output)}}
+      task = Task.async(fn -> :ok end)
+
+      # state = case Task.yield(task, 10) do
+      #   nil ->
+      #     input_queue = EQueue.from_list([task]) |> EQueue.join(state.input_queue)
+      #     %{state | active_task: task, input_queue: input_queue}
+      #   {:ok, result} ->
+      #     %{state | active_task: task, input_queue: Equeue.pop()}
+
+      # end
+      {:reply, :ok, %{state | active_task: task}}
     end
   end
 
+  @doc false
+  @spec handle_call({:send_message, message :: String.t}, any, %State{}) :: {:reply, :ok, %State{}}
+  def handle_call({:send_message, message}, _from, state) do
+    if GenEvent.which_handlers(state.event_manager) != [] do
+      :ok = GenEvent.notify(state.event_manager, message)
+      {:reply, :ok, state}
+    else
+      {:reply, :ok, %{state | message_queue: EQueue.push(state.message_queue, message)}}
+    end
+  end
+
+  @doc false
   @lint {Credo.Check.Refactor.PipeChainStart, false}
+  @spec handle_call({:stream_output, handler :: fun}, any, %State{}) :: {:reply, :ok, %State{}}
   def handle_call({:stream_output, handler_fun}, _from, state) do
     :ok = GenEvent.add_handler(state.event_manager, PlayerSessionOutputHandler, handler_fun)
 
@@ -161,7 +211,8 @@ defmodule Exmud.PlayerSession do
   #
 
 
-  defp send_message(key, message) do
+  @spec forward(key :: any, message :: String.t) :: {:ok, :success} | {:error, :no_session_active}
+  defp forward(key, message) do
     case active(key) do
       {:ok, false} -> {:error, :no_session_active}
       {:ok, true} ->
@@ -170,4 +221,8 @@ defmodule Exmud.PlayerSession do
         {:ok, :success}
     end
   end
+
+  @spec taskActive?(%State{}) :: true | false
+  defp taskActive?(%State{active_task: nil}), do: false
+  defp taskActive?(_), do: true
 end

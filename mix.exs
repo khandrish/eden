@@ -34,6 +34,7 @@ defmodule Exmud.Mixfile do
      {:ex_doc, ">= 0.14.5", only: :dev},
      {:fsm, "~> 0.3.0"},
      {:gen_stage, "~> 0.11"},
+     {:honeydew, "~> 1.0.0-rc4"},
      {:inch_ex, ">= 0.5.6", only: :docs},
      {:postgrex, "~> 0.13.0"},
      {:uuid, "~> 1.1"}]

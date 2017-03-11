@@ -5,6 +5,8 @@ defmodule Exmud.PlayerSessionTest do
   require Logger
   use ExUnit.Case, async: true
 
+  doctest Exmud.PlayerSession
+
   describe "player session tests: " do
     setup [:add_player]
 
@@ -15,9 +17,9 @@ defmodule Exmud.PlayerSessionTest do
       assert PlayerSession.start(key) == {:ok, :success}
       assert PlayerSession.active(key) == {:ok, true}
       me = self()
-      assert PlayerSession.send_output(key, :bar) == {:ok, :success}
+      assert PlayerSession.send_message(key, :bar) == {:ok, :success}
       assert PlayerSession.stream_output(key, fn(message) -> send(me, {:message, message}) end) == {:ok, :success}
-      assert PlayerSession.send_output(key, :foo) == {:ok, :success}
+      assert PlayerSession.send_message(key, :foo) == {:ok, :success}
       assert rec() == :bar
       assert rec() == :foo
       assert PlayerSession.stop(key) == {:ok, :success}
