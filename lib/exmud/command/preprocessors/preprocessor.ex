@@ -3,7 +3,7 @@ defmodule Exmud.Command.Preproccessor do
   A preprocessor is a callback module which executes before a command string is processed by the engine.
   """
 
-  @typedoc "The template defining how the callback module will be indexed in the engine."
+  @typedoc "The command string to be parsed."
   @type command_string :: String.t
 
 
