@@ -71,7 +71,6 @@ defmodule Exmud.Command do
     args: nil, # The processed arguments, which might look like %{direction: "north"} or even %Move{direction: "north"}
     object: nil, # The id of the object on which the command is being executed.
     match_string: nil, # The string which was matched. For "go north" the value would be "go".
-                       # Note that this value is filled in after preprocessors have run.
     subject: nil, # The id of the calling object. e.g., An object puppeted by a player, or a script on an object.
   )
 
