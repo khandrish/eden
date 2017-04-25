@@ -42,10 +42,16 @@ defmodule Exmud.Callback do
     Registry.register_key(key, @callback_category, callback_module)
   end
 
+  @doc """
+  Check to see if there is a callback module registered with a given key.
+  """
   def registered?(key) do
     Registry.key_registered?(key, @callback_category)
   end
 
+  @doc """
+  Return the module that has been registered with a given key.
+  """
   def which_module(key) do
     Logger.debug("Finding callback module for key `#{key}`")
     case Registry.read_key(key, @callback_category) do
@@ -56,6 +62,7 @@ defmodule Exmud.Callback do
     end
   end
 
+  @doc false
   def unregister(key) do
     Registry.unregister_key(key, @callback_category)
   end
