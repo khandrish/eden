@@ -8,6 +8,7 @@ defmodule Exmud.CommandTemplate do
 
   defstruct(
     aliases: MapSet.new(), # A command may have any number of aliases that it also matches against.
+    auto_help: true, # Extract and display help documentation to player in case of command processing failure.
     help_category: "General", # A path to where the help documentation will be found. A `nil` value means no help docs.
     key: nil, # The primary key that, along with the aliases, is used to determine what to execute.
   )
@@ -21,6 +22,10 @@ defmodule Exmud.CommandTemplate do
   def get_aliases(template), do: template.aliases
 
   def has_alias?(template, a), do: MapSet.member?(template.aliases, a)
+
+  def get_auto_help(template), do: template.auto_help
+
+  def set_auto_help(template, auto_help), do: %{template | auto_help: auto_help}
 
   def remove_alias(template, a) do
     %{template | aliases: MapSet.delete(template.aliases, a)}
