@@ -101,7 +101,7 @@ defmodule Exmud.Command do
   def set_match_string(command, match_string), do: %{command | match_string: match_string}
 
   @doc false
-  def get_subject(command), do: command.object
+  def get_subject(command), do: command.subject
 
   @doc false
   def set_subject(command, subject), do: %{command | subject: subject}
