@@ -26,6 +26,11 @@ defmodule Exmud.Command do
       tone: "cheery"
     }
   ```
+
+  ## Failure
+  Returning an error may (see `init/1`) trigger the help documentation for the command to be shown to the player. In
+  either case, any returned error message will be displayed to the player. An empty string or `nil` will display no
+  message to the player, even if auto help is turned off.
   """
   @callback parse(args_string) :: {:ok, term} | {:error, error_message}
 
