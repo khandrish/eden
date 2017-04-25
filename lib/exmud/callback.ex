@@ -1,19 +1,21 @@
 defmodule Exmud.Callback do
   @moduledoc """
-  An `Exmud.GameObject` can have an arbitrary number of callbacks associated
-  with it.
+  An `Exmud.GameObject` can have an arbitrary number of callbacks associated with it.
 
-  These callbacks provide the hooks for the engine, and application code, to
-  customize almost every aspect of how the engine interacts with a game object.
+  Callbacks are designed to be a more lightweight alternative to swapping out command sets when dynamic behavior on an
+  object is required, but a more substantial change feels too heavy handed. There are a few special cases in which the
+  engine will look for callbacks on an object, such as when an object is being puppeted/unpuppeted.
 
-  A callback, in this context, is a module which implements the
-  `Exmud.Callback` behavior and which is registered with the engine. When a
-  game object is being processed, the object will be checked for registered
-  callbacks matching what the engine needs to call. If a custom implementation
-  is not found the engine will fall back to a default implementation.
+  When a custom callback for an object has not been registered the engine will search to see if there is a default
+  implementation, which are provided by the engine to nsure that consistent behavior is followed. This logic can be
+  applied in application code as well when writing scripts and commands.
   """
 
-  # TODO: write callback behavior/spec
+  @doc """
+  A callback module is an arbitrary hook to enable the insertion of custom logic into the processing flow of a command
+  or script.
+  """
+  @callback execute(term) :: term
 
   alias Exmud.Registry
   alias Exmud.Repo
@@ -30,12 +32,10 @@ defmodule Exmud.Callback do
   #
 
   @doc """
-  In order for the engine to map callback strings to callback modules, each
-  callback module must be registered with the engine via a unique key.
-
-  For example: A 'light' command on a torch might expect the object to have
-  before_light, on_light, and after_light callbacks for flow control and
-  customization.
+  A callback can only be registered with a unique key. This is primarily useful for a universal default callback when
+  nothing more specific can be found attached to a given object. An example of this might be a `before_puppet`
+  default callback which is essentially a no-op, allowing for a custom callback which could interrupt the puppeting
+  process by returning `false`.
   """
   def register(key, callback_module) do
     Logger.debug("Registering callback for key `#{key}` with module `#{callback_module}`")
