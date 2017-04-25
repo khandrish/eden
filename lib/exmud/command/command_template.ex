@@ -13,29 +13,38 @@ defmodule Exmud.CommandTemplate do
     key: nil, # The primary key that, along with the aliases, is used to determine what to execute.
   )
 
+  @doc false
   def new, do: %Exmud.CommandTemplate{}
 
+  @doc false
   def add_alias(template, a) do
     %{template | aliases: MapSet.put(template.aliases, a)}
   end
 
+  @doc false
   def get_aliases(template), do: template.aliases
 
+  @doc false
   def has_alias?(template, a), do: MapSet.member?(template.aliases, a)
 
+  @doc false
   def get_auto_help(template), do: template.auto_help
 
+  @doc false
   def set_auto_help(template, auto_help), do: %{template | auto_help: auto_help}
 
-  def remove_alias(template, a) do
-    %{template | aliases: MapSet.delete(template.aliases, a)}
-  end
+  @doc false
+  def remove_alias(template, a), do: %{template | aliases: MapSet.delete(template.aliases, a)}
 
+  @doc false
   def get_help_category(template), do: template.help_category
 
+  @doc false
   def set_help_category(template, category), do: %{template | help_category: category}
 
+  @doc false
   def get_key(template, key), do: template.key
 
+  @doc false
   def set_key(template, key), do: %{template | key: key}
 end
