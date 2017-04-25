@@ -3,6 +3,7 @@ defmodule Exmud.Mixfile do
 
   def project do
     [app: :exmud,
+     aliases: aliases(),
      build_embedded: Mix.env == :prod,
      compilers: Mix.compilers,
      deps: deps(),
@@ -53,4 +54,11 @@ defmodule Exmud.Mixfile do
      maintainers: ["Chris Hicks"],
      name: :exmud]
   end
+
+  defp aliases do
+    [
+      "ecto.setup": ["ecto.create", "ecto.migrate"],
+      "ecto.reset": ["ecto.drop", "ecto.setup"]
+    ]
+end
 end
