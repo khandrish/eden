@@ -147,8 +147,8 @@ defmodule Exmud.GameObject do
 
 
   @lint {Credo.Check.Refactor.PipeChainStart, false}
-  def add_callback(oid, callback, key) do
-    args = %{callback: callback, key: key, oid: oid}
+  def add_callback(oid, callback_string, callback_module) do
+    args = %{string: callback_string, module: :erlang.term_to_binary(callback_module), oid: oid}
     Repo.insert(Callback.changeset(%Callback{}, args))
     |> normalize_repo_result(oid)
     |> case do
@@ -163,43 +163,55 @@ defmodule Exmud.GameObject do
     end
   end
 
-  def add_callback(%Ecto.Multi{} = multi, multi_key, oid, callback, key) do
+  def add_callback(%Ecto.Multi{} = multi, multi_key, oid, callback_string, callback_module) do
     Multi.run(multi, multi_key, fn(_) ->
-      add_callback(oid, callback, key)
+      add_callback(oid, callback_string, callback_module)
     end)
+  end
+
+  def get_callback(oid, callback_string) do
+    case get_callback(oid, callback_string, nil) do
+      {:ok, nil} -> {:error, :no_such_callback}
+      result -> result
+    end
   end
 
   @lint {Credo.Check.Refactor.PipeChainStart, false}
-  def get_callback(oid, callback, default) do
-    case Repo.one(callback_query(oid, callback)) do
-      nil -> default
-      callback -> callback.key
+  def get_callback(oid, callback_string, default_callback_module) do
+    case Repo.one(callback_query(oid, callback_string)) do
+      nil -> {:ok, default_callback_module}
+      callback -> {:ok, :erlang.binary_to_term(callback.module)}
     end
-    |> Exmud.Callback.which_module()
   end
 
-  def get_callback(%Ecto.Multi{} = multi, multi_key, oid, callback, default) do
+  def get_callback(%Ecto.Multi{} = multi, multi_key, oid, callback_string) do
     Multi.run(multi, multi_key, fn(_) ->
-      get_callback(oid, callback, default)
+      get_callback(oid, callback_string)
     end)
   end
 
-  def has_callback?(oid, callback) do
-    case Repo.one(callback_query(oid, callback)) do
+  def get_callback(%Ecto.Multi{} = multi, multi_key, oid, callback_string, default_callback_module) do
+    Multi.run(multi, multi_key, fn(_) ->
+      get_callback(oid, callback_string, default_callback_module)
+    end)
+  end
+
+  def has_callback?(oid, callback_string) do
+    case Repo.one(callback_query(oid, callback_string)) do
       nil -> {:ok, false}
       _object -> {:ok, true}
     end
   end
 
-  def has_callback?(%Ecto.Multi{} = multi, multi_key, oid, callback) do
+  def has_callback?(%Ecto.Multi{} = multi, multi_key, oid, callback_string) do
     Multi.run(multi, multi_key, fn(_) ->
-      has_callback?(oid, callback)
+      has_callback?(oid, callback_string)
     end)
   end
 
   @lint {Credo.Check.Refactor.PipeChainStart, false}
-  def delete_callback(oid, callback) do
-    Repo.delete_all(callback_query(oid, callback))
+  def delete_callback(oid, callback_string) do
+    Repo.delete_all(callback_query(oid, callback_string))
     |> case do
       {1, _} -> {:ok, oid}
       {0, _} -> {:error, :no_such_callback}
@@ -207,9 +219,9 @@ defmodule Exmud.GameObject do
     end
   end
 
-  def delete_callback(%Ecto.Multi{} = multi, multi_key, oid, callback) do
+  def delete_callback(%Ecto.Multi{} = multi, multi_key, oid, callback_string) do
     Multi.run(multi, multi_key, fn(_) ->
-      delete_callback(oid, callback)
+      delete_callback(oid, callback_string)
     end)
   end
 
@@ -374,27 +386,27 @@ defmodule Exmud.GameObject do
 
   # List Callbacks
 
-  defp build_list_query(query, [{:or_callbacks, callbacks} | options]) do
-    callbacks = wrap_or_query_params(callbacks)
-    build_list_query(query, [{:callbacks, callbacks} | options])
+  defp build_list_query(query, [{:or_callbacks, callback_strings} | options]) do
+    callback_strings = wrap_or_query_params(callback_strings)
+    build_list_query(query, [{:callbacks, callback_strings} | options])
   end
 
-  defp build_list_query(query, [{:callbacks, [{:or, callback} | callbacks]} | options]) do
+  defp build_list_query(query, [{:callbacks, [{:or, callback_string} | callback_strings]} | options]) do
     query =
       from object in query,
         inner_join: callback in assoc(object, :callbacks), on: object.id == callback.oid,
-        or_where: callback.callback == ^callback
+        or_where: callback.string == ^callback_string
 
-    build_list_query(query, [{:callbacks, callbacks} | options])
+    build_list_query(query, [{:callbacks, callback_strings} | options])
   end
 
-  defp build_list_query(query, [{:callbacks, [callback | callbacks]} | options]) do
+  defp build_list_query(query, [{:callbacks, [callback_string | callback_strings]} | options]) do
     query =
       from object in query,
         inner_join: callback in assoc(object, :callbacks), on: object.id == callback.oid,
-        where: callback.callback == ^callback
+        where: callback.string == ^callback_string
 
-    build_list_query(query, [{:callbacks, callbacks} | options])
+    build_list_query(query, [{:callbacks, callback_strings} | options])
   end
 
 
@@ -494,9 +506,9 @@ defmodule Exmud.GameObject do
   end
 
   # Return the query used to find a specific callback mapped to a specific object.
-  defp callback_query(oid, callback) do
+  defp callback_query(oid, callback_string) do
     from callback in Callback,
-      where: callback.callback == ^callback,
+      where: callback.string == ^callback_string,
       where: callback.oid == ^oid
   end
 

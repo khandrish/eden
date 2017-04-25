@@ -125,7 +125,7 @@ defmodule Exmud.GameObjectTest do
       assert GameObject.add_callback(oid, "foo", "foo") == {:ok, oid}
       assert GameObject.add_callback(oid, "foobar", "foo") == {:ok, oid}
       assert GameObject.has_callback?(oid, "foo") == {:ok, true}
-      assert GameObject.get_callback(oid, "foo", "foobar") == {:ok, EC}
+      assert GameObject.get_callback(oid, "foo", "foobar") == {:ok, "foo"}
       assert GameObject.delete_callback(oid, "foo") == {:ok, oid}
       assert GameObject.has_callback?(oid, "foo") == {:ok, false}
     end
@@ -135,7 +135,7 @@ defmodule Exmud.GameObjectTest do
     test "callback invalid cases" do
       assert GameObject.has_callback?(0, "foo") == {:ok, false}
       assert GameObject.add_callback(0, "foo", "foo") == {:error, :no_such_game_object}
-      assert GameObject.get_callback(0, "foo", "foobar") == {:error, :no_such_callback}
+      assert GameObject.get_callback(0, "foo") == {:error, :no_such_callback}
       assert GameObject.delete_callback(0, "foo") == {:error, :no_such_callback}
     end
 
@@ -317,12 +317,11 @@ defmodule Exmud.GameObjectTest do
     @tag callback: true
     @tag game_object: true
     test "callback lifecycle", %{multi: multi, oid: oid} = _context do
-      assert Callback.register("foo", EC) == :ok
       assert Repo.transaction(GameObject.has_callback?(multi, "has callback", oid, "foo")) == {:ok, %{"has callback" => false}}
       assert Repo.transaction(GameObject.add_callback(multi, "add callback", oid, "foo", "foo")) == {:ok, %{"add callback" => oid}}
       assert Repo.transaction(GameObject.add_callback(multi, "add callback", oid, "foobar", "foo")) == {:ok, %{"add callback" => oid}}
       assert Repo.transaction(GameObject.has_callback?(multi, "has callback", oid, "foo")) == {:ok, %{"has callback" => true}}
-      assert Repo.transaction(GameObject.get_callback(multi, "get callback", oid, "foo", "foobar")) == {:ok, %{"get callback" => EC}}
+      assert Repo.transaction(GameObject.get_callback(multi, "get callback", oid, "foo", "foobar")) == {:ok, %{"get callback" => "foo"}}
       assert Repo.transaction(GameObject.delete_callback(multi, "delete callback", oid, "foo")) == {:ok, %{"delete callback" => oid}}
       assert Repo.transaction(GameObject.has_callback?(multi, "has callback", oid, "foo")) == {:ok, %{"has callback" => false}}
     end
@@ -332,7 +331,7 @@ defmodule Exmud.GameObjectTest do
     test "callback invalid cases", %{multi: multi} = _context do
       assert Repo.transaction(GameObject.has_callback?(multi, "has callback", 0, "foo")) == {:ok, %{"has callback" => false}}
       assert Repo.transaction(GameObject.add_callback(multi, "add callback", 0, "foo", "foo")) == {:error, "add callback", :no_such_game_object, %{}}
-      assert Repo.transaction(GameObject.get_callback(multi, "get callback", 0, "foo", "foobar")) == {:error, "get callback", :no_such_callback, %{}}
+      assert Repo.transaction(GameObject.get_callback(multi, "get callback", 0, "foo")) == {:error, "get callback", :no_such_callback, %{}}
       assert Repo.transaction(GameObject.delete_callback(multi, "delete callback", 0, "foo")) == {:error, "delete callback", :no_such_callback, %{}}
     end
 
