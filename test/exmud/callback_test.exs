@@ -13,6 +13,7 @@ defmodule Exmud.CallbackTest do
     test "engine registration" do
       callback = UUID.generate()
       assert Callback.registered?(callback) == false
+      assert Callback.which_module(callback) == {:error, :no_such_callback}
       assert Callback.register(callback, EC) == :ok
       assert Callback.registered?(callback) == true
       assert Callback.which_module(callback) == {:ok, EC}
