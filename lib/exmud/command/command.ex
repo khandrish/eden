@@ -79,21 +79,30 @@ defmodule Exmud.Command do
     subject: nil, # The id of the calling object. e.g., An object puppeted by a player, or a script on an object.
   )
 
+  @doc false
   def new, do: %Exmud.Command{}
 
+  @doc false
   def get_args(command), do: command.args
 
+  @doc false
   def set_args(command, args), do: %{command | args: args}
 
+  @doc false
   def get_object(command), do: command.object
 
+  @doc false
   def set_object(command, object), do: %{command | object: object}
 
+  @doc false
   def get_match_string(command), do: command.match_string
 
+  @doc false
   def set_match_string(command, match_string), do: %{command | match_string: match_string}
 
+  @doc false
   def get_subject(command), do: command.object
 
+  @doc false
   def set_subject(command, subject), do: %{command | subject: subject}
 end
