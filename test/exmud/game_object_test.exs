@@ -158,7 +158,6 @@ defmodule Exmud.GameObjectTest do
     test "command set on object lifecycle", %{oid: oid} = _context do
       command_set = UUID.generate()
       command_set2 = UUID.generate()
-      assert CommandSet.register(command_set, ECO) == :ok
       assert GameObject.has_command_set?(oid, command_set) == {:ok, false}
       assert GameObject.add_command_set(oid, command_set) == {:ok, oid}
       assert GameObject.add_command_set(oid, command_set2) == {:ok, oid}
@@ -353,7 +352,6 @@ defmodule Exmud.GameObjectTest do
     test "command set on object lifecycle", %{multi: multi, oid: oid} = _context do
       command_set = UUID.generate()
       command_set2 = UUID.generate()
-      assert CommandSet.register(command_set, ECO) == :ok
       assert Repo.transaction(GameObject.has_command_set?(multi, "has command set", oid, command_set)) == {:ok, %{"has command set" => false}}
       assert Repo.transaction(GameObject.add_command_set(multi, "add command set", oid, command_set)) == {:ok, %{"add command set" => oid}}
       assert Repo.transaction(GameObject.add_command_set(multi, "add command set", oid, command_set2)) == {:ok, %{"add command set" => oid}}

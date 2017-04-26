@@ -232,8 +232,8 @@ defmodule Exmud.GameObject do
 
 
   @lint {Credo.Check.Refactor.PipeChainStart, false}
-  def add_command_set(oid, key) do
-    args = %{key: key, oid: oid}
+  def add_command_set(oid, module) do
+    args = %{module: :erlang.term_to_binary(module), oid: oid}
     Repo.insert(CommandSet.changeset(%CommandSet{}, args))
     |> normalize_repo_result(oid)
     |> case do
@@ -249,28 +249,28 @@ defmodule Exmud.GameObject do
     end
   end
 
-  def add_command_set(%Ecto.Multi{} = multi, multi_key, oid, key) do
+  def add_command_set(%Ecto.Multi{} = multi, multi_key, oid, module) do
     Multi.run(multi, multi_key, fn(_) ->
-      add_command_set(oid, key)
+      add_command_set(oid, module)
     end)
   end
 
-  def has_command_set?(oid, key) do
-    case Repo.one(command_set_query(oid, key)) do
+  def has_command_set?(oid, module) do
+    case Repo.one(command_set_query(oid, :erlang.term_to_binary(module))) do
       nil -> {:ok, false}
       _object -> {:ok, true}
     end
   end
 
-  def has_command_set?(%Ecto.Multi{} = multi, multi_key, oid, key) do
+  def has_command_set?(%Ecto.Multi{} = multi, multi_key, oid, module) do
     Multi.run(multi, multi_key, fn(_) ->
-      has_command_set?(oid, key)
+      has_command_set?(oid, module)
     end)
   end
 
   @lint {Credo.Check.Refactor.PipeChainStart, false}
-  def delete_command_set(oid, key) do
-    Repo.delete_all(command_set_query(oid, key))
+  def delete_command_set(oid, module) do
+    Repo.delete_all(command_set_query(oid, :erlang.term_to_binary(module)))
     |> case do
       {1, _} -> {:ok, oid}
       {0, _} -> {:error, :no_such_command_set}
@@ -278,9 +278,9 @@ defmodule Exmud.GameObject do
     end
   end
 
-  def delete_command_set(%Ecto.Multi{} = multi, multi_key, oid, key) do
+  def delete_command_set(%Ecto.Multi{} = multi, multi_key, oid, module) do
     Multi.run(multi, multi_key, fn(_) ->
-      delete_command_set(oid, key)
+      delete_command_set(oid, module)
     end)
   end
 
@@ -421,7 +421,7 @@ defmodule Exmud.GameObject do
     query =
       from object in query,
         inner_join: command_set in assoc(object, :command_sets), on: object.id == command_set.oid,
-        or_where: command_set.key == ^command_set
+        or_where: command_set.module == ^:erlang.term_to_binary(command_set)
 
     build_list_query(query, [{:command_sets, command_sets} | options])
   end
@@ -430,7 +430,7 @@ defmodule Exmud.GameObject do
     query =
       from object in query,
         inner_join: command_set in assoc(object, :command_sets), on: object.id == command_set.oid,
-        where: command_set.key == ^command_set
+        where: command_set.module == ^:erlang.term_to_binary(command_set)
 
     build_list_query(query, [{:command_sets, command_sets} | options])
   end
@@ -513,9 +513,9 @@ defmodule Exmud.GameObject do
   end
 
   # Return the query used to find a specific command set mapped to a specific object.
-  defp command_set_query(oid, key) do
+  defp command_set_query(oid, module) do
     from command_set in CommandSet,
-      where: command_set.key == ^key,
+      where: command_set.module == ^module,
       where: command_set.oid == ^oid
   end
 

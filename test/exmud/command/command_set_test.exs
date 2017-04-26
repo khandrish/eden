@@ -10,20 +10,6 @@ defmodule Exmud.CommandSetTest do
     setup [:create_new_game_object]
 
     @tag command_set: true
-    test "engine registration" do
-      command_set = UUID.generate()
-      command_set2 = UUID.generate()
-      assert CommandSet.registered?(command_set) == false
-      assert CommandSet.register(command_set, EC) == :ok
-      assert CommandSet.register(command_set2, EC, true) == :ok
-      assert CommandSet.get(command_set) == {:ok, %Exmud.CommandSet{}}
-      assert CommandSet.get(command_set2) == {:ok, %Exmud.CommandSet{}}
-      assert CommandSet.registered?(command_set) == true
-      assert CommandSet.unregister(command_set) == :ok
-      assert CommandSet.registered?(command_set) == false
-    end
-
-    @tag command_set: true
     test "command set manipulation with commands" do
       command_set = CommandSet.new()
       command_set = CommandSet.add_command(command_set, :foo)

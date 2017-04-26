@@ -3,14 +3,14 @@ defmodule Exmud.Schema.CommandSet do
   use Ecto.Schema
 
   schema "command_set" do
-    field :key, :string
+    field :module, :binary
     belongs_to :object, Exmud.Schema.Object, foreign_key: :oid
   end
 
   def changeset(tag, params \\ %{}) do
     tag
-    |> cast(params, [:key, :oid])
-    |> validate_required([:key, :oid])
+    |> cast(params, [:module, :oid])
+    |> validate_required([:module, :oid])
     |> foreign_key_constraint(:oid)
   end
 end

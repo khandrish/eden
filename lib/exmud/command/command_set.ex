@@ -52,10 +52,8 @@ defmodule Exmud.CommandSet do
 
 
   alias Exmud.GameObject
-  alias Exmud.Registry
   alias Exmud.Repo
   alias Exmud.Schema.CommandSet, as: CS
-  import Ecto.Query
   import Exmud.Utils
   require Logger
 
@@ -72,55 +70,6 @@ defmodule Exmud.CommandSet do
   # API
   #
 
-
-  # Management of command sets within the engine
-
-  @doc """
-  In order for the engine to map command sets to command set objects or
-  callback modules, each command set must be registered with the engine
-  via a unique key.
-  """
-  def register(key, callback_module, dynamic \\ false)
-
-  def register(key, callback_module, false) do
-    Logger.debug("Initializing command set for key `#{key}` with module `#{callback_module}`")
-    case callback_module.init(nil) do
-      {:ok, command_set} ->
-        Logger.debug("Registering static command set for key `#{key}` with module `#{callback_module}`")
-        Registry.register_key(key, @command_set_category, {command_set, false})
-      {:error, reason} = error ->
-        Logger.error("Unable to initilize command set for key `#{key}` with module `#{callback_module} because `#{reason}`")
-        error
-    end
-  end
-
-  def register(key, callback_module, true) do
-    Logger.debug("Registering dynamic command set for key `#{key}` with module `#{callback_module}`")
-    Registry.register_key(key, @command_set_category, {callback_module, true})
-  end
-
-  def registered?(key) do
-    Registry.key_registered?(key, @command_set_category)
-  end
-
-  def get(key, object \\ nil) do
-    Logger.debug("Getting command set for key `#{key}`")
-    case Registry.read_key(key, @command_set_category) do
-      # Dynamic command set
-      {:ok, {callback_module, true}} -> callback_module.init(object)
-      # Static command set
-      {:ok, {command_set, false}} -> {:ok, command_set}
-      {:error, _} ->
-        Logger.warn("Attempt to find callback module for command set with key `#{key}` failed")
-        {:error, :no_such_command_set}
-    end
-  end
-
-  def unregister(key) do
-    Registry.unregister_key(key, @command_set_category)
-  end
-
-  # Manipulate commands on a command set
 
   def add_command(command_set, command) do
     %{command_set | commands: MapSet.put(command_set.commands, command)}

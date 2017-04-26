@@ -36,10 +36,10 @@ defmodule Exmud.Repo.Migrations.CreateDatabases do
 
     create table(:command_set) do
       add :oid, references(:object, [on_delete: :delete_all])
-      add :key, :string
+      add :module, :binary
     end
     create index(:callback, [:oid])
-    create unique_index(:command_set, [:key, :oid])
+    create unique_index(:command_set, [:module, :oid])
 
     create table(:lock) do
       add :oid, references(:object, [on_delete: :delete_all])
