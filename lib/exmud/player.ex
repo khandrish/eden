@@ -8,7 +8,7 @@ defmodule Exmud.Player do
 
   alias Ecto.Multi
   alias Exmud.Attribute
-  alias Exmud.GameObject
+  alias Exmud.Object
   alias Exmud.PlayerSession
   alias Exmud.PlayerSessionSup
   alias Exmud.Repo
@@ -41,9 +41,9 @@ defmodule Exmud.Player do
   def add(key) do
     Multi.new()
     |> existence_check(key)
-    |> GameObject.new("new", key)
+    |> Object.new("new", key)
     |> Multi.run("add tag", fn(%{"new" => oid}) ->
-      GameObject.add_tag(oid, @player_tag, @tag_category)
+      Object.add_tag(oid, @player_tag, @tag_category)
     end)
     |> Repo.transaction()
     |> normalize_multi_result("new")
@@ -72,7 +72,7 @@ defmodule Exmud.Player do
     Multi.new()
     |> which(key)
     |> Multi.run("delete", fn(%{"which" => oid}) ->
-      GameObject.delete(oid)
+      Object.delete(oid)
     end)
     |> Repo.transaction()
     |> normalize_multi_result("which")
@@ -85,7 +85,7 @@ defmodule Exmud.Player do
   end
 
   def which(key) do
-    case GameObject.list(objects: [key], tags: [{@player_tag, @tag_category}]) do
+    case Object.list(objects: [key], tags: [{@player_tag, @tag_category}]) do
       {:ok, []} -> {:error, :no_such_player}
       {:ok, oids} -> {:ok, hd(oids)}
     end

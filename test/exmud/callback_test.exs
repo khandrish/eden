@@ -2,7 +2,7 @@ defmodule Exmud.CallbackTest do
   alias Ecto.UUID
   alias Exmud.Callback
   alias Exmud.CallbackTest.ExampleCallback, as: EC
-  alias Exmud.GameObject
+  alias Exmud.Object
   require Logger
   use ExUnit.Case
 
@@ -24,7 +24,7 @@ defmodule Exmud.CallbackTest do
 
   defp create_new_game_object(_context) do
     key = UUID.generate()
-    {:ok, oid} = GameObject.new(key)
+    {:ok, oid} = Object.new(key)
     %{key: key, oid: oid}
   end
 end

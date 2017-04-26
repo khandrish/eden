@@ -1,4 +1,4 @@
-defmodule Exmud.GameObject do
+defmodule Exmud.Object do
   alias Ecto.Multi
   alias Exmud.Repo
   alias Exmud.Schema.Attribute
@@ -12,7 +12,7 @@ defmodule Exmud.GameObject do
 
 
   #
-  # General game object functions
+  # General object functions
   #
 
 
@@ -155,7 +155,7 @@ defmodule Exmud.GameObject do
       {:error, errors} ->
         if Keyword.has_key?(errors, :oid) do
           Logger.warn("Attempt to add callback onto non existing object `#{oid}`")
-          {:error, :no_such_game_object}
+          {:error, :no_such_object}
         else
           {:error, errors}
         end
@@ -240,7 +240,7 @@ defmodule Exmud.GameObject do
       {:error, errors} ->
         if Keyword.has_key?(errors, :oid) do
           Logger.warn("Attempt to add command set onto non existing object `#{oid}`")
-          {:error, :no_such_game_object}
+          {:error, :no_such_object}
         else
           {:error, errors}
         end
@@ -301,7 +301,7 @@ defmodule Exmud.GameObject do
       {:error, errors} ->
         if Keyword.has_key?(errors, :oid) do
           Logger.warn("Attempt to add tag onto non existing object `#{oid}`")
-          {:error, :no_such_game_object}
+          {:error, :no_such_object}
         else
           {:error, errors}
         end

@@ -1,6 +1,6 @@
 defmodule Exmud.Callback do
   @moduledoc """
-  An `Exmud.GameObject` can have an arbitrary number of callbacks associated with it.
+  An `Exmud.Object` can have an arbitrary number of callbacks associated with it.
 
   Callbacks are designed to be a more lightweight alternative to swapping out command sets when dynamic behavior on an
   object is required, but a more substantial change feels too heavy handed. There are a few special cases in which the

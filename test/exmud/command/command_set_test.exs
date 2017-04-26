@@ -2,7 +2,7 @@ defmodule Exmud.CommandSetTest do
   alias Ecto.UUID
   alias Exmud.CommandSet
   alias Exmud.CommandSetTest.ExampleCommandSet, as: EC
-  alias Exmud.GameObject
+  alias Exmud.Object
   require Logger
   use ExUnit.Case
 
@@ -38,7 +38,7 @@ defmodule Exmud.CommandSetTest do
 
   defp create_new_game_object(context) do
     key = UUID.generate()
-    {:ok, oid} = GameObject.new(key)
+    {:ok, oid} = Object.new(key)
     context
     |> Map.put(:go_key, key)
     |> Map.put(:oid, oid)

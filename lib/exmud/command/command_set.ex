@@ -2,7 +2,7 @@ defmodule Exmud.CommandSet do
   @moduledoc """
   A command set determines what commands a player has access to.
 
-  An `Exmud.GameObject` can have an arbitrary number of command sets associated
+  An `Exmud.Object` can have an arbitrary number of command sets associated
   with it.
 
   A command set, in this context, is a module which implements the
@@ -19,7 +19,7 @@ defmodule Exmud.CommandSet do
   commands are treated as the same.
   """
 
-  alias Exmud.GameObject
+  alias Exmud.Object
   alias Exmud.Repo
   alias Exmud.Schema.CommandSet, as: CS
   import Exmud.Utils
