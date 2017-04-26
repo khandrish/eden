@@ -19,38 +19,6 @@ defmodule Exmud.CommandSet do
   commands are treated as the same.
   """
 
-
-  #
-  # Behavior definition
-  #
-
-
-  @doc """
-  Initialize a new command set.
-
-  All custom logic to build a command set takes place here. In most cases
-  this involves creating a command set object and adding the desired commands.
-  In complex cases a dynamic command set can be built if the desired effect
-  can't be achieved with the normal merge rules and options.
-
-  The 'init' method is only called with an object id if the command set was
-  registered as a dynamic command set, and will be called with an explicit
-  nil otherwise. Dynamic command sets will have their init method called each
-  time the command set is accessed. See the docs on the registration function
-  for the full warning.
-  """
-  @callback init(object) :: {:ok, command_set} | {:error, reason}
-
-  @typedoc "The id of the object that the command set is being built for."
-  @type object :: term | nil
-
-  @typedoc "A command set object."
-  @type command_set :: term
-
-  @typedoc "The reason for the failure."
-  @type reason :: term
-
-
   alias Exmud.GameObject
   alias Exmud.Repo
   alias Exmud.Schema.CommandSet, as: CS
@@ -59,61 +27,21 @@ defmodule Exmud.CommandSet do
 
   @command_set_category "command_set"
 
-  defstruct allow_duplicates: false,
-            commands: MapSet.new(),
-            merge_type: :union,
-            merge_type_overrides: %{},
-            priority: 0
-
 
   #
   # API
   #
 
 
-  def add_command(command_set, command) do
-    %{command_set | commands: MapSet.put(command_set.commands, command)}
-  end
-
-  def has_command?(command_set, command), do: MapSet.member?(command_set.commands, command)
-
-  def remove_command(command_set, command) do
-    %{command_set | commands: MapSet.delete(command_set.commands, command)}
-  end
-
-  # Merge type overrides
-
-  def add_override(command_set, key, merge_type) do
-    %{command_set | merge_type_overrides: Map.put(command_set.merge_type_overrides, key, merge_type)}
-  end
-
-  def has_override?(command_set, key), do: Map.has_key?(command_set.merge_type_overrides, key)
-
-  def remove_override(command_set, key) do
-    %{command_set | merge_type_overrides: Map.delete(command_set.merge_type_overrides, key)}
-  end
-
-  # Merging command sets
-
-  def merge(%Exmud.CommandSet{priority: priority1} = command_set1,
-            %Exmud.CommandSet{priority: priority2} = command_set2) when priority1 >= priority2 do
+  def merge(%Exmud.CommandSetTemplate{priority: priority1} = command_set1,
+            %Exmud.CommandSetTemplate{priority: priority2} = command_set2) when priority1 >= priority2 do
     do_merge(command_set2, command_set1)
   end
 
-  def merge(%Exmud.CommandSet{priority: priority1} = command_set1,
-            %Exmud.CommandSet{priority: priority2} = command_set2) when priority1 < priority2 do
+  def merge(%Exmud.CommandSetTemplate{priority: priority1} = command_set1,
+            %Exmud.CommandSetTemplate{priority: priority2} = command_set2) when priority1 < priority2 do
     do_merge(command_set1, command_set2)
   end
-
-  # Other command set manipulation
-
-  def new, do: %Exmud.CommandSet{}
-
-  def set_allow_duplicates(command_set, maybe), do: %{command_set | allow_duplicates: maybe}
-
-  def set_merge_type(command_set, merge_type), do: %{command_set | merge_type: merge_type}
-
-  def set_priority(command_set, priority), do: %{command_set | priority: priority}
 
 
   #
