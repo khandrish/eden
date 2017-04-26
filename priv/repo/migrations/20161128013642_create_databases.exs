@@ -31,6 +31,7 @@ defmodule Exmud.Repo.Migrations.CreateDatabases do
       add :module, :binary
     end
     create index(:callback, [:string])
+    create index(:callback, [:module])
     create unique_index(:callback, [:oid, :string])
 
     create table(:command_set) do
