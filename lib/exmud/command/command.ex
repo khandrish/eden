@@ -2,21 +2,35 @@ defmodule Exmud.Command do
   @moduledoc """
   A command is a distinct action that can be executed within the system.
 
-  The behavior defined below is the contract for users of `Exmud` to follow
-  when constructing their command logic.
+  ## Command Struct
+  When the engine determines which command is to be executed it first calls the `parse/1` callback so a custom term can
+  be constructed for the `execute/1` callback. The term returned from the `parse/1` callback is then inserted into an
+  `%Exmud.Command{}` struct along with a few additional values which should provide the `execute/1` callback with enough
+  context to properly execute. This command struct is then passed into the `execute/1` callback.
+
+  ## Example:
+  ```
+    %Exmud.Command{
+      args: %Args{
+        message: "Ohh, Micky, you're so fine!",
+        targets: ["Micky"],
+        tone: "cheery"
+      },
+      object: 4,
+      match_string: "shout",
+      subject: 2
+    }
   """
 
   @doc """
   Parse the arguments string.
 
-  Assuming the default Exmud behavior has not been overwritten, the args_string
-  will be everything after the characters which were mapped to a command minus
-  any leading spaces. So if the full string being processed is 'move north' or
+  Assuming the default Exmud behavior has not been overwritten, the args_string  will be everything after the characters
+  which were mapped to a command minus any leading spaces. So if the full string being processed is 'move north' or
   'go north' this function would receive 'north' as the string to parse.
 
-  A more advanced use of the parse callback would be to allow multiple types and
-  number of arguments. For example, an advanced command might look like
-  this: `shout @Micky /cheery Ohh, Micky, you're so fine!`
+  A more advanced use of the parse callback would be to allow multiple types and number of arguments. For example, an
+  advanced command might look like this: `shout @Micky /cheery Ohh, Micky, you're so fine!`
 
   In such a case, the term which is returned might look something like this:
   ```
@@ -42,11 +56,13 @@ defmodule Exmud.Command do
   @callback execute(command) :: term
 
   @doc """
-  Initialize a command template for the engine to use in indexing the callback module.
+  Initialize a command template for the engine to use when processing command strings.
 
-  Commands are added to the engine via their inclusion in command sets. When a command set is registered with the
-  engine all commands contained in that command set are registered as well, assuming they haven't already been. This
-  callback is only called that first time the command is being registered with the engine.
+  Command templates are initialized on demand via the inclusion of a command set in the processing of a command string.
+  Note that this callback will be called every time a command is included in the processing of a command string. In the
+  case of an object, such as a fountain, on a main thoroughfare every single command from every single player passing
+  through would cause this function to be called so that the command key/aliases could be matched against the incoming
+  command string.
   """
   @callback init(object) :: {:ok, command_template} | {:error, reason}
 
