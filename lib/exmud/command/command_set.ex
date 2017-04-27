@@ -2,21 +2,16 @@ defmodule Exmud.CommandSet do
   @moduledoc """
   A command set determines what commands a player has access to.
 
-  An `Exmud.Object` can have an arbitrary number of command sets associated
-  with it.
+  An `Exmud.Object` can have an arbitrary number of command sets associated with it.
 
-  A command set, in this context, is a module which implements the
-  `Exmud.CommandSet` behavior. This command set can only be used once it is
-  registered with the engine and a command set object has been initialized.
-  When a command is sent by a player, the engine gathers the relevant command
-  sets from the current context and merges them together to form a single
-  command set. The incoming command is then checked against the commands,
-  using both their keys and aliases, and then executed, or not, as logic
-  dictates.
+  A command set is a module which implements the `Exmud.CommandSet` behavior. When a command string is bring processed,
+  the engine gathers the relevant command sets from the current context and merges them together to form a single
+  command set. The incoming command string is then checked against the commands in this final command set, using both
+  their keys and aliases, and then an appropriate action is taken whether it be executing a command or returning an
+  error.
 
-  Please note than when determining whether commands match during a merge,
-  both the keys and aliases will be checked and any match will mean two
-  commands are treated as the same.
+  Note than when determining whether commands match during a merge, both the keys and aliases will be checked and any
+  match will mean two commands are treated as the same.
   """
 
   alias Exmud.Object
