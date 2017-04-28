@@ -121,22 +121,23 @@ defmodule Exmud.System do
   Call a running system with a message.
   """
   def call(key, message) do
-    case Registry.read_key(key, @system_category) do
-      {:error, :no_such_key} -> {:error, :no_such_system}
-      {:ok, pid} ->
-        GenServer.call(pid, {:message, message})
-    end
+    send_message(:call, key, message)
   end
 
   @doc """
   Cast a message to a running system.
   """
   def cast(key, message) do
+    send_message(:cast, key, message)
+  end
+
+  @doc """
+  Get the state of a running system.
+  """
+  def get_state(key) do
     case Registry.read_key(key, @system_category) do
+      {:ok, pid} ->  GenServer.call(pid, :state)
       {:error, :no_such_key} -> {:error, :no_such_system}
-      {:ok, pid} ->
-        GenServer.cast(pid, {:message, message})
-        :ok
     end
   end
 

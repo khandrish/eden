@@ -10,7 +10,7 @@ defmodule Exmud.CommandSetTemplateTest do
     setup [:create_new_game_object]
 
     @tag command_set_template: true
-    test "command set manipulation with commands" do
+    test "command set template manipulation with commands" do
       command_set = CommandSetTemplate.new()
       command_set = CommandSetTemplate.add_command(command_set, :foo)
       assert command_set == %Exmud.CommandSetTemplate{commands: %MapSet{map: %{foo: true}}}
@@ -33,6 +33,19 @@ defmodule Exmud.CommandSetTemplateTest do
       command_set = CommandSetTemplate.remove_override(command_set, "foobar")
       assert CommandSetTemplate.has_override?(command_set, "foobar") == false
     end
+
+    @tag command_set_template: true
+    test "other command set manipulation" do
+      command_set =
+        CommandSetTemplate.new()
+        |> CommandSetTemplate.set_allow_duplicates(:true)
+        |> CommandSetTemplate.set_merge_type(:replace)
+        |> CommandSetTemplate.set_priority(10)
+
+      assert command_set == %Exmud.CommandSetTemplate{allow_duplicates: :true,
+                                                      merge_type: :replace,
+                                                      priority: 10}
+    end
   end
 
   defp create_new_game_object(context) do
@@ -44,7 +57,43 @@ defmodule Exmud.CommandSetTemplateTest do
   end
 end
 
-defmodule Exmud.CommandSetTemplateTest.ExampleCommandSetTemplate do
+defmodule Exmud.CommandSetTemplateTest.ExampleCommandSetTemplate1 do
+  @moduledoc """
+  A barebones example of a command set template instance for testing.
+  """
+
+  @behaviour Exmud.CommandSetTemplate
+
+  def init(_oid) do
+    {:ok, Exmud.CommandSetTemplate.new()}
+  end
+end
+
+defmodule Exmud.CommandSetTemplateTest.ExampleCommandSetTemplate2 do
+  @moduledoc """
+  A barebones example of a command set template instance for testing.
+  """
+
+  @behaviour Exmud.CommandSetTemplate
+
+  def init(_oid) do
+    {:ok, Exmud.CommandSetTemplate.new()}
+  end
+end
+
+defmodule Exmud.CommandSetTemplateTest.ExampleCommandSetTemplate3 do
+  @moduledoc """
+  A barebones example of a command set template instance for testing.
+  """
+
+  @behaviour Exmud.CommandSetTemplate
+
+  def init(_oid) do
+    {:ok, Exmud.CommandSetTemplate.new()}
+  end
+end
+
+defmodule Exmud.CommandSetTemplateTest.ExampleCommandSetTemplate4 do
   @moduledoc """
   A barebones example of a command set template instance for testing.
   """

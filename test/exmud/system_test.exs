@@ -11,6 +11,7 @@ defmodule Exmud.SystemTest do
       assert System.start(key, callback_module) == :ok
       assert System.start(key, callback_module) == {:error, :already_started} # Can't start two of the same key
       assert System.running?(key) == true
+      assert System.get_state(key) != nil
       assert System.call(key, "foo") == "foo"
       assert System.cast(key, "foo") == :ok
       assert System.stop(key) == :ok

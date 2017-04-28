@@ -1,6 +1,6 @@
 defmodule Exmud.CommandSet do
   @moduledoc """
-  A command set determines what commands a player has access to.
+  A command set determines what commands an object has attached to it.
 
   An `Exmud.Object` can have an arbitrary number of command sets associated with it.
 
@@ -14,6 +14,7 @@ defmodule Exmud.CommandSet do
   match will mean two commands are treated as the same.
   """
 
+  alias Exmud.CommandSetTemplate, as: CST
   alias Exmud.Object
   alias Exmud.Repo
   alias Exmud.Schema.CommandSet, as: CS
@@ -28,14 +29,32 @@ defmodule Exmud.CommandSet do
   #
 
 
-  def merge(%Exmud.CommandSetTemplate{priority: priority1} = command_set1,
-            %Exmud.CommandSetTemplate{priority: priority2} = command_set2) when priority1 >= priority2 do
-    do_merge(command_set2, command_set1)
+  @doc """
+  Given an `%Exmud.CommandSetTemplate{}` struct and the object to which it belongs, all commands contained in the
+  command set are iterated over and initialized.
+
+  This includes injecting the object that the command set belongs to so that the relationship doesn't get lost in the
+  combining of command sets.
+  """
+  def init(command_set, object, callback_module) do
+    initialized_commands =
+      Enum.reduce(command_set.commands, MapSet.new(), fn(command_callback_module, mapset) ->
+        command_template = command_callback_module.init(object)
+        MapSet.put(mapset, %{command_template | object: object})
+      end)
+
+    %{command_set | callback_module: callback_module, commands: initialized_commands, object: object}
   end
 
-  def merge(%Exmud.CommandSetTemplate{priority: priority1} = command_set1,
-            %Exmud.CommandSetTemplate{priority: priority2} = command_set2) when priority1 < priority2 do
-    do_merge(command_set1, command_set2)
+
+  def merge(%CST{priority: dominant_priority} = dominant_command_set,
+            %CST{priority: recessive_priority} = recessive_command_set) when dominant_priority > recessive_priority do
+    do_merge(recessive_command_set, dominant_command_set)
+  end
+
+  def merge(%CST{priority: recessive_priority} = recessive_command_set,
+            %CST{priority: dominant_priority} = dominant_command_set) when dominant_priority >= recessive_priority do
+    do_merge(recessive_command_set, dominant_command_set)
   end
 
 
@@ -44,8 +63,8 @@ defmodule Exmud.CommandSet do
   #
 
 
-  # Given a command struct, create a map where the keys are the combined aliases and
-  # command set key and all of the values are the command struct itself.
+  # Given a command struct, create a map where the keys are the combined aliases and command key and all of the values
+  # are the command struct itself.
   @lint {Credo.Check.Refactor.PipeChainStart, false}
   defp create_commands_map(commands) do
     Enum.reduce(commands, %{}, fn(command, map) ->
@@ -57,79 +76,83 @@ defmodule Exmud.CommandSet do
   end
 
   # Perform the merge of two command sets.
-  defp do_merge(old_cs, new_cs) do
-    merge_type = get_merge_type(new_cs, old_cs.key)
+  defp do_merge(recessive_cs, dominant_cs) do
+    merge_type = get_merge_type(dominant_cs, recessive_cs.callback_module)
 
-    conflicts = find_conflicting_commands(old_cs.commands, new_cs.commands)
+    conflicts = find_conflicting_commands(recessive_cs.commands, dominant_cs.commands)
 
-    do_merge(old_cs.commands, new_cs.commands, conflicts, merge_type, new_cs.allow_duplicates)
+    commands = do_merge(recessive_cs.commands,
+                        dominant_cs.commands,
+                        conflicts,
+                        merge_type,
+                        dominant_cs.allow_duplicates)
+
+    %{dominant_cs | commands: commands}
   end
 
   # Perform a union merge when no duplicates are allowed.
-  defp do_merge(old_commands, new_commands, conflicts, :union, false) do
-    filtered_old_commands = filter_commands(old_commands, conflicts, 0)
-    MapSet.union(filtered_old_commands, new_commands)
+  defp do_merge(recessive_commands, dominant_commands, conflicts, :union, false) do
+    filtered_recessive_commands = filter_commands(recessive_commands, conflicts, 0)
+    MapSet.union(filtered_recessive_commands, dominant_commands)
   end
 
   # Perform a union merge when duplicates are allowed.
-  defp do_merge(old_commands, new_commands, _, :union, true) do
-    MapSet.union(old_commands, new_commands)
+  defp do_merge(recessive_commands, dominant_commands, _, :union, true) do
+    MapSet.union(recessive_commands, dominant_commands)
   end
 
   # Perform an intersection merge when duplicates are not allowed.
-  defp do_merge(old_commands, new_commands, conflicts, :intersect, false) do
+  defp do_merge(recessive_commands, dominant_commands, conflicts, :intersect, false) do
     Enum.reduce(conflicts, MapSet.new(), &(MapSet.put(&2, elem(&1, 1))))
   end
 
   # Perform an intersection merge when duplicates are allowed.
-  defp do_merge(old_commands, new_commands, conflicts, :intersect, true) do
-    Enum.reduce(conflicts, MapSet.new(), fn({old_command, new_command}, map) ->
+  defp do_merge(recessive_commands, dominant_commands, conflicts, :intersect, true) do
+    Enum.reduce(conflicts, MapSet.new(), fn({recessive_command, dominant_command}, map) ->
       map
-      |> MapSet.put(old_command)
-      |> MapSet.put(new_command)
+      |> MapSet.put(dominant_command)
+      |> MapSet.put(recessive_command)
     end)
   end
 
-  # Perform a remove merge where the matching commands from the higher priority
-  # command set are removed from the lower priority command set.
-  defp do_merge(old_commands, new_commands, conflicts, :remove, _) do
-    filter_commands(old_commands, conflicts, 0)
+  # Perform a remove merge where the matching commands from the higher priority command set are removed from the lower
+  # priority command set.
+  defp do_merge(recessive_commands, dominant_commands, conflicts, :remove, _) do
+    filter_commands(recessive_commands, conflicts, 0)
   end
 
-  # Perform a replace merge where the new command set completely replaces the
-  # old one without even checking for matches.
-  defp do_merge(_, new_commands, _, :replace, _) do
-    new_commands
+  # Perform a replace merge where the dominant command set completely replaces the recessive one without even checking
+  # for matches.
+  defp do_merge(_, dominant_commands, _, :replace, _) do
+    dominant_commands
   end
 
-  # Given a set of commands, a tuple of old/new commands in conflict, and an
-  # index specifying which of the conflicting commands to use, filter the
-  # provided set of commands.
+  # Given a set of commands, a tuple of recessive/dominant commands in conflict, and an index specifying which of the
+  # conflicting commands to use, filter the provided set of commands.
   defp filter_commands(commands, conflicts, index) do
     conflicting_commands = Enum.reduce(conflicts, MapSet.new(), &(MapSet.put(&2, elem(&1, index))))
     MapSet.difference(commands, conflicting_commands)
   end
 
-  # Given two command sets, find the commands that would cause duplicate match errors and
-  # return the commands from both sets that caused the error.
-  defp find_conflicting_commands(old_commands, new_commands) do
-    old_commands_mapping = create_commands_map(old_commands)
-    new_commands_mapping = create_commands_map(new_commands)
+  # Given two command sets, find the commands that would cause duplicate match errors and  return the commands from both
+  # sets that caused the error.
+  defp find_conflicting_commands(recessive_cs, dominant_cs) do
+    recessive_commands_mapping = create_commands_map(recessive_cs)
+    dominant_commands_mapping = create_commands_map(dominant_cs)
 
-    all_old_keys = MapSet.new(Map.keys(old_commands_mapping))
-    all_new_keys = MapSet.new(Map.keys(new_commands_mapping))
+    all_recessive_keys = MapSet.new(Map.keys(recessive_commands_mapping))
+    all_dominant_keys = MapSet.new(Map.keys(dominant_commands_mapping))
 
-    Enum.reduce(all_new_keys, MapSet.new(), fn(key, conflicting_commands) ->
-      if MapSet.member?(all_old_keys, key) do
-        MapSet.put(conflicting_commands, {old_commands_mapping[key], new_commands_mapping[key]})
+    Enum.reduce(all_recessive_keys, MapSet.new(), fn(key, conflicting_commands) ->
+      if MapSet.member?(all_dominant_keys, key) do
+        MapSet.put(conflicting_commands, {recessive_commands_mapping[key], dominant_commands_mapping[key]})
       else
         conflicting_commands
       end
     end)
   end
 
-  # Given a command set and a key against which to check, determine what the
-  # merge type should be.
+  # Given a command set and a key against which to check, determine what the merge type should be.
   defp get_merge_type(command_set, key) do
     command_set.merge_type_overrides
     |> Map.keys()

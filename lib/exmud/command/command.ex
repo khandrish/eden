@@ -9,8 +9,10 @@ defmodule Exmud.Command do
   context to properly execute. This command struct is then passed into the `execute/1` callback.
 
   ## Example:
+  A command struct being passed into the `execute/1` callback might look something like this:
   ```
     %Exmud.Command{
+      # This struct would be returned from the parse/1 callback
       args: %Args{
         message: "Ohh, Micky, you're so fine!",
         targets: ["Micky"],
@@ -64,7 +66,7 @@ defmodule Exmud.Command do
   through would cause this function to be called so that the command key/aliases could be matched against the incoming
   command string.
   """
-  @callback init(object) :: {:ok, command_template} | {:error, reason}
+  @callback init(object) :: command_template
 
   @typedoc "The id of the object that the command is being built for."
   @type object :: term | nil

@@ -125,6 +125,7 @@ defmodule Exmud.ObjectTest do
       assert Object.add_callback(oid, "foo", "foo") == {:ok, oid}
       assert Object.add_callback(oid, "foobar", "foo") == {:ok, oid}
       assert Object.has_callback?(oid, "foo") == {:ok, true}
+      assert Object.get_callback(oid, "foo") == {:ok, "foo"}
       assert Object.get_callback(oid, "foo", "foobar") == {:ok, "foo"}
       assert Object.delete_callback(oid, "foo") == {:ok, oid}
       assert Object.has_callback?(oid, "foo") == {:ok, false}

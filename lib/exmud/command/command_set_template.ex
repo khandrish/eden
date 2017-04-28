@@ -35,14 +35,16 @@ defmodule Exmud.CommandSetTemplate do
 
 
   #
-  # Struct Definition
+  # Command Set Template Definition
   #
 
 
   defstruct allow_duplicates: false,
+            callback_module: nil,
             commands: MapSet.new(),
             merge_type: :union,
             merge_type_overrides: %{},
+            object: nil,
             priority: 0
 
 
@@ -54,31 +56,31 @@ defmodule Exmud.CommandSetTemplate do
   # Commands
 
   @doc false
-  def add_command(command_set_template, command) do
-    %{command_set_template | commands: MapSet.put(command_set_template.commands, command)}
+  def add_command(template, command) do
+    %{template | commands: MapSet.put(template.commands, command)}
   end
 
   @doc false
-  def has_command?(command_set_template, command), do: MapSet.member?(command_set_template.commands, command)
+  def has_command?(template, command), do: MapSet.member?(template.commands, command)
 
   @doc false
-  def remove_command(command_set_template, command) do
-    %{command_set_template | commands: MapSet.delete(command_set_template.commands, command)}
+  def remove_command(template, command) do
+    %{template | commands: MapSet.delete(template.commands, command)}
   end
 
   # Merge type overrides
 
   @doc false
-  def add_override(command_set_template, key, merge_type) do
-    %{command_set_template | merge_type_overrides: Map.put(command_set_template.merge_type_overrides, key, merge_type)}
+  def add_override(template, key, merge_type) do
+    %{template | merge_type_overrides: Map.put(template.merge_type_overrides, key, merge_type)}
   end
 
   @doc false
-  def has_override?(command_set_template, key), do: Map.has_key?(command_set_template.merge_type_overrides, key)
+  def has_override?(template, key), do: Map.has_key?(template.merge_type_overrides, key)
 
   @doc false
-  def remove_override(command_set_template, key) do
-    %{command_set_template | merge_type_overrides: Map.delete(command_set_template.merge_type_overrides, key)}
+  def remove_override(template, key) do
+    %{template | merge_type_overrides: Map.delete(template.merge_type_overrides, key)}
   end
 
   # Other command set manipulation
@@ -87,11 +89,11 @@ defmodule Exmud.CommandSetTemplate do
   def new, do: %Exmud.CommandSetTemplate{}
 
   @doc false
-  def set_allow_duplicates(command_set_template, maybe), do: %{command_set_template | allow_duplicates: maybe}
+  def set_allow_duplicates(template, maybe), do: %{template | allow_duplicates: maybe}
 
   @doc false
-  def set_merge_type(command_set_template, merge_type), do: %{command_set_template | merge_type: merge_type}
+  def set_merge_type(template, merge_type), do: %{template | merge_type: merge_type}
 
   @doc false
-  def set_priority(command_set_template, priority), do: %{command_set_template | priority: priority}
+  def set_priority(template, priority), do: %{template | priority: priority}
 end
