@@ -1,4 +1,4 @@
-defmodule Exmud.CommandProcessorSupervisor do
+defmodule Exmud.CommandProcessorSup do
   use Supervisor
 
   def start_link do

@@ -5,12 +5,13 @@ defmodule Exmud do
     import Supervisor.Spec, warn: false
 
     children = [
-      worker(Exmud.Repo, []),
-      worker(Exmud.Registry, []),
       supervisor(Task.Supervisor, [[name: Exmud.TaskSupervisor]]),
       supervisor(Registry, [:unique, :player_session_registry]),
+      supervisor(Exmud.SystemSup, []),
+      supervisor(Exmud.CommandProcessorSup, []),
       supervisor(Exmud.PlayerSessionSup, []),
-      supervisor(Exmud.SystemSup, [])
+      worker(Exmud.Repo, []),
+      worker(Exmud.Registry, []),
     ]
 
     opts = [strategy: :one_for_one, name: Exmud.Supervisor]

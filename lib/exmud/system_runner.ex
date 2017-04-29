@@ -11,13 +11,15 @@ defmodule Exmud.SystemRunner do
 
   @system_category "system"
 
+
   #
   # Worker Callback
   #
 
 
-  def start_link(name, callback_module, args) do
-    GenServer.start_link(__MODULE__, {name, callback_module, args})
+  @doc false
+  def start_link(key, callback_module, args) do
+    GenServer.start_link(__MODULE__, {key, callback_module, args})
   end
 
 
@@ -26,6 +28,7 @@ defmodule Exmud.SystemRunner do
   #
 
 
+  @doc false
   @lint {Credo.Check.Refactor.PipeChainStart, false}
   def init({key, callback_module, args}) do
     if Registry.register_key(key, @system_category, self()) == :ok do
@@ -66,10 +69,12 @@ defmodule Exmud.SystemRunner do
     end
   end
 
+  @doc false
   def handle_call(:state, _from, %{state: state} = data) do
     {:reply, state, data}
   end
 
+  @doc false
   @lint {Credo.Check.Refactor.PipeChainStart, false}
   def handle_call({:stop, args}, _from, %{callback_module: callback_module, system: system, state: state} = _data) do
     new_state = callback_module.stop(args, state)
@@ -86,6 +91,7 @@ defmodule Exmud.SystemRunner do
     end
   end
 
+  @doc false
   def handle_call({:message, message}, _from,  %{callback_module: callback_module, state: state} = data) do
     case callback_module.handle_message(message, state) do
       {response, new_state, timeout} ->
@@ -96,12 +102,14 @@ defmodule Exmud.SystemRunner do
     end
   end
 
+  @doc false
   def handle_cast({:message, message}, %{callback_module: callback_module, state: state} = data) do
     {_response, new_state} = callback_module.handle_message(message, state)
 
     {:noreply, Map.put(data, :state, new_state)}
   end
 
+  @doc false
   @lint {Credo.Check.Refactor.PipeChainStart, false}
   def handle_info(:run, %{callback_module: callback_module, state: state} = data) do
     {new_state, timeout} = callback_module.run(state) |> normalize_result()
