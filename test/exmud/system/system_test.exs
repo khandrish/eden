@@ -1,16 +1,21 @@
 defmodule Exmud.SystemTest do
+  alias Exmud.Registry
   alias Exmud.System
   use ExUnit.Case # Can't be async otherwise it won't load the test system
-  doctest Exmud.System
 
   describe "system tests: " do
     setup [:do_setup]
 
-
-    test "lifecycle", %{callback_module: callback_module, key: key} = _context do
+    @tag system: true
+    test "regular lifecycle", %{es: callback_module, es_key: key} = _context do
       assert System.start(key, callback_module) == :ok
       assert System.start(key, callback_module) == {:error, :already_started} # Can't start two of the same key
       assert System.running?(key) == true
+
+      case Registry.read_key(key, "system") do
+        {:ok, pid} -> send(pid, :run)
+      end
+
       assert System.get_state(key) != nil
       assert System.call(key, "foo") == "foo"
       assert System.cast(key, "foo") == :ok
@@ -22,6 +27,15 @@ defmodule Exmud.SystemTest do
       assert System.purge(key) == {:ok, %{}}
     end
 
+    @tag system: true
+    test "idle lifecycle", %{ies: callback_module, ies_key: key} = _context do
+      assert System.start(key, callback_module) == :ok
+      assert System.running?(key) == true
+      assert System.call(key, "foo") == "foo"
+      assert System.stop(key) == :ok
+    end
+
+    @tag system: true
     test "calls with invalid system", _context do
       assert System.stop("foo") == {:error, :no_such_system}
       assert System.call("foo", "foo") == {:error, :no_such_system}
@@ -31,7 +45,8 @@ defmodule Exmud.SystemTest do
   end
 
   defp do_setup(_context) do
-    %{callback_module: Exmud.SystemTest.ExampleSystem, key: "ExampleSystem"}
+    %{es: Exmud.SystemTest.ExampleSystem, es_key: "ExampleSystem",
+      ies: Exmud.SystemTest.ExampleSystemIdle, ies_key: "IdleExampleSystem"}
   end
 end
 
@@ -41,4 +56,24 @@ defmodule Exmud.SystemTest.ExampleSystem do
   """
 
   use Exmud.System
+
+  def start(state) do
+    {state, 50}
+  end
+
+  def run(state) do
+    {state, 50}
+  end
+end
+
+defmodule Exmud.SystemTest.ExampleSystemIdle do
+  @moduledoc """
+  A barebones example of a system for testing.
+  """
+
+  use Exmud.System
+
+  def handle_message(message, state) do
+    {message, state, :never}
+  end
 end
