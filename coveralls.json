@@ -1,0 +1,8 @@
+{
+  "skip_files": [
+    "lib/exmud/command/preprocessors/preprocessor.ex",
+    "lib/exmud/repo.ex",
+    "lib/exmud/time.ex",
+    "lib/exmud/command/command_context.ex"
+  ]
+}
