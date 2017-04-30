@@ -11,17 +11,12 @@ defmodule Exmud.CommandProcessor do
   finished and returning the final command object.
   """
 
-  defmodule State do
-    defstruct active_input: nil, # Input being processed.
-              active_task: nil, # Task processing input.
-              event_manager: nil, # Event manager for output stream.
-              input_queue: EQueue.new(), # Holds all input waiting to be processed.
-              key: nil, # The unique key identifying the player that the session represents.
-              message_queue: EQueue.new(), # Holds all output waiting to be sent, only populated if no listeners.
-              start_time: nil # The time the session was started
+  defmodule Args do
+    defstruct subject: nil, # The id of an object which the command is being executed on behalf of; Usually a player.
+              command_string: nil # Raw input string being processed. Can be modified in place by preprocessors.
   end
 
-  alias Exmud.CommandProcessorSupervisor
+  alias Exmud.CommandProcessorSup
   import Exmud.Utils
   use GenServer
 
@@ -36,10 +31,10 @@ defmodule Exmud.CommandProcessor do
 
   A reference is returned which can be used for identifying
   """
-  def process(command) do
-    {:ok, pid} = Supervisor.start_child(CommandProcessorSupervisor, [])
+  def process(command_string, subject) do
+    {:ok, pid} = Supervisor.start_child(CommandProcessorSup, [])
     ref = make_ref()
-    :ok = GenServer.cast(pid, {:process, command, self(), ref})
+    :ok = GenServer.cast(pid, {:process, %Args{command_string: command_string, subject: subject}, self(), ref})
     {:ok, ref}
   end
 
@@ -50,8 +45,8 @@ defmodule Exmud.CommandProcessor do
 
 
   @doc false
-  @spec start_link(any) :: {:ok, pid}
-  def start_link(_), do: GenServer.start_link(__MODULE__, :ok)
+  @spec start_link() :: {:ok, pid}
+  def start_link, do: GenServer.start_link(__MODULE__, :ok)
 
 
   #
@@ -65,10 +60,19 @@ defmodule Exmud.CommandProcessor do
   end
 
   @doc false
-  def handle_cast({:process, command, from, ref}, state) do
-    # do command processing type stuff here
-    send(from, {:command_processing_done, ref, :ok, command})
-    {:stop, :normal, :ok, state}
+  def handle_cast({:process, %Args{command_string: command_string, subject: subject} = _args, from, ref}, state) do
+    # Run preprocessors
+    # get context for subject via callback module
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    send(from, {:command_processing_done, ref, :ok})
+    {:stop, :normal, state}
   end
 
 
