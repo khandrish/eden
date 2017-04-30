@@ -21,8 +21,7 @@ config :exmud, Exmud.Repo,
   port: "5432"
 
 config :exmud, :engine,
-  default_command_context_callback: Exmud.DefaultCommandContext,
-  #default_global_parser_callback: Exmud.DefaultGlobalParser,
+  command_context_callback: Exmud.Command.Context.Default,
   default_system_run_timeout: 1000 # milliseconds
 
 
