@@ -16,6 +16,7 @@ defmodule Exmud.PlayerSessionTest do
       assert PlayerSession.stop(key) == {:error, :no_session_active}
       assert PlayerSession.start(key) == {:ok, :success}
       assert PlayerSession.active(key) == {:ok, true}
+      assert PlayerSession.receive_message(key, "move north") == {:ok, :success}
       me = self()
       assert PlayerSession.send_message(key, :bar) == {:ok, :success}
       assert PlayerSession.stream_output(key, fn(message) -> send(me, {:message, message}) end) == {:ok, :success}
