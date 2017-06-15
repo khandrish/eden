@@ -15,6 +15,7 @@ defmodule Exmud.CommandSet do
   """
 
   alias Exmud.CommandSetTemplate, as: CST
+  alias Exmud.CommandTemplate
   alias Exmud.Object
   alias Exmud.Repo
   alias Exmud.Schema.CommandSet, as: CS
@@ -36,16 +37,20 @@ defmodule Exmud.CommandSet do
   This includes injecting the object that the command set belongs to so that the relationship doesn't get lost in the
   combining of command sets.
   """
-  def init(command_set, object, callback_module) do
+  def initialize_commands(command_set_template) do
     initialized_commands =
-      Enum.reduce(command_set.commands, MapSet.new(), fn(command_callback_module, mapset) ->
-        command_template = command_callback_module.init(object)
-        MapSet.put(mapset, %{command_template | object: object})
+      Enum.reduce(command_set_template.commands, MapSet.new(), fn(command_handler, mapset) ->
+        command_template =
+          CommandTemplate.new()
+          |> CommandTemplate.set_handler(command_handler)
+          |> CommandTemplate.set_object(command_set_template.object)
+          |> command_handler.init()
+
+        MapSet.put(mapset, command_template)
       end)
 
-    %{command_set | callback_module: callback_module, commands: initialized_commands, object: object}
+    %{command_set_template | commands: initialized_commands}
   end
-
 
   def merge(%CST{priority: dominant_priority} = dominant_command_set,
             %CST{priority: recessive_priority} = recessive_command_set) when dominant_priority > recessive_priority do

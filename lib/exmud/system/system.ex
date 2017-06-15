@@ -110,7 +110,7 @@ defmodule Exmud.System do
   #
 
 
-  alias Exmud.Registry
+  alias Exmud.Cache
   alias Exmud.Repo
   alias Exmud.Schema.System, as: S
   import Ecto.Query
@@ -135,7 +135,7 @@ defmodule Exmud.System do
   Get the state of a running system.
   """
   def get_state(key) do
-    case Registry.read_key(key, @system_category) do
+    case Cache.get(key, @system_category) do
       {:ok, pid} ->  GenServer.call(pid, :state)
       {:error, :no_such_key} -> {:error, :no_such_system}
     end
@@ -168,7 +168,7 @@ defmodule Exmud.System do
   Check to see if a system is running.
   """
   def running?(key) do
-    {result, _reply} = Registry.read_key(key, @system_category)
+    {result, _reply} = Cache.get(key, @system_category)
     result == :ok
   end
 
@@ -188,7 +188,7 @@ defmodule Exmud.System do
   Stops a system if it is started.
   """
   def stop(key, args \\ %{}) do
-    case Registry.read_key(key, @system_category) do
+    case Cache.get(key, @system_category) do
       {:ok, pid} ->  GenServer.call(pid, {:stop, args})
       {:error, :no_such_key} -> {:error, :no_such_system}
     end
@@ -201,7 +201,7 @@ defmodule Exmud.System do
 
 
   def send_message(method, key, message) do
-    case Registry.read_key(key, @system_category) do
+    case Cache.get(key, @system_category) do
       {:error, :no_such_key} -> {:error, :no_such_system}
       {:ok, pid} ->
         apply(GenServer, method, [pid, {:message, message}])

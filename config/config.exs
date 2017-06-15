@@ -22,6 +22,9 @@ config :exmud, Exmud.Repo,
 
 config :exmud, :engine,
   command_context_callback: Exmud.Command.Context.Default,
+  command_preprocessors: [Exmud.Command.Preproccessor.TrimLeading, Exmud.Command.Preproccessor.TrimTrailing],
+  default_cmd_no_match_handler: Exmud.Command.Handler.NoMatch,
+  default_cmd_blank_input_handler: Exmud.Command.Handler.BlankInput,
   default_system_run_timeout: 1000 # milliseconds
 
 

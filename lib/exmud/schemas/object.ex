@@ -5,9 +5,9 @@ defmodule Exmud.Schema.Object do
   schema "object" do
     field :key, :string
     field :date_created, :utc_datetime
-    has_many :attributes, Exmud.Schema.Attribute, foreign_key: :oid
     has_many :callbacks, Exmud.Schema.Callback, foreign_key: :oid
     has_many :command_sets, Exmud.Schema.CommandSet, foreign_key: :oid
+    has_many :components, Exmud.Schema.Component, foreign_key: :oid
     has_many :locks, Exmud.Schema.Lock, foreign_key: :oid
     has_many :relationships, Exmud.Schema.Relationship, foreign_key: :oid
     has_many :scripts, Exmud.Schema.Script, foreign_key: :oid

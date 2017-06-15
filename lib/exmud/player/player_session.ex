@@ -17,18 +17,38 @@ defmodule Exmud.PlayerSession do
               input_queue: EQueue.new(), # Holds all input waiting to be processed.
               key: nil, # The unique key identifying the player that the session represents.
               message_queue: EQueue.new(), # Holds all output waiting to be sent, only populated if no listeners.
-              start_time: nil # The time the session was started
+              object: nil, # The id of the object that represents the player in the system.
+              start_time: nil # The time the session was started.
   end
 
+  alias Ecto.Multi
+  alias Exmud.CommandProcessor
+  alias Exmud.CommandSet
+  alias Exmud.Object
   alias Exmud.Player
   alias Exmud.PlayerSessionSup
   alias Exmud.PlayerSessionOutputHandler
   alias Exmud.PlayerSessionStreamSup
+  alias Exmud.Repo
   import Exmud.Utils
+  import IO, only: [inspect: 2]
+  require Logger
   use GenServer
 
   @player_category "player"
   @registry :player_session_registry
+
+
+  #
+  # Type definitions
+  #
+
+
+  @typedoc "The string, such as `move north`, that is to be processed."
+  @type command_string :: String.t
+
+  @typedoc "The unique string that identifies the player."
+  @type key :: String.t
 
 
   #
@@ -56,11 +76,11 @@ defmodule Exmud.PlayerSession do
 
   ## Examples
 
-      Exmud.PlayerSession.receive_message(:louis_pasteur, "Pasteurization")
+      Exmud.PlayerSession.process_command_string(:louis_pasteur, "Pasteurization")
   """
-  @spec receive_message(any, any) :: {:ok, :success} | {:error, :no_session_active}
-  def receive_message(key, input) do
-    forward(key, {:receive_message, input})
+  @spec process_command_string(key, command_string) :: {:ok, :success} | {:error, :no_session_active}
+  def process_command_string(key, command_string) do
+    forward(key, {:process_command_string, command_string})
   end
 
   @doc """
@@ -81,7 +101,7 @@ defmodule Exmud.PlayerSession do
   end
 
   @doc """
-  Start a player new player session.
+  Start a new player session.
 
   An `Exmud.Player` must have been registered with the `key` prior to starting
   a session for said player.
@@ -92,11 +112,12 @@ defmodule Exmud.PlayerSession do
   """
   @spec start(key :: any) :: {:ok, :success} | {:error, :no_such_player}
   def start(key) do
-    if Player.exists(key) == {:ok, true} do
-      {:ok, _pid} = Supervisor.start_child(PlayerSessionSup, [key])
-      {:ok, :success}
-    else
-      {:error, :no_such_player}
+    case Player.which(key) do
+      {:ok, oid} ->
+        {:ok, _pid} = Supervisor.start_child(PlayerSessionSup, [key, oid])
+        {:ok, :success}
+      error ->
+        error
     end
   end
 
@@ -138,8 +159,8 @@ defmodule Exmud.PlayerSession do
 
 
   @doc false
-  @spec start_link(any) :: {:ok, pid}
-  def start_link(key), do: GenServer.start_link(__MODULE__, :ok, name: via_tuple(@registry, key))
+  @spec start_link(any, any) :: {:ok, pid}
+  def start_link(key, oid), do: GenServer.start_link(__MODULE__, {key, oid}, name: via_tuple(@registry, key))
 
 
   #
@@ -148,10 +169,10 @@ defmodule Exmud.PlayerSession do
 
 
   @doc false
-  @spec init(key :: any) :: {:ok, %State{}}
-  def init(key) do
+  @spec init({key :: any, oid :: any}) :: {:ok, %State{}}
+  def init({key, oid}) do
     {:ok, pid} = GenEvent.start_link([])
-    {:ok, %State{event_manager: pid, key: key, start_time: Calendar.DateTime.now_utc()}}
+    {:ok, %State{event_manager: pid, key: key, object: oid, start_time: Calendar.DateTime.now_utc()}}
   end
 
   @doc false
@@ -161,12 +182,26 @@ defmodule Exmud.PlayerSession do
   end
 
   @doc false
-  @spec handle_call({:receive_message, input :: String.t}, any, %State{}) :: {:reply, :ok, %State{}}
-  def handle_call({:receive_message, input}, _from, state) do
+  @spec handle_call({:process_command_string, command_string :: String.t}, any, %State{}) :: {:reply, :ok, %State{}}
+  def handle_call({:process_command_string, command_string}, _from, state) do
     if taskActive?(state) do
-      {:reply, :ok, %{state | input_queue: EQueue.push(state.input_queue, input)}}
+      {:reply, :ok, %{state | input_queue: EQueue.push(state.input_queue, command_string)}}
     else
-      task = Task.async(fn -> :ok end)
+      task =
+        Task.async(fn ->
+            CommandProcessor.process(command_string, state.object)
+
+            # If no command sets match, trigger the no match behaviour/error via callback
+            # = merge_command_sets(command_set_templates)
+            #
+            #
+            #
+            #
+            #
+            # match against command set
+            # multi error? no match error?
+            # execute command
+        end)
 
       # state = case Task.yield(task, 10) do
       #   nil ->
@@ -174,7 +209,6 @@ defmodule Exmud.PlayerSession do
       #     %{state | active_task: task, input_queue: input_queue}
       #   {:ok, result} ->
       #     %{state | active_task: task, input_queue: Equeue.pop()}
-
       # end
       {:reply, :ok, %{state | active_task: task}}
     end

@@ -4,11 +4,13 @@ defmodule Exmud.Callback do
 
   Callbacks are designed to be a more lightweight alternative to swapping out command sets when dynamic behavior on an
   object is required, but a more substantial change feels too heavy handed. There are a few special cases in which the
-  engine will look for callbacks on an object, such as when an object is being puppeted/unpuppeted.
+  engine will look for callbacks on an object, such as when an object is being puppeted/unpuppeted, or when commands
+  are being processed.
 
-  When a custom callback for an object has not been registered the engine will search to see if there is a default
-  implementation, which are provided by the engine to nsure that consistent behavior is followed. This logic can be
-  applied in application code as well when writing scripts and commands.
+  When a custom callback for an object has not been registered, a default implementation must be used instead. These can
+  be specified by passing an atom to be used as a key to check the config, which is how the engine behaves for its
+  internal hooks, or by passing a module name to be called directly. Default implementations have been provided for all
+  engine hooks. This logic can be applied in application code as well when writing scripts and commands.
   """
 
   @doc """
@@ -17,7 +19,8 @@ defmodule Exmud.Callback do
   """
   @callback execute(term) :: term
 
-  alias Exmud.Registry
+  alias Exmud.Cache
+  alias Exmud.Object
   alias Exmud.Repo
   alias Exmud.Schema.Callback
   import Ecto.Query
@@ -31,6 +34,20 @@ defmodule Exmud.Callback do
   # API
   #
 
+
+  @doc """
+  When running a callback, the engine first checks to see if there is an object specific implementation before falling
+  back to a default implementation. If no default implementation is found an error is returned.
+  """
+  def run(object, key, args) do
+    case Object.get_callback(object, key) do
+      {:ok, callback} ->
+        callback.callback_module.run(object, args)
+      _error ->
+        {:error, :no_such_callback}
+    end
+  end
+
   @doc """
   A callback can only be registered with a unique key. This is primarily useful for a universal default callback when
   nothing more specific can be found attached to a given object. An example of this might be a `before_puppet`
@@ -38,15 +55,15 @@ defmodule Exmud.Callback do
   process by returning `false`.
   """
   def register(key, callback_module) do
-    Logger.debug("Registering callback for key `#{key}` with module `#{callback_module}`")
-    Registry.register_key(key, @callback_category, callback_module)
+    Logger.debug("Registering callback for key `#{key}` with module `#{inspect(callback_module)}`")
+    Cache.put(key, @callback_category, callback_module)
   end
 
   @doc """
   Check to see if there is a callback module registered with a given key.
   """
   def registered?(key) do
-    Registry.key_registered?(key, @callback_category)
+    Cache.exists?(key, @callback_category)
   end
 
   @doc """
@@ -54,7 +71,7 @@ defmodule Exmud.Callback do
   """
   def which_module(key) do
     Logger.debug("Finding callback module for key `#{key}`")
-    case Registry.read_key(key, @callback_category) do
+    case Cache.get(key, @callback_category) do
       {:error, _} ->
         Logger.warn("Attempt to find callback module for key `#{key}` failed")
         {:error, :no_such_callback}
@@ -64,6 +81,6 @@ defmodule Exmud.Callback do
 
   @doc false
   def unregister(key) do
-    Registry.unregister_key(key, @callback_category)
+    Cache.delete(key, @callback_category)
   end
 end

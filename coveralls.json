@@ -1,6 +1,6 @@
 {
   "skip_files": [
-    "lib/exmud/command/preprocessors/preprocessor.ex",
+    "lib/exmud/command/transformers/transformer.ex",
     "lib/exmud/repo.ex",
     "lib/exmud/time.ex",
     "lib/exmud/command/contexts/context.ex",

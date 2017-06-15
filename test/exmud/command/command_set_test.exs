@@ -10,6 +10,7 @@ defmodule Exmud.CommandSetTest do
   alias Exmud.CommandSetTest.ExampleCommand2, as: EC2
   alias Exmud.CommandSetTest.ExampleCommand3, as: EC3
   alias Exmud.CommandSetTest.ExampleCommand4, as: EC4
+  alias Exmud.CommandTemplate
   alias Exmud.Object
   require Logger
   use ExUnit.Case
@@ -67,14 +68,14 @@ defmodule Exmud.CommandSetTest do
     low_priority_command_set =
       %CommandSetTemplate{
         allow_duplicates: false,
-        callback_module: nil,
+        callback_module: ECS2,
         commands: MapSet.new([EC1, EC2]),
         merge_type: :union,
         merge_type_overrides: %{},
-        object: nil,
+        object: UUID.generate(),
         priority: -1
       }
-      |> CommandSet.init(UUID.generate(), ECS2)
+      |> CommandSet.initialize_commands()
 
     Map.put(context, :lpcs, low_priority_command_set)
   end
@@ -83,14 +84,14 @@ defmodule Exmud.CommandSetTest do
     command_set =
       %CommandSetTemplate{
         allow_duplicates: false,
-        callback_module: nil,
+        callback_module: ECS1,
         commands: MapSet.new([EC1, EC2, EC3, EC4]),
         merge_type: :union,
         merge_type_overrides: %{},
-        object: nil,
+        object: UUID.generate(),
         priority: 0
       }
-      |> CommandSet.init(UUID.generate(), ECS1)
+      |> CommandSet.initialize_commands()
 
     Map.put(context, :cs, command_set)
   end
@@ -99,14 +100,14 @@ defmodule Exmud.CommandSetTest do
     high_priority_command_set =
       %CommandSetTemplate{
         allow_duplicates: false,
-        callback_module: nil,
+        callback_module: ECS3,
         commands: MapSet.new([EC3, EC4]),
         merge_type: :union,
         merge_type_overrides: Map.put(%{}, ECS2, :replace),
-        object: nil,
+        object: UUID.generate(),
         priority: 1
       }
-      |> CommandSet.init(UUID.generate(), ECS3)
+      |> CommandSet.initialize_commands()
 
     Map.put(context, :hpcs, high_priority_command_set)
   end
@@ -129,18 +130,19 @@ defmodule Exmud.CommandSetTest.ExampleCommand1 do
   A barebones example of a command template instance for testing.
   """
 
+  alias Exmud.CommandTemplate
   @behaviour Exmud.Command
 
-  def init(object) do
-    %Exmud.CommandTemplate{
-      aliases: MapSet.new(["go", "run", "walk"]),
-      auto_help: true,
-      callback_module: __MODULE__,
-      help_category: "General",
-      key: "move",
-      object: object
-    }
+  def init(command_template) do
+    command_template
+    |> CommandTemplate.set_key("move")
+    |> CommandTemplate.add_alias("go")
+    |> CommandTemplate.add_alias("run")
+    |> CommandTemplate.add_alias("walk")
   end
+
+  def run(_), do: {:ok, nil}
+  def parse(_), do: {:ok, nil}
 end
 
 defmodule Exmud.CommandSetTest.ExampleCommand2 do
@@ -148,18 +150,19 @@ defmodule Exmud.CommandSetTest.ExampleCommand2 do
   A barebones example of a command template instance for testing.
   """
 
+  alias Exmud.CommandTemplate
   @behaviour Exmud.Command
 
-  def init(object) do
-    %Exmud.CommandTemplate{
-      aliases: MapSet.new(["gaze", "examine", "peer"]),
-      auto_help: true,
-      callback_module: __MODULE__,
-      help_category: "General",
-      key: "look",
-      object: object
-    }
+  def init(command_template) do
+    command_template
+    |> CommandTemplate.set_key("look")
+    |> CommandTemplate.add_alias("gaze")
+    |> CommandTemplate.add_alias("examine")
+    |> CommandTemplate.add_alias("peer")
   end
+
+  def run(_), do: {:ok, nil}
+  def parse(_), do: {:ok, nil}
 end
 
 defmodule Exmud.CommandSetTest.ExampleCommand3 do
@@ -167,18 +170,17 @@ defmodule Exmud.CommandSetTest.ExampleCommand3 do
   A barebones example of a command template instance for testing.
   """
 
+  alias Exmud.CommandTemplate
   @behaviour Exmud.Command
 
-  def init(object) do
-    %Exmud.CommandTemplate{
-      aliases: MapSet.new(["speak"]),
-      auto_help: true,
-      callback_module: __MODULE__,
-      help_category: "General",
-      key: "say",
-      object: object
-    }
+  def init(command_template) do
+    command_template
+    |> CommandTemplate.set_key("say")
+    |> CommandTemplate.add_alias("speak")
   end
+
+  def run(_), do: {:ok, nil}
+  def parse(_), do: {:ok, nil}
 end
 
 defmodule Exmud.CommandSetTest.ExampleCommand4 do
@@ -186,16 +188,14 @@ defmodule Exmud.CommandSetTest.ExampleCommand4 do
   A barebones example of a command template instance for testing.
   """
 
+  alias Exmud.CommandTemplate
   @behaviour Exmud.Command
 
-  def init(object) do
-    %Exmud.CommandTemplate{
-      aliases: MapSet.new(),
-      auto_help: true,
-      callback_module: __MODULE__,
-      help_category: "General",
-      key: "climb",
-      object: object
-    }
+  def init(command_template) do
+    command_template
+    |> CommandTemplate.set_key("climb")
   end
+
+  def run(_), do: {:ok, nil}
+  def parse(_), do: {:ok, nil}
 end

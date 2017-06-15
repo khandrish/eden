@@ -4,14 +4,14 @@ defmodule Exmud.Schema.Callback do
 
   schema "callback" do
     field :string, :string
-    field :module, :binary
+    field :callback_module, :binary
     belongs_to :object, Exmud.Schema.Object, foreign_key: :oid
   end
 
   def changeset(tag, params \\ %{}) do
     tag
-    |> cast(params, [:string, :module, :oid])
-    |> validate_required([:string, :module, :oid])
+    |> cast(params, [:string, :callback_module, :oid])
+    |> validate_required([:string, :callback_module, :oid])
     |> foreign_key_constraint(:oid)
   end
 end

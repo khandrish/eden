@@ -35,9 +35,9 @@ defmodule Exmud.ObjectTest do
 
     @tag object: true
     test "complex list tests to show composition", %{oid: oid} = _context do
-      attribute1 = UUID.generate()
-      attribute2 = UUID.generate()
-      attribute3 = UUID.generate()
+      component1 = UUID.generate()
+      component2 = UUID.generate()
+      component3 = UUID.generate()
       callback1 = UUID.generate()
       callback2 = UUID.generate()
       callback3 = UUID.generate()
@@ -45,63 +45,65 @@ defmodule Exmud.ObjectTest do
       tag2 = UUID.generate()
       tag3 = UUID.generate()
       category = UUID.generate()
-      assert Object.add_attribute(oid, attribute1, "bar") == {:ok, oid}
-      assert Object.add_attribute(oid, attribute2, "bar") == {:ok, oid}
+      assert Object.add_component(oid, component1) == {:ok, oid}
+      assert Object.add_component(oid, component2) == {:ok, oid}
       assert Object.add_callback(oid, callback1, "bar") == {:ok, oid}
       assert Object.add_callback(oid, callback2, "bar") == {:ok, oid}
       assert Object.add_tag(oid, tag1, category) == {:ok, oid}
       assert Object.add_tag(oid, tag2, category) == {:ok, oid}
-      assert Object.list(attributes: [attribute1], tags: [{tag1, category}]) == {:ok, [oid]}
-      assert Object.list(attributes: [attribute1], tags: [{tag3, category}]) == {:ok, []}
-      assert Object.list(attributes: [attribute1], or_tags: [{tag1, category}]) == {:ok, [oid]}
-      assert Object.list(attributes: [attribute1], tags: [{:or, {tag3, category}}]) == {:ok, [oid]}
-      assert Object.list(attributes: [attribute1], or_tags: [{tag3, category}]) == {:ok, [oid]}
-      assert Object.list(attributes: [attribute3], tags: [{:or, {tag3, category}}]) == {:ok, []}
-      assert Object.list(attributes: [attribute3, {:or, attribute2}], tags: [{:or, {tag3, category}}]) == {:ok, [oid]}
-      assert Object.list(attributes: [attribute3, {:or, attribute2}], callbacks: [callback1], tags: [{:or, {tag3, category}}]) == {:ok, [oid]}
-      assert Object.list(attributes: [attribute3, {:or, attribute2}], callbacks: [callback3], tags: [{:or, {tag3, category}}]) == {:ok, []}
-      assert Object.list(attributes: [attribute3, {:or, attribute2}], or_callbacks: [callback3], tags: [{:or, {tag3, category}}]) == {:ok, [oid]}
+      assert Object.list(components: [component1], tags: [{tag1, category}]) == {:ok, [oid]}
+      assert Object.list(components: [component1], tags: [{tag3, category}]) == {:ok, []}
+      assert Object.list(components: [component1], or_tags: [{tag1, category}]) == {:ok, [oid]}
+      assert Object.list(components: [component1], tags: [{:or, {tag3, category}}]) == {:ok, [oid]}
+      assert Object.list(components: [component1], or_tags: [{tag3, category}]) == {:ok, [oid]}
+      assert Object.list(components: [component3], tags: [{:or, {tag3, category}}]) == {:ok, []}
+      assert Object.list(components: [component3, {:or, component2}], tags: [{:or, {tag3, category}}]) == {:ok, [oid]}
+      assert Object.list(components: [component3, {:or, component2}], callbacks: [callback1], tags: [{:or, {tag3, category}}]) == {:ok, [oid]}
+      assert Object.list(components: [component3, {:or, component2}], callbacks: [callback3], tags: [{:or, {tag3, category}}]) == {:ok, []}
+      assert Object.list(components: [component3, {:or, component2}], or_callbacks: [callback3], tags: [{:or, {tag3, category}}]) == {:ok, [oid]}
     end
 
-    @tag attribute: true
+    @tag component: true
     @tag object: true
     test "attribute lifecycle", %{oid: oid} = _context do
+      component = UUID.generate()
       attribute = UUID.generate()
       attribute2 = UUID.generate()
-      assert Object.add_attribute(oid, attribute, "bar") == {:ok, oid}
-      assert Object.add_attribute(oid, attribute2, "bar") == {:ok, oid}
-      assert Object.get_attribute(oid, attribute) == {:ok, "bar"}
-      assert Object.update_attribute(oid, attribute, "foobar") == {:ok, oid}
-      assert Object.get_attribute(oid, attribute) == {:ok, "foobar"}
-      assert Object.has_attribute?(oid, attribute) == {:ok, true}
-      assert Object.remove_attribute(oid, attribute) == {:ok, oid}
-      assert Object.get_attribute(oid, attribute) == {:error, :no_such_attribute}
-      assert Object.has_attribute?(oid, attribute) == {:ok, false}
+      assert Object.add_component(oid, component) == {:ok, oid}
+      assert Object.add_attribute(oid, component, attribute, "bar") == {:ok, oid}
+      assert Object.add_attribute(oid, component, attribute2, "bar") == {:ok, oid}
+      assert Object.get_attribute(oid, component, attribute) == {:ok, "bar"}
+      assert Object.update_attribute(oid, component, attribute, "foobar") == {:ok, oid}
+      assert Object.get_attribute(oid, component, attribute) == {:ok, "foobar"}
+      assert Object.has_attribute?(oid, component, attribute) == {:ok, true}
+      assert Object.remove_attribute(oid, component, attribute) == {:ok, oid}
+      assert Object.get_attribute(oid, component, attribute) == {:error, :no_such_attribute}
+      assert Object.has_attribute?(oid, component, attribute) == {:ok, false}
     end
 
-    @tag attribute: true
+    @tag component: true
     @tag object: true
-    test "attribute list tests", %{oid: oid} = _context do
-      attribute1 = UUID.generate()
-      attribute2 = UUID.generate()
-      assert Object.list(attributes: [attribute1]) == {:ok, []}
-      assert Object.add_attribute(oid, attribute1, "bar") == {:ok, oid}
-      assert Object.add_attribute(oid, attribute2, "bar") == {:ok, oid}
-      assert Object.list(attributes: [attribute1]) == {:ok, [oid]}
-      assert Object.list(attributes: [attribute2]) == {:ok, [oid]}
-      assert Object.list(attributes: [attribute1, attribute2]) == {:ok, [oid]}
+    test "component list tests", %{oid: oid} = _context do
+      component1 = UUID.generate()
+      component2 = UUID.generate()
+      assert Object.list(components: [component1]) == {:ok, []}
+      assert Object.add_component(oid, component1) == {:ok, oid}
+      assert Object.add_component(oid, component2) == {:ok, oid}
+      assert Object.list(components: [component1]) == {:ok, [oid]}
+      assert Object.list(components: [component2]) == {:ok, [oid]}
+      assert Object.list(components: [component1, component2]) == {:ok, [oid]}
     end
 
-    @tag attribute: true
+    @tag component: true
     @tag object: true
     test "attribute invalid cases", %{oid: oid} = _context do
-      assert Object.get_attribute(oid, "foo") == {:error, :no_such_attribute}
-      assert Object.add_attribute("invalid id", :invalid_name, "bar") ==
-        {:error, [key: "is invalid", oid: "is invalid"]}
-      assert Object.add_attribute(0, "foo", "bar") == {:error, [oid: "does not exist"]}
-      assert Object.has_attribute?(0, "foo") == {:ok, false}
-      assert Object.remove_attribute(0, "foo") == {:error, :no_such_attribute}
-      assert Object.get_attribute(0, "foo") == {:error, :no_such_attribute}
+      component = UUID.generate()
+      assert Object.add_component(oid, component) == {:ok, oid}
+      assert Object.get_attribute(oid, component, "foo") == {:error, :no_such_attribute}
+      assert Object.add_attribute(0, component, "foo", "bar") == {:error, :no_such_component}
+      assert Object.has_attribute?(0, component, "foo") == {:ok, false}
+      assert Object.remove_attribute(0, component, "foo") == {:error, :no_such_attribute}
+      assert Object.get_attribute(0, component, "foo") == {:error, :no_such_attribute}
     end
 
     @tag callback: true
@@ -228,9 +230,9 @@ defmodule Exmud.ObjectTest do
     @tag object: true
     @tag multi: true
     test "complex list tests", %{multi: multi, oid: oid} = _context do
-      attribute1 = UUID.generate()
-      attribute2 = UUID.generate()
-      attribute3 = UUID.generate()
+      component1 = UUID.generate()
+      component2 = UUID.generate()
+      component3 = UUID.generate()
       callback1 = UUID.generate()
       callback2 = UUID.generate()
       callback3 = UUID.generate()
@@ -238,22 +240,22 @@ defmodule Exmud.ObjectTest do
       tag2 = UUID.generate()
       tag3 = UUID.generate()
       category = UUID.generate()
-      assert Object.add_attribute(oid, attribute1, "bar") == {:ok, oid}
-      assert Object.add_attribute(oid, attribute2, "bar") == {:ok, oid}
+      assert Object.add_component(oid, component1) == {:ok, oid}
+      assert Object.add_component(oid, component2) == {:ok, oid}
       assert Object.add_callback(oid, callback1, "bar") == {:ok, oid}
       assert Object.add_callback(oid, callback2, "bar") == {:ok, oid}
       assert Object.add_tag(oid, tag1, category) == {:ok, oid}
       assert Object.add_tag(oid, tag2, category) == {:ok, oid}
 
-      assert Repo.transaction(Object.list(multi, "list attribute", attributes: [attribute1], tags: [{tag1, category}])) == {:ok, %{"list attribute" => [oid]}}
-      assert Repo.transaction(Object.list(multi, "list attribute", attributes: [attribute1], or_tags: [{tag1, category}])) == {:ok, %{"list attribute" => [oid]}}
-      assert Repo.transaction(Object.list(multi, "list attribute", attributes: [attribute1], tags: [{tag3, category}])) == {:ok, %{"list attribute" => []}}
-      assert Repo.transaction(Object.list(multi, "list attribute", attributes: [attribute1], or_tags: [{tag1, category}])) == {:ok, %{"list attribute" => [oid]}}
-      assert Repo.transaction(Object.list(multi, "list attribute", attributes: [attribute1], tags: [{:or, {tag3, category}}])) == {:ok, %{"list attribute" => [oid]}}
-      assert Repo.transaction(Object.list(multi, "list attribute", attributes: [attribute3], tags: [{:or, {tag3, category}}])) == {:ok, %{"list attribute" => []}}
-      assert Repo.transaction(Object.list(multi, "list attribute", attributes: [attribute3, {:or, attribute2}], tags: [{:or, {tag3, category}}])) == {:ok, %{"list attribute" => [oid]}}
-      assert Repo.transaction(Object.list(multi, "list attribute", attributes: [attribute3, {:or, attribute2}], callbacks: [callback1], tags: [{:or, {tag3, category}}])) == {:ok, %{"list attribute" => [oid]}}
-      assert Repo.transaction(Object.list(multi, "list attribute", attributes: [attribute3, {:or, attribute2}], callbacks: [callback3], tags: [{:or, {tag3, category}}])) == {:ok, %{"list attribute" => []}}
+      assert Repo.transaction(Object.list(multi, "list component", components: [component1], tags: [{tag1, category}])) == {:ok, %{"list component" => [oid]}}
+      assert Repo.transaction(Object.list(multi, "list component", components: [component1], or_tags: [{tag1, category}])) == {:ok, %{"list component" => [oid]}}
+      assert Repo.transaction(Object.list(multi, "list component", components: [component1], tags: [{tag3, category}])) == {:ok, %{"list component" => []}}
+      assert Repo.transaction(Object.list(multi, "list component", components: [component1], or_tags: [{tag1, category}])) == {:ok, %{"list component" => [oid]}}
+      assert Repo.transaction(Object.list(multi, "list component", components: [component1], tags: [{:or, {tag3, category}}])) == {:ok, %{"list component" => [oid]}}
+      assert Repo.transaction(Object.list(multi, "list component", components: [component3], tags: [{:or, {tag3, category}}])) == {:ok, %{"list component" => []}}
+      assert Repo.transaction(Object.list(multi, "list component", components: [component3, {:or, component2}], tags: [{:or, {tag3, category}}])) == {:ok, %{"list component" => [oid]}}
+      assert Repo.transaction(Object.list(multi, "list component", components: [component3, {:or, component2}], callbacks: [callback1], tags: [{:or, {tag3, category}}])) == {:ok, %{"list component" => [oid]}}
+      assert Repo.transaction(Object.list(multi, "list component", components: [component3, {:or, component2}], callbacks: [callback3], tags: [{:or, {tag3, category}}])) == {:ok, %{"list component" => []}}
     end
 
 
@@ -261,44 +263,46 @@ defmodule Exmud.ObjectTest do
     @tag attribute: true
     @tag object: true
     test "attribute lifecycle", %{multi: multi, oid: oid} = _context do
+      component = UUID.generate()
       attribute = UUID.generate()
       attribute2 = UUID.generate()
-      assert Repo.transaction(Object.add_attribute(multi, "add attribute", oid, attribute, "bar")) == {:ok, %{"add attribute" => oid}}
-      assert Repo.transaction(Object.add_attribute(multi, "add attribute", oid, attribute2, "bar")) == {:ok, %{"add attribute" => oid}}
-      assert Repo.transaction(Object.get_attribute(multi, "get attribute", oid, attribute)) == {:ok, %{"get attribute" => "bar"}}
-      assert Repo.transaction(Object.update_attribute(multi, "update attribute", oid, attribute, "foobar")) == {:ok, %{"update attribute" => oid}}
-      assert Repo.transaction(Object.get_attribute(multi, "get attribute", oid, attribute)) == {:ok, %{"get attribute" => "foobar"}}
-      assert Repo.transaction(Object.has_attribute?(multi, "has attribute", oid, attribute)) == {:ok, %{"has attribute" => true}}
-      assert Repo.transaction(Object.remove_attribute(multi, "remove attribute", oid, attribute)) == {:ok, %{"remove attribute" => oid}}
-      assert Repo.transaction(Object.get_attribute(multi, "get attribute", oid, attribute)) == {:error, "get attribute", :no_such_attribute, %{}}
-      assert Repo.transaction(Object.has_attribute?(multi, "has attribute", oid, attribute)) == {:ok, %{"has attribute" => false}}
+      assert Repo.transaction(Object.add_component(multi, "add component", oid, component)) == {:ok, %{"add component" => oid}}
+      assert Repo.transaction(Object.add_attribute(multi, "add attribute", oid, component, attribute, "bar")) == {:ok, %{"add attribute" => oid}}
+      assert Repo.transaction(Object.add_attribute(multi, "add attribute", oid, component, attribute2, "bar")) == {:ok, %{"add attribute" => oid}}
+      assert Repo.transaction(Object.get_attribute(multi, "get attribute", oid, component, attribute)) == {:ok, %{"get attribute" => "bar"}}
+      assert Repo.transaction(Object.update_attribute(multi, "update attribute", oid, component, attribute, "foobar")) == {:ok, %{"update attribute" => oid}}
+      assert Repo.transaction(Object.get_attribute(multi, "get attribute", oid, component, attribute)) == {:ok, %{"get attribute" => "foobar"}}
+      assert Repo.transaction(Object.has_attribute?(multi, "has attribute", oid, component, attribute)) == {:ok, %{"has attribute" => true}}
+      assert Repo.transaction(Object.remove_attribute(multi, "remove attribute", oid, component, attribute)) == {:ok, %{"remove attribute" => oid}}
+      assert Repo.transaction(Object.get_attribute(multi, "get attribute", oid, component, attribute)) == {:error, "get attribute", :no_such_attribute, %{}}
+      assert Repo.transaction(Object.has_attribute?(multi, "has attribute", oid, component, attribute)) == {:ok, %{"has attribute" => false}}
     end
 
     @tag attribute: true
     @tag object: true
-    test "attribute list tests", %{multi: multi, oid: oid} = _context do
-      attribute1 = UUID.generate()
-      attribute2 = UUID.generate()
-      assert Repo.transaction(Object.list(multi, "list attribute", attributes: [attribute1])) == {:ok, %{"list attribute" => []}}
-      assert Repo.transaction(Object.add_attribute(multi, "add attribute", oid, attribute1, "bar")) == {:ok, %{"add attribute" => oid}}
-      assert Repo.transaction(Object.add_attribute(multi, "add attribute", oid, attribute2, "bar")) == {:ok, %{"add attribute" => oid}}
-      assert Repo.transaction(Object.list(multi, "list attribute", attributes: [attribute1])) == {:ok, %{"list attribute" => [oid]}}
-      assert Repo.transaction(Object.list(multi, "list attribute", attributes: [attribute2])) == {:ok, %{"list attribute" => [oid]}}
-      assert Repo.transaction(Object.list(multi, "list attribute", attributes: [attribute1, attribute2])) == {:ok, %{"list attribute" => [oid]}}
-      assert Repo.transaction(Object.list(multi, "list attribute", attributes: [attribute1, {:or, "invalid attribute name"}])) == {:ok, %{"list attribute" => [oid]}}
-      assert Repo.transaction(Object.list(multi, "list attribute", or_attributes: [attribute1, "invalid attribute name"])) == {:ok, %{"list attribute" => [oid]}}
+    test "component list tests", %{multi: multi, oid: oid} = _context do
+      component1 = UUID.generate()
+      component2 = UUID.generate()
+      assert Repo.transaction(Object.list(multi, "list component", components: [component1])) == {:ok, %{"list component" => []}}
+      assert Repo.transaction(Object.add_component(multi, "add component", oid, component1)) == {:ok, %{"add component" => oid}}
+      assert Repo.transaction(Object.add_component(multi, "add component", oid, component2)) == {:ok, %{"add component" => oid}}
+      assert Repo.transaction(Object.list(multi, "list component", components: [component1])) == {:ok, %{"list component" => [oid]}}
+      assert Repo.transaction(Object.list(multi, "list component", components: [component2])) == {:ok, %{"list component" => [oid]}}
+      assert Repo.transaction(Object.list(multi, "list component", components: [component1, component2])) == {:ok, %{"list component" => [oid]}}
+      assert Repo.transaction(Object.list(multi, "list component", components: [component1, {:or, "invalid component name"}])) == {:ok, %{"list component" => [oid]}}
+      assert Repo.transaction(Object.list(multi, "list component", or_components: [component1, "invalid component name"])) == {:ok, %{"list component" => [oid]}}
     end
 
     @tag attribute: true
     @tag object: true
     test "attribute invalid cases", %{multi: multi, oid: oid} = _context do
-      assert Repo.transaction(Object.get_attribute(multi, "get attribute", oid, "foo")) == {:error, "get attribute", :no_such_attribute, %{}}
-      assert Repo.transaction(Object.add_attribute(multi, "add attribute", "invalid id", :invalid_name, "bar")) ==
-        {:error, "add attribute", [key: "is invalid", oid: "is invalid"], %{}}
-      assert Repo.transaction(Object.add_attribute(multi, "add attribute", 0, "foo", "bar")) == {:error, "add attribute", [oid: "does not exist"], %{}}
-      assert Repo.transaction(Object.has_attribute?(multi, "has attribute", 0, "foo")) == {:ok, %{"has attribute" => false}}
-      assert Repo.transaction(Object.remove_attribute(multi, "remove attribute", 0, "foo")) == {:error, "remove attribute", :no_such_attribute, %{}}
-      assert Repo.transaction(Object.get_attribute(multi, "get attribute", 0, "foo")) == {:error, "get attribute", :no_such_attribute, %{}}
+      component = UUID.generate()
+      assert Repo.transaction(Object.add_component(multi, "add component", oid, component)) == {:ok, %{"add component" => oid}}
+      assert Repo.transaction(Object.get_attribute(multi, "get attribute", oid, component, "foo")) == {:error, "get attribute", :no_such_attribute, %{}}
+      assert Repo.transaction(Object.add_attribute(multi, "add attribute", 0, component, "foo", "bar")) == {:error, "add attribute", :no_such_component, %{}}
+      assert Repo.transaction(Object.has_attribute?(multi, "has attribute", 0, component, "foo")) == {:ok, %{"has attribute" => false}}
+      assert Repo.transaction(Object.remove_attribute(multi, "remove attribute", 0, component, "foo")) == {:error, "remove attribute", :no_such_attribute, %{}}
+      assert Repo.transaction(Object.get_attribute(multi, "get attribute", 0, component, "foo")) == {:error, "get attribute", :no_such_attribute, %{}}
     end
 
     @tag callback: true

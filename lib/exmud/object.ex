@@ -1,8 +1,10 @@
 defmodule Exmud.Object do
+  alias Ecto.Changeset
   alias Ecto.Multi
   alias Exmud.Repo
-  alias Exmud.Schema.Attribute
   alias Exmud.Schema.Callback
+  alias Exmud.Schema.Component
+  alias Exmud.Schema.ComponentData
   alias Exmud.Schema.CommandSet
   alias Exmud.Schema.Object, as: Object
   alias Exmud.Schema.Tag
@@ -31,13 +33,38 @@ defmodule Exmud.Object do
 
   @lint {Credo.Check.Refactor.PipeChainStart, false}
   def delete(oid) do
-    Repo.delete(%Object{id: oid})
-    |> (fn(_) -> {:ok, oid} end).()
+    {:ok, _} = Repo.delete(%Object{id: oid})
+    {:ok, oid}
   end
 
   def delete(%Ecto.Multi{} = multi, multi_key, oid) do
     Multi.run(multi, multi_key, fn(_) ->
       delete(oid)
+    end)
+  end
+
+  def get(objects, inclusion_filters \\ [:components, :callbacks, :command_sets, :tags]) do
+    objects = List.wrap(objects)
+    inclusion_filters = List.wrap(inclusion_filters)
+
+    query =
+      from object in Object,
+        where: object.id in ^objects,
+        preload: ^inclusion_filters
+
+    results =
+      Repo.all(query)
+      |> normalize_get_results(inclusion_filters)
+
+    {:ok, results}
+  end
+
+  def get(%Ecto.Multi{} = multi,
+          multi_key,
+          objects,
+          inclusion_filters \\ [:components, :callbacks, :command_sets, :tags]) do
+    Multi.run(multi, multi_key, fn(_) ->
+      get(objects, inclusion_filters)
     end)
   end
 
@@ -61,55 +88,96 @@ defmodule Exmud.Object do
 
 
   #
-  # Attribute related functions
+  # Component related functions
   #
 
 
   @lint {Credo.Check.Refactor.PipeChainStart, false}
-  def add_attribute(oid, key, data) do
-    args = %{data: serialize(data),
-             key: key,
+  def add_component(oid, component) do
+    args = %{component: serialize(component),
              oid: oid}
-    Repo.insert(Attribute.changeset(%Attribute{}, args))
+    Repo.insert(Component.changeset(%Component{}, args))
     |> normalize_repo_result(oid)
   end
 
-
-  def add_attribute(%Ecto.Multi{} = multi, multi_key, oid, key, data) do
+  def add_component(%Ecto.Multi{} = multi, multi_key, oid, component) do
     Multi.run(multi, multi_key, fn(_) ->
-      add_attribute(oid, key, data)
+      add_component(oid, component)
     end)
   end
 
-  def get_attribute(oid, key) do
-    case Repo.one(attribute_query(oid, key)) do
-      nil -> {:error, :no_such_attribute}
-      object -> {:ok, deserialize(object.data)}
+  # Being private, this would normally be down at the bottom but keeping it here so it doesn't get buried.
+  defp get_component(oid, component) do
+    case Repo.one(component_query(oid, serialize(component))) do
+      nil -> {:error, :no_such_component}
+      comp -> {:ok, comp}
     end
   end
 
-  def get_attribute(%Ecto.Multi{} = multi, multi_key, oid, key) do
-    Multi.run(multi, multi_key, fn(_) ->
-      get_attribute(oid, key)
-    end)
-  end
-
-  def has_attribute?(oid, key) do
-    case Repo.one(attribute_query(oid, key)) do
+  def has_component?(oid, component) do
+    case Repo.one(component_query(oid, serialize(component))) do
       nil -> {:ok, false}
       _object -> {:ok, true}
     end
   end
 
-  def has_attribute?(%Ecto.Multi{} = multi, multi_key, oid, key) do
+  def has_component?(%Ecto.Multi{} = multi, multi_key, oid, component) do
     Multi.run(multi, multi_key, fn(_) ->
-      has_attribute?(oid, key)
+      has_component?(oid, component)
     end)
   end
 
-  @lint {Credo.Check.Refactor.PipeChainStart, false}
-  def remove_attribute(oid, key) do
-    Repo.delete_all(attribute_query(oid, key))
+  # Component/Attribute related functions
+
+  def add_attribute(oid, component, attribute, data) do
+    case get_component(oid, component) do
+      {:ok, comp} ->
+        args = %{data: serialize(data),
+                 attribute: attribute}
+
+        Ecto.build_assoc(comp, :data, args)
+        |> Repo.insert()
+        |> normalize_repo_result(oid)
+      error ->
+        error
+    end
+  end
+
+  def add_attribute(%Ecto.Multi{} = multi, multi_key, oid, component, attribute, data) do
+    Multi.run(multi, multi_key, fn(_) ->
+      add_attribute(oid, component, attribute, data)
+    end)
+  end
+
+  def get_attribute(oid, component, attribute) do
+    case Repo.one(component_data_query(oid, component, attribute)) do
+      nil -> {:error, :no_such_attribute}
+      component_data -> {:ok, deserialize(component_data.data)}
+    end
+  end
+
+  def get_attribute(%Ecto.Multi{} = multi, multi_key, oid, component, attribute) do
+    Multi.run(multi, multi_key, fn(_) ->
+      get_attribute(oid, component, attribute)
+    end)
+  end
+
+  def has_attribute?(oid, component, attribute) do
+    case Repo.one(component_data_query(oid, component, attribute)) do
+      nil -> {:ok, false}
+      _object -> {:ok, true}
+    end
+  end
+
+  def has_attribute?(%Ecto.Multi{} = multi, multi_key, oid, component, attribute) do
+    Multi.run(multi, multi_key, fn(_) ->
+      has_attribute?(oid, component, attribute)
+    end)
+  end
+
+  def remove_attribute(oid, component, attribute) do
+    component_data_query(oid, component, attribute)
+    |> Repo.delete_all()
     |> case do
       {1, _} -> {:ok, oid}
       {0, _} -> {:error, :no_such_attribute}
@@ -117,26 +185,25 @@ defmodule Exmud.Object do
     end
   end
 
-  def remove_attribute(%Ecto.Multi{} = multi, multi_key, oid, key) do
+  def remove_attribute(%Ecto.Multi{} = multi, multi_key, oid, component, attribute) do
     Multi.run(multi, multi_key, fn(_) ->
-      remove_attribute(oid, key)
+      remove_attribute(oid, component, attribute)
     end)
   end
 
   @lint {Credo.Check.Refactor.PipeChainStart, false}
-  def update_attribute(oid, key, data) do
-    case Repo.one(attribute_query(oid, key)) do
+  def update_attribute(oid, component, attribute, data) do
+    case Repo.one(component_data_query(oid, component, attribute)) do
       nil -> {:error, :no_such_attribute}
       object ->
-        serialized_data = serialize(data)
-        Repo.update(Attribute.changeset(object, %{data: serialized_data}))
+        Repo.update(ComponentData.changeset(object, %{data: serialize(data)}))
         |> normalize_repo_result(oid)
     end
   end
 
-  def update_attribute(%Ecto.Multi{} = multi, multi_key, oid, key, data) do
+  def update_attribute(%Ecto.Multi{} = multi, multi_key, oid, component, attribute, data) do
     Multi.run(multi, multi_key, fn(_) ->
-      update_attribute(oid, key, data)
+      update_attribute(oid, component, attribute, data)
     end)
   end
 
@@ -148,7 +215,7 @@ defmodule Exmud.Object do
 
   @lint {Credo.Check.Refactor.PipeChainStart, false}
   def add_callback(oid, callback_string, callback_module) do
-    args = %{string: callback_string, module: :erlang.term_to_binary(callback_module), oid: oid}
+    args = %{string: callback_string, callback_module: :erlang.term_to_binary(callback_module), oid: oid}
     Repo.insert(Callback.changeset(%Callback{}, args))
     |> normalize_repo_result(oid)
     |> case do
@@ -180,7 +247,7 @@ defmodule Exmud.Object do
   def get_callback(oid, callback_string, default_callback_module) do
     case Repo.one(callback_query(oid, callback_string)) do
       nil -> {:ok, default_callback_module}
-      callback -> {:ok, :erlang.binary_to_term(callback.module)}
+      callback -> {:ok, :erlang.binary_to_term(callback.callback_module)}
     end
   end
 
@@ -232,8 +299,8 @@ defmodule Exmud.Object do
 
 
   @lint {Credo.Check.Refactor.PipeChainStart, false}
-  def add_command_set(oid, module) do
-    args = %{module: :erlang.term_to_binary(module), oid: oid}
+  def add_command_set(oid, callback_module) do
+    args = %{callback_module: :erlang.term_to_binary(callback_module), oid: oid}
     Repo.insert(CommandSet.changeset(%CommandSet{}, args))
     |> normalize_repo_result(oid)
     |> case do
@@ -249,28 +316,28 @@ defmodule Exmud.Object do
     end
   end
 
-  def add_command_set(%Ecto.Multi{} = multi, multi_key, oid, module) do
+  def add_command_set(%Ecto.Multi{} = multi, multi_key, oid, callback_module) do
     Multi.run(multi, multi_key, fn(_) ->
-      add_command_set(oid, module)
+      add_command_set(oid, callback_module)
     end)
   end
 
-  def has_command_set?(oid, module) do
-    case Repo.one(command_set_query(oid, :erlang.term_to_binary(module))) do
+  def has_command_set?(oid, callback_module) do
+    case Repo.one(command_set_query(oid, :erlang.term_to_binary(callback_module))) do
       nil -> {:ok, false}
       _object -> {:ok, true}
     end
   end
 
-  def has_command_set?(%Ecto.Multi{} = multi, multi_key, oid, module) do
+  def has_command_set?(%Ecto.Multi{} = multi, multi_key, oid, callback_module) do
     Multi.run(multi, multi_key, fn(_) ->
-      has_command_set?(oid, module)
+      has_command_set?(oid, callback_module)
     end)
   end
 
   @lint {Credo.Check.Refactor.PipeChainStart, false}
-  def delete_command_set(oid, module) do
-    Repo.delete_all(command_set_query(oid, :erlang.term_to_binary(module)))
+  def delete_command_set(oid, callback_module) do
+    Repo.delete_all(command_set_query(oid, :erlang.term_to_binary(callback_module)))
     |> case do
       {1, _} -> {:ok, oid}
       {0, _} -> {:error, :no_such_command_set}
@@ -278,9 +345,9 @@ defmodule Exmud.Object do
     end
   end
 
-  def delete_command_set(%Ecto.Multi{} = multi, multi_key, oid, module) do
+  def delete_command_set(%Ecto.Multi{} = multi, multi_key, oid, callback_module) do
     Multi.run(multi, multi_key, fn(_) ->
-      delete_command_set(oid, module)
+      delete_command_set(oid, callback_module)
     end)
   end
 
@@ -356,34 +423,6 @@ defmodule Exmud.Object do
   #
 
 
-  # List Attributes
-
-  defp build_list_query(query, []), do: query
-  defp build_list_query(query, [{_, []} | options]), do: build_list_query(query, options)
-
-  defp build_list_query(query, [{:or_attributes, attributes} | options]) do
-    attributes = wrap_or_query_params(attributes)
-    build_list_query(query, [{:attributes, attributes} | options])
-  end
-
-  defp build_list_query(query, [{:attributes, [{:or, attribute} | attributes]} | options]) do
-    query =
-      from object in query,
-        inner_join: attribute in assoc(object, :attributes), on: object.id == attribute.oid,
-        or_where: attribute.key == ^attribute
-
-    build_list_query(query, [{:attributes, attributes} | options])
-  end
-
-  defp build_list_query(query, [{:attributes, [attribute | attributes]} | options]) do
-    query =
-      from object in query,
-        inner_join: attribute in assoc(object, :attributes), on: object.id == attribute.oid,
-        where: attribute.key == ^attribute
-
-    build_list_query(query, [{:attributes, attributes} | options])
-  end
-
   # List Callbacks
 
   defp build_list_query(query, [{:or_callbacks, callback_strings} | options]) do
@@ -410,7 +449,7 @@ defmodule Exmud.Object do
   end
 
 
-  # List Command Set
+  # List Command Sets
 
   defp build_list_query(query, [{:or_command_sets, command_sets} | options]) do
     command_sets = wrap_or_query_params(command_sets)
@@ -421,7 +460,7 @@ defmodule Exmud.Object do
     query =
       from object in query,
         inner_join: command_set in assoc(object, :command_sets), on: object.id == command_set.oid,
-        or_where: command_set.module == ^:erlang.term_to_binary(command_set)
+        or_where: command_set.callback_module == ^:erlang.term_to_binary(command_set)
 
     build_list_query(query, [{:command_sets, command_sets} | options])
   end
@@ -430,9 +469,38 @@ defmodule Exmud.Object do
     query =
       from object in query,
         inner_join: command_set in assoc(object, :command_sets), on: object.id == command_set.oid,
-        where: command_set.module == ^:erlang.term_to_binary(command_set)
+        where: command_set.callback_module == ^:erlang.term_to_binary(command_set)
 
     build_list_query(query, [{:command_sets, command_sets} | options])
+  end
+
+
+  # List Components
+
+  defp build_list_query(query, []), do: query
+  defp build_list_query(query, [{_, []} | options]), do: build_list_query(query, options)
+
+  defp build_list_query(query, [{:or_components, components} | options]) do
+    components = wrap_or_query_params(components)
+    build_list_query(query, [{:components, components} | options])
+  end
+
+  defp build_list_query(query, [{:components, [{:or, component} | components]} | options]) do
+    query =
+      from object in query,
+        inner_join: component in assoc(object, :components), on: object.id == component.oid,
+        or_where: component.component == ^:erlang.term_to_binary(component)
+
+    build_list_query(query, [{:components, components} | options])
+  end
+
+  defp build_list_query(query, [{:components, [component | components]} | options]) do
+    query =
+      from object in query,
+        inner_join: component in assoc(object, :components), on: object.id == component.oid,
+        where: component.component == ^:erlang.term_to_binary(component)
+
+    build_list_query(query, [{:components, components} | options])
   end
 
 
@@ -496,27 +564,39 @@ defmodule Exmud.Object do
                        (params) -> {:or, params} end)
   end
 
-  # Queries
 
-  # Return the query used to find a specific attribute mapped to a specific object.
-  defp attribute_query(oid, key) do
-    from attribute in Attribute,
-      where: attribute.key == ^key,
-      where: attribute.oid == ^oid
-  end
+  # Queries
 
   # Return the query used to find a specific callback mapped to a specific object.
   defp callback_query(oid, callback_string) do
     from callback in Callback,
-      where: callback.string == ^callback_string,
-      where: callback.oid == ^oid
+      where: callback.oid == ^oid,
+      where: callback.string == ^callback_string
   end
 
   # Return the query used to find a specific command set mapped to a specific object.
-  defp command_set_query(oid, module) do
+  defp command_set_query(oid, callback_module) do
     from command_set in CommandSet,
-      where: command_set.module == ^module,
+      where: command_set.callback_module == ^callback_module,
       where: command_set.oid == ^oid
+  end
+
+  # Return query used to find a specific attribute mapped to a specific object.
+  defp component_data_query(oid, comp, attribute) do
+    from component_data in ComponentData,
+      inner_join: component in assoc(component_data, :component),
+      where: component_data.attribute == ^attribute,
+      where: component.component == ^:erlang.term_to_binary(comp),
+      where: component.id == component_data.component_id,
+      where: component.oid == ^oid
+  end
+
+  # Return query used to find a specific component mapped to a specific object.
+  defp component_query(oid, component) do
+    from component in Component,
+      where: component.component == ^component,
+      where: component.oid == ^oid,
+      preload: :data
   end
 
   # Return the query used to find a specific tag mapped to a specific object.
@@ -526,4 +606,47 @@ defmodule Exmud.Object do
       where: tag.key == ^key,
       where: tag.oid == ^oid
   end
+
+  defp normalize_get_results(objects, [:components | rest]) do
+    objects =
+      Enum.map(objects, fn(object) ->
+        %{object | components: Enum.map(object.components, fn(component) ->
+            %{component | component: :erlang.binary_to_term(component.component),
+                          data: Enum.map(component.data, fn(data) ->
+              %{data | data: :erlang.binary_to_term(data.data)}
+            end)}
+        end)}
+      end)
+
+    normalize_get_results(objects, rest)
+  end
+
+  defp normalize_get_results(objects, [:callbacks | rest]) do
+    objects =
+      Enum.map(objects, fn(object) ->
+        callbacks =
+          Enum.map(object.callbacks, fn(callback) ->
+            %{callback | callback_module: :erlang.binary_to_term(callback.callback_module)}
+          end)
+
+        %{object | callbacks: callbacks}
+      end)
+
+    normalize_get_results(objects, rest)
+  end
+
+  defp normalize_get_results(objects, [:command_sets | rest]) do
+    objects =
+      Enum.map(objects, fn(object) ->
+        command_sets =
+          Enum.map(object.command_sets, fn(command_set) ->
+            %{command_set | callback_module: :erlang.binary_to_term(command_set.callback_module)}
+          end)
+        %{object | command_sets: command_sets}
+      end)
+
+    normalize_get_results(objects, rest)
+  end
+
+  defp normalize_get_results(objects, _), do: objects
 end

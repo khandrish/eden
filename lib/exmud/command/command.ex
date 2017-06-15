@@ -11,7 +11,7 @@ defmodule Exmud.Command do
   to access the database to modify the state of the game world. To compensate for this parallel behavior, all
   logic related to the processing of a command string from start to finish must be executed inside a transaction so
   that it can be written without having to consider possible race conditions. This is handled transparently to the
-  callback module, and putting transactions in the callback module should pose no problems.
+  callback module itself, and nesting transactions within the callback module itself should pose no problems.
 
   ## Command Struct
   When the engine determines which command is to be executed it first calls the `parse/1` callback so a custom term can
@@ -67,7 +67,7 @@ defmodule Exmud.Command do
 
   Return value is ignored.
   """
-  @callback execute(command) :: term
+  @callback run(command) :: term
 
   @doc """
   Initialize a command template for the engine to use when processing command strings.

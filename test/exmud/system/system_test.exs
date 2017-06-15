@@ -1,5 +1,5 @@
 defmodule Exmud.SystemTest do
-  alias Exmud.Registry
+  alias Exmud.Cache
   alias Exmud.System
   use ExUnit.Case # Can't be async otherwise it won't load the test system
 
@@ -12,7 +12,7 @@ defmodule Exmud.SystemTest do
       assert System.start(key, callback_module) == {:error, :already_started} # Can't start two of the same key
       assert System.running?(key) == true
 
-      case Registry.read_key(key, "system") do
+      case Cache.get(key, "system") do
         {:ok, pid} -> send(pid, :run)
       end
 

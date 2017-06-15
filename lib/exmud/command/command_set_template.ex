@@ -92,7 +92,13 @@ defmodule Exmud.CommandSetTemplate do
   def set_allow_duplicates(template, maybe), do: %{template | allow_duplicates: maybe}
 
   @doc false
+  def set_callback_module(template, callback_module), do: %{template | callback_module: callback_module}
+
+  @doc false
   def set_merge_type(template, merge_type), do: %{template | merge_type: merge_type}
+
+  @doc false
+  def set_object(template, object), do: %{template | object: object}
 
   @doc false
   def set_priority(template, priority), do: %{template | priority: priority}

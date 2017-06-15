@@ -26,12 +26,12 @@ defmodule Exmud.CommandTemplateTest do
     test "Command template setters" do
       template =
         CommandTemplate.new()
-        |> CommandTemplate.set_callback_module(__MODULE__)
+        |> CommandTemplate.set_handler(__MODULE__)
         |> CommandTemplate.set_auto_help(:false)
         |> CommandTemplate.set_help_category("Foobar")
         |> CommandTemplate.set_key("bar")
       assert template == %CommandTemplate{
-        callback_module: __MODULE__,
+        handler: __MODULE__,
         auto_help: :false,
         help_category: "Foobar",
         key: "bar"

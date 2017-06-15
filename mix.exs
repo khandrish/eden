@@ -26,7 +26,7 @@ defmodule Exmud.Mixfile do
   defp elixirc_paths(_),     do: ["lib"]
 
   defp deps do
-    [{:apex, "~> 0.7.0"},
+    [{:apex, "~> 1.0"},
      {:calendar, "~> 0.17.1"},
      {:credo, "~> 0.5", only: [:dev, :test]},
      {:e_queue, "~> 1.0.1"},

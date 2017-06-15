@@ -1,7 +1,7 @@
 defmodule Exmud.SystemRunner do
   @moduledoc false
   alias Ecto.Changeset
-  alias Exmud.Registry
+  alias Exmud.Cache
   alias Exmud.Repo
   alias Exmud.Schema.System, as: S
   import Ecto.Query
@@ -31,7 +31,7 @@ defmodule Exmud.SystemRunner do
   @doc false
   @lint {Credo.Check.Refactor.PipeChainStart, false}
   def init({key, callback_module, args}) do
-    if Registry.register_key(key, @system_category, self()) == :ok do
+    if Cache.put(key, @system_category, self()) == :ok do
       Repo.one(
         from system in S,
         where: system.key == ^key,
@@ -78,7 +78,7 @@ defmodule Exmud.SystemRunner do
   @lint {Credo.Check.Refactor.PipeChainStart, false}
   def handle_call({:stop, args}, _from, %{callback_module: callback_module, system: system, state: state} = _data) do
     new_state = callback_module.stop(args, state)
-    :ok = Registry.unregister_key(Changeset.get_field(system, :key), @system_category)
+    :ok = Cache.delete(Changeset.get_field(system, :key), @system_category)
     serialized_state = :erlang.term_to_binary(new_state)
 
     Changeset.put_change(system, :state, serialized_state)
