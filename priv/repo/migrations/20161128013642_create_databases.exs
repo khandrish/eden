@@ -64,6 +64,7 @@ defmodule Exmud.Repo.Migrations.CreateDatabases do
     create table(:relationship) do
       add :object, references(:object, [on_delete: :delete_all])
       add :relationship, :string
+      add :data, :binary
       add :subject, references(:object, [on_delete: :delete_all])
     end
     create index(:relationship, [:object])

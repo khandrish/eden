@@ -12,6 +12,8 @@ defmodule Exmud.Object do
   import Exmud.Utils
   require Logger
 
+  @get_inclusion_filters [:callbacks, :command_sets, :components, :locks, :relationships, :scripts, :tags]
+
 
   #
   # General object functions
@@ -43,14 +45,23 @@ defmodule Exmud.Object do
     end)
   end
 
-  def get(objects, inclusion_filters \\ [:components, :callbacks, :command_sets, :tags]) do
-    objects = List.wrap(objects)
+  def get(objects) do
+    get(objects, @get_inclusion_filters)
+  end
+
+  def get(object, inclusion_filters) when is_list(object) == false do
+    {:ok, results} = get(List.wrap(object), inclusion_filters)
+    {:ok, List.first(results)}
+  end
+
+  def get(objects, inclusion_filters) do
     inclusion_filters = List.wrap(inclusion_filters)
 
-    query =
+    base_query =
       from object in Object,
-        where: object.id in ^objects,
-        preload: ^inclusion_filters
+        where: object.id in ^objects
+
+    query = build_get_query(base_query, inclusion_filters)
 
     results =
       Repo.all(query)
@@ -61,8 +72,14 @@ defmodule Exmud.Object do
 
   def get(%Ecto.Multi{} = multi,
           multi_key,
+          objects) do
+    get(multi, multi_key, objects, @get_inclusion_filters)
+  end
+
+  def get(%Ecto.Multi{} = multi,
+          multi_key,
           objects,
-          inclusion_filters \\ [:components, :callbacks, :command_sets, :tags]) do
+          inclusion_filters) do
     Multi.run(multi, multi_key, fn(_) ->
       get(objects, inclusion_filters)
     end)
@@ -74,6 +91,9 @@ defmodule Exmud.Object do
       from object in Object,
         group_by: object.id,
         select: object.id
+
+    options =
+      Enum.map(options, fn({type, values}) -> {type, List.wrap(values)} end)
 
     build_list_query(query, options)
     |> Repo.all()
@@ -149,6 +169,33 @@ defmodule Exmud.Object do
     end)
   end
 
+  def attribute_equals?(oid, component, attribute, data) do
+    case get_component(oid, component) do
+      {:ok, comp} ->
+        query =
+          component_data_query(oid, component, attribute)
+
+        query =
+          from component_data in query,
+            where: component_data.data == ^serialize(data)
+
+        case Repo.one(query) do
+          nil ->
+            {:ok, false}
+          _result ->
+            {:ok, true}
+        end
+      error ->
+        error
+    end
+  end
+
+  def attribute_equals?(%Ecto.Multi{} = multi, multi_key, oid, component, attribute, data) do
+    Multi.run(multi, multi_key, fn(_) ->
+      attribute_equals?(oid, component, attribute, data)
+    end)
+  end
+
   def get_attribute(oid, component, attribute) do
     case Repo.one(component_data_query(oid, component, attribute)) do
       nil -> {:error, :no_such_attribute}
@@ -215,7 +262,7 @@ defmodule Exmud.Object do
 
   @lint {Credo.Check.Refactor.PipeChainStart, false}
   def add_callback(oid, callback_string, callback_module) do
-    args = %{string: callback_string, callback_module: :erlang.term_to_binary(callback_module), oid: oid}
+    args = %{string: callback_string, callback_module: serialize(callback_module), oid: oid}
     Repo.insert(Callback.changeset(%Callback{}, args))
     |> normalize_repo_result(oid)
     |> case do
@@ -247,7 +294,7 @@ defmodule Exmud.Object do
   def get_callback(oid, callback_string, default_callback_module) do
     case Repo.one(callback_query(oid, callback_string)) do
       nil -> {:ok, default_callback_module}
-      callback -> {:ok, :erlang.binary_to_term(callback.callback_module)}
+      callback -> {:ok, deserialize(callback.callback_module)}
     end
   end
 
@@ -300,7 +347,7 @@ defmodule Exmud.Object do
 
   @lint {Credo.Check.Refactor.PipeChainStart, false}
   def add_command_set(oid, callback_module) do
-    args = %{callback_module: :erlang.term_to_binary(callback_module), oid: oid}
+    args = %{callback_module: serialize(callback_module), oid: oid}
     Repo.insert(CommandSet.changeset(%CommandSet{}, args))
     |> normalize_repo_result(oid)
     |> case do
@@ -323,7 +370,7 @@ defmodule Exmud.Object do
   end
 
   def has_command_set?(oid, callback_module) do
-    case Repo.one(command_set_query(oid, :erlang.term_to_binary(callback_module))) do
+    case Repo.one(command_set_query(oid, serialize(callback_module))) do
       nil -> {:ok, false}
       _object -> {:ok, true}
     end
@@ -337,7 +384,7 @@ defmodule Exmud.Object do
 
   @lint {Credo.Check.Refactor.PipeChainStart, false}
   def delete_command_set(oid, callback_module) do
-    Repo.delete_all(command_set_query(oid, :erlang.term_to_binary(callback_module)))
+    Repo.delete_all(command_set_query(oid, serialize(callback_module)))
     |> case do
       {1, _} -> {:ok, oid}
       {0, _} -> {:error, :no_such_command_set}
@@ -423,6 +470,132 @@ defmodule Exmud.Object do
   #
 
 
+  # Get Query
+
+  defp build_get_query(query, []), do: query
+
+  defp build_get_query(query, [:callbacks | inclusion_filters]) do
+    query =
+      from object in query,
+        left_join: callback in assoc(object, :callbacks),
+        preload: [:callbacks]
+
+    build_get_query(query, inclusion_filters)
+  end
+
+  defp build_get_query(query, [:command_sets | inclusion_filters]) do
+    query =
+      from object in query,
+        left_join: command_set in assoc(object, :command_sets),
+        preload: [:command_sets]
+
+    build_get_query(query, inclusion_filters)
+  end
+
+  defp build_get_query(query, [:components | inclusion_filters]) do
+    query =
+      from object in query,
+        left_join: component in assoc(object, :components),
+        left_join: data in assoc(component, :data),
+        preload: [components: {component, data: data}]
+
+    build_get_query(query, inclusion_filters)
+  end
+
+  defp build_get_query(query, [:locks | inclusion_filters]) do
+    query =
+      from object in query,
+        left_join: lock in assoc(object, :locks),
+        preload: [:locks]
+
+    build_get_query(query, inclusion_filters)
+  end
+
+  defp build_get_query(query, [:relationships | inclusion_filters]) do
+    query =
+      from object in query,
+        left_join: relationship in assoc(object, :relationships),
+        preload: [:relationships]
+
+    build_get_query(query, inclusion_filters)
+  end
+
+  defp build_get_query(query, [:scripts | inclusion_filters]) do
+    query =
+      from object in query,
+        left_join: script in assoc(object, :scripts),
+        preload: [:scripts]
+
+    build_get_query(query, inclusion_filters)
+  end
+
+  defp build_get_query(query, [:tags | inclusion_filters]) do
+    query =
+      from object in query,
+        left_join: tag in assoc(object, :tags),
+        preload: [:tags]
+
+    build_get_query(query, inclusion_filters)
+  end
+
+
+  # List Attributes
+
+  defp build_list_query(query, []), do: query
+  defp build_list_query(query, [{_, []} | options]), do: build_list_query(query, options)
+
+  defp build_list_query(query, [{:or_attributes, attributes} | options]) do
+    attributes = wrap_or_query_params(attributes)
+    build_list_query(query, [{:attributes, attributes} | options])
+  end
+
+  defp build_list_query(query, [{:attributes, [{:or, {component, attribute, data}} | attributes]} | options]) do
+    query =
+      from object in query,
+        inner_join: component in assoc(object, :components), on: object.id == component.oid,
+        inner_join: data in assoc(component, :data), on: data.component_id == component.id,
+        or_where: data.attribute == ^attribute
+          and component.component == ^serialize(component)
+            and data.data == ^serialize(data)
+
+    build_list_query(query, [{:attributes, attributes} | options])
+  end
+
+  defp build_list_query(query, [{:attributes, [{component, attribute, data} | attributes]} | options]) do
+    query =
+      from object in query,
+        inner_join: component in assoc(object, :components), on: object.id == component.oid,
+        inner_join: data in assoc(component, :data), on: data.component_id == component.id,
+        where: data.attribute == ^attribute,
+        where: component.component == ^serialize(component),
+        where: data.data == ^serialize(data)
+
+    build_list_query(query, [{:attributes, attributes} | options])
+  end
+
+  defp build_list_query(query, [{:attributes, [{:or, {component, attribute}} | attributes]} | options]) do
+    query =
+      from object in query,
+        inner_join: component in assoc(object, :components), on: object.id == component.oid,
+        inner_join: data in assoc(component, :data), on: data.component_id == component.id,
+        or_where: data.attribute == ^attribute,
+        where: component.component == ^serialize(component)
+
+    build_list_query(query, [{:attributes, attributes} | options])
+  end
+
+  defp build_list_query(query, [{:attributes, [{component, attribute} | attributes]} | options])  do
+    query =
+      from object in query,
+        inner_join: component in assoc(object, :components), on: object.id == component.oid,
+        inner_join: data in assoc(component, :data), on: data.component_id == component.id,
+        where: data.attribute == ^attribute,
+        where: component.component == ^serialize(component)
+
+    build_list_query(query, [{:attributes, attributes} | options])
+  end
+
+
   # List Callbacks
 
   defp build_list_query(query, [{:or_callbacks, callback_strings} | options]) do
@@ -460,7 +633,7 @@ defmodule Exmud.Object do
     query =
       from object in query,
         inner_join: command_set in assoc(object, :command_sets), on: object.id == command_set.oid,
-        or_where: command_set.callback_module == ^:erlang.term_to_binary(command_set)
+        or_where: command_set.callback_module == ^serialize(command_set)
 
     build_list_query(query, [{:command_sets, command_sets} | options])
   end
@@ -469,16 +642,13 @@ defmodule Exmud.Object do
     query =
       from object in query,
         inner_join: command_set in assoc(object, :command_sets), on: object.id == command_set.oid,
-        where: command_set.callback_module == ^:erlang.term_to_binary(command_set)
+        where: command_set.callback_module == ^serialize(command_set)
 
     build_list_query(query, [{:command_sets, command_sets} | options])
   end
 
 
   # List Components
-
-  defp build_list_query(query, []), do: query
-  defp build_list_query(query, [{_, []} | options]), do: build_list_query(query, options)
 
   defp build_list_query(query, [{:or_components, components} | options]) do
     components = wrap_or_query_params(components)
@@ -489,7 +659,7 @@ defmodule Exmud.Object do
     query =
       from object in query,
         inner_join: component in assoc(object, :components), on: object.id == component.oid,
-        or_where: component.component == ^:erlang.term_to_binary(component)
+        or_where: component.component == ^serialize(component)
 
     build_list_query(query, [{:components, components} | options])
   end
@@ -498,7 +668,7 @@ defmodule Exmud.Object do
     query =
       from object in query,
         inner_join: component in assoc(object, :components), on: object.id == component.oid,
-        where: component.component == ^:erlang.term_to_binary(component)
+        where: component.component == ^serialize(component)
 
     build_list_query(query, [{:components, components} | options])
   end
@@ -561,7 +731,7 @@ defmodule Exmud.Object do
 
   defp wrap_or_query_params(params) do
     Enum.map(params, fn({:ok, _} = element) -> element
-                       (params) -> {:or, params} end)
+                       (param) -> {:or, param} end)
   end
 
 
@@ -586,7 +756,7 @@ defmodule Exmud.Object do
     from component_data in ComponentData,
       inner_join: component in assoc(component_data, :component),
       where: component_data.attribute == ^attribute,
-      where: component.component == ^:erlang.term_to_binary(comp),
+      where: component.component == ^serialize(comp),
       where: component.id == component_data.component_id,
       where: component.oid == ^oid
   end
@@ -611,9 +781,9 @@ defmodule Exmud.Object do
     objects =
       Enum.map(objects, fn(object) ->
         %{object | components: Enum.map(object.components, fn(component) ->
-            %{component | component: :erlang.binary_to_term(component.component),
+            %{component | component: deserialize(component.component),
                           data: Enum.map(component.data, fn(data) ->
-              %{data | data: :erlang.binary_to_term(data.data)}
+              %{data | data: deserialize(data.data)}
             end)}
         end)}
       end)
@@ -626,7 +796,7 @@ defmodule Exmud.Object do
       Enum.map(objects, fn(object) ->
         callbacks =
           Enum.map(object.callbacks, fn(callback) ->
-            %{callback | callback_module: :erlang.binary_to_term(callback.callback_module)}
+            %{callback | callback_module: deserialize(callback.callback_module)}
           end)
 
         %{object | callbacks: callbacks}
@@ -640,7 +810,7 @@ defmodule Exmud.Object do
       Enum.map(objects, fn(object) ->
         command_sets =
           Enum.map(object.command_sets, fn(command_set) ->
-            %{command_set | callback_module: :erlang.binary_to_term(command_set.callback_module)}
+            %{command_set | callback_module: deserialize(command_set.callback_module)}
           end)
         %{object | command_sets: command_sets}
       end)

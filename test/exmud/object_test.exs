@@ -34,6 +34,23 @@ defmodule Exmud.ObjectTest do
     end
 
     @tag object: true
+    @tag get: true
+    test "object get tests", %{key: key, oid: oid} = _context do
+      invalid_key = UUID.generate()
+      {:ok, object} = Object.get(oid)
+      assert object.id == oid
+      component = UUID.generate()
+      callback = UUID.generate()
+      assert Object.add_component(oid, component) == {:ok, oid}
+      assert Object.add_attribute(oid, component, "foo", "bar") == {:ok, oid}
+      assert Object.add_callback(oid, callback, "bar") == {:ok, oid}
+      assert Object.add_command_set(oid, UUID.generate()) == {:ok, oid}
+      {:ok, object} = Object.get(oid)
+      assert length(object.components) == 1
+      assert length(object.callbacks) == 1
+    end
+
+    @tag object: true
     test "complex list tests to show composition", %{oid: oid} = _context do
       component1 = UUID.generate()
       component2 = UUID.generate()
@@ -79,6 +96,29 @@ defmodule Exmud.ObjectTest do
       assert Object.remove_attribute(oid, component, attribute) == {:ok, oid}
       assert Object.get_attribute(oid, component, attribute) == {:error, :no_such_attribute}
       assert Object.has_attribute?(oid, component, attribute) == {:ok, false}
+    end
+
+    @tag component: true
+    @tag object: true
+    test "attribute list tests", %{oid: oid} = _context do
+      {:ok, oid2} = Object.new(UUID.generate())
+      component = UUID.generate()
+      attribute = UUID.generate()
+      attribute2 = UUID.generate()
+      assert Object.add_component(oid, component) == {:ok, oid}
+      assert Object.add_component(oid2, component) == {:ok, oid2}
+      assert Object.add_attribute(oid, component, attribute, "foo") == {:ok, oid}
+      assert Object.add_attribute(oid2, component, attribute, "bar") == {:ok, oid2}
+      assert Object.add_attribute(oid2, component, attribute2, "bar") == {:ok, oid2}
+      {:ok, result} = Object.list(attributes: [{component, attribute}])
+      assert MapSet.equal?(MapSet.new(result), MapSet.new([oid, oid2])) == true
+      assert Object.list(attributes: [{component, attribute2}]) == {:ok, [oid2]}
+      assert Object.list(attributes: [{component, attribute, "foo"}]) == {:ok, [oid]}
+      assert Object.list(attributes: [{component, attribute, "bar"}]) == {:ok, [oid2]}
+      {:ok, result} = Object.list(or_attributes: [{component, attribute}, {component, attribute2}])
+      assert MapSet.equal?(MapSet.new(result), MapSet.new([oid, oid2])) == true
+      {:ok, result} = Object.list(or_attributes: [{component, attribute, "foo"}, {component, attribute, "bar"}])
+      assert MapSet.equal?(MapSet.new(result), MapSet.new([oid, oid2])) == true
     end
 
     @tag component: true
@@ -220,11 +260,41 @@ defmodule Exmud.ObjectTest do
 
     @tag object: true
     @tag multi: true
+    test "attribute tests", %{multi: multi, oid: oid} = _context do
+      component = UUID.generate()
+      attribute = UUID.generate()
+      assert Object.add_component(oid, component) == {:ok, oid}
+      assert Object.add_attribute(oid, component, attribute, "bar") == {:ok, oid}
+      result = Repo.transaction(Object.attribute_equals?(multi, "equals", oid, component, attribute, "bar"))
+      assert result == {:ok, %{"equals" => true}}
+      result = Repo.transaction(Object.attribute_equals?(multi, "equals", oid, component, attribute, "foo"))
+      assert result == {:ok, %{"equals" => false}}
+      result = Repo.transaction(Object.attribute_equals?(multi, "equals", oid, "invalid component", attribute, "foo"))
+      assert result == {:error, "equals", :no_such_component, %{}}
+    end
+
+    @tag object: true
+    @tag multi: true
     test "delete tests", %{multi: multi, oid: oid} = _context do
       assert {:ok, %{"delete" => oid}} == Repo.transaction(Object.delete(multi, "delete", oid))
       assert_raise Ecto.StaleEntryError, fn ->
         Repo.transaction(Object.delete(multi, "delete", 0))
       end
+    end
+
+    @tag object: true
+    @tag multi: true
+    test "object get tests", %{multi: multi, oid: oid} = _context do
+      {:ok, %{"get" => object}} = Repo.transaction(Object.get(multi, "get", oid))
+      assert object.id == oid
+    end
+
+    @tag object: true
+    @tag multi: true
+    test "component tests", %{multi: multi, oid: oid} = _context do
+      component = UUID.generate()
+      assert Object.add_component(oid, component) == {:ok, oid}
+      assert Repo.transaction(Object.has_component?(multi, "has component", oid, component)) == {:ok, %{"has component" => true}}
     end
 
     @tag object: true

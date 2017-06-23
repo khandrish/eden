@@ -9,7 +9,7 @@ defmodule Exmud.Schema.Object do
     has_many :command_sets, Exmud.Schema.CommandSet, foreign_key: :oid
     has_many :components, Exmud.Schema.Component, foreign_key: :oid
     has_many :locks, Exmud.Schema.Lock, foreign_key: :oid
-    has_many :relationships, Exmud.Schema.Relationship, foreign_key: :oid
+    has_many :relationships, Exmud.Schema.Relationship, foreign_key: :object
     has_many :scripts, Exmud.Schema.Script, foreign_key: :oid
     has_many :tags, Exmud.Schema.Tag, foreign_key: :oid
   end
