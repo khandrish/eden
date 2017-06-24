@@ -447,9 +447,9 @@ defmodule Exmud.Object do
   def remove_tag(oid, key, category \\ "__DEFAULT__") do
     Repo.delete_all(
       from tag in Tag,
-        where: tag.oid == ^oid,
-        where: tag.key == ^key,
-        where: tag.category == ^category
+        where: tag.oid == ^oid
+          and tag.key == ^key
+          and tag.category == ^category
     )
     |> case do
       {num, _} when num > 0 -> {:ok, oid}
@@ -556,7 +556,7 @@ defmodule Exmud.Object do
         inner_join: data in assoc(component, :data), on: data.component_id == component.id,
         or_where: data.attribute == ^attribute
           and component.component == ^serialize(component)
-            and data.data == ^serialize(data)
+          and data.data == ^serialize(data)
 
     build_list_query(query, [{:attributes, attributes} | options])
   end
@@ -566,9 +566,9 @@ defmodule Exmud.Object do
       from object in query,
         inner_join: component in assoc(object, :components), on: object.id == component.oid,
         inner_join: data in assoc(component, :data), on: data.component_id == component.id,
-        where: data.attribute == ^attribute,
-        where: component.component == ^serialize(component),
-        where: data.data == ^serialize(data)
+        where: data.attribute == ^attribute
+          and component.component == ^serialize(component)
+          and data.data == ^serialize(data)
 
     build_list_query(query, [{:attributes, attributes} | options])
   end
@@ -578,8 +578,8 @@ defmodule Exmud.Object do
       from object in query,
         inner_join: component in assoc(object, :components), on: object.id == component.oid,
         inner_join: data in assoc(component, :data), on: data.component_id == component.id,
-        or_where: data.attribute == ^attribute,
-        where: component.component == ^serialize(component)
+        or_where: data.attribute == ^attribute
+          and component.component == ^serialize(component)
 
     build_list_query(query, [{:attributes, attributes} | options])
   end
@@ -589,8 +589,8 @@ defmodule Exmud.Object do
       from object in query,
         inner_join: component in assoc(object, :components), on: object.id == component.oid,
         inner_join: data in assoc(component, :data), on: data.component_id == component.id,
-        where: data.attribute == ^attribute,
-        where: component.component == ^serialize(component)
+        where: data.attribute == ^attribute
+          and component.component == ^serialize(component)
 
     build_list_query(query, [{:attributes, attributes} | options])
   end
@@ -709,8 +709,8 @@ defmodule Exmud.Object do
     query =
       from object in query,
         inner_join: tag in assoc(object, :tags), on: object.id == tag.oid,
-        or_where: tag.key == ^key,
-        where: tag.category == ^category
+        or_where: tag.key == ^key
+          and tag.category == ^category
 
     build_list_query(query, [{:tags, tags} | options])
   end
@@ -719,8 +719,8 @@ defmodule Exmud.Object do
     query =
       from object in query,
         inner_join: tag in assoc(object, :tags), on: object.id == tag.oid,
-        where: tag.key == ^key,
-        where: tag.category == ^category
+        where: tag.key == ^key
+          and tag.category == ^category
 
     build_list_query(query, [{:tags, tags} | options])
   end
@@ -740,41 +740,41 @@ defmodule Exmud.Object do
   # Return the query used to find a specific callback mapped to a specific object.
   defp callback_query(oid, callback_string) do
     from callback in Callback,
-      where: callback.oid == ^oid,
-      where: callback.string == ^callback_string
+      where: callback.oid == ^oid
+        and callback.string == ^callback_string
   end
 
   # Return the query used to find a specific command set mapped to a specific object.
   defp command_set_query(oid, callback_module) do
     from command_set in CommandSet,
-      where: command_set.callback_module == ^callback_module,
-      where: command_set.oid == ^oid
+      where: command_set.callback_module == ^callback_module
+        and command_set.oid == ^oid
   end
 
   # Return query used to find a specific attribute mapped to a specific object.
   defp component_data_query(oid, comp, attribute) do
     from component_data in ComponentData,
       inner_join: component in assoc(component_data, :component),
-      where: component_data.attribute == ^attribute,
-      where: component.component == ^serialize(comp),
-      where: component.id == component_data.component_id,
-      where: component.oid == ^oid
+      where: component_data.attribute == ^attribute
+        and component.component == ^serialize(comp)
+        and component.id == component_data.component_id
+        and component.oid == ^oid
   end
 
   # Return query used to find a specific component mapped to a specific object.
   defp component_query(oid, component) do
     from component in Component,
-      where: component.component == ^component,
-      where: component.oid == ^oid,
+      where: component.component == ^component
+        and component.oid == ^oid,
       preload: :data
   end
 
   # Return the query used to find a specific tag mapped to a specific object.
   defp find_tag_query(oid, key, category) do
     from tag in Tag,
-      where: tag.category == ^category,
-      where: tag.key == ^key,
-      where: tag.oid == ^oid
+      where: tag.category == ^category
+        and tag.key == ^key
+        and tag.oid == ^oid
   end
 
   defp normalize_get_results(objects, [:components | rest]) do
