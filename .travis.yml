@@ -12,6 +12,7 @@ services:
 before_script:
   - psql -c "CREATE USER exmud WITH PASSWORD 'exmud'" -U postgres
   - psql -c "CREATE DATABASE exmud_test" -U postgres
+  - psql -c "ALTER DATABASE exmud_test OWNER TO exmud" -U postgres
   - mix ecto.migrate
 
 script:
