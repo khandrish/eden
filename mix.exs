@@ -10,7 +10,9 @@ defmodule ExmudUmbrella.Mixfile do
   end
 
   defp deps do
-    []
+    [
+      {:excoveralls, ">= 0.7.0", only: :test}
+    ]
   end
 
   defp aliases do
