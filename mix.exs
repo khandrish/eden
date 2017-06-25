@@ -2,11 +2,15 @@ defmodule ExmudUmbrella.Mixfile do
   use Mix.Project
 
   def project do
-    [apps_path: "apps",
-     build_embedded: Mix.env == :prod,
-     start_permanent: Mix.env == :prod,
-     aliases: aliases(),
-     deps: deps()]
+    [
+      aliases: aliases(),
+      apps_path: "apps",
+      build_embedded: Mix.env == :prod,
+      deps: deps(),
+      preferred_cli_env: ["coveralls": :test, "coveralls.detail": :test, "coveralls.post": :test, "coveralls.html": :test],
+      start_permanent: Mix.env == :prod,
+      test_coverage: [tool: ExCoveralls]
+    ]
   end
 
   defp deps do
