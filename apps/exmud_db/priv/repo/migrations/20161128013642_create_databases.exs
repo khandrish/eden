@@ -25,14 +25,14 @@ defmodule Exmud.Repo.Migrations.CreateDatabases do
     create index(:component, [:oid])
     create unique_index(:component, [:oid, :component])
 
-    create table(:component_data) do
+    create table(:attribute) do
       add :attribute, :string
       add :component_id, references(:component, [on_delete: :delete_all])
       add :data, :binary
     end
-    create index(:component_data, [:attribute])
-    create index(:component_data, [:component_id])
-    create unique_index(:component_data, [:attribute, :component_id])
+    create index(:attribute, [:attribute])
+    create index(:attribute, [:component_id])
+    create unique_index(:attribute, [:attribute, :component_id])
 
     create table(:callback) do
       add :oid, references(:object, [on_delete: :delete_all])
