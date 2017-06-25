@@ -5,7 +5,7 @@ defmodule Exmud.DB.CommandSet do
   schema "command_set" do
     field :callback_module, :binary
     belongs_to :object, Exmud.Schema.Object, foreign_key: :oid
-    timestamps
+    timestamps()
   end
 
   def changeset(tag, params \\ %{}) do
