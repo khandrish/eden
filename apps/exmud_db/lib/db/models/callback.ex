@@ -1,6 +1,5 @@
 defmodule Exmud.DB.Callback do
-  import Ecto.Changeset
-  use Ecto.Schema
+  use Exmud.DB.Model
 
   schema "callback" do
     field :string, :string

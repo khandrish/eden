@@ -1,6 +1,5 @@
 defmodule Exmud.DB.Component do
-  import Ecto.Changeset
-  use Ecto.Schema
+  use Exmud.DB.Model
 
   schema "component" do
     field :component, :binary

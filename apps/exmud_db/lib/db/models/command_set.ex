@@ -1,6 +1,5 @@
 defmodule Exmud.DB.CommandSet do
-  import Ecto.Changeset
-  use Ecto.Schema
+  use Exmud.DB.Model
 
   schema "command_set" do
     field :callback_module, :binary

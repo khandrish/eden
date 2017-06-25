@@ -1,6 +1,5 @@
 defmodule Exmud.DB.Tag do
-  import Ecto.Changeset
-  use Ecto.Schema
+  use Exmud.DB.Model
 
   schema "tag" do
     field :key, :string

@@ -1,6 +1,5 @@
 defmodule Exmud.DB.Relationship do
-  import Ecto.Changeset
-  use Ecto.Schema
+  use Exmud.DB.Model
 
   schema "relationship" do
     field :relationship, :string

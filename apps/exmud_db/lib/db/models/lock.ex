@@ -1,6 +1,5 @@
 defmodule Exmud.DB.Lock do
-  import Ecto.Changeset
-  use Ecto.Schema
+  use Exmud.DB.Model
 
   schema "lock" do
     field :type, :string

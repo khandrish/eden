@@ -1,6 +1,5 @@
 defmodule Exmud.DB.Attribute do
-  import Ecto.Changeset
-  use Ecto.Schema
+  use Exmud.DB.Model
 
   schema "attribute" do
     field :attribute, :string
