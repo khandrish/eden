@@ -10,10 +10,9 @@ services:
   - postgresql
 
 before_script:
-  - psql -c "CREATE USER exmud WITH PASSWORD 'exmud'" -U postgres
-  - psql -c "CREATE DATABASE exmud_test" -U postgres
-  - psql -c "ALTER DATABASE exmud_test OWNER TO exmud" -U postgres
-  - mix ecto.migrate
+  - psql -c "CREATE USER exmud" -U postgres
+  - psql -c "ALTER USER exmud WITH SUPERUSER" -U postgres
+  - cp config/database.travis.yml config/database.yml
 
 script:
   - "mix do deps.get, test && mix compile && mix coveralls.travis"
