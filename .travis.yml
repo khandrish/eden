@@ -10,7 +10,7 @@ services:
   - postgresql
 
 before_script:
-  - psql -c "create user exmud with password 'exmud'; create database exmud_test;"" -U postgres
+  - psql -c "create user exmud with password 'exmud'; create database exmud_test;" -U postgres
   - mix ecto.migrate
 
 script:
