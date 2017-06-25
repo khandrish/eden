@@ -8,12 +8,15 @@ defmodule ExmudUmbrella.Mixfile do
      aliases: aliases(),
      deps: deps()]
   end
-  
+
   defp deps do
     []
   end
-  
+
   defp aliases do
-    ["test": ["ecto.create --quiet -r Exmud.DB.Repo", "ecto.migrate -r Exmud.DB.Repo", "test"]]
+    ["test": ["ecto.drop --quiet -r Exmud.DB.Repo MIX_ENV=test",
+              "ecto.create --quiet -r Exmud.DB.Repo MIX_ENV=test",
+              "ecto.migrate -r Exmud.DB.Repo MIX_ENV=test",
+              "test"]]
   end
 end

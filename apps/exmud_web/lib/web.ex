@@ -8,8 +8,6 @@ defmodule Exmud.Web do
 
     # Define workers and child supervisors to be supervised
     children = [
-      # Start the Ecto repository
-      supervisor(Exmud.DB.Repo, []),
       # Start the endpoint when the application starts
       supervisor(Exmud.Web.Endpoint, []),
       # Start your own worker by calling: Exmud.Web.Worker.start_link(arg1, arg2, arg3)

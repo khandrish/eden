@@ -4,7 +4,7 @@ defmodule Exmud.Engine.Object do
   alias Exmud.DB.Repo
   alias Exmud.DB.Callback
   alias Exmud.DB.Component
-  alias Exmud.DB.ComponentData
+  alias Exmud.DB.Attribute
   alias Exmud.DB.CommandSet
   alias Exmud.DB.Object
   alias Exmud.DB.Tag
@@ -155,7 +155,7 @@ defmodule Exmud.Engine.Object do
         args = %{data: serialize(data),
                  attribute: attribute}
 
-        Ecto.build_assoc(comp, :data, args)
+        Ecto.build_assoc(comp, :attributes, args)
         |> Repo.insert()
         |> normalize_repo_result(oid)
       error ->
@@ -173,7 +173,7 @@ defmodule Exmud.Engine.Object do
     case get_component(oid, component) do
       {:ok, comp} ->
         query =
-          component_data_query(oid, component, attribute)
+          component_attribute_query(oid, component, attribute)
 
         query =
           from component_data in query,
@@ -197,7 +197,7 @@ defmodule Exmud.Engine.Object do
   end
 
   def get_attribute(oid, component, attribute) do
-    case Repo.one(component_data_query(oid, component, attribute)) do
+    case Repo.one(component_attribute_query(oid, component, attribute)) do
       nil -> {:error, :no_such_attribute}
       component_data -> {:ok, deserialize(component_data.data)}
     end
@@ -210,7 +210,7 @@ defmodule Exmud.Engine.Object do
   end
 
   def has_attribute?(oid, component, attribute) do
-    case Repo.one(component_data_query(oid, component, attribute)) do
+    case Repo.one(component_attribute_query(oid, component, attribute)) do
       nil -> {:ok, false}
       _object -> {:ok, true}
     end
@@ -223,7 +223,7 @@ defmodule Exmud.Engine.Object do
   end
 
   def remove_attribute(oid, component, attribute) do
-    component_data_query(oid, component, attribute)
+    component_attribute_query(oid, component, attribute)
     |> Repo.delete_all()
     |> case do
       {1, _} -> {:ok, oid}
@@ -240,10 +240,10 @@ defmodule Exmud.Engine.Object do
 
   @lint {Credo.Check.Refactor.PipeChainStart, false}
   def update_attribute(oid, component, attribute, data) do
-    case Repo.one(component_data_query(oid, component, attribute)) do
+    case Repo.one(component_attribute_query(oid, component, attribute)) do
       nil -> {:error, :no_such_attribute}
       object ->
-        Repo.update(ComponentData.changeset(object, %{data: serialize(data)}))
+        Repo.update(Attribute.changeset(object, %{data: serialize(data)}))
         |> normalize_repo_result(oid)
     end
   end
@@ -496,8 +496,8 @@ defmodule Exmud.Engine.Object do
     query =
       from object in query,
         left_join: component in assoc(object, :components),
-        left_join: data in assoc(component, :data),
-        preload: [components: {component, data: data}]
+        left_join: attribute in assoc(component, :attributes),
+        preload: [components: {component, attributes: attribute}]
 
     build_get_query(query, inclusion_filters)
   end
@@ -553,10 +553,10 @@ defmodule Exmud.Engine.Object do
     query =
       from object in query,
         inner_join: component in assoc(object, :components), on: object.id == component.oid,
-        inner_join: data in assoc(component, :data), on: data.component_id == component.id,
-        or_where: data.attribute == ^attribute
+        inner_join: attr in assoc(component, :attributes), on: attr.component_id == component.id,
+        or_where: attr.attribute == ^attribute
           and component.component == ^serialize(component)
-          and data.data == ^serialize(data)
+          and attr.data == ^serialize(data)
 
     build_list_query(query, [{:attributes, attributes} | options])
   end
@@ -565,10 +565,10 @@ defmodule Exmud.Engine.Object do
     query =
       from object in query,
         inner_join: component in assoc(object, :components), on: object.id == component.oid,
-        inner_join: data in assoc(component, :data), on: data.component_id == component.id,
-        where: data.attribute == ^attribute
+        inner_join: attr in assoc(component, :attributes), on: attr.component_id == component.id,
+        where: attr.attribute == ^attribute
           and component.component == ^serialize(component)
-          and data.data == ^serialize(data)
+          and attr.data == ^serialize(data)
 
     build_list_query(query, [{:attributes, attributes} | options])
   end
@@ -577,8 +577,8 @@ defmodule Exmud.Engine.Object do
     query =
       from object in query,
         inner_join: component in assoc(object, :components), on: object.id == component.oid,
-        inner_join: data in assoc(component, :data), on: data.component_id == component.id,
-        or_where: data.attribute == ^attribute
+        inner_join: attr in assoc(component, :attributes), on: attr.component_id == component.id,
+        or_where: attr.attribute == ^attribute
           and component.component == ^serialize(component)
 
     build_list_query(query, [{:attributes, attributes} | options])
@@ -588,8 +588,8 @@ defmodule Exmud.Engine.Object do
     query =
       from object in query,
         inner_join: component in assoc(object, :components), on: object.id == component.oid,
-        inner_join: data in assoc(component, :data), on: data.component_id == component.id,
-        where: data.attribute == ^attribute
+        inner_join: attr in assoc(component, :attributes), on: attr.component_id == component.id,
+        where: attr.attribute == ^attribute
           and component.component == ^serialize(component)
 
     build_list_query(query, [{:attributes, attributes} | options])
@@ -752,12 +752,12 @@ defmodule Exmud.Engine.Object do
   end
 
   # Return query used to find a specific attribute mapped to a specific object.
-  defp component_data_query(oid, comp, attribute) do
-    from component_data in ComponentData,
-      inner_join: component in assoc(component_data, :component),
-      where: component_data.attribute == ^attribute
+  defp component_attribute_query(oid, comp, attribute) do
+    from attr in Attribute,
+      inner_join: component in assoc(attr, :component),
+      where: attr.attribute == ^attribute
         and component.component == ^serialize(comp)
-        and component.id == component_data.component_id
+        and component.id == attr.component_id
         and component.oid == ^oid
   end
 
@@ -766,7 +766,7 @@ defmodule Exmud.Engine.Object do
     from component in Component,
       where: component.component == ^component
         and component.oid == ^oid,
-      preload: :data
+      preload: :attributes
   end
 
   # Return the query used to find a specific tag mapped to a specific object.
@@ -782,8 +782,8 @@ defmodule Exmud.Engine.Object do
       Enum.map(objects, fn(object) ->
         %{object | components: Enum.map(object.components, fn(component) ->
             %{component | component: deserialize(component.component),
-                          data: Enum.map(component.data, fn(data) ->
-              %{data | data: deserialize(data.data)}
+                          attributes: Enum.map(component.attributes, fn(attribute) ->
+              %{attribute | data: deserialize(attribute.data)}
             end)}
         end)}
       end)

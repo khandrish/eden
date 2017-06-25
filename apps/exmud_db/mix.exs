@@ -14,13 +14,13 @@ defmodule Exmud.DB.Mixfile do
      aliases: aliases(),
      deps: deps()]
   end
-  
+
   def application do
     # Specify extra applications you'll use from Erlang/Elixir
     [extra_applications: [:logger],
      mod: {Exmud.DB.Application, [:postgrex]}]
   end
-  
+
   defp deps do
     [
       {:ecto, "~> 2.1.3"},
@@ -30,6 +30,6 @@ defmodule Exmud.DB.Mixfile do
 
   defp aliases do
     ["exmud.db.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
-     "exmud.db.reset": ["ecto.drop", "ecto.setup"]]
+     "exmud.db.reset": ["ecto.drop", "exmud.db.setup"]]
   end
 end
