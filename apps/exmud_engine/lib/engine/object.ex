@@ -1,5 +1,4 @@
 defmodule Exmud.Engine.Object do
-  alias Ecto.Changeset
   alias Ecto.Multi
   alias Exmud.DB.Repo
   alias Exmud.DB.Callback
