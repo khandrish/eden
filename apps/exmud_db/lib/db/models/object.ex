@@ -5,13 +5,13 @@ defmodule Exmud.DB.Object do
   schema "object" do
     field :key, :string
     field :date_created, :utc_datetime
-    has_many :callbacks, Exmud.Schema.Callback, foreign_key: :oid
-    has_many :command_sets, Exmud.Schema.CommandSet, foreign_key: :oid
-    has_many :components, Exmud.Schema.Component, foreign_key: :oid
-    has_many :locks, Exmud.Schema.Lock, foreign_key: :oid
-    has_many :relationships, Exmud.Schema.Relationship, foreign_key: :object
-    has_many :scripts, Exmud.Schema.Script, foreign_key: :oid
-    has_many :tags, Exmud.Schema.Tag, foreign_key: :oid
+    has_many :callbacks, Exmud.DB.Callback, foreign_key: :oid
+    has_many :command_sets, Exmud.DB.CommandSet, foreign_key: :oid
+    has_many :components, Exmud.DB.Component, foreign_key: :oid
+    has_many :locks, Exmud.DB.Lock, foreign_key: :oid
+    has_many :relationships, Exmud.DB.Relationship, foreign_key: :object
+    has_many :scripts, Exmud.DB.Script, foreign_key: :oid
+    has_many :tags, Exmud.DB.Tag, foreign_key: :oid
   end
 
   def changeset(object, params \\ %{}) do

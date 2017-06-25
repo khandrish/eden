@@ -5,7 +5,7 @@ defmodule Exmud.DB.Tag do
   schema "tag" do
     field :key, :string
     field :category, :string
-    belongs_to :object, Exmud.Schema.Object, foreign_key: :oid
+    belongs_to :object, Exmud.DB.Object, foreign_key: :oid
   end
 
   def changeset(tag, params \\ %{}) do

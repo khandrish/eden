@@ -1,4 +1,3 @@
-ExUnit.start
+ExUnit.configure(exclude: [pending: true])
 
-Ecto.Adapters.SQL.Sandbox.mode(Exmud.DB.Repo, :manual)
-
+ExUnit.start()

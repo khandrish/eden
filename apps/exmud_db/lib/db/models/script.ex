@@ -5,7 +5,7 @@ defmodule Exmud.DB.Script do
   schema "script" do
     field :key, :string
     field :state, :binary
-    belongs_to :object, Exmud.Schema.Object, foreign_key: :oid
+    belongs_to :object, Exmud.DB.Object, foreign_key: :oid
   end
 
   def changeset(script, params \\ %{}) do
