@@ -3,16 +3,15 @@ defmodule Exmud.Engine do
   Documentation for Exmud.Engine.
   """
 
-  @doc """
-  Hello world.
+  def configure do
+    :ok
+  end
 
-  ## Examples
+  def start do
+    :ok
+  end
 
-      iex> Exmud.Engine.hello
-      :world
-
-  """
-  def hello do
-    :world
+  def stop do
+    :ok
   end
 end
