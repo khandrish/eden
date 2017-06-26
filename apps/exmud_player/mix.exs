@@ -19,6 +19,8 @@ defmodule Exmud.Player.Mixfile do
   end
 
   defp deps do
-    []
+    [
+      {:comeonin, "~> 3.0"}
+    ]
   end
 end
