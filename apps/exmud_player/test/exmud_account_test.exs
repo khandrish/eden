@@ -1,6 +1,6 @@
-defmodule Exmud.AccountTest do
+defmodule Exmud.PlayerTest do
   use ExUnit.Case
-  doctest Exmud.Account
+  doctest Exmud.Player
 
   test "the truth" do
     assert 1 + 1 == 2

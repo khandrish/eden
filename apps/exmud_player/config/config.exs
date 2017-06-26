@@ -10,11 +10,11 @@ use Mix.Config
 
 # You can configure for your application as:
 #
-#     config :exmud_account, key: :value
+#     config :exmud_player, key: :value
 #
 # And access this configuration in your application as:
 #
-#     Application.get_env(:exmud_account, :key)
+#     Application.get_env(:exmud_player, :key)
 #
 # Or configure a 3rd-party app:
 #

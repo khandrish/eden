@@ -1,8 +1,8 @@
-defmodule Exmud.Account.Mixfile do
+defmodule Exmud.Player.Mixfile do
   use Mix.Project
 
   def project do
-    [app: :exmud_account,
+    [app: :exmud_player,
      version: "0.1.0",
      build_path: "../../_build",
      config_path: "../../config/config.exs",

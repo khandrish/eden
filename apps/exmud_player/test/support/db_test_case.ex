@@ -1,4 +1,4 @@
-defmodule Exmud.Account.DBTestCase do
+defmodule Exmud.Player.DBTestCase do
   @moduledoc """
   This module defines the test case to be used by tests.
 
