@@ -15,7 +15,8 @@ defmodule ExmudUmbrella.Mixfile do
 
   defp deps do
     [
-      {:excoveralls, ">= 0.7.0", only: :test}
+      {:excoveralls, ">= 0.7.0", only: :test},
+      {:inch_ex, ">= 0.5.6", only: :docs}
     ]
   end
 
