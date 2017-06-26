@@ -1,12 +1,12 @@
 defmodule Exmud.Engine.Object do
   alias Ecto.Multi
   alias Exmud.DB.Repo
-  alias Exmud.DB.Callback
-  alias Exmud.DB.Component
-  alias Exmud.DB.Attribute
-  alias Exmud.DB.CommandSet
-  alias Exmud.DB.Object
-  alias Exmud.DB.Tag
+  alias Exmud.DB.Model.Callback
+  alias Exmud.DB.Model.Component
+  alias Exmud.DB.Model.Attribute
+  alias Exmud.DB.Model.CommandSet
+  alias Exmud.DB.Model.Object
+  alias Exmud.DB.Model.Tag
   import Ecto.Query
   import Exmud.Engine.Utils
   require Logger
