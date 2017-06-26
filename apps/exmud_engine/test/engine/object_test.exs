@@ -1,7 +1,6 @@
 defmodule Exmud.Engine.ObjectTest do
   alias Ecto.UUID
   alias Exmud.Engine.Callback
-  alias Exmud.Engine.CommandSetTest.ExampleCommandSet, as: ECS
   alias Exmud.Engine.Object
   alias Exmud.DB.Repo
   require Logger
@@ -34,8 +33,7 @@ defmodule Exmud.Engine.ObjectTest do
 
     @tag object: true
     @tag get: true
-    test "object get tests", %{key: key, oid: oid} = _context do
-      invalid_key = UUID.generate()
+    test "object get tests", %{oid: oid} = _context do
       {:ok, object} = Object.get(oid)
       assert object.id == oid
       component = UUID.generate()
