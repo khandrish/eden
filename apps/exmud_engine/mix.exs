@@ -22,7 +22,9 @@ defmodule Exmud.Engine.Mixfile do
 
   defp deps do
     [
-      {:exmud_db, in_umbrella: true}
+      {:e_queue, "~> 1.0"},
+      {:exmud_db, in_umbrella: true},
+      {:uuid, "~> 1.1"}
     ]
   end
 end

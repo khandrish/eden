@@ -15,6 +15,8 @@ defmodule ExmudUmbrella.Mixfile do
 
   defp deps do
     [
+      {:credo, "~> 0.5", only: [:dev, :test]},
+      {:ex_doc, ">= 0.14.5", only: :dev},
       {:excoveralls, ">= 0.7.0", only: :test},
       {:inch_ex, ">= 0.5.6", only: :docs}
     ]
