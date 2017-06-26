@@ -7,7 +7,7 @@ defmodule Exmud.Engine.ObjectTest do
   use Exmud.Engine.DBTestCase
 
   describe "Standard Ecto usage tests for game object: " do
-    setup [:create_new_object, :setup_db_connection]
+    setup [:create_new_object]
 
     @tag object: true
     test "bad input tests" do
@@ -476,17 +476,6 @@ defmodule Exmud.Engine.ObjectTest do
       assert Repo.transaction(Object.list(multi, "list tag", tags: [{tag2, category}])) == {:ok, %{"list tag" => [oid]}}
       assert Repo.transaction(Object.list(multi, "list tag", tags: [{tag1, category}, {tag2, category}])) == {:ok, %{"list tag" => [oid]}}
     end
-  end
-
-  defp setup_db_connection(context) do
-    # Explicitly get a connection before each test
-    # By default the test is wrapped in a transaction
-    # :ok = Ecto.Adapters.SQL.Sandbox.checkout(Exmud.DB.Repo)
-
-    # The :shared mode allows a process to share
-    # its connection with any other process automatically
-    # Ecto.Adapters.SQL.Sandbox.mode(Exmud.DB.Repo, { :shared, self() })
-    context
   end
 
   defp create_new_object(_context) do
