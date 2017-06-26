@@ -1,9 +1,9 @@
-defmodule Exmud.DB.CommandSet do
+defmodule Exmud.DB.Model.CommandSet do
   use Exmud.DB.Model
 
   schema "command_set" do
     field :callback_module, :binary
-    belongs_to :object, Exmud.DB.Object, foreign_key: :oid
+    belongs_to :object, Exmud.DB.Model.Object, foreign_key: :oid
     timestamps()
   end
 

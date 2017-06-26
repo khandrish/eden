@@ -1,11 +1,11 @@
-defmodule Exmud.DB.Relationship do
+defmodule Exmud.DB.Model.Relationship do
   use Exmud.DB.Model
 
   schema "relationship" do
     field :relationship, :string
     field :data, :binary
-    belongs_to :subject_object, Exmud.DB.Object, foreign_key: :subject
-    belongs_to :object_object, Exmud.DB.Object, foreign_key: :object
+    belongs_to :subject_object, Exmud.DB.Model.Object, foreign_key: :subject
+    belongs_to :object_object, Exmud.DB.Model.Object, foreign_key: :object
   end
 
   def changeset(location, params \\ %{}) do

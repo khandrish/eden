@@ -1,4 +1,4 @@
-defmodule Exmud.DB.System do
+defmodule Exmud.DB.Model.System do
   use Exmud.DB.Model
 
   schema "system" do

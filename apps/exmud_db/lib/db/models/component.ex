@@ -1,10 +1,10 @@
-defmodule Exmud.DB.Component do
+defmodule Exmud.DB.Model.Component do
   use Exmud.DB.Model
 
   schema "component" do
     field :component, :binary
-    belongs_to :object, Exmud.DB.Object, foreign_key: :oid
-    has_many :attributes, Exmud.DB.Attribute, foreign_key: :component_id
+    belongs_to :object, Exmud.DB.Model.Object, foreign_key: :oid
+    has_many :attributes, Exmud.DB.Model.Attribute, foreign_key: :component_id
   end
 
   def changeset(component, params \\ %{}) do

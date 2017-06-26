@@ -1,10 +1,10 @@
-defmodule Exmud.DB.Callback do
+defmodule Exmud.DB.Model.Callback do
   use Exmud.DB.Model
 
   schema "callback" do
     field :string, :string
     field :callback_module, :binary
-    belongs_to :object, Exmud.DB.Object, foreign_key: :oid
+    belongs_to :object, Exmud.DB.Model.Object, foreign_key: :oid
   end
 
   def changeset(tag, params \\ %{}) do

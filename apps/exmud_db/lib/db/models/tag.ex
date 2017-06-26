@@ -1,10 +1,10 @@
-defmodule Exmud.DB.Tag do
+defmodule Exmud.DB.Model.Tag do
   use Exmud.DB.Model
 
   schema "tag" do
     field :key, :string
     field :category, :string
-    belongs_to :object, Exmud.DB.Object, foreign_key: :oid
+    belongs_to :object, Exmud.DB.Model.Object, foreign_key: :oid
   end
 
   def changeset(tag, params \\ %{}) do
