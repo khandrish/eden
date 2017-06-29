@@ -17,6 +17,7 @@ defmodule Exmud.Session.Mixfile do
   def application do
     [extra_applications: [:logger]]
   end
+
   defp deps do
     []
   end
