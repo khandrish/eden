@@ -1,26 +1,23 @@
 defmodule Exmud.Engine.Object do
   alias Ecto.Multi
-  alias Exmud.DB.Repo
-  alias Exmud.DB.Model.Callback
-  alias Exmud.DB.Model.Component
-  alias Exmud.DB.Model.Attribute
-  alias Exmud.DB.Model.CommandSet
-  alias Exmud.DB.Model.Object
-  alias Exmud.DB.Model.Tag
+  alias Exmud.Engine.Repo
+  alias Exmud.Engine.Schema.Object
   import Ecto.Query
-  import Exmud.Engine.Utils
+  import Exmud.Common.Utils
   require Logger
 
   @get_inclusion_filters [:callbacks, :command_sets, :components, :locks, :relationships, :scripts, :tags]
 
 
   #
-  # General object functions
+  # API
   #
 
 
   def new(key) do
-    case Repo.insert(new_changeset(key)) do
+    obj = Object.new(%Object{}, %{key: key})
+    |> Repo.insert()
+    |> case do
       {:ok, object} -> {:ok, object.id}
       {:error, changeset} -> {:error, normalize_ecto_errors(changeset.errors)}
     end
@@ -32,15 +29,14 @@ defmodule Exmud.Engine.Object do
     end)
   end
 
-  @lint {Credo.Check.Refactor.PipeChainStart, false}
-  def delete(oid) do
-    {:ok, _} = Repo.delete(%Object{id: oid})
-    {:ok, oid}
+  def delete(object_id) do
+    {:ok, _} = Repo.delete(%Object{id: object_id})
+    {:ok, object_id}
   end
 
-  def delete(%Ecto.Multi{} = multi, multi_key, oid) do
+  def delete(%Ecto.Multi{} = multi, multi_key, object_id) do
     Multi.run(multi, multi_key, fn(_) ->
-      delete(oid)
+      delete(object_id)
     end)
   end
 
@@ -54,11 +50,13 @@ defmodule Exmud.Engine.Object do
   end
 
   def get(objects, inclusion_filters) do
-    inclusion_filters = List.wrap(inclusion_filters)
+    {ids, keys} = Enum.split_with(objects, &Kernel.is_integer/1)
 
     base_query =
       from object in Object,
-        where: object.id in ^objects
+        where: object.key in ^keys or object.id in ^ids
+
+    inclusion_filters = List.wrap(inclusion_filters)
 
     query = build_get_query(base_query, inclusion_filters)
 
@@ -72,7 +70,9 @@ defmodule Exmud.Engine.Object do
   def get(%Ecto.Multi{} = multi,
           multi_key,
           objects) do
-    get(multi, multi_key, objects, @get_inclusion_filters)
+    Multi.run(multi, multi_key, fn(_) ->
+      get(multi, multi_key, objects, @get_inclusion_filters)
+    end)
   end
 
   def get(%Ecto.Multi{} = multi,
@@ -84,382 +84,18 @@ defmodule Exmud.Engine.Object do
     end)
   end
 
-  @lint {Credo.Check.Refactor.PipeChainStart, false}
-  def list(options) do
-    query =
-      from object in Object,
-        group_by: object.id,
-        select: object.id
+  def query(object_query) do
+    result =
+      object_query
+      |> build_object_query()
+      |> Repo.all()
 
-    options =
-      Enum.map(options, fn({type, values}) -> {type, List.wrap(values)} end)
-
-    build_list_query(query, options)
-    |> Repo.all()
-    |> (&({:ok, &1})).()
+    {:ok, result}
   end
 
-  def list(%Ecto.Multi{} = multi, multi_key, options) do
+  def query(%Ecto.Multi{} = multi, multi_key, object_query) do
     Multi.run(multi, multi_key, fn(_) ->
-      list(options)
-    end)
-  end
-
-
-  #
-  # Component related functions
-  #
-
-
-  @lint {Credo.Check.Refactor.PipeChainStart, false}
-  def add_component(oid, component) do
-    args = %{component: serialize(component),
-             oid: oid}
-    Repo.insert(Component.changeset(%Component{}, args))
-    |> normalize_repo_result(oid)
-  end
-
-  def add_component(%Ecto.Multi{} = multi, multi_key, oid, component) do
-    Multi.run(multi, multi_key, fn(_) ->
-      add_component(oid, component)
-    end)
-  end
-
-  # Being private, this would normally be down at the bottom but keeping it here so it doesn't get buried.
-  defp get_component(oid, component) do
-    case Repo.one(component_query(oid, serialize(component))) do
-      nil -> {:error, :no_such_component}
-      comp -> {:ok, comp}
-    end
-  end
-
-  def has_component?(oid, component) do
-    case Repo.one(component_query(oid, serialize(component))) do
-      nil -> {:ok, false}
-      _object -> {:ok, true}
-    end
-  end
-
-  def has_component?(%Ecto.Multi{} = multi, multi_key, oid, component) do
-    Multi.run(multi, multi_key, fn(_) ->
-      has_component?(oid, component)
-    end)
-  end
-
-  # Component/Attribute related functions
-
-  def add_attribute(oid, component, attribute, data) do
-    case get_component(oid, component) do
-      {:ok, comp} ->
-        args = %{data: serialize(data),
-                 attribute: attribute}
-
-        Ecto.build_assoc(comp, :attributes, args)
-        |> Repo.insert()
-        |> normalize_repo_result(oid)
-      error ->
-        error
-    end
-  end
-
-  def add_attribute(%Ecto.Multi{} = multi, multi_key, oid, component, attribute, data) do
-    Multi.run(multi, multi_key, fn(_) ->
-      add_attribute(oid, component, attribute, data)
-    end)
-  end
-
-  def attribute_equals?(oid, component, attribute, data) do
-    case get_component(oid, component) do
-      {:ok, comp} ->
-        query =
-          component_attribute_query(oid, component, attribute)
-
-        query =
-          from component_data in query,
-            where: component_data.data == ^serialize(data)
-
-        case Repo.one(query) do
-          nil ->
-            {:ok, false}
-          _result ->
-            {:ok, true}
-        end
-      error ->
-        error
-    end
-  end
-
-  def attribute_equals?(%Ecto.Multi{} = multi, multi_key, oid, component, attribute, data) do
-    Multi.run(multi, multi_key, fn(_) ->
-      attribute_equals?(oid, component, attribute, data)
-    end)
-  end
-
-  def get_attribute(oid, component, attribute) do
-    case Repo.one(component_attribute_query(oid, component, attribute)) do
-      nil -> {:error, :no_such_attribute}
-      component_data -> {:ok, deserialize(component_data.data)}
-    end
-  end
-
-  def get_attribute(%Ecto.Multi{} = multi, multi_key, oid, component, attribute) do
-    Multi.run(multi, multi_key, fn(_) ->
-      get_attribute(oid, component, attribute)
-    end)
-  end
-
-  def has_attribute?(oid, component, attribute) do
-    case Repo.one(component_attribute_query(oid, component, attribute)) do
-      nil -> {:ok, false}
-      _object -> {:ok, true}
-    end
-  end
-
-  def has_attribute?(%Ecto.Multi{} = multi, multi_key, oid, component, attribute) do
-    Multi.run(multi, multi_key, fn(_) ->
-      has_attribute?(oid, component, attribute)
-    end)
-  end
-
-  def remove_attribute(oid, component, attribute) do
-    component_attribute_query(oid, component, attribute)
-    |> Repo.delete_all()
-    |> case do
-      {1, _} -> {:ok, oid}
-      {0, _} -> {:error, :no_such_attribute}
-      _ -> {:error, :unknown}
-    end
-  end
-
-  def remove_attribute(%Ecto.Multi{} = multi, multi_key, oid, component, attribute) do
-    Multi.run(multi, multi_key, fn(_) ->
-      remove_attribute(oid, component, attribute)
-    end)
-  end
-
-  @lint {Credo.Check.Refactor.PipeChainStart, false}
-  def update_attribute(oid, component, attribute, data) do
-    case Repo.one(component_attribute_query(oid, component, attribute)) do
-      nil -> {:error, :no_such_attribute}
-      object ->
-        Repo.update(Attribute.changeset(object, %{data: serialize(data)}))
-        |> normalize_repo_result(oid)
-    end
-  end
-
-  def update_attribute(%Ecto.Multi{} = multi, multi_key, oid, component, attribute, data) do
-    Multi.run(multi, multi_key, fn(_) ->
-      update_attribute(oid, component, attribute, data)
-    end)
-  end
-
-
-  #
-  # Callback related functions
-  #
-
-
-  @lint {Credo.Check.Refactor.PipeChainStart, false}
-  def add_callback(oid, callback_string, callback_module) do
-    args = %{string: callback_string, callback_module: serialize(callback_module), oid: oid}
-    Repo.insert(Callback.changeset(%Callback{}, args))
-    |> normalize_repo_result(oid)
-    |> case do
-      {:error, errors} ->
-        if Keyword.has_key?(errors, :oid) do
-          Logger.warn("Attempt to add callback onto non existing object `#{oid}`")
-          {:error, :no_such_object}
-        else
-          {:error, errors}
-        end
-      result -> result
-    end
-  end
-
-  def add_callback(%Ecto.Multi{} = multi, multi_key, oid, callback_string, callback_module) do
-    Multi.run(multi, multi_key, fn(_) ->
-      add_callback(oid, callback_string, callback_module)
-    end)
-  end
-
-  def get_callback(oid, callback_string) do
-    case get_callback(oid, callback_string, nil) do
-      {:ok, nil} -> {:error, :no_such_callback}
-      result -> result
-    end
-  end
-
-  @lint {Credo.Check.Refactor.PipeChainStart, false}
-  def get_callback(oid, callback_string, default_callback_module) do
-    case Repo.one(callback_query(oid, callback_string)) do
-      nil -> {:ok, default_callback_module}
-      callback -> {:ok, deserialize(callback.callback_module)}
-    end
-  end
-
-  def get_callback(%Ecto.Multi{} = multi, multi_key, oid, callback_string) do
-    Multi.run(multi, multi_key, fn(_) ->
-      get_callback(oid, callback_string)
-    end)
-  end
-
-  def get_callback(%Ecto.Multi{} = multi, multi_key, oid, callback_string, default_callback_module) do
-    Multi.run(multi, multi_key, fn(_) ->
-      get_callback(oid, callback_string, default_callback_module)
-    end)
-  end
-
-  def has_callback?(oid, callback_string) do
-    case Repo.one(callback_query(oid, callback_string)) do
-      nil -> {:ok, false}
-      _object -> {:ok, true}
-    end
-  end
-
-  def has_callback?(%Ecto.Multi{} = multi, multi_key, oid, callback_string) do
-    Multi.run(multi, multi_key, fn(_) ->
-      has_callback?(oid, callback_string)
-    end)
-  end
-
-  @lint {Credo.Check.Refactor.PipeChainStart, false}
-  def delete_callback(oid, callback_string) do
-    Repo.delete_all(callback_query(oid, callback_string))
-    |> case do
-      {1, _} -> {:ok, oid}
-      {0, _} -> {:error, :no_such_callback}
-      _ -> {:error, :unknown} # What are the error conditions? What needs to be handled?
-    end
-  end
-
-  def delete_callback(%Ecto.Multi{} = multi, multi_key, oid, callback_string) do
-    Multi.run(multi, multi_key, fn(_) ->
-      delete_callback(oid, callback_string)
-    end)
-  end
-
-
-  #
-  # Command set related functions
-  #
-
-
-  @lint {Credo.Check.Refactor.PipeChainStart, false}
-  def add_command_set(oid, callback_module) do
-    args = %{callback_module: serialize(callback_module), oid: oid}
-    Repo.insert(CommandSet.changeset(%CommandSet{}, args))
-    |> normalize_repo_result(oid)
-    |> case do
-      {:error, errors} ->
-        if Keyword.has_key?(errors, :oid) do
-          Logger.warn("Attempt to add command set onto non existing object `#{oid}`")
-          {:error, :no_such_object}
-        else
-          {:error, errors}
-        end
-      result ->
-        result
-    end
-  end
-
-  def add_command_set(%Ecto.Multi{} = multi, multi_key, oid, callback_module) do
-    Multi.run(multi, multi_key, fn(_) ->
-      add_command_set(oid, callback_module)
-    end)
-  end
-
-  def has_command_set?(oid, callback_module) do
-    case Repo.one(command_set_query(oid, serialize(callback_module))) do
-      nil -> {:ok, false}
-      _object -> {:ok, true}
-    end
-  end
-
-  def has_command_set?(%Ecto.Multi{} = multi, multi_key, oid, callback_module) do
-    Multi.run(multi, multi_key, fn(_) ->
-      has_command_set?(oid, callback_module)
-    end)
-  end
-
-  @lint {Credo.Check.Refactor.PipeChainStart, false}
-  def delete_command_set(oid, callback_module) do
-    Repo.delete_all(command_set_query(oid, serialize(callback_module)))
-    |> case do
-      {1, _} -> {:ok, oid}
-      {0, _} -> {:error, :no_such_command_set}
-      _ -> {:error, :unknown}
-    end
-  end
-
-  def delete_command_set(%Ecto.Multi{} = multi, multi_key, oid, callback_module) do
-    Multi.run(multi, multi_key, fn(_) ->
-      delete_command_set(oid, callback_module)
-    end)
-  end
-
-
-  #
-  # Tag related functions
-  #
-
-
-  @lint {Credo.Check.Refactor.PipeChainStart, false}
-  def add_tag(oid, key, category \\ "__DEFAULT__") do
-    args = %{category: category,
-             oid: oid,
-             key: key}
-    Repo.insert(Tag.changeset(%Tag{}, args))
-    |> normalize_repo_result(oid)
-    |> case do
-      {:error, errors} ->
-        if Keyword.has_key?(errors, :oid) do
-          Logger.warn("Attempt to add tag onto non existing object `#{oid}`")
-          {:error, :no_such_object}
-        else
-          {:error, errors}
-        end
-      result ->
-        result
-    end
-  end
-
-  def add_tag(%Ecto.Multi{} = multi, multi_key, oid, key, category \\ "__DEFAULT__") do
-    Multi.run(multi, multi_key, fn(_) ->
-      add_tag(oid, key, category)
-    end)
-  end
-
-  def has_tag?(oid, key, category \\ "__DEFAULT__") do
-    case Repo.one(find_tag_query(oid, key, category)) do
-      nil -> {:ok, false}
-      _object -> {:ok, true}
-    end
-  end
-
-  def has_tag?(%Ecto.Multi{} = multi, multi_key, oid, key, category \\ "__DEFAULT__") do
-    Multi.run(multi, multi_key, fn(_) ->
-      has_tag?(oid, key, category)
-    end)
-  end
-
-  @lint {Credo.Check.Refactor.PipeChainStart, false}
-  def remove_tag(oid, key, category \\ "__DEFAULT__") do
-    Repo.delete_all(
-      from tag in Tag,
-        where: tag.oid == ^oid
-          and tag.key == ^key
-          and tag.category == ^category
-    )
-    |> case do
-      {num, _} when num > 0 -> {:ok, oid}
-      {0, _} -> {:error, :no_such_tag}
-      _ -> {:error, :unknown}
-    end
-  end
-
-  def remove_tag(%Ecto.Multi{} = multi, multi_key, oid, key, category \\ "__DEFAULT__") do
-    Multi.run(multi, multi_key, fn(_) ->
-      remove_tag(oid, key, category)
+      query(object_query)
     end)
   end
 
@@ -468,6 +104,86 @@ defmodule Exmud.Engine.Object do
   # Private functions
   #
 
+
+  # Query functions
+
+  defp build_object_query(object_query) do
+    dynamic = build_where(object_query)
+
+    from object in Object,
+      inner_join: callback in assoc(object, :callbacks),
+      inner_join: command_set in assoc(object, :command_sets),
+      inner_join: component in assoc(object, :components),
+      inner_join: attribute in assoc(component, :attributes),
+      inner_join: relationship in assoc(object, :relationships),
+      inner_join: tag in assoc(object, :tags),
+      select: object.id,
+      where: ^dynamic
+  end
+
+  defp build_where({mode, checks}) do
+    actually_build_where(nil, mode, checks)
+  end
+
+  defp actually_build_where(dynamic, _, []), do: dynamic
+
+  defp actually_build_where(dynamic, mode, [{type, nested_checks} | checks]) when type == :and or type == :or do
+    new_dynamic = actually_build_where(nil, type, nested_checks)
+
+    dynamic =
+      case {mode, dynamic} do
+        {_, nil} -> new_dynamic
+        {:and, dynamic} -> dynamic(^dynamic and (^new_dynamic))
+        {:or, dynamic} -> dynamic(^dynamic or (^new_dynamic))
+      end
+
+    actually_build_where(dynamic, mode, checks)
+  end
+
+  defp actually_build_where(dynamic, mode, [check | checks]) do
+    new_dynamic = build_equality_check_dynamic(check)
+
+    if dynamic != nil do
+      dynamic =
+        case mode do
+          :and -> dynamic([], ^new_dynamic and ^dynamic)
+          :or -> dynamic([], ^new_dynamic or ^dynamic)
+        end
+
+      actually_build_where(dynamic, mode, checks)
+    else
+      actually_build_where(new_dynamic, mode, checks)
+    end
+  end
+
+  defp build_equality_check_dynamic({:attribute, {component, attribute}}) do
+    dynamic([object, callback, command_set, component, attribute], (attribute.attribute == ^attribute and component.component == ^component))
+  end
+
+  defp build_equality_check_dynamic({:callback, callback}) do
+    dynamic([object, callback], callback.callback == ^callback)
+  end
+
+  defp build_equality_check_dynamic({:command_set, command_set}) do
+    dynamic([object, callback, command_set], command_set.command_set == ^command_set)
+  end
+
+  defp build_equality_check_dynamic({:component, component}) do
+    dynamic([object, callback, command_set, component], component.component == ^component)
+  end
+
+  defp build_equality_check_dynamic({:object, key}) do
+    dynamic([object], object.key == ^key)
+  end
+
+  defp build_equality_check_dynamic({:relationship, relationship}) do
+    dynamic([object, callback, command_set, component, attribute, relationship], relationship.relationship == ^relationship)
+  end
+
+  defp build_equality_check_dynamic({:tag, {category, tag}}) do
+    dynamic([object, callback, command_set, component, attribute, relationship, tag],
+            (tag.category == ^category and tag.tag == ^tag))
+  end
 
   # Get Query
 
@@ -535,245 +251,6 @@ defmodule Exmud.Engine.Object do
         preload: [:tags]
 
     build_get_query(query, inclusion_filters)
-  end
-
-
-  # List Attributes
-
-  defp build_list_query(query, []), do: query
-  defp build_list_query(query, [{_, []} | options]), do: build_list_query(query, options)
-
-  defp build_list_query(query, [{:or_attributes, attributes} | options]) do
-    attributes = wrap_or_query_params(attributes)
-    build_list_query(query, [{:attributes, attributes} | options])
-  end
-
-  defp build_list_query(query, [{:attributes, [{:or, {component, attribute, data}} | attributes]} | options]) do
-    query =
-      from object in query,
-        inner_join: component in assoc(object, :components), on: object.id == component.oid,
-        inner_join: attr in assoc(component, :attributes), on: attr.component_id == component.id,
-        or_where: attr.attribute == ^attribute
-          and component.component == ^serialize(component)
-          and attr.data == ^serialize(data)
-
-    build_list_query(query, [{:attributes, attributes} | options])
-  end
-
-  defp build_list_query(query, [{:attributes, [{component, attribute, data} | attributes]} | options]) do
-    query =
-      from object in query,
-        inner_join: component in assoc(object, :components), on: object.id == component.oid,
-        inner_join: attr in assoc(component, :attributes), on: attr.component_id == component.id,
-        where: attr.attribute == ^attribute
-          and component.component == ^serialize(component)
-          and attr.data == ^serialize(data)
-
-    build_list_query(query, [{:attributes, attributes} | options])
-  end
-
-  defp build_list_query(query, [{:attributes, [{:or, {component, attribute}} | attributes]} | options]) do
-    query =
-      from object in query,
-        inner_join: component in assoc(object, :components), on: object.id == component.oid,
-        inner_join: attr in assoc(component, :attributes), on: attr.component_id == component.id,
-        or_where: attr.attribute == ^attribute
-          and component.component == ^serialize(component)
-
-    build_list_query(query, [{:attributes, attributes} | options])
-  end
-
-  defp build_list_query(query, [{:attributes, [{component, attribute} | attributes]} | options])  do
-    query =
-      from object in query,
-        inner_join: component in assoc(object, :components), on: object.id == component.oid,
-        inner_join: attr in assoc(component, :attributes), on: attr.component_id == component.id,
-        where: attr.attribute == ^attribute
-          and component.component == ^serialize(component)
-
-    build_list_query(query, [{:attributes, attributes} | options])
-  end
-
-
-  # List Callbacks
-
-  defp build_list_query(query, [{:or_callbacks, callback_strings} | options]) do
-    callback_strings = wrap_or_query_params(callback_strings)
-    build_list_query(query, [{:callbacks, callback_strings} | options])
-  end
-
-  defp build_list_query(query, [{:callbacks, [{:or, callback_string} | callback_strings]} | options]) do
-    query =
-      from object in query,
-        inner_join: callback in assoc(object, :callbacks), on: object.id == callback.oid,
-        or_where: callback.string == ^callback_string
-
-    build_list_query(query, [{:callbacks, callback_strings} | options])
-  end
-
-  defp build_list_query(query, [{:callbacks, [callback_string | callback_strings]} | options]) do
-    query =
-      from object in query,
-        inner_join: callback in assoc(object, :callbacks), on: object.id == callback.oid,
-        where: callback.string == ^callback_string
-
-    build_list_query(query, [{:callbacks, callback_strings} | options])
-  end
-
-
-  # List Command Sets
-
-  defp build_list_query(query, [{:or_command_sets, command_sets} | options]) do
-    command_sets = wrap_or_query_params(command_sets)
-    build_list_query(query, [{:command_sets, command_sets} | options])
-  end
-
-  defp build_list_query(query, [{:command_sets, [{:or, command_set} | command_sets]} | options]) do
-    query =
-      from object in query,
-        inner_join: command_set in assoc(object, :command_sets), on: object.id == command_set.oid,
-        or_where: command_set.callback_module == ^serialize(command_set)
-
-    build_list_query(query, [{:command_sets, command_sets} | options])
-  end
-
-  defp build_list_query(query, [{:command_sets, [command_set | command_sets]} | options]) do
-    query =
-      from object in query,
-        inner_join: command_set in assoc(object, :command_sets), on: object.id == command_set.oid,
-        where: command_set.callback_module == ^serialize(command_set)
-
-    build_list_query(query, [{:command_sets, command_sets} | options])
-  end
-
-
-  # List Components
-
-  defp build_list_query(query, [{:or_components, components} | options]) do
-    components = wrap_or_query_params(components)
-    build_list_query(query, [{:components, components} | options])
-  end
-
-  defp build_list_query(query, [{:components, [{:or, component} | components]} | options]) do
-    query =
-      from object in query,
-        inner_join: component in assoc(object, :components), on: object.id == component.oid,
-        or_where: component.component == ^serialize(component)
-
-    build_list_query(query, [{:components, components} | options])
-  end
-
-  defp build_list_query(query, [{:components, [component | components]} | options]) do
-    query =
-      from object in query,
-        inner_join: component in assoc(object, :components), on: object.id == component.oid,
-        where: component.component == ^serialize(component)
-
-    build_list_query(query, [{:components, components} | options])
-  end
-
-
-  # List Keys
-
-  defp build_list_query(query, [{:or_objects, objects} | options]) do
-    objects = wrap_or_query_params(objects)
-    build_list_query(query, [{:objects, objects} | options])
-  end
-
-  defp build_list_query(query, [{:objects, [{:or, key} | keys]} | options]) do
-    query =
-      from object in query,
-        or_where: object.key == ^key
-
-    build_list_query(query, [{:objects, keys} | options])
-  end
-
-  defp build_list_query(query, [{:objects, [key | keys]} | options]) do
-    query =
-      from object in query,
-        where: object.key == ^key
-
-    build_list_query(query, [{:objects, keys} | options])
-  end
-
-
-  # List Tags
-
-  defp build_list_query(query, [{:or_tags, tags} | options]) do
-    tags = wrap_or_query_params(tags)
-    build_list_query(query, [{:tags, tags} | options])
-  end
-
-  defp build_list_query(query, [{:tags, [{:or, {key, category}} | tags]} | options]) do
-    query =
-      from object in query,
-        inner_join: tag in assoc(object, :tags), on: object.id == tag.oid,
-        or_where: tag.key == ^key
-          and tag.category == ^category
-
-    build_list_query(query, [{:tags, tags} | options])
-  end
-
-  defp build_list_query(query, [{:tags, [{key, category} | tags]} | options]) do
-    query =
-      from object in query,
-        inner_join: tag in assoc(object, :tags), on: object.id == tag.oid,
-        where: tag.key == ^key
-          and tag.category == ^category
-
-    build_list_query(query, [{:tags, tags} | options])
-  end
-
-  defp new_changeset(key) do
-    Object.changeset(%Object{}, %{key: key, date_created: DateTime.utc_now()})
-  end
-
-  defp wrap_or_query_params(params) do
-    Enum.map(params, fn({:ok, _} = element) -> element
-                       (param) -> {:or, param} end)
-  end
-
-
-  # Queries
-
-  # Return the query used to find a specific callback mapped to a specific object.
-  defp callback_query(oid, callback_string) do
-    from callback in Callback,
-      where: callback.oid == ^oid
-        and callback.string == ^callback_string
-  end
-
-  # Return the query used to find a specific command set mapped to a specific object.
-  defp command_set_query(oid, callback_module) do
-    from command_set in CommandSet,
-      where: command_set.callback_module == ^callback_module
-        and command_set.oid == ^oid
-  end
-
-  # Return query used to find a specific attribute mapped to a specific object.
-  defp component_attribute_query(oid, comp, attribute) do
-    from attr in Attribute,
-      inner_join: component in assoc(attr, :component),
-      where: attr.attribute == ^attribute
-        and component.component == ^serialize(comp)
-        and component.id == attr.component_id
-        and component.oid == ^oid
-  end
-
-  # Return query used to find a specific component mapped to a specific object.
-  defp component_query(oid, component) do
-    from component in Component,
-      where: component.component == ^component
-        and component.oid == ^oid,
-      preload: :attributes
-  end
-
-  # Return the query used to find a specific tag mapped to a specific object.
-  defp find_tag_query(oid, key, category) do
-    from tag in Tag,
-      where: tag.category == ^category
-        and tag.key == ^key
-        and tag.oid == ^oid
   end
 
   defp normalize_get_results(objects, [:components | rest]) do

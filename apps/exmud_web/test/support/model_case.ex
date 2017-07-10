@@ -16,7 +16,7 @@ defmodule Exmud.Web.ModelCase do
 
   using do
     quote do
-      alias Exmud.DB.Repo
+      alias Exmud.Web.Repo
 
       import Ecto
       import Ecto.Changeset
@@ -26,10 +26,10 @@ defmodule Exmud.Web.ModelCase do
   end
 
   setup tags do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Exmud.DB.Repo)
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Exmud.Web.Repo)
 
     unless tags[:async] do
-      Ecto.Adapters.SQL.Sandbox.mode(Exmud.DB.Repo, {:shared, self()})
+      Ecto.Adapters.SQL.Sandbox.mode(Exmud.Web.Repo, {:shared, self()})
     end
 
     :ok

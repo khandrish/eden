@@ -12,7 +12,7 @@ config :exmud_web, Exmud.Web.Endpoint,
   code_reloader: true,
   check_origin: false,
   watchers: [node: ["node_modules/brunch/bin/brunch", "watch", "--stdin",
-                    cd: Path.expand("../", __DIR__)]]
+                    cd: Path.expand("../assets", __DIR__)]]
 
 
 # Watch static and templates for browser reloading.
@@ -32,3 +32,6 @@ config :logger, :console, format: "[$level] $message\n"
 # Set a higher stacktrace during development. Avoid configuring such
 # in production as building large stacktraces may be expensive.
 config :phoenix, :stacktrace_depth, 20
+
+config :exmud_web, Exmud.Web.Repo,
+  password: "exmud_web"

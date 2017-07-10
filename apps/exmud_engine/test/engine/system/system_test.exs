@@ -1,11 +1,12 @@
 defmodule Exmud.Engine.SystemTest do
   alias Exmud.Engine.Cache
   alias Exmud.Engine.System
-  use Exmud.Engine.DBTestCase
+  use Exmud.Engine.Test.DBTestCase
 
   describe "system tests: " do
     setup [:do_setup]
 
+    @tag engine: true
     @tag system: true
     test "regular lifecycle", %{es: callback_module, es_key: key} = _context do
       assert System.start(key, callback_module) == :ok
@@ -27,6 +28,7 @@ defmodule Exmud.Engine.SystemTest do
       assert System.purge(key) == {:ok, %{}}
     end
 
+    @tag engine: true
     @tag system: true
     test "idle lifecycle", %{ies: callback_module, ies_key: key} = _context do
       assert System.start(key, callback_module) == :ok
@@ -35,11 +37,12 @@ defmodule Exmud.Engine.SystemTest do
       assert System.stop(key) == :ok
     end
 
+    @tag engine: true
     @tag system: true
     test "calls with invalid system", _context do
-      assert System.stop("foo") == {:error, :no_such_system}
-      assert System.call("foo", "foo") == {:error, :no_such_system}
-      assert System.cast("foo", "foo") == {:error, :no_such_system}
+      assert System.stop("foo") == {:error, :system_not_running}
+      assert System.call("foo", "foo") == {:error, :system_not_running}
+      assert System.cast("foo", "foo") == {:error, :system_not_running}
       assert System.purge("foo") == {:error, :no_such_system}
     end
   end

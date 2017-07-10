@@ -111,10 +111,10 @@ defmodule Exmud.Engine.System do
 
 
   alias Exmud.Engine.Cache
-  alias Exmud.DB.Repo
-  alias Exmud.DB.Model.System, as: S
+  alias Exmud.Engine.Repo
+  alias Exmud.Engine.Schema.System
   import Ecto.Query
-  import Exmud.Engine.Utils
+  import Exmud.Common.Utils
 
   @system_category "system"
 
@@ -133,29 +133,29 @@ defmodule Exmud.Engine.System do
   end
 
   @doc """
-  Get the state of a running system.
+  Get the state of a system.
   """
   def get_state(key) do
-    case Cache.get(key, @system_category) do
-      {:ok, pid} ->  GenServer.call(pid, :state)
-      {:error, :no_such_key} -> {:error, :no_such_system}
+    if running?(key) do
+      case Cache.get(key, @system_category) do
+        {:ok, pid} ->  GenServer.call(pid, :state)
+        {:error, :no_such_key} -> do_get_state(key)
+      end
+    else
+      do_get_state(key)
     end
   end
 
   @doc """
   Purge all the data from a system if it is not running.
   """
-  @lint {Credo.Check.Refactor.PipeChainStart, false}
   def purge(key) do
     case running?(key) do
       true ->
         {:error, :system_running}
       false ->
-        Repo.one(
-          from system in S,
-          where: system.key == ^key,
-          select: system
-        )
+        system_query(key)
+        |> Repo.one()
         |> case do
           nil -> {:error, :no_such_system}
           system ->
@@ -191,7 +191,7 @@ defmodule Exmud.Engine.System do
   def stop(key, args \\ %{}) do
     case Cache.get(key, @system_category) do
       {:ok, pid} ->  GenServer.call(pid, {:stop, args})
-      {:error, :no_such_key} -> {:error, :no_such_system}
+      {:error, :no_such_key} -> {:error, :system_not_running}
     end
   end
 
@@ -201,11 +201,26 @@ defmodule Exmud.Engine.System do
   #
 
 
+  def do_get_state(key) do
+    system_query(key)
+    |> Repo.one()
+    |> case do
+      nil -> {:error, :no_such_system}
+      system -> {:ok, deserialize(system.state)}
+    end
+  end
+
+
   def send_message(method, key, message) do
     case Cache.get(key, @system_category) do
-      {:error, :no_such_key} -> {:error, :no_such_system}
+      {:error, :no_such_key} -> {:error, :system_not_running}
       {:ok, pid} ->
         apply(GenServer, method, [pid, {:message, message}])
     end
+  end
+
+  defp system_query(key) do
+    from system in System,
+      where: system.key == ^key
   end
 end

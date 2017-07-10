@@ -19,12 +19,12 @@ defmodule Exmud.Engine.Callback do
   """
   @callback execute(term) :: term
 
+  alias Ecto.Multi
   alias Exmud.Engine.Cache
-  alias Exmud.Engine.Object
-  alias Exmud.DB.Repo
-  alias Exmud.DB.Callback
+  alias Exmud.Engine.Repo
+  alias Exmud.Engine.Schema.Callback
   import Ecto.Query
-  import Exmud.Engine.Utils
+  import Exmud.Common.Utils
   require Logger
 
   @callback_category "callback"
@@ -34,15 +34,95 @@ defmodule Exmud.Engine.Callback do
   # API
   #
 
+  def add(object_id, callback_string, callback_module) do
+    args = %{string: callback_string, callback_module: serialize(callback_module), object_id: object_id}
+    Repo.insert(Callback.changeset(%Callback{}, args))
+    |> normalize_repo_result(object_id)
+    |> case do
+      {:error, errors} ->
+        if Keyword.has_key?(errors, :object_id) do
+          Logger.warn("Attempt to add callback onto non existing object `#{object_id}`")
+          {:error, :no_such_object}
+        else
+          {:error, errors}
+        end
+      result -> result
+    end
+  end
+
+  def add(%Ecto.Multi{} = multi, multi_key, object_id, callback_string, callback_module) do
+    Multi.run(multi, multi_key, fn(_) ->
+      add(object_id, callback_string, callback_module)
+    end)
+  end
+
+  def get(object_id, callback_string) do
+    case get(object_id, callback_string, nil) do
+      {:ok, nil} -> {:error, :no_such_callback}
+      result -> result
+    end
+  end
+
+  def get(object_id, callback_string, default_callback_module) do
+    case Repo.one(callback_query(object_id, callback_string)) do
+      nil -> {:ok, default_callback_module}
+      callback -> {:ok, deserialize(callback.callback_module)}
+    end
+  end
+
+  def get(%Ecto.Multi{} = multi, multi_key, object_id, callback_string) do
+    Multi.run(multi, multi_key, fn(_) ->
+      get(object_id, callback_string)
+    end)
+  end
+
+  def get(%Ecto.Multi{} = multi, multi_key, object_id, callback_string, default_callback_module) do
+    Multi.run(multi, multi_key, fn(_) ->
+      get(object_id, callback_string, default_callback_module)
+    end)
+  end
+
+  def has(object_id, callback_string) do
+    query =
+      from callback in callback_query(object_id, callback_string),
+      select: count("*")
+
+    case Repo.one(query) do
+      1 -> {:ok, true}
+      0 -> {:ok, false}
+    end
+  end
+
+  def has(%Ecto.Multi{} = multi, multi_key, object_id, callback_string) do
+    Multi.run(multi, multi_key, fn(_) ->
+      has(object_id, callback_string)
+    end)
+  end
+
+  def delete(object_id, callback_string) do
+    Repo.delete_all(callback_query(object_id, callback_string))
+    |> case do
+      {1, _} -> {:ok, object_id}
+      {0, _} -> {:error, :no_such_callback}
+      _ -> {:error, :unknown} # What are the error conditions? What needs to be handled?
+    end
+  end
+
+  def delete(%Ecto.Multi{} = multi, multi_key, object_id, callback_string) do
+    Multi.run(multi, multi_key, fn(_) ->
+      delete(object_id, callback_string)
+    end)
+  end
+
 
   @doc """
   When running a callback, the engine first checks to see if there is an object specific implementation before falling
   back to a default implementation. If no default implementation is found an error is returned.
   """
-  def run(object, key, args) do
-    case Object.get_callback(object, key) do
+  def run(object_id, key, args) do
+    case get(object_id, key) do
       {:ok, callback} ->
-        callback.callback_module.run(object, args)
+        callback.callback_module.run(object_id, args)
       _error ->
         {:error, :no_such_callback}
     end
@@ -82,5 +162,17 @@ defmodule Exmud.Engine.Callback do
   @doc false
   def unregister(key) do
     Cache.delete(key, @callback_category)
+  end
+
+
+  #
+  # Internal Functions
+  #
+
+
+  defp callback_query(object_id, callback_string) do
+    from callback in Callback,
+      where: callback.object_id == ^object_id
+        and callback.string == ^callback_string
   end
 end

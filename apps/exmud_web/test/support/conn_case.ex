@@ -20,7 +20,7 @@ defmodule Exmud.Web.ConnCase do
       # Import conveniences for testing with connections
       use Phoenix.ConnTest
 
-      alias Exmud.DB.Repo
+      alias Exmud.Web.Repo
       import Ecto
       import Ecto.Changeset
       import Ecto.Query
@@ -33,10 +33,10 @@ defmodule Exmud.Web.ConnCase do
   end
 
   setup tags do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Exmud.DB.Repo)
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Exmud.Web.Repo)
 
     unless tags[:async] do
-      Ecto.Adapters.SQL.Sandbox.mode(Exmud.DB.Repo, {:shared, self()})
+      Ecto.Adapters.SQL.Sandbox.mode(Exmud.Web.Repo, {:shared, self()})
     end
 
     {:ok, conn: Phoenix.ConnTest.build_conn()}

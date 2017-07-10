@@ -1,9 +1,11 @@
-defmodule Exmud.Engine.CacheTest do
+defmodule Exmud.Engine.Test.CacheTest do
   alias Exmud.Engine.Cache
-  use ExUnit.Case, async: true
+  use Exmud.Engine.Test.DBTestCase
 
   describe "cache tests: " do
 
+    @tag cache: true
+    @tag engine: true
     test "lifecycle" do
       assert Cache.get("foo", "system") == {:error, :no_such_key}
       assert Cache.exists?("foo", "system") == false

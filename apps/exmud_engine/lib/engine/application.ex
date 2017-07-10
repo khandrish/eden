@@ -7,6 +7,7 @@ defmodule Exmud.Engine.Application do
     import Supervisor.Spec, warn: false
 
     children = [
+      worker(Exmud.Engine.Repo, []),
       worker(Exmud.Engine.Cache, []),
       supervisor(Exmud.Engine.SystemSup, [])
     ]

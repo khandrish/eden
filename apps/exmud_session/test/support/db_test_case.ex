@@ -15,15 +15,15 @@ defmodule Exmud.Session.DBTestCase do
 
   using do
     quote do
-      alias Exmud.DB.Repo
+      alias Exmud.DB.Repo.EngineRepo
     end
   end
 
   setup tags do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Exmud.DB.Repo)
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Exmud.DB.Repo.EngineRepo)
 
     unless tags[:async] do
-      Ecto.Adapters.SQL.Sandbox.mode(Exmud.DB.Repo, {:shared, self()})
+      Ecto.Adapters.SQL.Sandbox.mode(Exmud.DB.Repo.EngineRepo, {:shared, self()})
     end
 
     :ok

@@ -1,8 +1,5 @@
 defmodule Exmud.Engine.Cache do
-  @moduledoc """
-  A simple cache intended for use with callbacks and general engine configuration. Not suitable for use as a general
-  data cache.
-  """
+  @moduledoc false
 
   require Logger
   use GenServer

@@ -8,3 +8,7 @@ config :exmud_web, Exmud.Web.Endpoint,
 
 # Print only warnings and errors during test
 config :logger, level: :warn
+
+config :exmud_web, Exmud.Web.Repo,
+  password: "exmud_web",
+  pool: Ecto.Adapters.SQL.Sandbox

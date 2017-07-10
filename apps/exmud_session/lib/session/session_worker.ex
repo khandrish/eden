@@ -22,15 +22,15 @@ defmodule Exmud.Session.SessionWorker do
   end
 
   alias Ecto.Multi
-  alias Exmud.Engine.CommandProcessor
-  alias Exmud.Engine.CommandSet
-  alias Exmud.Engine.Object
-  alias Exmud.Engine.Player
-  alias Exmud.Engine.SessionSup
-  alias Exmud.Engine.SessionOutputHandler
-  alias Exmud.Repo
-  import Exmud.Engine.Utils
-  import IO, only: [inspect: 2]
+  # alias Exmud.Engine.CommandProcessor
+  # alias Exmud.Engine.CommandSet
+  # alias Exmud.Engine.Object
+  # alias Exmud.Engine.Player
+  alias Exmud.Session.SessionSup
+  alias Exmud.Session.SessionOutputHandler
+  # alias Exmud.Repo
+  import Exmud.Common.Utils
+  # import IO, only: [inspect: 2]
   require Logger
   use GenServer
 
@@ -83,7 +83,7 @@ defmodule Exmud.Session.SessionWorker do
   end
 
   @doc """
-  Send output to the player via its active session.
+  Send message to the player via its active session.
 
   A successful return from this function does not guarantee that the player has
   or will ever actually receive the output, only that the active player session
@@ -92,7 +92,7 @@ defmodule Exmud.Session.SessionWorker do
 
   ## Examples
 
-      Exmud.PlayerSession.send_output(:james_watson, "The Double Helix")
+      Exmud.PlayerSession.send_message(:james_watson, "The Double Helix")
   """
   @spec send_message(key :: any, message :: any) :: {:ok, :success} | {:error, :no_session_active}
   def send_message(key, message) do
