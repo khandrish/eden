@@ -7,7 +7,7 @@ defmodule Exmud.Engine.Callback do
   engine will look for callbacks on an object, such as when an object is being puppeted/unpuppeted, or when commands
   are being processed.
 
-  When a custom callback for an object has not been registered, a default implementation must be used instead. These can
+  When a custom callback for an object has not been registered, a default implementation may be used instead. These can
   be specified by passing an atom to be used as a key to check the config, which is how the engine behaves for its
   internal hooks, or by passing a module name to be called directly. Default implementations have been provided for all
   engine hooks. This logic can be applied in application code as well when writing scripts and commands.
@@ -20,11 +20,11 @@ defmodule Exmud.Engine.Callback do
   @callback execute(term) :: term
 
   alias Ecto.Multi
-  alias Exmud.Engine.Cache
   alias Exmud.Engine.Repo
   alias Exmud.Engine.Schema.Callback
   import Ecto.Query
   import Exmud.Common.Utils
+  import Exmud.Engine.Utils
   require Logger
 
   @callback_category "callback"
@@ -36,7 +36,9 @@ defmodule Exmud.Engine.Callback do
 
   def add(object_id, callback_string, callback_module) do
     args = %{string: callback_string, callback_module: serialize(callback_module), object_id: object_id}
-    Repo.insert(Callback.changeset(%Callback{}, args))
+
+    Callback.add(%Callback{}, args)
+    |> Repo.insert()
     |> normalize_repo_result(object_id)
     |> case do
       {:error, errors} ->
@@ -58,6 +60,13 @@ defmodule Exmud.Engine.Callback do
 
   def get(object_id, callback_string) do
     case get(object_id, callback_string, nil) do
+      {:ok, nil} -> {:ok, nil}
+      result -> result
+    end
+  end
+
+  def get!(object_id, callback_string) do
+    case get(object_id, callback_string, nil) do
       {:ok, nil} -> {:error, :no_such_callback}
       result -> result
     end
@@ -76,6 +85,12 @@ defmodule Exmud.Engine.Callback do
     end)
   end
 
+  def get!(%Ecto.Multi{} = multi, multi_key, object_id, callback_string) do
+    Multi.run(multi, multi_key, fn(_) ->
+      get!(object_id, callback_string)
+    end)
+  end
+
   def get(%Ecto.Multi{} = multi, multi_key, object_id, callback_string, default_callback_module) do
     Multi.run(multi, multi_key, fn(_) ->
       get(object_id, callback_string, default_callback_module)
@@ -85,7 +100,7 @@ defmodule Exmud.Engine.Callback do
   def has(object_id, callback_string) do
     query =
       from callback in callback_query(object_id, callback_string),
-      select: count("*")
+        select: count("*")
 
     case Repo.one(query) do
       1 -> {:ok, true}
@@ -122,10 +137,16 @@ defmodule Exmud.Engine.Callback do
   def run(object_id, key, args) do
     case get(object_id, key) do
       {:ok, callback} ->
-        callback.callback_module.run(object_id, args)
+        callback.run(object_id, args)
       _error ->
         {:error, :no_such_callback}
     end
+  end
+
+  def run(%Ecto.Multi{} = multi, multi_key, object_id, key, args) do
+    Multi.run(multi, multi_key, fn(_) ->
+      run(object_id, key, args)
+    end)
   end
 
   @doc """
@@ -136,14 +157,14 @@ defmodule Exmud.Engine.Callback do
   """
   def register(key, callback_module) do
     Logger.debug("Registering callback for key `#{key}` with module `#{inspect(callback_module)}`")
-    Cache.put(key, @callback_category, callback_module)
+    Cachex.set(cache(), key, callback_module)
   end
 
   @doc """
   Check to see if there is a callback module registered with a given key.
   """
-  def registered?(key) do
-    Cache.exists?(key, @callback_category)
+  def registered(key) do
+    Cachex.exists?(cache(), key)
   end
 
   @doc """
@@ -151,8 +172,8 @@ defmodule Exmud.Engine.Callback do
   """
   def which_module(key) do
     Logger.debug("Finding callback module for key `#{key}`")
-    case Cache.get(key, @callback_category) do
-      {:error, _} ->
+    case Cachex.get(cache(), key) do
+      {:missing, _} ->
         Logger.warn("Attempt to find callback module for key `#{key}` failed")
         {:error, :no_such_callback}
       result -> result
@@ -161,7 +182,7 @@ defmodule Exmud.Engine.Callback do
 
   @doc false
   def unregister(key) do
-    Cache.delete(key, @callback_category)
+    Cachex.del(cache(), key)
   end
 
 

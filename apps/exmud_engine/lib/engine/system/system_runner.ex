@@ -7,6 +7,7 @@ defmodule Exmud.Engine.SystemRunner do
   alias Exmud.Engine.Schema.System
   import Ecto.Query
   import Exmud.Common.Utils
+  import Exmud.Engine.Utils
   require Logger
   use GenServer
 

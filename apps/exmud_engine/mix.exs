@@ -43,6 +43,7 @@ defmodule Exmud.Engine.Mixfile do
     [
       {:absinthe, "~> 1.3"},
       {:absinthe_ecto, "~> 0.1.0"},
+      {:cachex, "~> 2.1"},
       {:calendar, "~> 0.17.2"},
       {:credo, "~> 0.5", only: [:dev, :test]},
       {:e_queue, "~> 1.0"},

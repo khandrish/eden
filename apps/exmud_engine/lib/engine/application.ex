@@ -1,6 +1,7 @@
 defmodule Exmud.Engine.Application do
   @moduledoc false
 
+  import Exmud.Engine.Utils
   use Application
 
   def start(_type, _args) do
@@ -8,7 +9,7 @@ defmodule Exmud.Engine.Application do
 
     children = [
       worker(Exmud.Engine.Repo, []),
-      worker(Exmud.Engine.Cache, []),
+      worker(Cachex, [cache(), []]),
       supervisor(Exmud.Engine.SystemSup, [])
     ]
 

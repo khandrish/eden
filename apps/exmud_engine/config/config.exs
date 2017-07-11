@@ -9,6 +9,10 @@ config :exmud_engine, Exmud.Engine.Repo,
   pool_size: 10,
   username: "exmud_engine"
 
+config :exmud_engine,
+  cache: :exmud_cache
+
+
 # It is also possible to import configuration files, relative to this
 # directory. For example, you can emulate configuration per environment
 # by uncommenting the line below and defining dev.exs, test.exs and such.

@@ -3,5 +3,7 @@ defmodule Exmud.Engine.Utils do
 
   import Exmud.Common.Utils
 
-  def engine_cfg(key), do: cfg(:exmud_engine)[key]
+  def cache, do: engine_cfg(:cache)
+
+  def engine_cfg(key), do: cfg(:exmud_engine, key)
 end
