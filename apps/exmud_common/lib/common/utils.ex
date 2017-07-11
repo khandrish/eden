@@ -1,8 +1,7 @@
 defmodule Exmud.Common.Utils do
   @moduledoc false
 
-  def cfg(key), do: Application.get_env(:exmud, key)
-  def engine_cfg(key), do: cfg(:engine)[key]
+  def cfg(first_key, second_key), do: Application.get_env(first_key, second_key)
 
   def deserialize(term), do: :erlang.binary_to_term(term)
   def serialize(term), do: :erlang.term_to_binary(term)
