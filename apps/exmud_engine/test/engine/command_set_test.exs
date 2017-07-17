@@ -6,26 +6,35 @@ defmodule Exmud.Engine.Test.CommandSetTest do
   require Logger
   use Exmud.Engine.Test.DBTestCase
 
-  describe "Multi Ecto usage tests for command sets: " do
-    setup [:create_new_object_multi]
+  describe "Tests for command sets:" do
+    setup [:create_new_object]
 
     @tag command_set: true
     @tag engine: true
-    test "command set tests", %{multi: multi, object_id: object_id} = _context do
+    test "lifecycle", %{object_id: object_id} = _context do
       callback_module = UUID.generate()
-      assert Repo.transaction(CommandSet.add(multi, "add command_set", object_id, callback_module)) == {:ok, %{"add command_set" => object_id}}
-      assert Repo.transaction(CommandSet.has(multi, "has command_set", object_id, callback_module)) == {:ok, %{"has command_set" => true}}
-      assert Repo.transaction(CommandSet.remove(multi, "remove command_set", object_id, callback_module)) == {:ok, %{"remove command_set" => true}}
-      assert Repo.transaction(CommandSet.has(multi, "has command_set", object_id, callback_module)) == {:ok, %{"has command_set" => false}}
+      assert CommandSet.add(object_id, callback_module) == {:ok, object_id}
+      assert CommandSet.has(object_id, callback_module) == {:ok, true}
+      assert CommandSet.has_any(object_id, ["foo"]) == {:ok, false}
+      assert CommandSet.has_any(object_id, [callback_module, "foo"]) == {:ok, true}
+      assert CommandSet.remove(object_id, callback_module) == {:ok, true}
+      assert CommandSet.has(object_id, callback_module) == {:ok, false}
+    end
+
+    @tag command_set: true
+    @tag engine: true
+    test "invalid input" do
+      callback_module = UUID.generate()
+      assert CommandSet.add(0, callback_module) == {:error, :no_such_object}
+      assert CommandSet.has(0, callback_module) == {:ok, false}
+      assert CommandSet.remove(0, callback_module) == {:error, :no_such_command_set}
     end
   end
 
-  defp create_new_object_multi(_context) do
+  defp create_new_object(_context) do
     key = UUID.generate()
-    {:ok, results} = Ecto.Multi.new()
-    |> Object.new("new_object", key)
-    |> Repo.transaction()
+    {:ok, object_id} = Object.new(key)
 
-    %{key: key, multi: Ecto.Multi.new(), object_id: results["new_object"]}
+    %{key: key, object_id: object_id}
   end
 end

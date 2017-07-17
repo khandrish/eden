@@ -159,7 +159,7 @@ defmodule Exmud.Session.SessionWorker do
 
   @doc false
   @spec start_link(any, any) :: {:ok, pid}
-  def start_link(key, oid), do: GenServer.start_link(__MODULE__, {key, oid}, name: via_tuple(@registry, key))
+  def start_link(key, oid), do: GenServer.start_link(__MODULE__, {key, oid}, name: via(@registry, key))
 
 
   #
@@ -250,7 +250,7 @@ defmodule Exmud.Session.SessionWorker do
     case active(key) do
       {:ok, false} -> {:error, :no_session_active}
       {:ok, true} ->
-        via = via_tuple(@registry, key)
+        via = via(@registry, key)
         :ok = GenServer.call(via, message)
         {:ok, :success}
     end

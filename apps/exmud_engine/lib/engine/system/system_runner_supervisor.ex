@@ -1,4 +1,4 @@
-defmodule Exmud.Engine.SystemSup do
+defmodule Exmud.Engine.SystemRunnerSupervisor do
   require Logger
   use Supervisor
 

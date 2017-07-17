@@ -1,5 +1,4 @@
 defmodule Exmud.Engine.Component do
-  alias Ecto.Multi
   alias Exmud.Engine.Repo
   alias Exmud.Engine.Schema.Component
   import Ecto.Query
@@ -26,12 +25,6 @@ defmodule Exmud.Engine.Component do
     {:ok, object_id}
   end
 
-  def add(%Ecto.Multi{} = multi, multi_key, object_id, component) do
-    Multi.run(multi, multi_key, fn(_) ->
-      add(object_id, component)
-    end)
-  end
-
   def get(components_or_object_ids) when is_list(components_or_object_ids) == false do
     {:ok, results} = components_or_object_ids
     |> List.wrap()
@@ -42,6 +35,7 @@ defmodule Exmud.Engine.Component do
 
   def get(components_or_object_ids) do
     {ids, components} = Enum.split_with(components_or_object_ids, &Kernel.is_integer/1)
+    components = Enum.map(components, &serialize/1)
 
     query =
       from component in Component,
@@ -58,12 +52,6 @@ defmodule Exmud.Engine.Component do
     {:ok, result}
   end
 
-  def get(%Ecto.Multi{} = multi, multi_key, components_or_object_ids) do
-    Multi.run(multi, multi_key, fn(_) ->
-      get(components_or_object_ids)
-    end)
-  end
-
   def get(object_id, component) do
     component =
       component_query(object_id, component)
@@ -75,12 +63,6 @@ defmodule Exmud.Engine.Component do
       component ->
         {:ok, normalize(component)}
     end
-  end
-
-  def get(%Ecto.Multi{} = multi, multi_key, object_id, component) do
-    Multi.run(multi, multi_key, fn(_) ->
-      get(object_id, component)
-    end)
   end
 
   def has(object_id, components) do
@@ -103,12 +85,6 @@ defmodule Exmud.Engine.Component do
     end
   end
 
-  def has(%Ecto.Multi{} = multi, multi_key, object_id, components) do
-    Multi.run(multi, multi_key, fn(_) ->
-      has(object_id, components)
-    end)
-  end
-
   def has_any(object_id, components) do
     components =
       components
@@ -127,20 +103,14 @@ defmodule Exmud.Engine.Component do
     end
   end
 
-  def has_any(%Ecto.Multi{} = multi, multi_key, object_id, components) do
-    Multi.run(multi, multi_key, fn(_) ->
-      has_any(object_id, components)
-    end)
-  end
-
   def remove(object_ids) do
     delete_query =
       from component in Component,
         where: component.object_id in ^List.wrap(object_ids)
 
-    delete_query
-    |> Repo.delete_all()
-    |> normalize_repo_result(true)
+    Repo.delete_all(delete_query)
+
+    {:ok, true}
   end
 
   def remove(object_id, components) do
@@ -156,12 +126,6 @@ defmodule Exmud.Engine.Component do
     Repo.delete_all(delete_query)
 
     {:ok, true}
-  end
-
-  def remove(%Ecto.Multi{} = multi, multi_key, object_id, component) do
-    Multi.run(multi, multi_key, fn(_) ->
-      remove(object_id, component)
-    end)
   end
 
 

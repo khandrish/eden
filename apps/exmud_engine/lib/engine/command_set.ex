@@ -12,8 +12,8 @@ defmodule Exmud.Engine.CommandSet do
   #
 
 
-  def add(object_id, callback_module) do
-    args = %{callback_module: serialize(callback_module), object_id: object_id}
+  def add(object_id, command_set) do
+    args = %{command_set: serialize(command_set), object_id: object_id}
 
     %CommandSet{}
     |> CommandSet.add(args)
@@ -32,54 +32,36 @@ defmodule Exmud.Engine.CommandSet do
     end
   end
 
-  def add(%Ecto.Multi{} = multi, multi_key, object_id, callback_module) do
-    Multi.run(multi, multi_key, fn(_) ->
-      add(object_id, callback_module)
-    end)
-  end
-
-  def has(object_id, callback_modules) do
-    callback_modules = List.wrap(callback_modules)
+  def has(object_id, command_sets) do
+    command_sets = List.wrap(command_sets)
 
     query =
-      from command_set in command_set_query(object_id, callback_modules),
+      from command_set in command_set_query(object_id, command_sets),
         select: count("*")
 
-    case Repo.one(query) == length(callback_modules) do
+    case Repo.one(query) == length(command_sets) do
       true -> {:ok, true}
       false -> {:ok, false}
     end
   end
 
-  def has(%Ecto.Multi{} = multi, multi_key, object_id, callback_module) do
-    Multi.run(multi, multi_key, fn(_) ->
-      has(object_id, callback_module)
-    end)
-  end
-
-  def has_any(object_id, callback_modules) do
-    callback_modules = List.wrap(callback_modules)
+  def has_any(object_id, command_sets) do
+    command_sets = List.wrap(command_sets)
 
     query =
-      from command_set in command_set_query(object_id, callback_modules),
+      from command_set in command_set_query(object_id, command_sets),
         select: count("*")
 
-    case Repo.one(query) == length(callback_modules) do
+    case Repo.one(query) > 0 do
       true -> {:ok, true}
       false -> {:ok, false}
     end
   end
 
-  def has_any(%Ecto.Multi{} = multi, multi_key, object_id, callback_module) do
-    Multi.run(multi, multi_key, fn(_) ->
-      has_any(object_id, callback_module)
-    end)
-  end
+  def remove(object_id, command_sets) do
+    command_sets = List.wrap(command_sets)
 
-  def remove(object_id, callback_modules) do
-    callback_modules = List.wrap(callback_modules)
-
-    command_set_query(object_id, callback_modules)
+    command_set_query(object_id, command_sets)
     |> Repo.delete_all()
     |> case do
       {0, _} -> {:error, :no_such_command_set}
@@ -88,21 +70,15 @@ defmodule Exmud.Engine.CommandSet do
     end
   end
 
-  def remove(%Ecto.Multi{} = multi, multi_key, object_id, callback_module) do
-    Multi.run(multi, multi_key, fn(_) ->
-      remove(object_id, callback_module)
-    end)
-  end
-
 
   #
   # Private functions
   #
 
 
-  defp command_set_query(object_id, callback_modules) do
+  defp command_set_query(object_id, command_sets) do
     from command_set in CommandSet,
-      where: command_set.callback_module in ^Enum.map(callback_modules, &serialize/1)
+      where: command_set.command_set in ^Enum.map(command_sets, &serialize/1)
         and command_set.object_id == ^object_id
   end
 end

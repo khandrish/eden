@@ -51,6 +51,7 @@ defmodule Exmud.Engine.Mixfile do
       {:ex_doc, ">= 0.14.5", only: :dev},
       {:excoveralls, ">= 0.7.0", only: :test},
       {:exmud_common, in_umbrella: true},
+      {:exmud_game, in_umbrella: true},
       {:faker, "~> 0.8.0"},
       {:inch_ex, ">= 0.5.6", only: :docs},
       {:postgrex, "~> 0.13.0"},

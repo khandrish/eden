@@ -27,12 +27,6 @@ defmodule Exmud.Engine.Attribute do
     end
   end
 
-  def add(%Ecto.Multi{} = multi, multi_key, object_id, component, attribute, data) do
-    Multi.run(multi, multi_key, fn(_) ->
-      add(object_id, component, attribute, data)
-    end)
-  end
-
   def equals(object_id, component, attribute, data) do
     query =
       from attribute in attribute_query(object_id, component, attribute),
@@ -46,12 +40,6 @@ defmodule Exmud.Engine.Attribute do
     end
   end
 
-  def equals(%Ecto.Multi{} = multi, multi_key, object_id, component, attribute, data) do
-    Multi.run(multi, multi_key, fn(_) ->
-      equals(object_id, component, attribute, data)
-    end)
-  end
-
   def get(object_id, component, attribute) do
     case Repo.one(attribute_query(object_id, component, attribute)) do
       nil -> {:error, :no_such_attribute}
@@ -59,23 +47,11 @@ defmodule Exmud.Engine.Attribute do
     end
   end
 
-  def get(%Ecto.Multi{} = multi, multi_key, object_id, component, attribute) do
-    Multi.run(multi, multi_key, fn(_) ->
-      get(object_id, component, attribute)
-    end)
-  end
-
   def has(object_id, component, attribute) do
     case Repo.one(attribute_query(object_id, component, attribute)) do
       nil -> {:ok, false}
       _object -> {:ok, true}
     end
-  end
-
-  def has(%Ecto.Multi{} = multi, multi_key, object_id, component, attribute) do
-    Multi.run(multi, multi_key, fn(_) ->
-      has(object_id, component, attribute)
-    end)
   end
 
   def remove(object_id, component, attribute) do
@@ -88,12 +64,6 @@ defmodule Exmud.Engine.Attribute do
     end
   end
 
-  def remove(%Ecto.Multi{} = multi, multi_key, object_id, component, attribute) do
-    Multi.run(multi, multi_key, fn(_) ->
-      remove(object_id, component, attribute)
-    end)
-  end
-
   def update(object_id, component, attribute, data) do
     query =
       from attribute in attribute_query(object_id, component, attribute),
@@ -103,12 +73,6 @@ defmodule Exmud.Engine.Attribute do
       {1, _} -> {:ok, object_id}
       {0, _} -> {:error, :no_such_attribute}
     end
-  end
-
-  def update(%Ecto.Multi{} = multi, multi_key, object_id, component, attribute, data) do
-    Multi.run(multi, multi_key, fn(_) ->
-      update(object_id, component, attribute, data)
-    end)
   end
 
 

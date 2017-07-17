@@ -14,5 +14,5 @@ defmodule Exmud.Common.Utils do
   def normalize_repo_result({:ok, _}, desired_result), do: {:ok, desired_result}
   def normalize_repo_result({:error, changeset}, _), do: {:error, normalize_ecto_errors(changeset.errors)}
 
-  def via_tuple(registry, key), do: {:via, Registry, {registry, key}}
+  def via(registry, key), do: {:via, Registry, {registry, key}}
 end

@@ -34,23 +34,11 @@ defmodule Exmud.Engine.Tag do
     end
   end
 
-  def add(%Ecto.Multi{} = multi, multi_tag, object_id, category, tag) do
-    Multi.run(multi, multi_tag, fn(_) ->
-      add(object_id, category, tag)
-    end)
-  end
-
   def has(object_id, category, tag) do
     case Repo.one(tag_query(object_id, category, tag)) do
       nil -> {:ok, false}
       _object -> {:ok, true}
     end
-  end
-
-  def has(%Ecto.Multi{} = multi, multi_tag, object_id, category, tag) do
-    Multi.run(multi, multi_tag, fn(_) ->
-      has(object_id, category, tag)
-    end)
   end
 
   def remove(object_id, category, tag) do
@@ -61,12 +49,6 @@ defmodule Exmud.Engine.Tag do
       {0, _} -> {:error, :no_such_tag}
       _ -> {:error, :unknown}
     end
-  end
-
-  def remove(%Ecto.Multi{} = multi, multi_tag, object_id, category, tag) do
-    Multi.run(multi, multi_tag, fn(_) ->
-      remove(object_id, category, tag)
-    end)
   end
 
 

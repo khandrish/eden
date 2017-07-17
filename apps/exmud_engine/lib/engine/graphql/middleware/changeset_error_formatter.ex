@@ -1,7 +1,5 @@
 defmodule Exmud.Engine.Graphql.Middleware.ChangesetErrorFormatter do
-  # import Ecto
   import Ecto.Changeset
-  # import Ecto.Query
 
   def call(%{errors: []} = res, _), do: res
 

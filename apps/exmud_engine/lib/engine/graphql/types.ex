@@ -78,7 +78,7 @@ defmodule Exmud.Engine.Graphql.Types do
     field :string, :string
 
     @desc "The callback module to be used if the callback string is matched."
-    field :callback_module, :binary
+    field :callback_function, :binary
 
     @desc "The object that the callback belongs to."
     field :object_id, :object, resolve: assoc(:object)

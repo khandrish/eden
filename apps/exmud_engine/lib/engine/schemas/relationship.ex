@@ -4,15 +4,20 @@ defmodule Exmud.Engine.Schema.Relationship do
   schema "relationship" do
     field :relationship, :string
     field :data, :binary
-    belongs_to :target, Exmud.Engine.Schema.Object, foreign_key: :target_id
-    belongs_to :object, Exmud.Engine.Schema.Object, foreign_key: :object_id
+    belongs_to :to, Exmud.Engine.Schema.Object, foreign_key: :to_id
+    belongs_to :from, Exmud.Engine.Schema.Object, foreign_key: :from_id
   end
 
-  def changeset(location, params \\ %{}) do
-    location
-    |> cast(params, [:object_id, :relationship, :target_id, :data])
-    |> validate_required([:object_id, :relationship, :target_id, :data])
-    |> foreign_key_constraint(:object_id)
-    |> foreign_key_constraint(:target_id)
+  def add(relationship, params \\ %{}) do
+    relationship
+    |> cast(params, [:data, :from_id, :relationship, :to_id])
+    |> validate_required([:data, :from_id, :relationship, :to_id])
+    |> foreign_key_constraint(:to_id)
+    |> foreign_key_constraint(:from_id)
+  end
+
+  def update(relationship, params \\ %{}) do
+    relationship
+    |> cast(params, [:relationship, :data])
   end
 end

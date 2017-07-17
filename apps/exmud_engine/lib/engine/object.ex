@@ -1,5 +1,4 @@
 defmodule Exmud.Engine.Object do
-  alias Ecto.Multi
   alias Exmud.Engine.Repo
   alias Exmud.Engine.Schema.Object
   import Ecto.Query
@@ -15,7 +14,7 @@ defmodule Exmud.Engine.Object do
 
 
   def new(key) do
-    obj = Object.new(%Object{}, %{key: key})
+    Object.new(%Object{}, %{key: key})
     |> Repo.insert()
     |> case do
       {:ok, object} -> {:ok, object.id}
@@ -23,21 +22,9 @@ defmodule Exmud.Engine.Object do
     end
   end
 
-  def new(%Ecto.Multi{} = multi, multi_key, key) do
-    Multi.run(multi, multi_key, fn(_) ->
-      new(key)
-    end)
-  end
-
   def delete(object_id) do
     {:ok, _} = Repo.delete(%Object{id: object_id})
     {:ok, object_id}
-  end
-
-  def delete(%Ecto.Multi{} = multi, multi_key, object_id) do
-    Multi.run(multi, multi_key, fn(_) ->
-      delete(object_id)
-    end)
   end
 
   def get(objects) do
@@ -67,23 +54,6 @@ defmodule Exmud.Engine.Object do
     {:ok, results}
   end
 
-  def get(%Ecto.Multi{} = multi,
-          multi_key,
-          objects) do
-    Multi.run(multi, multi_key, fn(_) ->
-      get(multi, multi_key, objects, @get_inclusion_filters)
-    end)
-  end
-
-  def get(%Ecto.Multi{} = multi,
-          multi_key,
-          objects,
-          inclusion_filters) do
-    Multi.run(multi, multi_key, fn(_) ->
-      get(objects, inclusion_filters)
-    end)
-  end
-
   def query(object_query) do
     result =
       object_query
@@ -91,12 +61,6 @@ defmodule Exmud.Engine.Object do
       |> Repo.all()
 
     {:ok, result}
-  end
-
-  def query(%Ecto.Multi{} = multi, multi_key, object_query) do
-    Multi.run(multi, multi_key, fn(_) ->
-      query(object_query)
-    end)
   end
 
 
@@ -111,12 +75,12 @@ defmodule Exmud.Engine.Object do
     dynamic = build_where(object_query)
 
     from object in Object,
-      inner_join: callback in assoc(object, :callbacks),
-      inner_join: command_set in assoc(object, :command_sets),
-      inner_join: component in assoc(object, :components),
-      inner_join: attribute in assoc(component, :attributes),
-      inner_join: relationship in assoc(object, :relationships),
-      inner_join: tag in assoc(object, :tags),
+      left_join: callback in assoc(object, :callbacks),
+      left_join: command_set in assoc(object, :command_sets),
+      left_join: component in assoc(object, :components),
+      left_join: attribute in assoc(component, :attributes),
+      left_join: relationship in assoc(object, :relationships),
+      left_join: tag in assoc(object, :tags),
       select: object.id,
       where: ^dynamic
   end
@@ -131,10 +95,9 @@ defmodule Exmud.Engine.Object do
     new_dynamic = actually_build_where(nil, type, nested_checks)
 
     dynamic =
-      case {mode, dynamic} do
-        {_, nil} -> new_dynamic
-        {:and, dynamic} -> dynamic(^dynamic and (^new_dynamic))
-        {:or, dynamic} -> dynamic(^dynamic or (^new_dynamic))
+      case mode do
+        :and -> dynamic(^dynamic and (^new_dynamic))
+        :or -> dynamic(^dynamic or (^new_dynamic))
       end
 
     actually_build_where(dynamic, mode, checks)
@@ -157,23 +120,31 @@ defmodule Exmud.Engine.Object do
   end
 
   defp build_equality_check_dynamic({:attribute, {component, attribute}}) do
-    dynamic([object, callback, command_set, component, attribute], (attribute.attribute == ^attribute and component.component == ^component))
+    dynamic([object, callback, command_set, component, attribute], (attribute.attribute == ^attribute and component.component == ^serialize(component)))
   end
 
   defp build_equality_check_dynamic({:callback, callback}) do
-    dynamic([object, callback], callback.callback == ^callback)
+    dynamic([object, callback], callback.key == ^callback)
   end
 
   defp build_equality_check_dynamic({:command_set, command_set}) do
-    dynamic([object, callback, command_set], command_set.command_set == ^command_set)
+    dynamic([object, callback, command_set], command_set.command_set == ^serialize(command_set))
   end
 
   defp build_equality_check_dynamic({:component, component}) do
-    dynamic([object, callback, command_set, component], component.component == ^component)
+    dynamic([object, callback, command_set, component], component.component == ^serialize(component))
   end
 
   defp build_equality_check_dynamic({:object, key}) do
     dynamic([object], object.key == ^key)
+  end
+
+  defp build_equality_check_dynamic({:relationship, {relationship, to, data}}) do
+    dynamic([object, callback, command_set, component, attribute, relationship], (relationship.relationship == ^relationship and relationship.to_id == ^to and relationship.data == ^serialize(data)))
+  end
+
+  defp build_equality_check_dynamic({:relationship, {relationship, to}}) do
+    dynamic([object, callback, command_set, component, attribute, relationship], (relationship.relationship == ^relationship and relationship.to_id == ^to))
   end
 
   defp build_equality_check_dynamic({:relationship, relationship}) do
@@ -272,7 +243,7 @@ defmodule Exmud.Engine.Object do
       Enum.map(objects, fn(object) ->
         callbacks =
           Enum.map(object.callbacks, fn(callback) ->
-            %{callback | callback_module: deserialize(callback.callback_module)}
+            %{callback | callback_function: deserialize(callback.callback_function)}
           end)
 
         %{object | callbacks: callbacks}
@@ -286,7 +257,7 @@ defmodule Exmud.Engine.Object do
       Enum.map(objects, fn(object) ->
         command_sets =
           Enum.map(object.command_sets, fn(command_set) ->
-            %{command_set | callback_module: deserialize(command_set.callback_module)}
+            %{command_set | command_set: deserialize(command_set.command_set)}
           end)
         %{object | command_sets: command_sets}
       end)

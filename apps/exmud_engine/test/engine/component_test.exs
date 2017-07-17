@@ -1,34 +1,53 @@
 defmodule Exmud.Engine.Test.ComponentTest do
   alias Ecto.UUID
+  alias Exmud.Engine.Attribute
   alias Exmud.Engine.Component
   alias Exmud.Engine.Object
   alias Exmud.Engine.Repo
   require Logger
   use Exmud.Engine.Test.DBTestCase
 
-  describe "Multi Ecto usage tests for components: " do
-    setup [:create_new_object_multi]
+  describe "Usage tests for components: " do
+    setup [:create_new_object]
 
     @tag component: true
     @tag engine: true
-    test "component tests", %{multi: multi, object_id: object_id} = _context do
+    test "lifecycle", %{object_id: object_id} = _context do
       component = UUID.generate()
-      assert Repo.transaction(Component.add(multi, "add component", object_id, component)) == {:ok, %{"add component" => object_id}}
-      assert Repo.transaction(Component.has(multi, "has component", object_id, component)) == {:ok, %{"has component" => true}}
-      assert Repo.transaction(Component.has_any(multi, "has_any component", object_id, component)) == {:ok, %{"has_any component" => true}}
-      {:ok, %{"get component" => result}} = Repo.transaction(Component.get(multi, "get component", object_id, component))
+      component2 = UUID.generate()
+      component3 = UUID.generate()
+      assert Component.add(object_id, component) == {:ok, object_id}
+      assert Component.add(object_id, component2) == {:ok, object_id}
+      assert Component.add(object_id, component3) == {:ok, object_id}
+      assert Component.has(object_id, component) == {:ok, true}
+      assert Component.has_any(object_id, component) == {:ok, true}
+      {:ok, result} = Component.get(object_id, component)
       assert result.component == component
-      assert Repo.transaction(Component.remove(multi, "remove component", object_id, component)) == {:ok, %{"remove component" => true}}
-      assert Repo.transaction(Component.has(multi, "has component", object_id, component)) == {:ok, %{"has component" => false}}
+      assert Component.remove(object_id, component) == {:ok, true}
+      assert Component.has(object_id, component) == {:ok, false}
+      assert Component.remove(object_id) == {:ok, true}
+      assert Component.has(object_id, component2) == {:ok, false}
+      assert Component.has(object_id, component3) == {:ok, false}
+    end
+
+    @tag component: true
+    @tag engine: true
+    test "get tests", %{object_id: object_id} = _context do
+      component = UUID.generate()
+      attribute_key = UUID.generate()
+      attribute_data = UUID.generate()
+      assert Component.add(object_id, component) == {:ok, object_id}
+      assert Attribute.add(object_id, component, attribute_key, attribute_data) == {:ok, object_id}
+      {:ok, comp} = Component.get(object_id)
+      {:ok, comp2} = Component.get(component)
+      assert comp == comp2
     end
   end
 
-  defp create_new_object_multi(_context) do
+  defp create_new_object(_context) do
     key = UUID.generate()
-    {:ok, results} = Ecto.Multi.new()
-    |> Object.new("new_object", key)
-    |> Repo.transaction()
+    {:ok, object_id} = Object.new(key)
 
-    %{key: key, multi: Ecto.Multi.new(), object_id: results["new_object"]}
+    %{key: key, object_id: object_id}
   end
 end

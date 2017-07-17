@@ -5,6 +5,7 @@ defmodule Exmud.DB.Repo.EngineRepo.Migrations.InitializeEngineRepo do
     # Tables which stand on their own and have no relationships
     create table(:system) do
       add :key, :string
+      add :options, :binary
       add :state, :binary
     end
     create unique_index(:system, [:key])
@@ -36,22 +37,21 @@ defmodule Exmud.DB.Repo.EngineRepo.Migrations.InitializeEngineRepo do
 
     create table(:callback) do
       add :object_id, references(:object, [on_delete: :delete_all])
-      add :string, :string
-      add :callback_module, :binary
+      add :key, :string
+      add :callback_function, :binary
     end
-    create index(:callback, [:callback_module])
     create index(:callback, [:object_id])
-    create index(:callback, [:string])
-    create unique_index(:callback, [:object_id, :string])
+    create index(:callback, [:key])
+    create unique_index(:callback, [:object_id, :key])
 
     create table(:command_set) do
       add :object_id, references(:object, [on_delete: :delete_all])
-      add :callback_module, :binary
+      add :command_set, :binary
 
       timestamps()
     end
     create index(:command_set, [:object_id])
-    create unique_index(:command_set, [:callback_module, :object_id])
+    create unique_index(:command_set, [:command_set, :object_id])
 
     create table(:lock) do
       add :object_id, references(:object, [on_delete: :delete_all])
@@ -62,19 +62,21 @@ defmodule Exmud.DB.Repo.EngineRepo.Migrations.InitializeEngineRepo do
     create index(:lock, [:type])
 
     create table(:relationship) do
-      add :object_id, references(:object, [on_delete: :delete_all])
+      add :from_id, references(:object, [on_delete: :delete_all])
       add :relationship, :string
       add :data, :binary
-      add :subject_id, references(:object, [on_delete: :delete_all])
+      add :to_id, references(:object, [on_delete: :delete_all])
     end
-    create index(:relationship, [:object_id])
+    create index(:relationship, [:from_id])
     create index(:relationship, [:relationship])
-    create index(:relationship, [:subject_id])
-    create unique_index(:relationship, [:object_id, :relationship, :subject_id])
+    create index(:relationship, [:to_id])
+    create unique_index(:relationship, [:from_id, :relationship, :to_id])
 
     create table(:script) do
-      add :object_id, references(:object, [on_delete: :delete_all])
+      add :callback_module, :binary
       add :key, :string
+      add :object_id, references(:object, [on_delete: :delete_all])
+      add :options, :binary
       add :state, :binary
     end
     create index(:script, [:key])

@@ -2,17 +2,14 @@ defmodule Exmud.Engine.System do
   @moduledoc """
   A behaviour module for implementing a system within the Exmud engine.
 
-  Systems form the backbone of the engine. They drive time and event based
-  actions, covering everything from weather effects to triggering AI actions.
-
-  Systems do not have to run on a set schedule and instead can only react to
-  events, and vice versa. See documentation for `c:initialize/1` for details.
+  Systems form the backbone of the engine. They drive time and event based actions, covering everything from weather
+  effects to triggering actions. Transitioning between a set schedule, dynamic schedule, and events is seamless and can
+  be controlled entirely at runtime simply by modifying the returned system state.
 
   ## Callbacks
-  There are five callbacks required to be implemented in a system. By adding
-  `use Exmud.System` to your module, Elixir will automatically define all
-  five callbacks for you, leaving it up to you to implement the ones you want
-  to customize.
+  There are five callbacks required to be implemented in a system. By adding `use Exmud.System` to your module, Exmud
+  will automatically define all five callbacks for you, leaving it up to you to implement the ones you want to
+  customize.
   """
 
 
@@ -82,22 +79,22 @@ defmodule Exmud.Engine.System do
       @behaviour Exmud.Engine.System
 
       @doc false
-      def handle_message(message, state), do: {message, state}
+      def handle_message(message, state), do: {:ok, message, state}
 
       @doc false
-      def initialize(args), do: Map.new()
+      def initialize(args, initial_state \\ %{}), do: {:ok, initial_state}
 
       @doc false
-      def run(state), do: {state, :never}
+      def run(state), do: {:ok, state, :never}
 
       @doc false
-      def start(_args, state), do: {state, :never}
+      def start(_args, state), do: {:ok, state, :never}
 
       @doc false
-      def stop(_args, state), do: state
+      def stop(_args, state), do: {:ok, state}
 
       defoverridable [handle_message: 2,
-                      initialize: 1,
+                      initialize: 2,
                       run: 1,
                       start: 2,
                       stop: 2]
@@ -115,8 +112,12 @@ defmodule Exmud.Engine.System do
   alias Exmud.Engine.Schema.System
   import Ecto.Query
   import Exmud.Common.Utils
+  import Exmud.Engine.Utils
+  require Logger
 
-  @system_category "system"
+  @default_system_options engine_cfg(:default_system_options)
+  @system_registry system_registry()
+  @system_cache_category :system_cache
 
   @doc """
   Call a running system with a message.
@@ -129,20 +130,24 @@ defmodule Exmud.Engine.System do
   Cast a message to a running system.
   """
   def cast(key, message) do
-    send_message(:cast, key, message)
+    case send_message(:cast, key, message) do
+      :ok -> {:ok, true}
+      error -> error
+    end
   end
 
   @doc """
   Get the state of a system.
   """
   def get_state(key) do
-    if running?(key) do
-      case Cache.get(key, @system_category) do
-        {:ok, pid} ->  GenServer.call(pid, :state)
-        {:error, :no_such_key} -> do_get_state(key)
-      end
-    else
-      do_get_state(key)
+    case Registry.lookup(@system_registry, key) do
+      [] -> do_get_state(key)
+      [{system, _metadata}] ->
+        try do
+          {:ok, GenServer.call(system, :state)}
+        catch
+          :exit, {:noproc, _} -> do_get_state(key)
+        end
     end
   end
 
@@ -150,10 +155,10 @@ defmodule Exmud.Engine.System do
   Purge all the data from a system if it is not running.
   """
   def purge(key) do
-    case running?(key) do
-      true ->
+    case running(key) do
+      {:ok, true} ->
         {:error, :system_running}
-      false ->
+      {:ok, false} ->
         system_query(key)
         |> Repo.one()
         |> case do
@@ -168,20 +173,27 @@ defmodule Exmud.Engine.System do
   @doc """
   Check to see if a system is running.
   """
-  def running?(key) do
-    {result, _reply} = Cache.get(key, @system_category)
-    result == :ok
+  def running(key) do
+    result = Registry.lookup(@system_registry, key)
+    {:ok, result != []}
   end
 
   @doc """
   Starts a system if it is not already started.
   """
-  def start(key, callback_module, args \\ %{}) do
-    if running?(key) do
+  def start(key, args \\ %{}) do
+    if running(key) == {:ok, true} do
       {:error, :already_started}
     else
-      {:ok, _} = Supervisor.start_child(Exmud.Engine.SystemSup, [key, callback_module, args])
-      :ok
+      case get_registered_callback(key) do
+        {:ok, {callback_module, options}} ->
+          case Supervisor.start_child(Exmud.Engine.SystemRunnerSupervisor, [key, callback_module, args, options]) do
+            {:ok, _} -> {:ok, true}
+            error -> error
+          end
+        error ->
+          error
+      end
     end
   end
 
@@ -189,10 +201,38 @@ defmodule Exmud.Engine.System do
   Stops a system if it is started.
   """
   def stop(key, args \\ %{}) do
-    case Cache.get(key, @system_category) do
-      {:ok, pid} ->  GenServer.call(pid, {:stop, args})
-      {:error, :no_such_key} -> {:error, :system_not_running}
+    case Registry.lookup(@system_registry, key) do
+      [] ->  {:error, :system_not_running}
+      [{system, _metadata}] -> GenServer.call(system, {:stop, args})
     end
+  end
+
+  def register(key, callback_module, options \\ @default_system_options) do
+    Logger.debug("Registering system with key `#{key}` and module `#{inspect(callback_module)}`")
+    Cache.set(@system_cache_category, key, {callback_module, Keyword.merge(options, @default_system_options)})
+  end
+
+  @doc """
+  Check to see if there is a callback module registered with a given key.
+  """
+  def registered(key) do
+    Cache.exists?(@system_cache_category, key)
+  end
+
+  def get_registered_callback(key) do
+    Logger.debug("Finding registered system for key `#{key}`")
+    case Cache.get(@system_cache_category, key) do
+      {:missing, _} ->
+        Logger.warn("Attempt to find system callback module for key `#{key}` failed")
+        {:error, :no_such_system}
+      {:ok, callback} ->
+        {:ok, callback}
+    end
+  end
+
+  @doc false
+  def unregister(key) do
+    Cache.delete(@system_cache_category, key)
   end
 
 
@@ -201,7 +241,7 @@ defmodule Exmud.Engine.System do
   #
 
 
-  def do_get_state(key) do
+  defp do_get_state(key) do
     system_query(key)
     |> Repo.one()
     |> case do
@@ -211,11 +251,11 @@ defmodule Exmud.Engine.System do
   end
 
 
-  def send_message(method, key, message) do
-    case Cache.get(key, @system_category) do
-      {:error, :no_such_key} -> {:error, :system_not_running}
-      {:ok, pid} ->
-        apply(GenServer, method, [pid, {:message, message}])
+  defp send_message(method, key, message) do
+    case Registry.lookup(@system_registry, key) do
+      [] -> {:error, :system_not_running}
+      [{system, _metadata}] ->
+        apply(GenServer, method, [system, {:message, message}])
     end
   end
 

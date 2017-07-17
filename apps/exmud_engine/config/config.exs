@@ -10,7 +10,10 @@ config :exmud_engine, Exmud.Engine.Repo,
   username: "exmud_engine"
 
 config :exmud_engine,
-  cache: :exmud_cache
+  cache: :exmud_cache,
+  default_script_options: [auto_start: true, delay: 0, run_interval: 1_000],
+  default_system_options: [auto_start: true, run_interval: 1_000],
+  system_registry: :exmud_engine_system_registry
 
 
 # It is also possible to import configuration files, relative to this

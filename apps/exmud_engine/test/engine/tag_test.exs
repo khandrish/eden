@@ -6,34 +6,31 @@ defmodule Exmud.Engine.Test.TagTest do
   use Exmud.Engine.Test.DBTestCase
 
   describe "Multi Ecto usage tests for tags:" do
-    setup [:create_new_object_multi]
+    setup [:create_new_object]
 
     @tag tag: true
-    @tag object: true
-    test "lifecycle", %{multi: multi, object_id: object_id} = _context do
-      assert Repo.transaction(Tag.has(multi, "has tag", object_id, "foo", "bar")) == {:ok, %{"has tag" => false}}
-      assert Repo.transaction(Tag.add(multi, "add tag", object_id, "foo", "bar")) == {:ok, %{"add tag" => object_id}}
-      assert Repo.transaction(Tag.has(multi, "has tag", object_id, "foo", "bar")) == {:ok, %{"has tag" => true}}
-      assert Repo.transaction(Tag.remove(multi, "remove tag", object_id, "foo", "bar")) == {:ok, %{"remove tag" => object_id}}
-      assert Repo.transaction(Tag.has(multi, "has tag", object_id, "foo", "bar")) == {:ok, %{"has tag" => false}}
+    @tag engine: true
+    test "lifecycle", %{object_id: object_id} = _context do
+      assert Tag.has(object_id, "foo", "bar") == {:ok, false}
+      assert Tag.add(object_id, "foo", "bar") == {:ok, object_id}
+      assert Tag.has(object_id, "foo", "bar") == {:ok, true}
+      assert Tag.remove(object_id, "foo", "bar") == {:ok, object_id}
+      assert Tag.has(object_id, "foo", "bar") == {:ok, false}
     end
 
     @tag tag: true
-    @tag object: true
-    test "invalid cases", %{multi: multi} = _context do
-      assert Repo.transaction(Tag.add(multi, "add tag", "invalid id", :invalid_tag, "bar")) ==
-        {:error, "add tag", :no_such_object, %{}}
-      assert Repo.transaction(Tag.has(multi, "has tag", 0, "foo", "bar")) == {:ok, %{"has tag" => false}}
-      assert Repo.transaction(Tag.remove(multi, "remove tag", 0, "foo", "bar")) == {:error, "remove tag", :no_such_tag, %{}}
+    @tag engine: true
+    test "invalid cases" do
+      assert Tag.add("invalid id", :invalid_tag, "bar") == {:error, :no_such_object}
+      assert Tag.has(0, "foo", "bar") == {:ok, false}
+      assert Tag.remove(0, "foo", "bar") == {:error, :no_such_tag}
     end
   end
 
-  defp create_new_object_multi(_context) do
-    tag = UUID.generate()
-    {:ok, results} = Ecto.Multi.new()
-    |> Object.new("new_object", tag)
-    |> Repo.transaction()
+  defp create_new_object(_context) do
+    key = UUID.generate()
+    {:ok, object_id} = Object.new(key)
 
-    %{tag: tag, multi: Ecto.Multi.new(), object_id: results["new_object"]}
+    %{key: key, object_id: object_id}
   end
 end
