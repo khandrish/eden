@@ -1,10 +1,6 @@
 defmodule Exmud.Engine.Graphql.Types do
-  alias Exmud.DB
-  alias Exmud.DB.Model.{AttributeModel, CallbackModel, CommandSetModel, ComponentModel, LockModel, ObjectModel,
-                        RelationshipModel, ScriptModel, SystemModel, TagModel}
-  import Ecto.Query
   use Absinthe.Schema.Notation
-  use Absinthe.Ecto, repo: Exmud.DB.Repo.EngineRepo
+  use Absinthe.Ecto, repo: Exmud.Engine.Repo
 
 
   object :object do
@@ -159,8 +155,4 @@ defmodule Exmud.Engine.Graphql.Types do
     parse &:erlang.binary_to_term(&1)
     serialize &:erlang.term_to_binary(&1)
   end
-
-  def parse(binary), do: :erlang.binary_to_term(binary)
-
-  def serialize(term), do: :erlang.term_to_binary(term)
 end

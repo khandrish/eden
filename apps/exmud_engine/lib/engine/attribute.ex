@@ -1,5 +1,4 @@
 defmodule Exmud.Engine.Attribute do
-  alias Ecto.Multi
   alias Exmud.Engine.Component
   alias Exmud.Engine.Repo
   alias Exmud.Engine.Schema.Attribute

@@ -8,18 +8,11 @@ defmodule Exmud.Engine.Callback do
   are being processed.
 
   When a custom callback for an object has not been registered, a default implementation may be used instead. These can
-  be specified by passing an atom to be used as a key to check the config, which is how the engine behaves for its
-  internal hooks, or by passing a module name to be called directly. Default implementations have been provided for all
+  be specified by passing a key to be used as a key to check the config, which is how the engine behaves for its
+  internal hooks, or by passing a function to be called directly. Default implementations have been provided for all
   engine hooks. This logic can be applied in application code as well when writing scripts and commands.
   """
 
-  @doc """
-  A callback module is an arbitrary hook to enable the insertion of custom logic into the processing flow of a command
-  or script.
-  """
-  @callback execute(term) :: term
-
-  alias Ecto.Multi
   alias Exmud.Engine.Cache
   alias Exmud.Engine.Repo
   alias Exmud.Engine.Schema.Callback

@@ -13,13 +13,13 @@ defmodule Exmud.Engine.SystemRunner do
 
 
   #
-  # Worker Callback
+  # Worker callback used by the supervisor when starting a new system runner.
   #
 
 
   @doc false
-  def start_link(key, callback_module, args, options) do
-    case GenServer.start_link(__MODULE__, {key, callback_module, args, options}, name: via(@system_registry, key)) do
+  def start_link(key, callback_module, args) do
+    case GenServer.start_link(__MODULE__, {key, callback_module, args}, name: via(@system_registry, key)) do
       {:error, {:already_started, _pid}} -> {:error, :already_started}
       result -> result
     end
@@ -27,90 +27,97 @@ defmodule Exmud.Engine.SystemRunner do
 
 
   #
-  # GenServer Callbacks
+  # Initialization of the GenServer and the system it is managing.
   #
 
 
   @doc false
-  def init({key, callback_module, args, options}) do
+  def init({key, callback_module, initialization_args}) do
     system =
-      from(system in System, where: system.key == ^key)
-      |> Repo.one()
+      key
+      |> load_system()
+      |> normalize_system(callback_module)
 
-    case do_initialization(key, callback_module, system, args, options) do
-      {:ok, initial_state, system} ->
-        callback_module.start(args, initial_state)
-        |> normalize_noreply_result(options)
-        |> case do
-          {:ok, new_state, timeout} ->
-            maybe_queue_run(timeout)
-            Logger.info("System started with key `#{key}` and callback module `#{callback_module}`.")
-            {:ok, %{callback_module: callback_module, options: options, state: new_state, system: system}}
-          {:error, error} ->
-            Logger.error("Attempt to start system with key `#{key}` and callback module `#{callback_module}` failed with error `#{error}`.")
-            {:stop, error}
-        end
-      {:error, reason} ->
-        {:stop, reason}
+    initialization_result = system.callback_module.initialize(initialization_args, system.state)
+
+    if elem(initialization_result, 0) == :ok do
+      Logger.info("System started with key `#{key}` and callback module `#{callback_module}`.")
+
+      state = elem(initialization_result, 1)
+      {:ok, system} = Repo.insert_or_update(System.new(system, %{key: key, state: serialize(state)}))
+      system = %{system | :state => deserialize(system.state)}
+
+      state = %{callback_module: callback_module, state: state, system: system}
+
+      case initialization_result do
+        {_, _} ->
+          {:ok, state}
+        {_, _, time} ->
+          Process.send_after(self(), :auto_run, time)
+
+          {:ok, state}
+      end
+    else
+      {:stop, elem(initialization_result, 1)}
+    end
+  end
+
+  @doc false
+  def handle_call(:manual_run, _from, data) do
+    doo_run_run(data)
+  end
+
+
+  @doc false
+  def handle_call({:message, message}, _from, data) do
+    data.callback_module.handle_message(message, data.state)
+    |> case do
+      {:ok, response, new_state} ->
+        {:reply, {:ok, response}, Map.put(data, :state, new_state)}
+      {:ok, response, new_state, time} ->
+        Process.send_after(self(), :auto_run, time)
+
+        {:reply, {:ok, response}, Map.put(data, :state, new_state)}
+      {:error, error, new_state} ->
+        {:reply, {:error, error}, Map.put(data, :state, new_state)}
+      {:stop, response, new_state} ->
+        {:stop, :normal, {:ok, response}, Map.put(data, :state, new_state)}
     end
   end
 
   @doc false
   def handle_call(:state, _from, %{state: state} = data) do
-    {:reply, state, data}
+    {:reply, {:ok, state}, data}
   end
 
   @doc false
-  def handle_call({:stop, args}, _from, %{callback_module: callback_module, system: system, state: state} = _data) do
-    case callback_module.stop(args, state) do
-      {:ok, new_state} ->
-        system
+  def handle_call({:stop, args}, _from, data) do
+    case data.callback_module.stop(args, data.state) do
+      {:ok, reply, new_state} ->
+        data.system
         |> System.update(%{state: serialize(new_state)})
         |> Repo.update()
 
-        {:stop, :normal, {:ok, true}, system}
+        {:stop, :normal, {:ok, reply}, new_state}
       {:error, error, new_state} ->
         {:stop, :normal, {:error, error}, new_state}
     end
   end
 
   @doc false
-  def handle_call({:message, message}, _from,  %{callback_module: callback_module, options: options, state: state} = data) do
-    callback_module.handle_message(message, state)
-    |> normalize_reply_result(options)
-    |> case do
-      {:ok, response, new_state, timeout} ->
-        maybe_queue_run(timeout)
-        {:reply, {:ok, response}, Map.put(data, :state, new_state)}
-      {:error, error, new_state} ->
-        {:reply, {:error, error}, Map.put(data, :state, new_state)}
-      {:stop, reason, new_state} ->
-        {:stop, reason, {:ok, :stopping}, Map.put(data, :state, new_state)}
-      {:stop, reason, response, new_state} ->
-        {:stop, reason, response, Map.put(data, :state, new_state)}
-    end
-  end
-
-  @doc false
-  def handle_cast({:message, message}, %{callback_module: callback_module, state: state} = data) do
-    {:ok, _response, new_state} = callback_module.handle_message(message, state)
+  def handle_cast({:message, message}, data) do
+    {:ok, _response, new_state} = data.callback_module.handle_message(message, data.state)
 
     {:noreply, Map.put(data, :state, new_state)}
   end
 
   @doc false
-  def handle_info(:run, %{callback_module: callback_module, options: options, state: state, system: system} = data) do
-    state
-    |> callback_module.run()
-    |> normalize_noreply_result(options)
-    |> case do
-      {:ok, new_state, timeout} ->
-        maybe_queue_run(timeout)
-        system = update_and_maybe_persist(system, new_state)
-        {:noreply, %{data | :state => new_state, :system => system}}
-      {:error, error, new_state} ->
-        system = update_and_maybe_persist(system, new_state)
-        {:stop, {:callback_error, error}, system.state}
+  def handle_info(:auto_run, data) do
+    case doo_run_run(data) do
+      {:reply, _, new_state} ->
+        {:noreply, new_state}
+      {:stop, reason, _reply, state} ->
+        {:stop, reason, state}
     end
   end
 
@@ -119,68 +126,42 @@ defmodule Exmud.Engine.SystemRunner do
   # Private Functions
   #
 
-  defp do_initialization(key, callback_module, nil, args, options) do
-    system = %System{}
-    args
-    |> callback_module.initialize()
-    |> normalize_noreply_result(options)
+  defp doo_run_run(data) do
+    data.state
+    |> data.callback_module.run()
     |> case do
-      {:error, _reason} = error ->
-        error
-      ok_result ->
-        state = elem(ok_result, 1)
-        {:ok, system} =
-          System.new(system, %{key: key, options: serialize(options), state: serialize(state)})
-          |> Repo.insert()
+      {:ok, reply, new_state} ->
+        system = update_and_persist(data.system, new_state)
+        {:reply, {:ok, reply}, %{data | :state => new_state, :system => system}}
+      {:ok, reply, new_state, time} ->
+        Process.send_after(self(), :auto_run, time)
 
-        {:ok, state, system}
+        system = update_and_persist(data.system, new_state)
+        {:reply, {:ok, reply}, %{data | :state => new_state, :system => system}}
+      {:error, reply, new_state} ->
+        system = update_and_persist(data.system, new_state)
+        {:reply, {:error, reply}, %{data | :state => new_state, :system => system}}
+      {:stop, reply, new_state} ->
+        system = update_and_persist(data.system, new_state)
+        {:stop, :normal, {:ok, reply}, %{data | :state => new_state, :system => system}}
     end
   end
 
-  defp do_initialization(_key, callback_module, system, args, options) do
-    initial_state = deserialize(system.state)
-    callback_module.initialize(args, initial_state)
-    |> normalize_noreply_result(options)
-    |> case do
-      {:error, _reason} = error ->
-        error
-      ok_result ->
-        state = elem(ok_result, 1)
-
-        {:ok, system} =
-          System.update(system, %{options: serialize(options), state: serialize(state)})
-          |> Repo.update()
-
-        {:ok, deserialize(system.state), system}
+  defp load_system(key) do
+    case Repo.one(from(system in System, where: system.key == ^key)) do
+      nil ->
+        %System{key: key, state: serialize(nil)}
+      system ->
+        system
     end
   end
 
-
-  defp normalize_noreply_result({:ok, _, _} = result, _options), do: result
-
-  defp normalize_noreply_result({:ok, _} = result, options) do
-    Tuple.append(result, Keyword.get(options, :run_interval))
+  defp normalize_system(system, callback_module) do
+    %{system | callback_module: callback_module, state: deserialize(system.state)}
   end
 
-  defp normalize_noreply_result(error, _options), do: error
-
-
-  defp normalize_reply_result({:ok, _, _, _} = result, _options), do: result
-
-  defp normalize_reply_result({:ok, _, _} = result, options) do
-    Tuple.append(result, Keyword.get(options, :run_interval))
-  end
-
-  defp normalize_reply_result(error, _options), do: error
-
-  defp maybe_queue_run(timeout) do
-    if timeout !== :never do
-      Process.send_after(self(), :run, timeout)
-    end
-  end
-
-  defp update_and_maybe_persist(system, new_state) do
-    # TODO: Allow for different update strategies, such as each time, every X runs, min/max interval in seconds.
-    Repo.update(System.update(system, serialize(new_state)))
+  defp update_and_persist(system, new_state) do
+    {:ok, system} = Repo.update(System.update(system, %{state: serialize(new_state)}))
+    %{system | :state => deserialize(system.state)}
   end
 end

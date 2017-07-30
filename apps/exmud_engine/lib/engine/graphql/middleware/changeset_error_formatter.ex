@@ -1,5 +1,4 @@
 defmodule Exmud.Engine.Graphql.Middleware.ChangesetErrorFormatter do
-  import Ecto.Changeset
 
   def call(%{errors: []} = res, _), do: res
 
@@ -45,7 +44,6 @@ defmodule Exmud.Engine.Graphql.Middleware.ChangesetErrorFormatter do
     end)
   end
 
-  @spec error_field_value(changeset :: Ecto.Changeset.t, field :: atom) :: any
   defp error_field_value(changeset, field) do
     case Ecto.Changeset.fetch_field(changeset, field) do
       {_, value} -> value

@@ -1,5 +1,4 @@
 defmodule Exmud.Engine.Tag do
-  alias Ecto.Multi
   alias Exmud.Engine.Repo
   alias Exmud.Engine.Schema.Tag
   import Ecto.Query

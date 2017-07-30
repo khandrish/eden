@@ -1,5 +1,4 @@
 defmodule Exmud.Engine.CommandSet do
-  alias Ecto.Multi
   alias Exmud.Engine.Repo
   alias Exmud.Engine.Schema.CommandSet
   import Ecto.Query
