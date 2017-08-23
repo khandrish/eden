@@ -84,7 +84,7 @@ defmodule Exmud.Engine.Attribute do
     from attribute in Attribute,
       inner_join: component in assoc(attribute, :component),
       where: attribute.attribute == ^attribute
-        and component.component == ^serialize(comp)
+        and component.component == ^comp
         and component.object_id == ^object_id
   end
 end

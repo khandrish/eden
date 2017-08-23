@@ -1,105 +1,16 @@
 defmodule Exmud.Engine.System do
   @moduledoc """
-  A behaviour module for implementing a system within the Exmud engine.
+  Systems form the backbone of the Engine, driving time and message based actions within the game world.
 
-  Systems form the backbone of the engine. They drive time and event based actions, covering everything from weather
-  effects to triggering actions. Transitioning between a set schedule, dynamic schedule, and events is seamless and can
-  be controlled entirely at runtime simply by modifying the returned system state.
+  Examples include weather effects, triggering invasions, regular spawning of critters, the day/night cycle, and so on.
+  Unlike Scripts, which can be added as many times to as many different Objects as you want, only one of each registered
+  System may run at a time.
 
-  ## Callbacks
-  There are five callbacks required to be implemented in a system. By adding `use Exmud.System` to your module, Exmud
-  will automatically define all five callbacks for you, leaving it up to you to implement the ones you want to
-  customize.
+  Systems can transition between a set schedule, dynamic schedule, and purely message based seamlessly at runtime simply
+  by modifying the value returned from the `run/1` callback. Note that while it is possible to run only in response to
+  being explicitly called, short of not implementing the `handle_message/2` callback it is not possible for the Engine
+  to enforce a schedule only mode. Only you can prevent messages by not calling the System directly in your code.
   """
-
-
-  #
-  # Behavior definition and default callback setup
-  #
-
-
-  @doc """
-  Invoked when a message has been sent to the system.
-
-  Must return a tuple in the form of `{reply, state}`. If the message was sent
-  as a cast the value of `reply` is ignored.
-  """
-  @callback handle_message(message, state) :: {reply, state}
-
-  @doc """
-  Invoked the first, and only the first, time a system is started.
-
-  If invoked, this callback will come before `start/2` and the state returned
-  will be passed to the `start/2` callback.
-  """
-  @callback initialize(args) :: state
-
-  @doc """
-  Invoked when the main loop of the system is to be run again.
-
-  Must return a new state.
-  """
-  @callback run(state) :: state | {next_iteration, state}
-
-  @doc """
-  Invoked when the system is being started.
-
-  Must return a new state.
-  """
-  @callback start(args, state) :: state | {next_iteration, state}
-
-  @doc """
-  Invoked when the system is being stopped.
-
-  Must return a new state.
-  """
-  @callback stop(args, state) :: state
-
-  @typedoc "Arguments passed through to a callback module."
-  @type args :: term
-
-  @typedoc "What triggered the run callback."
-  @type event :: :timer | term
-
-  @typedoc "A message passed through to a callback module."
-  @type message :: term
-
-  @typedoc "How many milliseconds should pass until the run callback is called again."
-  @type next_iteration :: integer
-
-  @typedoc "A reply passed through to the caller."
-  @type reply :: term
-
-  @typedoc "State used by the callback module."
-  @type state :: term
-
-  @doc false
-  defmacro __using__(_) do
-    quote location: :keep do
-      @behaviour Exmud.Engine.System
-
-      @doc false
-      def handle_message(message, state), do: {:ok, message, state}
-
-      @doc false
-      def initialize(args, initial_state \\ %{}), do: {:ok, initial_state}
-
-      @doc false
-      def run(state), do: {:ok, 42, state}
-
-      @doc false
-      def start(_args, state), do: {:ok, state, state}
-
-      @doc false
-      def stop(_args, state), do: {:ok, state, state}
-
-      defoverridable [handle_message: 2,
-                      initialize: 2,
-                      run: 1,
-                      start: 2,
-                      stop: 2]
-    end
-  end
 
 
   #
@@ -112,11 +23,9 @@ defmodule Exmud.Engine.System do
   alias Exmud.Engine.Schema.System
   import Ecto.Query
   import Exmud.Common.Utils
-  import Exmud.Engine.Utils
   require Logger
 
-  @system_registry system_registry()
-  @system_cache_category :system_cache
+  @system_registry :exmud_engine_system_registry
 
   @doc """
   Call a running system with a message.
@@ -146,7 +55,8 @@ defmodule Exmud.Engine.System do
         |> Repo.one()
         |> case do
           nil -> {:error, :no_such_system}
-          system -> {:ok, deserialize(system.state)}
+          system ->
+            {:ok, deserialize(system.state)}
         end
     end
   end
@@ -171,7 +81,7 @@ defmodule Exmud.Engine.System do
   """
   def run(key) do
     try do
-      GenServer.call(via(@system_registry, key), :manual_run, :infinity)
+      GenServer.call(via(@system_registry, key), :start_running, :infinity)
     catch
       :exit, {:noproc, _} -> {:error, :system_not_running}
     end
@@ -180,19 +90,18 @@ defmodule Exmud.Engine.System do
   @doc """
   Check to see if a system is running.
   """
-  def running(key) do
+  def running?(key) do
     result = Registry.lookup(@system_registry, key)
     {:ok, result != []}
   end
 
   @doc """
-  Starts a system if it is not already started.
+  Start a system.
   """
   def start(key, args \\ nil) do
-    with  {:ok, callback_module} <- lookup(key),
-          {:ok, _} <- Supervisor.start_child(Exmud.Engine.SystemRunnerSupervisor, [key, callback_module, args]),
+    with  {:ok, _} <- Supervisor.start_child(Exmud.Engine.SystemRunnerSupervisor, [key, args]),
 
-      do: {:ok, true}
+      do: {:ok, :started}
   end
 
   @doc """
@@ -206,32 +115,43 @@ defmodule Exmud.Engine.System do
     end
   end
 
-  def register(key, callback_module) do
-    Logger.debug("Registering system with key `#{key}` and module `#{inspect(callback_module)}`")
-    Cache.set(@system_cache_category, key, callback_module)
-  end
 
-  @doc """
-  Check to see if there is a callback module registered with a given key.
-  """
-  def registered?(key) do
-    Cache.exists?(@system_cache_category, key)
+  #
+  # Manipulation of Systems in the Engine.
+  #
+
+
+  @cache :system_cache
+
+  def list_registered() do
+    Logger.info("Listing all registered Systems")
+    Cache.list(@cache)
   end
 
   def lookup(key) do
-    Logger.debug("Finding module for system registered with key `#{key}`")
-    case Cache.get(@system_cache_category, key) do
-      {:missing, _} ->
-        Logger.warn("Attempt to find system callback module for key `#{key}` failed")
+    case Cache.get(@cache, key) do
+      {:error, _} ->
+        Logger.error("Lookup failed for System registered with key `#{key}`")
         {:error, :no_such_system}
-      {:ok, callback} ->
-        {:ok, callback}
+      result ->
+        Logger.info("Lookup succeeded for System registered with key `#{key}`")
+        result
     end
   end
 
-  @doc false
+  def register(key, callback_module) do
+    Logger.info("Registering System with key `#{key}` and module `#{inspect(callback_module)}`")
+    Cache.set(@cache, key, callback_module)
+  end
+
+  def registered?(key) do
+    Logger.info("Checking registration of System with key `#{key}`")
+    Cache.exists?(@cache, key)
+  end
+
   def unregister(key) do
-    Cache.delete(@system_cache_category, key)
+    Logger.info("Unregistering System with key `#{key}`")
+    Cache.delete(@cache, key)
   end
 
 

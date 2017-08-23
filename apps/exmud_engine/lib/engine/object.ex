@@ -120,7 +120,7 @@ defmodule Exmud.Engine.Object do
   end
 
   defp build_equality_check_dynamic({:attribute, {component, attribute}}) do
-    dynamic([object, callback, command_set, component, attribute], (attribute.attribute == ^attribute and component.component == ^serialize(component)))
+    dynamic([object, callback, command_set, component, attribute], (attribute.attribute == ^attribute and component.component == ^component))
   end
 
   defp build_equality_check_dynamic({:callback, callback}) do
@@ -132,7 +132,7 @@ defmodule Exmud.Engine.Object do
   end
 
   defp build_equality_check_dynamic({:component, component}) do
-    dynamic([object, callback, command_set, component], component.component == ^serialize(component))
+    dynamic([object, callback, command_set, component], component.component == ^component)
   end
 
   defp build_equality_check_dynamic({:object, key}) do
@@ -228,8 +228,7 @@ defmodule Exmud.Engine.Object do
     objects =
       Enum.map(objects, fn(object) ->
         %{object | components: Enum.map(object.components, fn(component) ->
-            %{component | component: deserialize(component.component),
-                          attributes: Enum.map(component.attributes, fn(attribute) ->
+            %{component | attributes: Enum.map(component.attributes, fn(attribute) ->
               %{attribute | data: deserialize(attribute.data)}
             end)}
         end)}

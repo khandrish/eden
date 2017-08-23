@@ -6,7 +6,7 @@ defmodule Exmud.Common.Mixfile do
       # Standard arguments
       app: :exmud_common,
       deps: deps(),
-      elixir: "~> 1.4",
+      elixir: "~> 1.5",
       elixirc_paths: elixirc_paths(Mix.env),
       version: "0.1.0",
 

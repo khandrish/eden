@@ -9,6 +9,8 @@ defmodule Exmud.Engine.Schema.Script do
     belongs_to :object, Exmud.Engine.Schema.Object, foreign_key: :object_id
   end
 
+  def cast(system), do: cast(system, %{}, [])
+
   def changeset(script, params \\ %{}) do
     script
     |> cast(params, [:key, :object_id, :options, :state])

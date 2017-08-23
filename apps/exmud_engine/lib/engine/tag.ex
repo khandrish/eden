@@ -23,7 +23,7 @@ defmodule Exmud.Engine.Tag do
     |> case do
       {:error, errors} ->
         if Keyword.has_key?(errors, :object_id) do
-          Logger.warn("Attempt to add tag onto non existing object `#{object_id}`")
+          Logger.error("Attempt to add Tag onto non existing object `#{object_id}`")
           {:error, :no_such_object}
         else
           {:error, errors}

@@ -12,13 +12,15 @@ defmodule Exmud.Engine.Test.CallbackTest do
     @tag engine: true
     test "engine registration" do
       callback = UUID.generate()
-      assert Callback.registered(callback) == {:ok, false}
-      assert Callback.get_registered(callback) == {:error, :no_such_callback}
+      assert Callback.registered?(callback) == {:ok, false}
+      assert Callback.lookup(callback) == {:error, :no_such_callback}
       assert Callback.register(callback, EC) == {:ok, true}
-      assert Callback.registered(callback) == {:ok, true}
-      assert Callback.get_registered(callback) == {:ok, EC}
+      assert Callback.registered?(callback) == {:ok, true}
+      assert Callback.lookup(callback) == {:ok, EC}
+      assert Enum.any?(Callback.list_registered(), fn(key) -> key == callback end) == true
       assert Callback.unregister(callback) == {:ok, true}
-      assert Callback.registered(callback) == {:ok, false}
+      assert Callback.registered?(callback) == {:ok, false}
+      assert Enum.any?(Callback.list_registered(), fn(key) -> key == callback end) == false
     end
   end
 
@@ -28,14 +30,17 @@ defmodule Exmud.Engine.Test.CallbackTest do
     @tag callback: true
     @tag engine: true
     test "callback lifecycle", %{object_id: object_id} = _context do
+      fun = fn(_, _) -> {:ok, :ok} end
+      callback = UUID.generate()
+      assert Callback.register(callback, fun) == {:ok, true}
+      assert Callback.run(object_id, callback, :ok) == {:ok, :ok}
       assert Callback.has(object_id, "foo") == {:ok, false}
-      assert Callback.add(object_id, "foo", "foo") == {:ok, object_id}
-      assert Callback.add(object_id, "foobar", EC) == {:ok, object_id}
+      assert Callback.add(object_id, "foo", fun) == {:ok, object_id}
+      assert Callback.add(object_id, "foobar", fun) == {:ok, object_id}
       assert Callback.has(object_id, "foo") == {:ok, true}
-      assert Callback.get(object_id, "foo") == {:ok, "foo"}
-      assert Callback.get!(object_id, "foo") == {:ok, "foo"}
-      assert Callback.get(object_id, "foo", "foobar") == {:ok, "foo"}
-      assert Callback.delete(object_id, "foo") == {:ok, object_id}
+      assert Callback.get(object_id, "foo") == {:ok, fun}
+      assert Callback.get(object_id, "fooo", fun) == {:ok, fun}
+      assert Callback.remove(object_id, "foo") == {:ok, object_id}
       assert Callback.has(object_id, "foo") == {:ok, false}
       assert Callback.run(object_id, "foobar", []) == {:ok, :ok}
     end
@@ -45,9 +50,8 @@ defmodule Exmud.Engine.Test.CallbackTest do
     test "callback invalid cases" do
       assert Callback.has(0, "foo") == {:ok, false}
       assert Callback.add(0, "foo", "foo") == {:error, :no_such_object}
-      assert Callback.get(0, "foo") == {:ok, nil}
-      assert Callback.get!(0, "foo") == {:error, :no_such_callback}
-      assert Callback.delete(0, "foo") == {:error, :no_such_callback}
+      assert Callback.get(0, "foo") == {:error, :no_such_callback}
+      assert Callback.remove(0, "foo") == {:error, :no_such_callback}
     end
   end
 

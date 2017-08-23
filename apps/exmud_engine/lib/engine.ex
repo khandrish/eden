@@ -1,17 +1,23 @@
 defmodule Exmud.Engine do
   @moduledoc """
-  Documentation for Exmud.Engine.
+  The Engine is what drives the game world forward. It coordinates calling into the systems/commands/callbacks that have
+  been registered, and making sure that database interactions are appropriately isolated from other concurrent parts of
+  the Engine. The Engine does not actually start until explicitely told to.
   """
 
-  def configure do
-    :ok
+  alias Exmud.Engine.MasterControl, as: MC
+  alias Exmud.Game.Schema
+
+  def restart do
+    with {:ok, _} <- stop(),
+      do: start()
   end
 
   def start do
-    :ok
+    GenServer.call(MC, :start, :infinity)
   end
 
   def stop do
-    :ok
+    GenServer.call(MC, :stop, :infinity)
   end
 end

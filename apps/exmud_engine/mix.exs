@@ -7,7 +7,7 @@ defmodule Exmud.Engine.Mixfile do
       aliases: aliases(),
       app: :exmud_engine,
       deps: deps(),
-      elixir: "~> 1.4",
+      elixir: "~> 1.5",
       elixirc_paths: elixirc_paths(Mix.env),
       version: "0.1.0",
 
@@ -51,8 +51,7 @@ defmodule Exmud.Engine.Mixfile do
       {:ex_doc, ">= 0.14.5", only: :dev},
       {:excoveralls, ">= 0.7.0", only: :test},
       {:exmud_common, in_umbrella: true},
-      {:exmud_game, in_umbrella: true},
-      {:faker, "~> 0.8.0"},
+      {:faker, "~> 0.8.0", only: [:dev, :test]},
       {:inch_ex, ">= 0.5.6", only: :docs},
       {:postgrex, "~> 0.13.0"},
       {:uuid, "~> 1.1"}

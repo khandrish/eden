@@ -20,11 +20,9 @@ defmodule Exmud.Engine.Callback do
   import Exmud.Common.Utils
   require Logger
 
-  @callback_cache_category "callback"
-
 
   #
-  # API
+  # Adding callback to an object
   #
 
 
@@ -37,7 +35,7 @@ defmodule Exmud.Engine.Callback do
     |> case do
       {:error, errors} ->
         if Keyword.has_key?(errors, :object_id) do
-          Logger.warn("Attempt to add callback onto non existing object `#{object_id}`")
+          Logger.error("Attempt to add Callback onto non existing object `#{object_id}`")
           {:error, :no_such_object}
         else
           {:error, errors}
@@ -46,14 +44,13 @@ defmodule Exmud.Engine.Callback do
     end
   end
 
-  def get(object_id, key) do
-    case get(object_id, key, nil) do
-      {:ok, nil} -> {:ok, nil}
-      result -> result
-    end
-  end
 
-  def get!(object_id, key) do
+  #
+  # Get callback from object.
+  #
+
+
+  def get(object_id, key) do
     case get(object_id, key, nil) do
       {:ok, nil} -> {:error, :no_such_callback}
       result -> result
@@ -67,6 +64,12 @@ defmodule Exmud.Engine.Callback do
     end
   end
 
+
+  #
+  # Check presence of callback on an Object.
+  #
+
+
   def has(object_id, key) do
     query =
       from callback in callback_query(object_id, key),
@@ -78,7 +81,13 @@ defmodule Exmud.Engine.Callback do
     end
   end
 
-  def delete(object_id, key) do
+
+  #
+  # Remove callback from an Object.
+  #
+
+
+  def remove(object_id, key) do
     Repo.delete_all(callback_query(object_id, key))
     |> case do
       {1, _} -> {:ok, object_id}
@@ -90,14 +99,45 @@ defmodule Exmud.Engine.Callback do
 
   @doc """
   When running a callback, the engine first checks to see if there is an object specific implementation before falling
-  back to a default implementation. If no default implementation is found an error is returned.
+  back to a globally registered implementation. If no global implementation is found an error is returned.
   """
   def run(object_id, key, args) do
     case get(object_id, key) do
       {:ok, callback} ->
-        callback.run(object_id, args)
+        apply(callback, [object_id, args])
       _error ->
+        case lookup(key) do
+          {:ok, callback} ->
+            apply(callback, [object_id, args])
+          _error ->
+            {:error, :no_such_callback}
+        end
+    end
+  end
+
+
+  #
+  # Manipulation of Callbacks in the Engine.
+  #
+
+  @cache :callback_cache
+
+  def list_registered() do
+    Logger.info("Listing all registered Callbacks")
+    Cache.list(@cache)
+  end
+
+  @doc """
+  Return the module that has been registered with a given key.
+  """
+  def lookup(key) do
+    case Cache.get(@cache, key) do
+      {:error, _} ->
+        Logger.error("Lookup failed for Callback registered with key `#{key}`")
         {:error, :no_such_callback}
+      result ->
+        Logger.info("Lookup succeeded for Callback registered with key `#{key}`")
+        result
     end
   end
 
@@ -107,34 +147,25 @@ defmodule Exmud.Engine.Callback do
   default callback which is essentially a no-op, allowing for a custom callback which could interrupt the puppeting
   process by returning `false`.
   """
-  def register(key, callback_function) do
-    Logger.debug("Registering callback for key `#{key}` with module `#{inspect(callback_function)}`")
-    Cache.set(@callback_cache_category, key, callback_function)
+  def register(key, callback_module) do
+    Logger.info("Registering Callback with key `#{key}` and module `#{inspect(callback_module)}`")
+    Cache.set(@cache, key, callback_module)
   end
 
   @doc """
   Check to see if there is a callback module registered with a given key.
   """
-  def registered(key) do
-    Cache.exists?(@callback_cache_category, key)
+  def registered?(key) do
+    Logger.info("Checking registration of Callback with key `#{key}`")
+    Cache.exists?(@cache, key)
   end
 
   @doc """
-  Return the module that has been registered with a given key.
+  Unregister a call default callback from the system.
   """
-  def get_registered(key) do
-    Logger.debug("Finding registered callback for key `#{key}`")
-    case Cache.get(@callback_cache_category, key) do
-      {:missing, _} ->
-        Logger.warn("Attempt to find callback module for key `#{key}` failed")
-        {:error, :no_such_callback}
-      result -> result
-    end
-  end
-
-  @doc false
   def unregister(key) do
-    Cache.delete(@callback_cache_category, key)
+    Logger.info("Unregistering Callback with key `#{key}`")
+    Cache.delete(@cache, key)
   end
 
 

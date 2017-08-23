@@ -18,3 +18,6 @@ erl_crash.dump
 
 # Also ignore archive artifacts (built via "mix archive.build").
 *.ez
+
+# Make sure changes to this file don't accidentally make it into the repo.
+/config/prod.secret.exe

@@ -8,7 +8,7 @@ defmodule Exmud.Game.Mixfile do
      config_path: "../../config/config.exs",
      deps_path: "../../deps",
      lockfile: "../../mix.lock",
-     elixir: "~> 1.4",
+     elixir: "~> 1.5",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
      deps: deps()]
@@ -19,7 +19,10 @@ defmodule Exmud.Game.Mixfile do
   # Type "mix help compile.app" for more information
   def application do
     # Specify extra applications you'll use from Erlang/Elixir
-    [extra_applications: [:logger]]
+    [
+      extra_applications: [:logger],
+      mod: {Exmud.Game.Application, []}
+    ]
   end
 
   # Dependencies can be Hex packages:
@@ -36,6 +39,9 @@ defmodule Exmud.Game.Mixfile do
   #
   # Type "mix help deps" for more examples and options
   defp deps do
-    []
+    [
+      {:exmud_common, in_umbrella: true},
+      {:exmud_engine, in_umbrella: true}
+    ]
   end
 end

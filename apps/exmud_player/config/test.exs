@@ -4,6 +4,5 @@ use Mix.Config
 config :logger, level: :warn
 
 config :exmud_player, Exmud.Player.Repo,
-  database: "exmud_player_test",
   password: "exmud_player",
   pool: Ecto.Adapters.SQL.Sandbox

@@ -5,9 +5,12 @@ defmodule Exmud.DB.Repo.EngineRepo.Migrations.InitializeEngineRepo do
     # Tables which stand on their own and have no relationships
     create table(:system) do
       add :key, :string
-      add :options, :binary
+      add :last_checkpoint, :timestamptz
+      add :running, :boolean
       add :state, :binary
     end
+    create index(:system, [:last_checkpoint])
+    create index(:system, [:running])
     create unique_index(:system, [:key])
 
     # Tables related to game objects
@@ -20,7 +23,7 @@ defmodule Exmud.DB.Repo.EngineRepo.Migrations.InitializeEngineRepo do
 
     create table(:component) do
       add :object_id, references(:object, [on_delete: :delete_all])
-      add :component, :binary
+      add :component, :string
     end
     create index(:component, [:component])
     create index(:component, [:object_id])

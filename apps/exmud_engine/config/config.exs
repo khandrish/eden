@@ -10,8 +10,11 @@ config :exmud_engine, Exmud.Engine.Repo,
   username: "exmud_engine"
 
 config :exmud_engine,
-  cache: :exmud_cache,
-  system_registry: :exmud_engine_system_registry
+  callbacks: [],
+  command_sets: [],
+  components: [],
+  scripts: [],
+  systems: []
 
 
 # It is also possible to import configuration files, relative to this

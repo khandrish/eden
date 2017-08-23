@@ -15,6 +15,7 @@ defmodule Exmud.Engine.Test.AttributeTest do
       component = UUID.generate()
       attribute = UUID.generate()
       attribute2 = UUID.generate()
+      assert Component.register(component, Exmud.Engine.AttributeTest.ExampleComponent) == {:ok, :registered}
       assert Component.add(object_id, component) == {:ok, object_id}
       assert Attribute.equals(object_id, component, attribute, "bar") == {:ok, false}
       assert Attribute.add(object_id, component, attribute, "bar") == {:ok, object_id}
@@ -34,6 +35,8 @@ defmodule Exmud.Engine.Test.AttributeTest do
     test "invalid cases", %{object_id: object_id} = _context do
       component = UUID.generate()
       component2 = UUID.generate()
+      assert Component.register(component, Exmud.Engine.AttributeTest.ExampleComponent) == {:ok, :registered}
+      assert Component.register(component2, Exmud.Engine.AttributeTest.ExampleComponent) == {:ok, :registered}
       assert Component.add(object_id, component) == {:ok, object_id}
       assert Attribute.get(object_id, component, "foo") == {:error, :no_such_attribute}
       assert Attribute.add(object_id, component2, "foo", "bar") == {:error, :no_such_component}
@@ -48,5 +51,12 @@ defmodule Exmud.Engine.Test.AttributeTest do
     {:ok, object_id} = Object.new(key)
 
     %{key: key, object_id: object_id}
+  end
+end
+
+
+defmodule Exmud.Engine.AttributeTest.ExampleComponent do
+  def populate do
+    {:ok, :populated}
   end
 end

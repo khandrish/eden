@@ -52,6 +52,7 @@ defmodule Exmud.Engine.Test.ObjectTest do
       {:ok, object} = Object.get(object_id)
       assert object.id == object_id
       component = UUID.generate()
+      assert Component.register(component, Exmud.Engine.ObjectTest.ExampleComponent) == {:ok, :registered}
       callback = UUID.generate()
       assert Component.add(object_id, component) == {:ok, object_id}
       assert Attribute.add(object_id, component, "foo", "bar") == {:ok, object_id}
@@ -76,6 +77,8 @@ defmodule Exmud.Engine.Test.ObjectTest do
       relationship = UUID.generate()
       tag = UUID.generate()
       tag_category = UUID.generate()
+
+      assert Component.register(component, Exmud.Engine.ObjectTest.ExampleComponent) == {:ok, :registered}
 
       assert Component.add(object_id1, component) == {:ok, object_id1}
       assert Attribute.add(object_id1, component, attribute_key, attribute_value) == {:ok, object_id1}
@@ -102,5 +105,12 @@ defmodule Exmud.Engine.Test.ObjectTest do
     key = UUID.generate()
     {:ok, object_id} = Object.new(key)
     %{key: key, object_id: object_id}
+  end
+end
+
+
+defmodule Exmud.Engine.ObjectTest.ExampleComponent do
+  def populate do
+    {:ok, :populated}
   end
 end

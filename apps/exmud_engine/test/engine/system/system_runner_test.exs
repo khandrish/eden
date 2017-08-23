@@ -7,155 +7,170 @@ defmodule Exmud.Engine.SystemRunnerTest do
 
     @tag engine: true
     @tag system_runner: true
-    test "bad systems", %{ses_key: ses_key, sos_key: sos_key, is_key: is_key, ms_key: ms_key,
-                          rss_key: rss_key, ros_key: ros_key, res_key: res_key, rots_key: rots_key} = _context do
+    test "systems", %{ses_key: ses_key, sos_key: sos_key, ies_key: ies_key, ms_key: ms_key, rs_key: rs_key,
+                          rss_key: rss_key, ros_key: ros_key, rots_key: rots_key, ios_key: ios_key} = _context do
 
-      assert System.start(rots_key) == {:ok, true}
+      assert System.start(rots_key) == {:ok, :started}
 
-      assert System.start(rss_key) == {:ok, true}
-      assert System.run(rss_key) == {:ok, "RunStopSystem"}
+      assert System.start(rs_key) == {:ok, :started}
+      assert System.run(rs_key) == {:error, :already_running}
+      Process.sleep(1)
+      assert System.run(rs_key) == {:ok, :running}
+      Process.sleep(1)
+      assert System.run(rs_key) == {:ok, :running}
+      Process.sleep(100) # State is persisted when System is stopped. Give time for that to happen.
+      assert System.start(rs_key) == {:ok, :started}
+      assert System.stop(rs_key) == {:ok, :stopped}
 
-      assert System.start(ros_key) == {:ok, true}
-      assert System.run(ros_key) == {:ok, "RunOkSystem"}
-      assert System.stop(ros_key) == {:ok, nil}
-
-      assert System.start(res_key) == {:ok, true}
-      assert System.run(res_key) == {:error, "RunErrorSystem"}
-      assert System.stop(res_key) == {:ok, nil}
-
-
-      assert System.start(ses_key, :ok) == {:ok, true}
-      assert System.stop(ses_key) == {:error, "StopErrorSystem"}
-
-      assert System.start(sos_key, :ok) == {:ok, true}
-      assert System.stop(sos_key) == {:ok, "StopOkSystem"}
-
-
-      assert System.start(is_key, :ok) == {:ok, true}
-      assert System.stop(is_key) == {:ok, "InitSystem"}
-      assert System.start(is_key, :error) == {:error, "InitSystem"}
-      assert System.start(is_key, :time) == {:ok, true}
-      assert System.stop(is_key) == {:ok, "InitSystem"}
-
-
-      assert System.start(ms_key) == {:ok, true}
+      assert System.start(ms_key) == {:ok, :started}
       assert System.call(ms_key, :error) == {:error, "MessageSystem"}
       assert System.call(ms_key, :ok) == {:ok, "MessageSystem"}
-      assert System.call(ms_key, :time) == {:ok, "MessageSystem"}
       assert System.cast(ms_key, :ok) == {:ok, true}
-      assert System.call(ms_key, :stop) == {:ok, "MessageSystem"}
+
+      assert System.start(rss_key) == {:ok, :started}
+      assert System.run(rss_key) == {:ok, :running}
+
+      assert System.start(ros_key) == {:ok, :started}
+      assert System.run(ros_key) == {:ok, :running}
+      assert System.stop(ros_key) == {:ok, :stopped}
+
+      assert System.start(ses_key, :ok) == {:ok, :started}
+      assert System.stop(ses_key) == {:error, "StopErrorSystem"}
+
+      assert System.start(sos_key, :ok) == {:ok, :started}
+      assert System.stop(sos_key) == {:ok, :stopped}
+
+      assert System.start(ios_key, :ok) == {:ok, :started}
+      assert System.stop(ios_key) == {:ok, :stopped}
+
+      assert System.start(ies_key, :ok) == {:error, "InitSystem"}
+
+      assert System.start(ros_key) == {:ok, :started}
+      assert System.stop(ros_key) == {:ok, :stopped}
+
+      Process.sleep(100) # Give everything a change to shut down properly, otherwise errors may occur when running tests.
     end
   end
 
   defp do_setup(_context) do
-    {:ok, true} = System.register("StopErrorSystem", Exmud.Engine.SystemTest.StopErrorSystem)
-    {:ok, true} = System.register("StopOkSystem", Exmud.Engine.SystemTest.StopOkSystem)
-    {:ok, true} = System.register("RunErrorSystem", Exmud.Engine.SystemTest.RunErrorSystem)
-    {:ok, true} = System.register("RunOkSystem", Exmud.Engine.SystemTest.RunOkSystem)
-    {:ok, true} = System.register("RunStopSystem", Exmud.Engine.SystemTest.RunStopSystem)
-    {:ok, true} = System.register("InitSystem", Exmud.Engine.SystemTest.InitSystem)
-    {:ok, true} = System.register("MessageSystem", Exmud.Engine.SystemTest.MessageSystem)
-    {:ok, true} = System.register("RunOkTimeSystem", Exmud.Engine.SystemTest.RunOkTimeSystem)
+    {:ok, true} = System.register("StopErrorSystem", Exmud.Engine.SystemRunnerTest.StopErrorSystem)
+    {:ok, true} = System.register("StopOkSystem", Exmud.Engine.SystemRunnerTest.StopOkSystem)
+    {:ok, true} = System.register("RunOkSystem", Exmud.Engine.SystemRunnerTest.RunOkSystem)
+    {:ok, true} = System.register("RunStopSystem", Exmud.Engine.SystemRunnerTest.RunStopSystem)
+    {:ok, true} = System.register("InitOkSystem", Exmud.Engine.SystemRunnerTest.InitOkSystem)
+    {:ok, true} = System.register("InitErrorSystem", Exmud.Engine.SystemRunnerTest.InitErrorSystem)
+    {:ok, true} = System.register("MessageSystem", Exmud.Engine.SystemRunnerTest.MessageSystem)
+    {:ok, true} = System.register("RunOkTimeSystem", Exmud.Engine.SystemRunnerTest.RunOkTimeSystem)
+    {:ok, true} = System.register("RunSystem", Exmud.Engine.SystemRunnerTest.RunSystem)
 
-    %{ses_key: "StopErrorSystem", sos_key: "StopOkSystem", is_key: "InitSystem", rss_key: "RunStopSystem",
-      ros_key: "RunOkSystem", res_key: "RunErrorSystem", ms_key: "MessageSystem", rots_key: "RunOkTimeSystem"
+    %{ses_key: "StopErrorSystem", sos_key: "StopOkSystem", ios_key: "InitOkSystem", ies_key: "InitErrorSystem",
+      rss_key: "RunStopSystem", ros_key: "RunOkSystem", ms_key: "MessageSystem", rots_key: "RunOkTimeSystem",
+      rs_key: "RunSystem"
     }
   end
 end
 
-defmodule Exmud.Engine.SystemTest.InitSystem do
+defmodule Exmud.Engine.SystemRunnerTest.InitOkSystem do
   @moduledoc """
   A barebones example of a system for testing.
   """
 
-  use Exmud.Engine.System
+  use Exmud.Engine.Test.System
 
-  def initialize(:error, _state) do
-    {:error, "InitSystem"}
-  end
-
-  def initialize(:ok, _state) do
+  def initialize(_args) do
     {:ok, "InitSystem"}
-  end
-
-  def initialize(:time, _state) do
-    {:ok, "InitSystem", 100}
   end
 end
 
-defmodule Exmud.Engine.SystemTest.StopErrorSystem do
+defmodule Exmud.Engine.SystemRunnerTest.InitErrorSystem do
   @moduledoc """
   A barebones example of a system for testing.
   """
 
-  use Exmud.Engine.System
+  use Exmud.Engine.Test.System
+
+  def initialize(_args) do
+    {:error, "InitSystem"}
+  end
+end
+
+defmodule Exmud.Engine.SystemRunnerTest.StopErrorSystem do
+  @moduledoc """
+  A barebones example of a system for testing.
+  """
+
+  use Exmud.Engine.Test.System
 
   def stop(_message, state) do
     {:error, "StopErrorSystem", state}
   end
 end
 
-defmodule Exmud.Engine.SystemTest.StopOkSystem do
+defmodule Exmud.Engine.SystemRunnerTest.StopOkSystem do
   @moduledoc """
   A barebones example of a system for testing.
   """
 
-  use Exmud.Engine.System
+  use Exmud.Engine.Test.System
 
   def stop(_message, state) do
-    {:ok, "StopOkSystem", state}
+    {:ok, state}
   end
 end
 
-defmodule Exmud.Engine.SystemTest.RunErrorSystem do
+defmodule Exmud.Engine.SystemRunnerTest.RunErrorSystem do
   @moduledoc """
   A barebones example of a system for testing.
   """
 
-  use Exmud.Engine.System
+  use Exmud.Engine.Test.System
+
+  def initialize(_args) do
+    {:ok, 0}
+  end
 
   def run(state) do
     {:error, "RunErrorSystem", state}
   end
 end
 
-defmodule Exmud.Engine.SystemTest.RunStopSystem do
+defmodule Exmud.Engine.SystemRunnerTest.RunStopSystem do
   @moduledoc """
   A barebones example of a system for testing.
   """
 
-  use Exmud.Engine.System
+  use Exmud.Engine.Test.System
 
   def run(state) do
     {:stop, "RunStopSystem", state}
   end
 end
 
-defmodule Exmud.Engine.SystemTest.RunOkSystem do
+defmodule Exmud.Engine.SystemRunnerTest.RunOkSystem do
   @moduledoc """
   A barebones example of a system for testing.
   """
 
-  use Exmud.Engine.System
+  use Exmud.Engine.Test.System
 
   def run(state) do
-    {:ok, "RunOkSystem", state}
+    {:ok, state}
   end
 end
 
-defmodule Exmud.Engine.SystemTest.RunOkTimeSystem do
+defmodule Exmud.Engine.SystemRunnerTest.RunOkTimeSystem do
   @moduledoc """
   A barebones example of a system for testing.
   """
 
-  use Exmud.Engine.System
+  use Exmud.Engine.Test.System
 
-  def initialize(_args, _state) do
-    {:ok, 0, 1}
+  def initialize(_args) do
+    {:ok, 1}
   end
 
   def run(state) when state < 2 do
-    {:ok, "RunOkTimeSystem", state + 1, 1}
+    {:ok, state + 1, 1}
   end
 
   def run(state) do
@@ -163,12 +178,12 @@ defmodule Exmud.Engine.SystemTest.RunOkTimeSystem do
   end
 end
 
-defmodule Exmud.Engine.SystemTest.MessageSystem do
+defmodule Exmud.Engine.SystemRunnerTest.MessageSystem do
   @moduledoc """
   A barebones example of a system for testing.
   """
 
-  use Exmud.Engine.System
+  use Exmud.Engine.Test.System
 
   def handle_message(:error, state) do
     {:error, "MessageSystem", state}
@@ -177,12 +192,57 @@ defmodule Exmud.Engine.SystemTest.MessageSystem do
   def handle_message(:ok, state) do
     {:ok, "MessageSystem", state}
   end
+end
 
-  def handle_message(:stop, state) do
-    {:stop, "MessageSystem", state}
+defmodule Exmud.Engine.SystemRunnerTest.RunSystem do
+  @moduledoc """
+  A barebones example of a system for testing.
+
+  Start
+  Run 2x
+  Start
+  Stop
+  """
+
+  use Exmud.Engine.Test.System
+
+  def start(:error, _state) do
+    {:error, :ok}
   end
 
-  def handle_message(:time, state) do
-    {:ok, "MessageSystem", state, 100}
+  def start(_args, 4) do
+    {:ok, 0}
+  end
+
+  def start(_args, _state) do # First start
+    {:ok, nil, 0}
+  end
+
+  def run(nil) do # Immediately after first start
+    {:ok, 0, 0}
+  end
+
+  def run(0) do
+    {:ok, 1}
+  end
+
+  def run(1) do # Call run to trigger
+    {:error, :ok, 2}
+  end
+
+  def run(2) do # Call run again to trigger
+    {:error, :ok, 3, 0}
+  end
+
+  def run(3) do
+    {:stop, :ok, 4}
+  end
+
+  def stop(_, 4) do
+    {:error, :ok, 5}
+  end
+
+  def stop(_, state) do
+    {:ok, state}
   end
 end
