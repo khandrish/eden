@@ -11,6 +11,12 @@ defmodule Exmud.Engine.Test.System do
       def initialize(_args), do: {:ok, nil}
 
       @doc false
+      def key, do: Atom.to_string(__MODULE__)
+
+      @doc false
+      def name, do: UUID.uuid4()
+
+      @doc false
       def run(state), do: {:ok, state}
 
       @doc false
@@ -21,6 +27,8 @@ defmodule Exmud.Engine.Test.System do
 
       defoverridable [handle_message: 2,
                       initialize: 1,
+                      key: 0,
+                      name: 0,
                       run: 1,
                       start: 2,
                       stop: 2]

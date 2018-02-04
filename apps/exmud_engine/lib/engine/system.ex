@@ -128,30 +128,30 @@ defmodule Exmud.Engine.System do
     Cache.list(@cache)
   end
 
-  def lookup(key) do
-    case Cache.get(@cache, key) do
+  def lookup(name) do
+    case Cache.get(@cache, name) do
       {:error, _} ->
-        Logger.error("Lookup failed for System registered with key `#{key}`")
+        Logger.error("Lookup failed for System registered with name `#{name}`")
         {:error, :no_such_system}
       result ->
-        Logger.info("Lookup succeeded for System registered with key `#{key}`")
+        Logger.info("Lookup succeeded for System registered with name `#{name}`")
         result
     end
   end
 
-  def register(key, callback_module) do
-    Logger.info("Registering System with key `#{key}` and module `#{inspect(callback_module)}`")
-    Cache.set(@cache, key, callback_module)
+  def register(callback_module) do
+    Logger.info("Registering System with name `#{callback_module.name}` and module `#{inspect(callback_module)}`")
+    Cache.set(@cache, callback_module.name, callback_module)
   end
 
-  def registered?(key) do
-    Logger.info("Checking registration of System with key `#{key}`")
-    Cache.exists?(@cache, key)
+  def registered?(name) do
+    Logger.info("Checking registration of System with name `#{name}`")
+    Cache.exists?(@cache, name)
   end
 
-  def unregister(key) do
-    Logger.info("Unregistering System with key `#{key}`")
-    Cache.delete(@cache, key)
+  def unregister(name) do
+    Logger.info("Unregistering System with name `#{name}`")
+    Cache.delete(@cache, name)
   end
 
 

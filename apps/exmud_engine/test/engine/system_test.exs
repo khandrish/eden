@@ -60,8 +60,8 @@ defmodule Exmud.Engine.SystemTest do
   end
 
   defp do_setup(_context) do
-    {:ok, true} = System.register("Interval", Exmud.Engine.Test.System.Interval)
-    {:ok, true} = System.register("Idle", Exmud.Engine.Test.System.Idle)
+    {:ok, true} = System.register(Exmud.Engine.Test.System.Interval)
+    {:ok, true} = System.register(Exmud.Engine.Test.System.Idle)
 
     %{interval_system: Exmud.Engine.Test.System.Interval, interval_key: "Interval",
       idle_system: Exmud.Engine.Test.System.Idle, idle_key: "Idle"}

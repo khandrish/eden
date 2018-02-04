@@ -53,15 +53,15 @@ defmodule Exmud.Engine.SystemRunnerTest do
   end
 
   defp do_setup(_context) do
-    {:ok, true} = System.register("StopErrorSystem", Exmud.Engine.SystemRunnerTest.StopErrorSystem)
-    {:ok, true} = System.register("StopOkSystem", Exmud.Engine.SystemRunnerTest.StopOkSystem)
-    {:ok, true} = System.register("RunOkSystem", Exmud.Engine.SystemRunnerTest.RunOkSystem)
-    {:ok, true} = System.register("RunStopSystem", Exmud.Engine.SystemRunnerTest.RunStopSystem)
-    {:ok, true} = System.register("InitOkSystem", Exmud.Engine.SystemRunnerTest.InitOkSystem)
-    {:ok, true} = System.register("InitErrorSystem", Exmud.Engine.SystemRunnerTest.InitErrorSystem)
-    {:ok, true} = System.register("MessageSystem", Exmud.Engine.SystemRunnerTest.MessageSystem)
-    {:ok, true} = System.register("RunOkTimeSystem", Exmud.Engine.SystemRunnerTest.RunOkTimeSystem)
-    {:ok, true} = System.register("RunSystem", Exmud.Engine.SystemRunnerTest.RunSystem)
+    {:ok, true} = System.register(Exmud.Engine.SystemRunnerTest.StopErrorSystem)
+    {:ok, true} = System.register(Exmud.Engine.SystemRunnerTest.StopOkSystem)
+    {:ok, true} = System.register(Exmud.Engine.SystemRunnerTest.RunOkSystem)
+    {:ok, true} = System.register(Exmud.Engine.SystemRunnerTest.RunStopSystem)
+    {:ok, true} = System.register(Exmud.Engine.SystemRunnerTest.InitOkSystem)
+    {:ok, true} = System.register(Exmud.Engine.SystemRunnerTest.InitErrorSystem)
+    {:ok, true} = System.register(Exmud.Engine.SystemRunnerTest.MessageSystem)
+    {:ok, true} = System.register(Exmud.Engine.SystemRunnerTest.RunOkTimeSystem)
+    {:ok, true} = System.register(Exmud.Engine.SystemRunnerTest.RunSystem)
 
     %{ses_key: "StopErrorSystem", sos_key: "StopOkSystem", ios_key: "InitOkSystem", ies_key: "InitErrorSystem",
       rss_key: "RunStopSystem", ros_key: "RunOkSystem", ms_key: "MessageSystem", rots_key: "RunOkTimeSystem",
@@ -80,6 +80,8 @@ defmodule Exmud.Engine.SystemRunnerTest.InitOkSystem do
   def initialize(_args) do
     {:ok, "InitSystem"}
   end
+
+  def name, do: "InitOkSystem"
 end
 
 defmodule Exmud.Engine.SystemRunnerTest.InitErrorSystem do
@@ -92,6 +94,8 @@ defmodule Exmud.Engine.SystemRunnerTest.InitErrorSystem do
   def initialize(_args) do
     {:error, "InitSystem"}
   end
+
+  def name, do: "InitErrorSystem"
 end
 
 defmodule Exmud.Engine.SystemRunnerTest.StopErrorSystem do
@@ -100,6 +104,8 @@ defmodule Exmud.Engine.SystemRunnerTest.StopErrorSystem do
   """
 
   use Exmud.Engine.Test.System
+
+  def name, do: "StopErrorSystem"
 
   def stop(_message, state) do
     {:error, "StopErrorSystem", state}
@@ -112,6 +118,8 @@ defmodule Exmud.Engine.SystemRunnerTest.StopOkSystem do
   """
 
   use Exmud.Engine.Test.System
+
+  def name, do: "StopOkSystem"
 
   def stop(_message, state) do
     {:ok, state}
@@ -129,6 +137,8 @@ defmodule Exmud.Engine.SystemRunnerTest.RunErrorSystem do
     {:ok, 0}
   end
 
+  def name, do: "RunErrorSystem"
+
   def run(state) do
     {:error, "RunErrorSystem", state}
   end
@@ -141,6 +151,8 @@ defmodule Exmud.Engine.SystemRunnerTest.RunStopSystem do
 
   use Exmud.Engine.Test.System
 
+  def name, do: "RunStopSystem"
+
   def run(state) do
     {:stop, "RunStopSystem", state}
   end
@@ -152,6 +164,8 @@ defmodule Exmud.Engine.SystemRunnerTest.RunOkSystem do
   """
 
   use Exmud.Engine.Test.System
+
+  def name, do: "RunOkSystem"
 
   def run(state) do
     {:ok, state}
@@ -168,6 +182,8 @@ defmodule Exmud.Engine.SystemRunnerTest.RunOkTimeSystem do
   def initialize(_args) do
     {:ok, 1}
   end
+
+  def name, do: "RunOkTimeSystem"
 
   def run(state) when state < 2 do
     {:ok, state + 1, 1}
@@ -192,6 +208,8 @@ defmodule Exmud.Engine.SystemRunnerTest.MessageSystem do
   def handle_message(:ok, state) do
     {:ok, "MessageSystem", state}
   end
+
+  def name, do: "MessageSystem"
 end
 
 defmodule Exmud.Engine.SystemRunnerTest.RunSystem do
@@ -205,6 +223,8 @@ defmodule Exmud.Engine.SystemRunnerTest.RunSystem do
   """
 
   use Exmud.Engine.Test.System
+
+  def name, do: "RunSystem"
 
   def start(:error, _state) do
     {:error, :ok}

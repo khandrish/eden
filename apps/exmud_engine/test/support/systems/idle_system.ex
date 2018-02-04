@@ -4,4 +4,6 @@ defmodule Exmud.Engine.Test.System.Idle do
   """
 
   use Exmud.Engine.Test.System
+
+  def name, do: "Idle"
 end

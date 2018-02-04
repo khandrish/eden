@@ -5,6 +5,8 @@ defmodule Exmud.Engine.Test.System.Interval do
 
   use Exmud.Engine.Test.System
 
+  def name, do: "Interval"
+
   @interval 5
 
   def start(_args, state), do: {:ok, state, @interval}
