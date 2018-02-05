@@ -219,8 +219,6 @@ defmodule Exmud.Engine.ScriptRunner do
                             :stop,
                             [reason, new_state])
 
-
-
         script_state =
           case stop_result do
             {:ok, script_state} ->
