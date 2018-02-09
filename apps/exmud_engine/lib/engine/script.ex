@@ -1,6 +1,6 @@
 defmodule Exmud.Engine.Script do
   @moduledoc """
-  Scripts perform repeated logic on one or, usually, more Objects within the game world.
+  Scripts perform repeated logic on one or more Objects within the game world.
 
   Examples include a character slowly drying off, a wound draining vitality, an opened door automatically closing, and
   so on. They can control longer running logic such as AI behaviors that are meant to remain on the Object permanently,
