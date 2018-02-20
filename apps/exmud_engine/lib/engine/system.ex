@@ -9,8 +9,111 @@ defmodule Exmud.Engine.System do
   Systems can transition between a set schedule, dynamic schedule, and purely message based seamlessly at runtime simply
   by modifying the value returned from the `run/1` callback. Note that while it is possible to run only in response to
   being explicitly called, short of not implementing the `handle_message/2` callback it is not possible for the Engine
-  to enforce a schedule only mode. Only you can prevent messages by not calling the System directly in your code.
+  to run in a schedule only mode. Only you can prevent messages by not calling the System directly in your code.
   """
+
+  @doc false
+  defmacro __using__(_) do
+    quote location: :keep do
+
+      @behaviour Exmud.Engine.System
+
+      @doc false
+      def handle_message(message, state), do: {:ok, message, state}
+
+      @doc false
+      def initialize(_args), do: {:ok, nil}
+
+      @doc false
+      def name, do: Atom.to_string(__MODULE__)
+
+      @doc false
+      def run(state), do: {:ok, state}
+
+      @doc false
+      def start(_args, state), do: {:ok, state}
+
+      @doc false
+      def stop(_args, state), do: {:ok, state}
+
+      defoverridable [handle_message: 2,
+                      initialize: 1,
+                      name: 0,
+                      run: 1,
+                      start: 2,
+                      stop: 2]
+    end
+  end
+
+
+  #
+  # Behavior definition and default callback setup
+  #
+
+
+  @doc """
+  Handle a message which has been explicitly sent to the System.
+  """
+  @callback handle_message(message, state) :: {:ok, reply, state} | {:error, reason}
+
+  @doc """
+  Called the first, and only the first, time a System is started.
+
+  If called, it will immediately precede `start/2` and the returned state will be passed to the `start/2` callback.
+  If a System has been previously initialized, the persisted state is loaded from the database and used in the `start/2`
+  callback instead.
+  """
+  @callback initialize(args) :: {:ok, state} | {:error, reason}
+
+  @doc """
+  The name of the System.
+  """
+  @callback name :: String.t
+
+  @doc """
+  Called in response to an interval period expiring, or an explicit call to run the System again.
+  """
+  @callback run(state) :: {:ok, state} |
+                          {:ok, state, next_iteration} |
+                          {:stop, reason, state} |
+                          {:error, error, state}
+
+  @doc """
+  Called when the System is being started.
+
+  If this is the first time the System has been started it will immediately follow a call to 'initialize/2' and will be
+  called with the state returned from the previous call, otherwise the state will be loaded from the database and used
+  instead. Must return a new state and an optional timeout, in milliseconds, until the next iteration.
+  """
+  @callback start(args, state) :: {:ok, state} | {:ok, state, next_iteration} | {:error, error}
+
+  @doc """
+  Called when the System is being stopped.
+
+  Must return a new state which will be persisted.
+  """
+  @callback stop(args, state) :: {:ok, state} | {:error, error}
+
+  @typedoc "Arguments passed through to a callback module."
+  @type args :: term
+
+  @typedoc "A message passed through to a callback module."
+  @type message :: term
+
+  @typedoc "How many milliseconds should pass until the run callback is called again."
+  @type next_iteration :: integer
+
+  @typedoc "A reply passed through to the caller."
+  @type reply :: term
+
+  @typedoc "An error message passed through to the caller."
+  @type error :: term
+
+  @typedoc "The reason the System is stopping."
+  @type reason :: term
+
+  @typedoc "State used by the callback module."
+  @type state :: term
 
 
   #
@@ -30,15 +133,15 @@ defmodule Exmud.Engine.System do
   @doc """
   Call a running system with a message.
   """
-  def call(key, message) do
-    send_message(:call, key, message)
+  def call(name, message) do
+    send_message(:call, name, message)
   end
 
   @doc """
   Cast a message to a running system.
   """
-  def cast(key, message) do
-    send_message(:cast, key, message)
+  def cast(name, message) do
+    send_message(:cast, name, message)
 
     {:ok, true}
   end
@@ -46,12 +149,12 @@ defmodule Exmud.Engine.System do
   @doc """
   Get the state of a system.
   """
-  def get_state(key) do
+  def get_state(name) do
     try do
-      GenServer.call(via(@system_registry, key), :state, :infinity)
+      GenServer.call(via(@system_registry, name), :state, :infinity)
     catch
       :exit, {:noproc, _} ->
-        system_query(key)
+        system_query(name)
         |> Repo.one()
         |> case do
           nil -> {:error, :no_such_system}
@@ -62,10 +165,10 @@ defmodule Exmud.Engine.System do
   end
 
   @doc """
-  Purge system data from the database.
+  Purge system data from the database. Does not check if system is running
   """
-  def purge(key) do
-    system_query(key)
+  def purge(name) do
+    system_query(name)
     |> Repo.one()
     |> case do
       nil -> {:error, :no_such_system}
@@ -77,11 +180,11 @@ defmodule Exmud.Engine.System do
 
   @doc """
   Trigger a system to run immediately. If a system is running while this call is made the system will run again
-  as soon as it can and the result returned.
+  as soon as it can and the result of that run is returned.
   """
-  def run(key) do
+  def run(name) do
     try do
-      GenServer.call(via(@system_registry, key), :start_running, :infinity)
+      GenServer.call(via(@system_registry, name), :run, :infinity)
     catch
       :exit, {:noproc, _} -> {:error, :system_not_running}
     end
@@ -90,16 +193,16 @@ defmodule Exmud.Engine.System do
   @doc """
   Check to see if a system is running.
   """
-  def running?(key) do
-    result = Registry.lookup(@system_registry, key)
+  def running?(name) do
+    result = Registry.lookup(@system_registry, name)
     {:ok, result != []}
   end
 
   @doc """
   Start a system.
   """
-  def start(key, args \\ nil) do
-    with  {:ok, _} <- Supervisor.start_child(Exmud.Engine.SystemRunnerSupervisor, [key, args]),
+  def start(name, args \\ nil) do
+    with  {:ok, _} <- Supervisor.start_child(Exmud.Engine.SystemRunnerSupervisor, [name, args]),
 
       do: {:ok, :started}
   end
@@ -107,9 +210,9 @@ defmodule Exmud.Engine.System do
   @doc """
   Stops a system if it is started.
   """
-  def stop(key, args \\ %{}) do
+  def stop(name, args \\ %{}) do
     try do
-      GenServer.call(via(@system_registry, key), {:stop, args}, :infinity)
+      GenServer.call(via(@system_registry, name), {:stop, args}, :infinity)
     catch
       :exit, {:noproc, _} -> {:error, :system_not_running}
     end
@@ -160,16 +263,16 @@ defmodule Exmud.Engine.System do
   #
 
 
-  defp send_message(method, key, message) do
+  defp send_message(method, name, message) do
     try do
-      apply(GenServer, method, [via(@system_registry, key), {:message, message}])
+      apply(GenServer, method, [via(@system_registry, name), {:message, message}])
     catch
       :exit, {:noproc, _} -> {:error, :system_not_running}
     end
   end
 
-  defp system_query(key) do
+  defp system_query(name) do
     from system in System,
-      where: system.key == ^key
+      where: system.name == ^name
   end
 end

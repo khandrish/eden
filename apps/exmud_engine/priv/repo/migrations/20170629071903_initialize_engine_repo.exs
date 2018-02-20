@@ -4,14 +4,10 @@ defmodule Exmud.DB.Repo.EngineRepo.Migrations.InitializeEngineRepo do
   def change do
     # Tables which stand on their own and have no relationships
     create table(:system) do
-      add :key, :string
-      add :last_checkpoint, :timestamptz
-      add :running, :boolean
+      add :name, :string
       add :state, :binary
     end
-    create index(:system, [:last_checkpoint])
-    create index(:system, [:running])
-    create unique_index(:system, [:key])
+    create unique_index(:system, [:name])
 
     # Tables related to game objects
     create table(:object) do

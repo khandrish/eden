@@ -3,7 +3,7 @@ defmodule Exmud.Engine.Test.System.Interval do
   A barebones example of a system that uses intervals when starting and running.
   """
 
-  use Exmud.Engine.Test.System
+  use Exmud.Engine.System
 
   def name, do: "Interval"
 
