@@ -76,7 +76,8 @@ defmodule Exmud.Engine.System do
   @callback run(state) :: {:ok, state} |
                           {:ok, state, next_iteration} |
                           {:stop, reason, state} |
-                          {:error, error, state}
+                          {:error, error, state} |
+                          {:error, error, state, next_iteration}
 
   @doc """
   Called when the System is being started.
