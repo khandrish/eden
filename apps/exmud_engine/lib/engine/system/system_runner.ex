@@ -84,7 +84,7 @@ defmodule Exmud.Engine.SystemRunner do
       system = change(system, state: deserialize(system.state))
 
       # If an interval was returned, trigger run after said interval
-      if :erlang.tuple_size(start_result) == 3, do: Process.send_after(self(), :auto_run, elem(start_result, 2))
+      if :erlang.tuple_size(start_result) == 3, do: Process.send_after(self(), :run, elem(start_result, 2))
 
       {:ok, system}
     else
@@ -100,7 +100,7 @@ defmodule Exmud.Engine.SystemRunner do
 
   @doc false
   def handle_call(:run, _from, system) do
-    Process.send_after(self(), :auto_run, 0)
+    Process.send_after(self(), :run, 0)
     {:reply, {:ok, :running}, system}
   end
 
@@ -155,7 +155,7 @@ defmodule Exmud.Engine.SystemRunner do
   end
 
   @doc false
-  def handle_info(:auto_run, system) do
+  def handle_info(:run, system) do
     run_result = apply(get_field(system, :callback_module),
                                  :run,
                                  [get_field(system, :state)])
@@ -168,7 +168,7 @@ defmodule Exmud.Engine.SystemRunner do
       {:ok, new_state, interval} ->
         Logger.info("System `#{get_field(system, :name)}` successfully ran. Running again in #{interval} milliseconds.")
 
-        Process.send_after(self(), :auto_run, interval)
+        Process.send_after(self(), :run, interval)
 
         {:noreply, update_and_persist(system, new_state)}
       {:error, error, new_state} ->
@@ -178,7 +178,7 @@ defmodule Exmud.Engine.SystemRunner do
       {:error, error, new_state, interval} ->
         Logger.error("Error `#{error}` encountered when running System `#{get_field(system, :name)}`.  Running again in #{interval} milliseconds.")
 
-        Process.send_after(self(), :auto_run, interval)
+        Process.send_after(self(), :run, interval)
 
         {:noreply, update_and_persist(system, new_state)}
       {:stop, reason, new_state} ->
