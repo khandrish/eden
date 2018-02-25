@@ -127,9 +127,10 @@ defmodule Exmud.Engine.System do
   alias Exmud.Engine.Schema.System
   import Ecto.Query
   import Exmud.Common.Utils
+  import Exmud.Engine.Utils
   require Logger
 
-  @system_registry :exmud_engine_system_registry
+  @system_registry system_registry()
 
   @doc """
   Call a running system with a message.
@@ -182,6 +183,9 @@ defmodule Exmud.Engine.System do
   @doc """
   Trigger a system to run immediately. If a system is running while this call is made the system will run again
   as soon as it can and the result of that run is returned.
+
+  This method ensures that the System is active and that it will begin the process of running its main loop immediately,
+  but offers no other guarantees.
   """
   def run(name) do
     try do
@@ -227,11 +231,17 @@ defmodule Exmud.Engine.System do
 
   @cache :system_cache
 
+  @doc """
+  List all Systems which have been registered with the engine since the last start.
+  """
   def list_registered() do
     Logger.info("Listing all registered Systems")
     Cache.list(@cache)
   end
 
+  @doc """
+  Lookup the callback module for the System with the provided name.
+  """
   def lookup(name) do
     case Cache.get(@cache, name) do
       {:error, _} ->
@@ -243,16 +253,25 @@ defmodule Exmud.Engine.System do
     end
   end
 
+  @doc """
+  Register a callback module for a System with the provided name.
+  """
   def register(callback_module) do
     Logger.info("Registering System with name `#{callback_module.name}` and module `#{inspect(callback_module)}`")
     Cache.set(@cache, callback_module.name, callback_module)
   end
 
+  @doc """
+  Check to see if a System has been registered with the provided name.
+  """
   def registered?(name) do
     Logger.info("Checking registration of System with name `#{name}`")
     Cache.exists?(@cache, name)
   end
 
+  @doc """
+  Unregisters the callback module for a Script with the provided name.
+  """
   def unregister(name) do
     Logger.info("Unregistering System with name `#{name}`")
     Cache.delete(@cache, name)

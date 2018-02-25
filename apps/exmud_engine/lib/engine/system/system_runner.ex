@@ -99,9 +99,10 @@ defmodule Exmud.Engine.SystemRunner do
   end
 
   @doc false
-  def handle_call(:run, _from, system) do
-    Process.send_after(self(), :run, 0)
-    {:reply, {:ok, :running}, system}
+  def handle_call(:run, from, system) do
+    GenServer.reply(from, {:ok, :running})
+
+    run(system)
   end
 
   @doc false
@@ -156,6 +157,10 @@ defmodule Exmud.Engine.SystemRunner do
 
   @doc false
   def handle_info(:run, system) do
+    run(system)
+  end
+
+  defp run(system) do
     run_result = apply(get_field(system, :callback_module),
                                  :run,
                                  [get_field(system, :state)])
