@@ -1,4 +1,6 @@
 defmodule Exmud.Engine.Cache do
+  @moduledoc false
+
   import Exmud.Engine.Utils
   require Logger
 

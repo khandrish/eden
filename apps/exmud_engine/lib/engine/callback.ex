@@ -10,7 +10,7 @@ defmodule Exmud.Engine.Callback do
   When a custom callback for an object has not been registered, a default implementation may be used instead. These can
   be specified by passing a key to be used as a key to check the config, which is how the engine behaves for its
   internal hooks, or by passing a function to be called directly. Default implementations have been provided for all
-  engine hooks. This logic can be applied in application code as well when writing scripts and commands.
+  engine hooks. This logic can be applied in application code as well as when writing scripts and commands.
   """
 
   alias Exmud.Engine.Cache

@@ -1,4 +1,11 @@
 defmodule Exmud.Engine.Attribute do
+  @moduledoc """
+  An `Exmud.Component` can have an arbitrary number of attributes associated with it.
+
+  Attributes are where all of the actual data within the engine is stored, and all Attributes belong to a Component
+  which has been attached to an Object.
+  """
+
   alias Exmud.Engine.Component
   alias Exmud.Engine.Repo
   alias Exmud.Engine.Schema.Attribute
