@@ -72,15 +72,13 @@ defmodule Exmud.DB.Repo.EngineRepo.Migrations.InitializeEngineRepo do
     create unique_index(:relationship, [:from_id, :relationship, :to_id])
 
     create table(:script) do
-      add :callback_module, :binary
-      add :key, :string
+      add :name, :string
       add :object_id, references(:object, [on_delete: :delete_all])
-      add :options, :binary
       add :state, :binary
     end
-    create index(:script, [:key])
+    create index(:script, [:name])
     create index(:script, [:object_id])
-    create unique_index(:script, [:object_id, :key])
+    create unique_index(:script, [:object_id, :name])
 
     create table(:tag) do
       add :category, :string

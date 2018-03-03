@@ -14,7 +14,8 @@ config :exmud_engine,
   command_sets: [],
   components: [],
   scripts: [],
-  systems: []
+  systems: [],
+  byte_size_to_compress: 1024
 
 
 # It is also possible to import configuration files, relative to this

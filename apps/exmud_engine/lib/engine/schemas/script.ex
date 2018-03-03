@@ -2,19 +2,22 @@ defmodule Exmud.Engine.Schema.Script do
   use Exmud.Common.Schema
 
   schema "script" do
-    field :callback_module, :binary
-    field :key, :string
-    field :options, :binary
+    field :callback_module, :any, virtual: true
+    field :deserialized_state, :any, virtual: true
+    field :name, :string
     field :state, :binary
     belongs_to :object, Exmud.Engine.Schema.Object, foreign_key: :object_id
   end
 
-  def cast(system), do: cast(system, %{}, [])
-
-  def changeset(script, params \\ %{}) do
+  def load(script, params) do
     script
-    |> cast(params, [:key, :object_id, :options, :state])
-    |> validate_required([:key, :object_id, :options, :state])
+    |> cast(params, [:callback_module, :deserialized_state])
+  end
+
+  def new(params) do
+    %Exmud.Engine.Schema.Script{}
+    |> cast(params, [:name, :object_id, :state, :callback_module, :deserialized_state])
+    |> validate_required([:name, :object_id])
     |> foreign_key_constraint(:object_id)
   end
 end

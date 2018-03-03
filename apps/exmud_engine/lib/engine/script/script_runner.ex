@@ -1,11 +1,6 @@
 defmodule Exmud.Engine.ScriptRunner do
   @moduledoc false
 
-  defmodule State do
-    @moduledoc false
-    defstruct running: false, script: nil
-  end
-
   alias Exmud.Engine.Repo
   alias Exmud.Engine.Schema.Script
   import Ecto.Changeset
@@ -15,6 +10,8 @@ defmodule Exmud.Engine.ScriptRunner do
   require Logger
   use GenServer
 
+  @script_registry script_registry()
+
 
   #
   # Worker callback used by the supervisor when starting a new Script runner.
@@ -22,8 +19,8 @@ defmodule Exmud.Engine.ScriptRunner do
 
 
   @doc false
-  def start_link(key, args) do
-    case GenServer.start_link(__MODULE__, {key, args}) do
+  def start_link(object_id, name, args) do
+    case GenServer.start_link(__MODULE__, {object_id, name, args}, name: via(@script_registry, {object_id, name})) do
       {:error, {:already_started, _pid}} -> {:error, :already_started}
       result -> result
     end
@@ -36,109 +33,81 @@ defmodule Exmud.Engine.ScriptRunner do
 
 
   @doc false
-  def init({key, args}) do
+  def init({object_id, name, args}) do
     # Either load the Script from the database, or create a new Script struct. This struct contains the state of the
     # Script as understood by the callback, as well as information used by the Engine to execute the Script properly.
-    with {:ok, callback_module} <- Exmud.Engine.Script.lookup(key),
-         loaded_script <- load_script(key, callback_module),
-         {:ok, initialized_script, initialized_args} <- initialize_script(loaded_script, args)
+    with {:ok, callback_module} <- Exmud.Engine.Script.lookup(name),
+         {:ok, loaded_script} <- load_script(object_id, name, callback_module, args)
     do
-      start_script(initialized_script, initialized_args)
+      start_script(loaded_script, args)
     else
       {:error, error} -> {:stop, error}
     end
   end
 
-  defp load_script(key, callback_module) do
-    case Repo.one(from(script in Script, where: script.key == ^key)) do
+  defp load_script(object_id, name, callback_module, args) do
+    case Repo.one(script_query(object_id, name)) do
       nil ->
-        Logger.info("Script `#{key}` not found in the database.")
+        Logger.info("Script `#{name}` not found in the database on Object `#{object_id}`.")
 
-        change(%Script{}, callback_module: callback_module, key: key, state: nil)
+        initialization_result = apply(callback_module, :initialize, [object_id, args])
+
+        case initialization_result do
+          {:ok, new_state} ->
+            Logger.info("Script `#{name}` successfully initialized on Object `#{object_id}`.")
+
+            {:ok, Script.new(%{callback_module: callback_module, deserialized_state: new_state, object_id: object_id, name: name})}
+          {_, error} = result ->
+            Logger.error("Encountered error `#{error}` while initializing Script `#{name}` on Object `#{object_id}`.")
+
+            result
+        end
       script ->
-        Logger.info("Script `#{key}` loaded from database.")
+        Logger.info("Script `#{name}` loaded from database.")
 
-        change(script, callback_module: callback_module, initialized: true, state: deserialize(script.state))
-    end
-  end
+        deserialized_state = maybe_unzip_state(script.state)
 
-  defp initialize_script(script, args) do
-    if get_field(script, :initialized) do
-      Logger.info("Script `#{get_field(script, :key)}` already initialized.")
-
-      {:ok, script, args}
-    else
-      initialization_result = apply(get_field(script, :callback_module), :initialize, [args])
-
-      case initialization_result do
-        {:ok, new_state} ->
-          Logger.info("Script `#{get_field(script, :key)}` successfully initialized. Returning passed in args.")
-
-          {:ok, change(script, state: new_state), args}
-        {:ok, new_state, new_args} ->
-          Logger.info("Script `#{get_field(script, :key)}` successfully initialized. Returning modified args.")
-
-          {:ok, change(script, state: new_state), new_args}
-        {_, error} = result ->
-          Logger.error("Encountered error `#{error}` while initializing Script `#{get_field(script, :key)}`.")
-
-          result
-      end
+        {:ok, Script.load(script, %{callback_module: callback_module, deserialized_state: deserialized_state})}
     end
   end
 
   defp start_script(script, start_args) do
     start_result = apply(get_field(script, :callback_module),
                          :start,
-                         [get_field(script, :state), start_args])
+                         [get_field(script, :object_id), start_args, get_field(script, :deserialized_state)])
 
-    if elem(start_result, 0) == :ok do
-      Logger.info("Script `#{get_field(script, :key)}` successfully started.")
+    case start_result do
+      {:ok, state, send_after} ->
+        Logger.info("Script `#{get_field(script, :name)}` successfully started on Object `#{get_field(script, :object_id)}`.")
 
-      # Update the running status...or not
-      script =
-        case start_result do
-          {_, new_state} ->
-            change(script, state: serialize(new_state))
-          {_, new_state, _} ->
-            change(script, running: true, state: serialize(new_state))
-        end
+        {:ok, script} = Repo.insert_or_update(change(script, state: maybe_zip_state(state)))
+        script = change(script, deserialized_state: state)
 
-      # Save modified state immediately
-      {:ok, script} = Repo.insert_or_update(Script.cast(script))
-      script = change(script, state: deserialize(script.state))
+        # Trigger run after interval
+        Process.send_after(self(), :run, send_after)
 
-      # If an interval was returned, trigger run after said interval
-      if get_field(script, :running), do: Process.send_after(self(), :auto_run, elem(start_result, 2))
+        {:ok, script}
+      {:error, error, new_state} ->
+        Logger.error("Encountered error `#{error}` while starting Script `#{get_field(script, :name)}` on Object `#{get_field(script, :object_id)}`.")
 
-      {:ok, script}
-    else
-      {_, error, new_state} = start_result
+        Repo.insert_or_update(change(script, state: maybe_zip_state(new_state)))
 
-      Logger.error("Encountered error `#{error}` while starting Script `#{get_field(script, :key)}`.")
-
-      Repo.insert_or_update(change(script, state: new_state))
-
-      {:stop, error}
+        {:stop, error}
     end
   end
 
   @doc false
-  def handle_call(:start_running, _from, script) do
-    if get_field(script, :running) do
-      {:reply, {:error, :already_running}, script}
-    else
-      Process.send_after(self(), :auto_run, 0)
+  def handle_call(:run, from, script) do
+    GenServer.reply(from, {:ok, :running})
 
-      {:reply, {:ok, :running}, change(script, running: true)}
-    end
+    run(script)
   end
 
   @doc false
   def handle_call({:message, message}, _from, script) do
     message_result = apply(get_field(script, :callback_module),
                            :handle_message,
-                           [message, get_field(script, :state)])
+                           [get_field(script, :object_id), message, get_field(script, :deserialized_state)])
 
     case message_result do
       {:ok, response, new_state} ->
@@ -150,26 +119,26 @@ defmodule Exmud.Engine.ScriptRunner do
 
   @doc false
   def handle_call(:state, _from, script) do
-    {:reply, {:ok, get_field(script, :state)}, script}
+    {:reply, {:ok, get_field(script, :deserialized_state)}, script}
   end
 
   @doc false
-  def handle_call({:stop, args}, _from, script) do
+  def handle_call({:stop, reason}, _from, script) do
     stop_result = apply(get_field(script, :callback_module),
                         :stop,
-                        [args, get_field(script, :state)])
+                        [get_field(script, :object_id), reason, get_field(script, :deserialized_state)])
 
     case stop_result do
       {:ok, new_state} ->
-        Logger.info("Script `#{get_field(script, :key)}` successfully stopped.")
+        Logger.info("Script `#{get_field(script, :name)}` successfully stopped on Object `#{get_field(script, :object_id)}`.")
 
-        script = update_and_persist(script, new_state, false)
+        script = update_and_persist(script, new_state)
 
         {:stop, :normal, {:ok, :stopped}, script}
       {:error, error, new_state} ->
-        Logger.error("Error `#{error}` encountered when stopping Script `#{get_field(script, :key)}`.")
+        Logger.error("Error `#{error}` encountered when stopping Script `#{get_field(script, :name)}` on Object `#{get_field(script, :object_id)}`.")
 
-        script = update_and_persist(script, new_state, false)
+        script = update_and_persist(script, new_state)
 
         {:stop, :normal, {:error, error}, script}
     end
@@ -179,57 +148,60 @@ defmodule Exmud.Engine.ScriptRunner do
   def handle_cast({:message, message}, script) do
     {_type, _response, new_state} = apply(get_field(script, :callback_module),
                                           :handle_message,
-                                          [message, get_field(script, :state)])
+                                          [get_field(script, :object_id), message, get_field(script, :deserialized_state)])
 
     {:noreply, update_and_persist(script, new_state)}
   end
 
   @doc false
-  def handle_info(:auto_run, script) do
+  def handle_info(:run, script) do
+    run(script)
+  end
+
+  defp run(script) do
     run_result = apply(get_field(script, :callback_module),
-                                 :run,
-                                 [get_field(script, :state)])
+                       :run,
+                       [get_field(script, :object_id), get_field(script, :deserialized_state)])
 
     case run_result do
       {:ok, new_state} ->
-        Logger.info("Script `#{get_field(script, :key)}` successfully ran.")
+        Logger.info("Script `#{get_field(script, :name)}` on Object `#{get_field(script, :object_id)}` successfully ran.")
 
-        {:noreply, update_and_persist(script, new_state, false)}
+        {:noreply, update_and_persist(script, new_state)}
       {:ok, new_state, interval} ->
-        Logger.info("Script `#{get_field(script, :key)}` successfully ran. Running again in #{interval} milliseconds.")
+        Logger.info("Script `#{get_field(script, :name)}` on Object `#{get_field(script, :object_id)}` successfully ran. Running again in #{interval} milliseconds.")
 
-        Process.send_after(self(), :auto_run, interval)
+        Process.send_after(self(), :run, interval)
 
-        {:noreply, update_and_persist(script, new_state, true)}
+        {:noreply, update_and_persist(script, new_state)}
       {:error, error, new_state} ->
-        Logger.error("Error `#{error}` encountered when running Script `#{get_field(script, :key)}`.")
+        Logger.error("Error `#{error}` encountered when running Script `#{get_field(script, :name)}` on Object `#{get_field(script, :object_id)}.")
 
-        {:noreply, update_and_persist(script, new_state, false)}
+        {:noreply, update_and_persist(script, new_state)}
       {:error, error, new_state, interval} ->
-        Logger.error("Error `#{error}` encountered when running Script `#{get_field(script, :key)}`.  Running again in #{interval} milliseconds.")
+        Logger.error("Error `#{error}` encountered when running Script `#{get_field(script, :name)}` on Object `#{get_field(script, :object_id)}.  Running again in #{interval} milliseconds.")
 
-        Process.send_after(self(), :auto_run, interval)
+        Process.send_after(self(), :run, interval)
 
-        {:noreply, update_and_persist(script, new_state, true)}
+        {:noreply, update_and_persist(script, new_state)}
       {:stop, reason, new_state} ->
-        Logger.info("Script `#{get_field(script, :key)}` stopping after run.")
-
+        Logger.info("Script `#{get_field(script, :name)}` on Object `#{get_field(script, :object_id)} stopping after run.")
 
         stop_result = apply(get_field(script, :callback_module),
                             :stop,
-                            [reason, new_state])
+                            [get_field(script, :object_id), reason, new_state])
 
         script_state =
           case stop_result do
             {:ok, script_state} ->
-              Logger.info("Script `#{get_field(script, :key)}` successfully stopped.")
+              Logger.info("Script `#{get_field(script, :name)}` on Object `#{get_field(script, :object_id)} successfully stopped.")
               script_state
             {:error, error, script_state} ->
-              Logger.error("Error `#{error}` encountered when stopping Script `#{get_field(script, :key)}`.")
+              Logger.error("Error `#{error}` encountered when stopping Script `#{get_field(script, :name)}` on Object `#{get_field(script, :object_id)}.")
               script_state
           end
 
-        script = update_and_persist(script, script_state, false)
+        script = update_and_persist(script, script_state)
 
         {:stop, :normal, script}
     end
@@ -240,18 +212,21 @@ defmodule Exmud.Engine.ScriptRunner do
   # Private Functions
   #
 
+
   defp update_and_persist(script, new_script_state) do
-    script = change(script, state: serialize(new_script_state))
-    do_persist(script)
+    if new_script_state == get_field(script, :deserialized_state) do
+      script
+    else
+      state = maybe_zip_state(new_script_state)
+
+      {:ok, script} = Repo.update(change(script, state: state))
+      change(script, deserialized_state: new_script_state)
+    end
   end
 
-  defp update_and_persist(script, new_script_state, running) do
-    script = change(script, running: running, state: serialize(new_script_state))
-    do_persist(script)
-  end
-
-  defp do_persist(script) do
-    {:ok, script} = Repo.update(script)
-    change(script, state: deserialize(script.state))
+  defp script_query(object_id, name) do
+    from script in Script,
+      where: script.name == ^name,
+      where: script.object_id == ^object_id
   end
 end
