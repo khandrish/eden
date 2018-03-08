@@ -98,7 +98,7 @@ defmodule Exmud.Engine.ScriptRunner do
 
   @doc false
   def handle_call(:run, from, script) do
-    GenServer.reply(from, {:ok, :running})
+    GenServer.reply(from, :ok)
 
     run(script)
   end
@@ -134,7 +134,7 @@ defmodule Exmud.Engine.ScriptRunner do
 
         script = update_and_persist(script, new_state)
 
-        {:stop, :normal, {:ok, :stopped}, script}
+        {:stop, :normal, :ok, script}
       {:error, error, new_state} ->
         Logger.error("Error `#{error}` encountered when stopping Script `#{get_field(script, :name)}` on Object `#{get_field(script, :object_id)}`.")
 

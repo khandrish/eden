@@ -136,7 +136,7 @@ defmodule Exmud.Engine.SystemRunner do
 
         system = update_and_persist(system, new_state)
 
-        {:stop, :normal, {:ok, :stopped}, system}
+        {:stop, :normal, :ok, system}
       {:error, error, new_state} ->
         Logger.error("Error `#{error}` encountered when stopping System `#{get_field(system, :name)}`.")
 

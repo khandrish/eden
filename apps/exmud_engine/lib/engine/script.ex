@@ -150,6 +150,22 @@ defmodule Exmud.Engine.Script do
   end
 
   @doc """
+  Detach a Script from an Object.
+
+  This method first stops the Script if it is running before moving on to removing the Script from the database. It is
+  also destructive, with the state of the Script being destroyed at the time of removal.
+  """
+  def detach(object_id, name) do
+    stop(object_id, name)
+    script_query(object_id, name)
+    |> Repo.delete_all()
+    |> case do
+      {1, _} ->   :ok
+      {0, _} -> {:error, :script_not_removed}
+    end
+  end
+
+  @doc """
   Get the state of a Script.
 
   First the running Script will be queried for the state, and then the database. Only if both fail to return a result is
@@ -174,12 +190,11 @@ defmodule Exmud.Engine.Script do
   Check to see if a Script is attached to an Object.
   """
   def is_attached?(object_id, name) do
-    script_query(object_id, name)
-    |> Repo.one()
-    |> case do
-      nil -> false
-      _ -> true
-    end
+    query =
+      from script in script_query(object_id, name),
+        select: count("*")
+
+    Repo.one(query) == 1
   end
 
   @doc """
@@ -195,22 +210,7 @@ defmodule Exmud.Engine.Script do
       nil -> {:error, :no_such_script}
       script ->
         {:ok, _} = Repo.delete(script)
-        {:ok, unpack_term(script.state)}
-    end
-  end
-
-  @doc """
-  Remove a Script from an Object.
-
-  This method first stops the Script if it is running before moving on to removing the Script from the database.
-  """
-  def remove(object_id, name) do
-    stop(object_id, name)
-    script_query(object_id, name)
-    |> Repo.delete_all
-    |> case do
-      {1, _} ->   {:ok, :removed}
-      {0, _} -> {:error, :script_not_removed}
+        :ok
     end
   end
 
@@ -245,7 +245,7 @@ defmodule Exmud.Engine.Script do
   def start(object_id, name, args \\ nil) do
     with  {:ok, _} <- Supervisor.start_child(Exmud.Engine.ScriptRunnerSupervisor, [object_id, name, args]),
 
-      do: {:ok, :started}
+      do: :ok
   end
 
   @doc """

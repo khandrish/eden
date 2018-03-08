@@ -6,6 +6,7 @@ defmodule Exmud.Engine.Cache do
 
   def delete(category, key) do
     Cachex.del(cache(), {category, key})
+    :ok
   end
 
   def exists?(category, key) do
@@ -30,6 +31,7 @@ defmodule Exmud.Engine.Cache do
 
   def set(category, key, callback_module) do
     Logger.debug("Registering key `#{key}` in category `#{category}`")
-    Cachex.set(cache(), {category, key}, callback_module)
+    {:ok, _} = Cachex.set(cache(), {category, key}, callback_module)
+    :ok
   end
 end
