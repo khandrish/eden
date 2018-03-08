@@ -11,7 +11,7 @@ defmodule Exmud.Engine.Tag do
   #
 
 
-  def add(object_id, category, tag) do
+  def attach(object_id, category, tag) do
     args = %{category: category,
              object_id: object_id,
              tag: tag}
@@ -28,23 +28,24 @@ defmodule Exmud.Engine.Tag do
         else
           {:error, errors}
         end
-      result ->
-        result
+      {:ok, _} ->
+        :ok
     end
   end
 
-  def has(object_id, category, tag) do
-    case Repo.one(tag_query(object_id, category, tag)) do
-      nil -> {:ok, false}
-      _object -> {:ok, true}
-    end
+  def is_attached?(object_id, category, tag) do
+    query =
+      from tag in tag_query(object_id, category, tag),
+        select: count("*")
+
+    Repo.one(query) == 1
   end
 
-  def remove(object_id, category, tag) do
+  def detach(object_id, category, tag) do
     tag_query(object_id, category, tag)
     |> Repo.delete_all()
     |> case do
-      {num, _} when num > 0 -> {:ok, object_id}
+      {num, _} when num > 0 -> :ok
       {0, _} -> {:error, :no_such_tag}
       _ -> {:error, :unknown}
     end

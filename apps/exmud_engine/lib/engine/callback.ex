@@ -122,7 +122,7 @@ defmodule Exmud.Engine.Callback do
         else
           {:error, errors}
         end
-      {:ok, callback} ->
+      {:ok, _callback} ->
         :ok
     end
   end

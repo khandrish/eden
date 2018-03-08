@@ -11,19 +11,19 @@ defmodule Exmud.Engine.Test.TagTest do
     @tag tag: true
     @tag engine: true
     test "lifecycle", %{object_id: object_id} = _context do
-      assert Tag.has(object_id, "foo", "bar") == {:ok, false}
-      assert Tag.add(object_id, "foo", "bar") == {:ok, object_id}
-      assert Tag.has(object_id, "foo", "bar") == {:ok, true}
-      assert Tag.remove(object_id, "foo", "bar") == {:ok, object_id}
-      assert Tag.has(object_id, "foo", "bar") == {:ok, false}
+      assert Tag.is_attached?(object_id, "foo", "bar") == false
+      assert Tag.attach(object_id, "foo", "bar") == :ok
+      assert Tag.is_attached?(object_id, "foo", "bar") == true
+      assert Tag.detach(object_id, "foo", "bar") == :ok
+      assert Tag.is_attached?(object_id, "foo", "bar") == false
     end
 
     @tag tag: true
     @tag engine: true
     test "invalid cases" do
-      assert Tag.add("invalid id", :invalid_tag, "bar") == {:error, :no_such_object}
-      assert Tag.has(0, "foo", "bar") == {:ok, false}
-      assert Tag.remove(0, "foo", "bar") == {:error, :no_such_tag}
+      assert Tag.attach("invalid id", :invalid_tag, "bar") == {:error, :no_such_object}
+      assert Tag.is_attached?(0, "foo", "bar") == false
+      assert Tag.detach(0, "foo", "bar") == {:error, :no_such_tag}
     end
   end
 
