@@ -237,20 +237,6 @@ defmodule Exmud.Engine.Object do
     normalize_get_results(objects, rest)
   end
 
-  defp normalize_get_results(objects, [:callbacks | rest]) do
-    objects =
-      Enum.map(objects, fn(object) ->
-        callbacks =
-          Enum.map(object.callbacks, fn(callback) ->
-            %{callback | callback_function: deserialize(callback.callback_function)}
-          end)
-
-        %{object | callbacks: callbacks}
-      end)
-
-    normalize_get_results(objects, rest)
-  end
-
   defp normalize_get_results(objects, [:command_sets | rest]) do
     objects =
       Enum.map(objects, fn(object) ->

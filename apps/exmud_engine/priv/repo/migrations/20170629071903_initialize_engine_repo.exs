@@ -37,7 +37,7 @@ defmodule Exmud.DB.Repo.EngineRepo.Migrations.InitializeEngineRepo do
     create table(:callback) do
       add :object_id, references(:object, [on_delete: :delete_all])
       add :key, :string
-      add :callback_function, :binary
+      add :name, :string
     end
     create index(:callback, [:object_id])
     create index(:callback, [:key])

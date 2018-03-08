@@ -1,57 +1,48 @@
 defmodule Exmud.Engine.Test.CallbackTest do
   alias Ecto.UUID
   alias Exmud.Engine.Callback
-  alias Exmud.Engine.Test.CallbackTest.ExampleCallback, as: EC
   alias Exmud.Engine.Object
   require Logger
   use Exmud.Engine.Test.DBTestCase, async: false
 
+  # Test Callbacks
+  alias Exmud.Engine.Test.Callback.Basic
+
   describe "global callback tests: " do
+    setup [:create_new_object, :register_test_callbacks]
 
     @tag callback: true
     @tag engine: true
     test "engine registration" do
-      callback = UUID.generate()
-      assert Callback.registered?(callback) == {:ok, false}
-      assert Callback.lookup(callback) == {:error, :no_such_callback}
-      assert Callback.register(callback, EC) == {:ok, true}
-      assert Callback.registered?(callback) == {:ok, true}
-      assert Callback.lookup(callback) == {:ok, EC}
-      assert Enum.any?(Callback.list_registered(), fn(key) -> key == callback end) == true
-      assert Callback.unregister(callback) == {:ok, true}
-      assert Callback.registered?(callback) == {:ok, false}
-      assert Enum.any?(Callback.list_registered(), fn(key) -> key == callback end) == false
+      assert Callback.registered?("foo") == false
+      assert Callback.lookup("foo") == {:error, :no_such_callback}
+      assert Callback.registered?(Basic.name()) == true
+      assert Callback.lookup(Basic.name()) == {:ok, Basic}
+      assert Enum.any?(Callback.list_registered(), fn(key) -> key == Basic.name() end) == true
+      assert Callback.unregister(Basic.name()) == :ok
+      assert Callback.registered?(Basic.name()) == false
+      assert Enum.any?(Callback.list_registered(), fn(key) -> key == Basic.name() end) == false
     end
-  end
-
-  describe "callback multi tests: " do
-    setup [:create_new_object]
 
     @tag callback: true
     @tag engine: true
     test "callback lifecycle", %{object_id: object_id} = _context do
-      fun = fn(_, _) -> {:ok, :ok} end
-      callback = UUID.generate()
-      assert Callback.register(callback, fun) == {:ok, true}
-      assert Callback.run(object_id, callback, :ok) == {:ok, :ok}
-      assert Callback.has(object_id, "foo") == {:ok, false}
-      assert Callback.add(object_id, "foo", fun) == {:ok, object_id}
-      assert Callback.add(object_id, "foobar", fun) == {:ok, object_id}
-      assert Callback.has(object_id, "foo") == {:ok, true}
-      assert Callback.get(object_id, "foo") == {:ok, fun}
-      assert Callback.get(object_id, "fooo", fun) == {:ok, fun}
-      assert Callback.remove(object_id, "foo") == {:ok, object_id}
-      assert Callback.has(object_id, "foo") == {:ok, false}
-      assert Callback.run(object_id, "foobar", []) == {:ok, :ok}
+      assert Callback.run(object_id, Basic.key(), :ok, %{}) == {:error, :no_such_callback}
+      assert Callback.is_attached?(object_id, Basic.name()) == false
+      assert Callback.run(object_id, Basic.key(), :ok, %{}, Basic.name()) == :ok
+      assert Callback.attach(object_id, Basic) == :ok
+      assert Callback.run(object_id, Basic.key(), :ok, %{}) == :ok
+      assert Callback.detach(object_id, Basic.key()) == :ok
+      assert Callback.is_attached?(object_id, Basic.name()) == false
     end
 
     @tag callback: true
     @tag engine: true
     test "callback invalid cases" do
-      assert Callback.has(0, "foo") == {:ok, false}
-      assert Callback.add(0, "foo", "foo") == {:error, :no_such_object}
+      assert Callback.is_attached?(0, "foo") == false
+      assert Callback.attach(0, Basic) == {:error, :no_such_object}
       assert Callback.get(0, "foo") == {:error, :no_such_callback}
-      assert Callback.remove(0, "foo") == {:error, :no_such_callback}
+      assert Callback.detach(0, "foo") == {:error, :no_such_callback}
     end
   end
 
@@ -60,18 +51,12 @@ defmodule Exmud.Engine.Test.CallbackTest do
     {:ok, object_id} = Object.new(key)
     %{key: key, object_id: object_id}
   end
-end
 
-defmodule Exmud.Engine.Test.CallbackTest.ExampleCallback do
-  @moduledoc """
-  A barebones example of a callback for testing.
-  """
+  @callbacks [Basic]
 
-  def run(_object_id, _args) do
-    {:ok, :ok}
+  defp register_test_callbacks(context) do
+    Enum.each(@callbacks, &Callback.register/1)
+
+    context
   end
 end
-
-
-
-

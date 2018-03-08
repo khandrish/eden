@@ -11,8 +11,11 @@ defmodule Exmud.Engine.Test.ObjectTest do
   require Logger
   use Exmud.Engine.Test.DBTestCase
 
+  # Test Callbacks
+  alias Exmud.Engine.Test.Callback.Basic
+
   describe "Standard Ecto usage tests for game object: " do
-    setup [:create_new_object]
+    setup [:create_new_object, :register_test_callbacks]
 
     @tag object: true
     @tag engine: true
@@ -53,10 +56,9 @@ defmodule Exmud.Engine.Test.ObjectTest do
       assert object.id == object_id
       component = UUID.generate()
       assert Component.register(component, Exmud.Engine.ObjectTest.ExampleComponent) == {:ok, :registered}
-      callback = UUID.generate()
       assert Component.add(object_id, component) == {:ok, object_id}
       assert Attribute.add(object_id, component, "foo", "bar") == {:ok, object_id}
-      assert Callback.add(object_id, callback, "bar") == {:ok, object_id}
+      assert Callback.attach(object_id, Basic) == :ok
       assert CommandSet.add(object_id, UUID.generate()) == {:ok, object_id}
       {:ok, object} = Object.get(object_id)
       assert length(object.components) == 1
@@ -82,7 +84,7 @@ defmodule Exmud.Engine.Test.ObjectTest do
 
       assert Component.add(object_id1, component) == {:ok, object_id1}
       assert Attribute.add(object_id1, component, attribute_key, attribute_value) == {:ok, object_id1}
-      assert Callback.add(object_id1, callback, "bar") == {:ok, object_id1}
+      assert Callback.attach(object_id1, Basic) == :ok
       assert CommandSet.add(object_id1, command_set) == {:ok, object_id1}
       assert Relationship.add(object_id1, object_id2, relationship, "foo") == {:ok, object_id1}
       assert Tag.add(object_id1, tag_category, tag) == {:ok, object_id1}
@@ -91,7 +93,7 @@ defmodule Exmud.Engine.Test.ObjectTest do
                                     {:object, key1},
                                     {:attribute, {component, attribute_key}},
                                     {:component, component},
-                                    {:callback, callback},
+                                    {:callback, Basic.key()},
                                     {:command_set, command_set},
                                     {:relationship, relationship},
                                     {:relationship, {relationship, object_id2}},
@@ -105,6 +107,14 @@ defmodule Exmud.Engine.Test.ObjectTest do
     key = UUID.generate()
     {:ok, object_id} = Object.new(key)
     %{key: key, object_id: object_id}
+  end
+
+  @callbacks [Basic]
+
+  defp register_test_callbacks(context) do
+    Enum.each(@callbacks, &Callback.register/1)
+
+    context
   end
 end
 

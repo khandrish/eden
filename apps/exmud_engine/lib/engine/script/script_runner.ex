@@ -65,7 +65,7 @@ defmodule Exmud.Engine.ScriptRunner do
       script ->
         Logger.info("Script `#{name}` loaded from database.")
 
-        deserialized_state = maybe_unzip_state(script.state)
+        deserialized_state = unpack_term(script.state)
 
         {:ok, Script.load(script, %{callback_module: callback_module, deserialized_state: deserialized_state})}
     end
@@ -80,7 +80,7 @@ defmodule Exmud.Engine.ScriptRunner do
       {:ok, state, send_after} ->
         Logger.info("Script `#{get_field(script, :name)}` successfully started on Object `#{get_field(script, :object_id)}`.")
 
-        {:ok, script} = Repo.insert_or_update(change(script, state: maybe_zip_state(state)))
+        {:ok, script} = Repo.insert_or_update(change(script, state: pack_term(state)))
         script = change(script, deserialized_state: state)
 
         # Trigger run after interval
@@ -90,7 +90,7 @@ defmodule Exmud.Engine.ScriptRunner do
       {:error, error, new_state} ->
         Logger.error("Encountered error `#{error}` while starting Script `#{get_field(script, :name)}` on Object `#{get_field(script, :object_id)}`.")
 
-        Repo.insert_or_update(change(script, state: maybe_zip_state(new_state)))
+        Repo.insert_or_update(change(script, state: pack_term(new_state)))
 
         {:stop, error}
     end
@@ -217,7 +217,7 @@ defmodule Exmud.Engine.ScriptRunner do
     if new_script_state == get_field(script, :deserialized_state) do
       script
     else
-      state = maybe_zip_state(new_script_state)
+      state = pack_term(new_script_state)
 
       {:ok, script} = Repo.update(change(script, state: state))
       change(script, deserialized_state: new_script_state)

@@ -165,7 +165,7 @@ defmodule Exmud.Engine.Script do
         |> case do
           nil -> {:error, :no_such_script}
           script ->
-            {:ok, deserialize(script.state)}
+            {:ok, unpack_term(script.state)}
         end
     end
   end
@@ -195,7 +195,7 @@ defmodule Exmud.Engine.Script do
       nil -> {:error, :no_such_script}
       script ->
         {:ok, _} = Repo.delete(script)
-        {:ok, maybe_unzip_state(script.state)}
+        {:ok, unpack_term(script.state)}
     end
   end
 
