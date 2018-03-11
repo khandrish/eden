@@ -73,13 +73,13 @@ defmodule Exmud.Engine.Test.ScriptTest do
     @tag engine: true
     test "engine registration" do
       assert Script.register(Idle) == :ok
-      assert Script.registered?(Idle.name()) == true
+      assert Script.registered?(Idle) == true
       assert Enum.any?(Script.list_registered(), fn(k) -> Idle.name() == k end) == true
       assert Script.lookup(Idle) == {:error, :no_such_script}
       {:ok, callback} = Script.lookup(Idle.name())
       assert callback == Idle
-      assert Script.unregister(Idle.name()) == :ok
-      assert Script.registered?(Idle.name()) == false
+      assert Script.unregister(Idle) == :ok
+      assert Script.registered?(Idle) == false
       assert Enum.any?(Script.list_registered(), fn(k) -> Idle.name() == k end) == false
     end
 

@@ -296,17 +296,17 @@ defmodule Exmud.Engine.Script do
   @doc """
   Check to see if a Script has been registered with the provided name.
   """
-  def registered?(name) do
-    Logger.info("Checking registration of Script with name `#{name}`")
-    elem(Cache.exists?(@cache, name), 1)
+  def registered?(callback_module) do
+    Logger.info("Checking registration of Script with name `#{callback_module.name()}`")
+    Cache.exists?(@cache, callback_module.name())
   end
 
   @doc """
   Unregisters the callback module for a Script with the provided name.
   """
-  def unregister(name) do
-    Logger.info("Unregistering Script with name `#{name}`")
-    Cache.delete(@cache, name)
+  def unregister(callback_module) do
+    Logger.info("Unregistering Script with name `#{callback_module.name()}`")
+    Cache.delete(@cache, callback_module.name())
   end
 
 
