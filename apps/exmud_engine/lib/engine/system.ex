@@ -145,7 +145,7 @@ defmodule Exmud.Engine.System do
   def cast(name, message) do
     send_message(:cast, name, message)
 
-    {:ok, true}
+    :ok
   end
 
   @doc """
@@ -200,7 +200,7 @@ defmodule Exmud.Engine.System do
   """
   def running?(name) do
     result = Registry.lookup(@system_registry, name)
-    {:ok, result != []}
+    result != []
   end
 
   @doc """
@@ -209,7 +209,7 @@ defmodule Exmud.Engine.System do
   def start(name, args \\ nil) do
     with  {:ok, _} <- Supervisor.start_child(Exmud.Engine.SystemRunnerSupervisor, [name, args]),
 
-      do: {:ok, :started}
+      do: :ok
   end
 
   @doc """
@@ -217,7 +217,10 @@ defmodule Exmud.Engine.System do
   """
   def stop(name, args \\ %{}) do
     try do
-      GenServer.call(via(@system_registry, name), {:stop, args}, :infinity)
+      case GenServer.call(via(@system_registry, name), {:stop, args}, :infinity) do
+        {:ok, _} -> :ok
+        error -> error
+      end
     catch
       :exit, {:noproc, _} -> {:error, :system_not_running}
     end
@@ -264,17 +267,17 @@ defmodule Exmud.Engine.System do
   @doc """
   Check to see if a System has been registered with the provided name.
   """
-  def registered?(name) do
-    Logger.info("Checking registration of System with name `#{name}`")
-    Cache.exists?(@cache, name)
+  def registered?(callback_module) do
+    Logger.info("Checking registration of System with name `#{callback_module.name()}`")
+    Cache.exists?(@cache, callback_module.name())
   end
 
   @doc """
   Unregisters the callback module for a Script with the provided name.
   """
-  def unregister(name) do
-    Logger.info("Unregistering System with name `#{name}`")
-    Cache.delete(@cache, name)
+  def unregister(callback_module) do
+    Logger.info("Unregistering System with name `#{callback_module.name()}`")
+    Cache.delete(@cache, callback_module.name())
   end
 
 
