@@ -10,7 +10,7 @@ defmodule Exmud.Engine.Cache do
   end
 
   def exists?(category, key) do
-    Cachex.exists?(cache(), {category, key})
+    Cachex.exists?(cache(), {category, key}) == {:ok, true}
   end
 
   def get(category, key) do

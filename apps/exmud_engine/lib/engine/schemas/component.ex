@@ -2,7 +2,7 @@ defmodule Exmud.Engine.Schema.Component do
   use Exmud.Common.Schema
 
   schema "component" do
-    field :component, :binary
+    field :name, :string
     belongs_to :object, Exmud.Engine.Schema.Object, foreign_key: :object_id
     has_many :attributes, Exmud.Engine.Schema.Attribute, foreign_key: :component_id
   end

@@ -9,30 +9,32 @@ defmodule Exmud.Engine.Test.ComponentTest do
   require Logger
   use Exmud.Engine.Test.DBTestCase
 
+  # Test Components
+  alias Exmud.Engine.Test.Component.Bad
+  alias Exmud.Engine.Test.Component.Basic
+
   describe "Usage tests for components: " do
-    setup [:create_new_object]
+    setup [:create_new_object, :register_test_components]
 
     @tag component: true
     @tag engine: true
     test "lifecycle", %{object_id: object_id} = _context do
-      component = UUID.generate()
-      component2 = UUID.generate()
-      component3 = UUID.generate()
-      assert Component.add(object_id, component) == {:error, :component_population_failed}
-      assert Component.register(component, EC) == {:ok, :registered}
-      assert Component.register(component2, EC) == {:ok, :registered}
-      assert Component.register(component3, BEC) == {:ok, :registered}
-      assert Component.add(object_id, component) == {:ok, object_id}
-      assert Component.add(object_id, component2) == {:ok, object_id}
-      assert Component.add(object_id, component3) == {:error, :component_population_failed}
-      assert Component.has(object_id, component) == {:ok, true}
-      assert Component.has_any(object_id, component) == {:ok, true}
-      {:ok, result} = Component.get(object_id, component)
-      assert result.component == component
-      assert Component.remove(object_id, component) == {:ok, true}
-      assert Component.has(object_id, component) == {:ok, false}
-      assert Component.remove(object_id) == {:ok, true}
-      assert Component.has(object_id, component2) == {:ok, false}
+      assert Component.attach(object_id, "foo") == {:error, :no_such_component}
+      assert Component.register(Basic) == :ok
+      assert Component.register(Bad) == :ok
+      assert Component.attach(object_id, Basic.name()) == :ok
+      assert Component.attach(object_id, Bad.name()) == {:error, :component_population_failed}
+      assert Component.all_attached?(object_id, Basic.name()) == true
+      assert Component.any_attached?(object_id, Basic.name()) == true
+      assert Component.all_attached?(object_id, Basic.name()) == true
+      {:ok, result} = Component.get(object_id, Basic.name())
+      assert result.name() == Basic.name()
+      assert Component.detach(object_id, Basic.name()) == :ok
+      assert Component.all_attached?(object_id, Basic.name()) == false
+      assert Component.attach(object_id, Basic.name()) == :ok
+      assert Component.detach(object_id) == :ok
+      assert Component.all_attached?(object_id, Basic.name()) == false
+      assert Component.all_attached?(object_id, "foo") == false
     end
 
     @tag component: true
@@ -40,28 +42,26 @@ defmodule Exmud.Engine.Test.ComponentTest do
     test "engine registration" do
       key = UUID.generate()
       callback_module = UUID.generate()
-      assert Component.register(key, callback_module) == {:ok, :registered}
-      assert Component.registered?(key) == {:ok, true}
-      assert Enum.any?(Component.list_registered(), fn(k) -> key == k end) == true
+      assert Component.register(Basic) == :ok
+      assert Component.registered?(Basic) == true
+      assert Enum.any?(Component.list_registered(), fn(k) -> Basic.name() == k end) == true
       assert Component.lookup(callback_module) == {:error, :no_such_component}
-      {:ok, callback} = Component.lookup(key)
-      assert callback == callback_module
-      assert Component.unregister(key) == {:ok, true}
-      assert Component.registered?(key) == {:ok, false}
-      assert Enum.any?(Component.list_registered(), fn(k) -> key == k end) == false
+      {:ok, callback} = Component.lookup(Basic.name())
+      assert callback == Basic
+      assert Component.unregister(Basic) == :ok
+      assert Component.registered?(Basic) == false
+      assert Enum.any?(Component.list_registered(), fn(k) -> Basic.name() == k end) == false
     end
 
     @tag component: true
     @tag engine: true
     test "get tests", %{object_id: object_id} = _context do
-      component = UUID.generate()
-      assert Component.register(component, Exmud.Engine.ComponentTest.ExampleComponent) == {:ok, :registered}
+      assert Component.attach(object_id, Basic.name()) == :ok
       attribute_key = UUID.generate()
       attribute_data = UUID.generate()
-      assert Component.add(object_id, component) == {:ok, object_id}
-      assert Attribute.add(object_id, component, attribute_key, attribute_data) == {:ok, object_id}
+      assert Attribute.add(object_id, Basic.name(), attribute_key, attribute_data) == {:ok, object_id}
       {:ok, comp} = Component.get(object_id)
-      {:ok, comp2} = Component.get(component)
+      {:ok, comp2} = Component.get(Basic.name())
       assert comp == comp2
     end
   end
@@ -72,11 +72,13 @@ defmodule Exmud.Engine.Test.ComponentTest do
 
     %{key: key, object_id: object_id}
   end
-end
 
-defmodule Exmud.Engine.ComponentTest.ExampleComponent do
-  def populate do
-    {:ok, :populated}
+  @components [Basic, Bad]
+
+  defp register_test_components(context) do
+    Enum.each(@components, &Component.register/1)
+
+    context
   end
 end
 

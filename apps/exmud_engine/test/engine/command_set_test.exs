@@ -26,14 +26,14 @@ defmodule Exmud.Engine.Test.CommandSetTest do
     test "engine registration" do
       key = UUID.generate()
       callback_module = UUID.generate()
-      assert CommandSet.register(key, callback_module) == {:ok, true}
-      assert CommandSet.registered?(key) == {:ok, true}
+      assert CommandSet.register(key, callback_module) == :ok
+      assert CommandSet.registered?(key) == true
       assert Enum.any?(CommandSet.list_registered(), fn(k) -> key == k end) == true
       assert CommandSet.lookup(callback_module) == {:error, :no_such_command_set}
       {:ok, callback} = CommandSet.lookup(key)
       assert callback == callback_module
-      assert CommandSet.unregister(key) == {:ok, true}
-      assert CommandSet.registered?(key) == {:ok, false}
+      assert CommandSet.unregister(key) == :ok
+      assert CommandSet.registered?(key) == false
       assert Enum.any?(CommandSet.list_registered(), fn(k) -> key == k end) == false
     end
 
