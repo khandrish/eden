@@ -5,17 +5,20 @@ defmodule Exmud.Engine.Test.ObjectTest do
   alias Exmud.Engine.CommandSet
   alias Exmud.Engine.Component
   alias Exmud.Engine.Object
-  alias Exmud.Engine.Relationship
+  alias Exmud.Engine.Link
   alias Exmud.Engine.Repo
   alias Exmud.Engine.Tag
   require Logger
   use Exmud.Engine.Test.DBTestCase
 
   # Test Callbacks
-  alias Exmud.Engine.Test.Callback.Basic
+  alias Exmud.Engine.Test.Callback.Basic, as: BasicCallback
+
+  # Test Component
+  alias Exmud.Engine.Test.Component.Basic, as: BasicComponent
 
   describe "Standard Ecto usage tests for game object: " do
-    setup [:create_new_object, :register_test_callbacks]
+    setup [:create_new_object, :register_test_callbacks, :register_test_components]
 
     @tag object: true
     @tag engine: true
@@ -54,11 +57,10 @@ defmodule Exmud.Engine.Test.ObjectTest do
     test "object get tests", %{object_id: object_id} = _context do
       {:ok, object} = Object.get(object_id)
       assert object.id == object_id
-      component = UUID.generate()
-      assert Component.register(component, Exmud.Engine.ObjectTest.ExampleComponent) == {:ok, :registered}
-      assert Component.add(object_id, component) == {:ok, object_id}
-      assert Attribute.add(object_id, component, "foo", "bar") == {:ok, object_id}
-      assert Callback.attach(object_id, Basic) == :ok
+      assert Component.register(BasicComponent) == :ok
+      assert Component.attach(object_id, BasicComponent.name()) == :ok
+      assert Attribute.add(object_id, BasicComponent.name(), "foo", "bar") == {:ok, object_id}
+      assert Callback.attach(object_id, BasicCallback.name()) == :ok
       assert CommandSet.add(object_id, UUID.generate()) == {:ok, object_id}
       {:ok, object} = Object.get(object_id)
       assert length(object.components) == 1
@@ -75,29 +77,28 @@ defmodule Exmud.Engine.Test.ObjectTest do
       attribute_value = UUID.generate()
       callback = UUID.generate()
       command_set = UUID.generate()
-      component = UUID.generate()
-      relationship = UUID.generate()
+      link_type = UUID.generate()
       tag = UUID.generate()
       tag_category = UUID.generate()
 
-      assert Component.register(component, Exmud.Engine.ObjectTest.ExampleComponent) == {:ok, :registered}
+      assert Component.register(BasicComponent) == :ok
 
-      assert Component.add(object_id1, component) == {:ok, object_id1}
-      assert Attribute.add(object_id1, component, attribute_key, attribute_value) == {:ok, object_id1}
-      assert Callback.attach(object_id1, Basic) == :ok
+      assert Component.attach(object_id1, BasicComponent.name()) == :ok
+      assert Attribute.add(object_id1, BasicComponent.name(), attribute_key, attribute_value) == {:ok, object_id1}
+      assert Callback.attach(object_id1, BasicCallback.name()) == :ok
       assert CommandSet.add(object_id1, command_set) == {:ok, object_id1}
-      assert Relationship.add(object_id1, object_id2, relationship, "foo") == {:ok, object_id1}
-      assert Tag.add(object_id1, tag_category, tag) == {:ok, object_id1}
+      assert Link.forge(object_id1, object_id2, link_type, "foo") == :ok
+      assert Tag.attach(object_id1, tag_category, tag) == :ok
 
       assert Object.query({:and, [
                                     {:object, key1},
-                                    {:attribute, {component, attribute_key}},
-                                    {:component, component},
-                                    {:callback, Basic.key()},
+                                    {:attribute, {BasicComponent.name(), attribute_key}},
+                                    {:component, BasicComponent.name()},
+                                    {:callback, BasicCallback.key()},
                                     {:command_set, command_set},
-                                    {:relationship, relationship},
-                                    {:relationship, {relationship, object_id2}},
-                                    {:relationship, {relationship, object_id2, "foo"}},
+                                    {:link, link_type},
+                                    {:link, {link_type, object_id2}},
+                                    {:link, {link_type, object_id2, "foo"}},
                                     {:tag, {tag_category, tag}}
                                  ]}) == {:ok, [object_id1]}
     end
@@ -109,18 +110,19 @@ defmodule Exmud.Engine.Test.ObjectTest do
     %{key: key, object_id: object_id}
   end
 
-  @callbacks [Basic]
+  @callbacks [BasicCallback]
 
   defp register_test_callbacks(context) do
     Enum.each(@callbacks, &Callback.register/1)
 
     context
   end
-end
 
+  @components [BasicComponent]
 
-defmodule Exmud.Engine.ObjectTest.ExampleComponent do
-  def populate do
-    {:ok, :populated}
+  defp register_test_components(context) do
+    Enum.each(@components, &Component.register/1)
+
+    context
   end
 end

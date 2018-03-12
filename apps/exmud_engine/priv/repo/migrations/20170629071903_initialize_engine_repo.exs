@@ -60,16 +60,16 @@ defmodule Exmud.DB.Repo.EngineRepo.Migrations.InitializeEngineRepo do
     create index(:lock, [:object_id])
     create index(:lock, [:type])
 
-    create table(:relationship) do
+    create table(:link) do
       add :from_id, references(:object, [on_delete: :delete_all])
-      add :relationship, :string
+      add :type, :string
       add :data, :binary
       add :to_id, references(:object, [on_delete: :delete_all])
     end
-    create index(:relationship, [:from_id])
-    create index(:relationship, [:relationship])
-    create index(:relationship, [:to_id])
-    create unique_index(:relationship, [:from_id, :relationship, :to_id])
+    create index(:link, [:from_id])
+    create index(:link, [:type])
+    create index(:link, [:to_id])
+    create unique_index(:link, [:from_id, :type, :to_id])
 
     create table(:script) do
       add :name, :string

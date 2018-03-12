@@ -3,9 +3,10 @@ defmodule Exmud.Engine.Object do
   alias Exmud.Engine.Schema.Object
   import Ecto.Query
   import Exmud.Common.Utils
+  import Exmud.Engine.Utils
   require Logger
 
-  @get_inclusion_filters [:callbacks, :command_sets, :components, :locks, :relationships, :scripts, :tags]
+  @get_inclusion_filters [:callbacks, :command_sets, :components, :locks, :links, :scripts, :tags]
 
 
   #
@@ -79,7 +80,7 @@ defmodule Exmud.Engine.Object do
       left_join: command_set in assoc(object, :command_sets),
       left_join: component in assoc(object, :components),
       left_join: attribute in assoc(component, :attributes),
-      left_join: relationship in assoc(object, :relationships),
+      left_join: link in assoc(object, :links),
       left_join: tag in assoc(object, :tags),
       select: object.id,
       where: ^dynamic
@@ -120,7 +121,7 @@ defmodule Exmud.Engine.Object do
   end
 
   defp build_equality_check_dynamic({:attribute, {component, attribute}}) do
-    dynamic([object, callback, command_set, component, attribute], (attribute.attribute == ^attribute and component.component == ^component))
+    dynamic([object, callback, command_set, component, attribute], (attribute.attribute == ^attribute and component.name == ^component))
   end
 
   defp build_equality_check_dynamic({:callback, callback}) do
@@ -132,27 +133,27 @@ defmodule Exmud.Engine.Object do
   end
 
   defp build_equality_check_dynamic({:component, component}) do
-    dynamic([object, callback, command_set, component], component.component == ^component)
+    dynamic([object, callback, command_set, component], component.name == ^component)
   end
 
   defp build_equality_check_dynamic({:object, key}) do
     dynamic([object], object.key == ^key)
   end
 
-  defp build_equality_check_dynamic({:relationship, {relationship, to, data}}) do
-    dynamic([object, callback, command_set, component, attribute, relationship], (relationship.relationship == ^relationship and relationship.to_id == ^to and relationship.data == ^serialize(data)))
+  defp build_equality_check_dynamic({:link, {link_type, to, data}}) do
+    dynamic([object, callback, command_set, component, attribute, link], (link.type == ^link_type and link.to_id == ^to and link.data == ^serialize(data)))
   end
 
-  defp build_equality_check_dynamic({:relationship, {relationship, to}}) do
-    dynamic([object, callback, command_set, component, attribute, relationship], (relationship.relationship == ^relationship and relationship.to_id == ^to))
+  defp build_equality_check_dynamic({:link, {link_type, to}}) do
+    dynamic([object, callback, command_set, component, attribute, link], (link.type == ^link_type and link.to_id == ^to))
   end
 
-  defp build_equality_check_dynamic({:relationship, relationship}) do
-    dynamic([object, callback, command_set, component, attribute, relationship], relationship.relationship == ^relationship)
+  defp build_equality_check_dynamic({:link, link_type}) do
+    dynamic([object, callback, command_set, component, attribute, link], link.type == ^link_type)
   end
 
   defp build_equality_check_dynamic({:tag, {category, tag}}) do
-    dynamic([object, callback, command_set, component, attribute, relationship, tag],
+    dynamic([object, callback, command_set, component, attribute, link, tag],
             (tag.category == ^category and tag.tag == ^tag))
   end
 
@@ -197,11 +198,11 @@ defmodule Exmud.Engine.Object do
     build_get_query(query, inclusion_filters)
   end
 
-  defp build_get_query(query, [:relationships | inclusion_filters]) do
+  defp build_get_query(query, [:links | inclusion_filters]) do
     query =
       from object in query,
-        left_join: relationship in assoc(object, :relationships),
-        preload: [:relationships]
+        left_join: link in assoc(object, :links),
+        preload: [:links]
 
     build_get_query(query, inclusion_filters)
   end
@@ -229,7 +230,7 @@ defmodule Exmud.Engine.Object do
       Enum.map(objects, fn(object) ->
         %{object | components: Enum.map(object.components, fn(component) ->
             %{component | attributes: Enum.map(component.attributes, fn(attribute) ->
-              %{attribute | data: deserialize(attribute.data)}
+              %{attribute | data: unpack_term(attribute.data)}
             end)}
         end)}
       end)
@@ -242,7 +243,7 @@ defmodule Exmud.Engine.Object do
       Enum.map(objects, fn(object) ->
         command_sets =
           Enum.map(object.command_sets, fn(command_set) ->
-            %{command_set | command_set: deserialize(command_set.command_set)}
+            %{command_set | command_set: unpack_term(command_set.command_set)}
           end)
         %{object | command_sets: command_sets}
       end)

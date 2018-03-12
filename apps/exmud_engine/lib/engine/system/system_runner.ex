@@ -100,7 +100,7 @@ defmodule Exmud.Engine.SystemRunner do
 
   @doc false
   def handle_call(:run, from, system) do
-    GenServer.reply(from, {:ok, :running})
+    GenServer.reply(from, :ok)
 
     run(system)
   end

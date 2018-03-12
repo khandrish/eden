@@ -10,58 +10,58 @@ defmodule Exmud.Engine.SystemRunnerTest do
     test "systems", %{ses_name: ses_name, sos_name: sos_name, ies_name: ies_name, ms_name: ms_name, rs_name: rs_name,
                           rss_name: rss_name, ros_name: ros_name, rots_name: rots_name, ios_name: ios_name} = _context do
 
-      assert System.start(rots_name) == {:ok, :started}
+      assert System.start(rots_name) == :ok
 
-      assert System.start(rs_name) == {:ok, :started}
+      assert System.start(rs_name) == :ok
       assert System.start(rs_name) == {:error, :already_started}
       Process.sleep(1)
-      assert System.run(rs_name) == {:ok, :running}
+      assert System.run(rs_name) == :ok
       Process.sleep(1)
-      assert System.run(rs_name) == {:ok, :running}
+      assert System.run(rs_name) == :ok
       Process.sleep(100) # State is persisted when System is stopped. Give time for that to happen.
-      assert System.start(rs_name) == {:ok, :started}
-      assert System.stop(rs_name) == {:ok, :stopped}
+      assert System.start(rs_name) == :ok
+      assert System.stop(rs_name) == :ok
 
-      assert System.start(ms_name) == {:ok, :started}
+      assert System.start(ms_name) == :ok
       assert System.call(ms_name, :error) == {:error, "MessageSystem"}
       assert System.call(ms_name, :ok) == {:ok, "MessageSystem"}
-      assert System.cast(ms_name, :ok) == {:ok, true}
+      assert System.cast(ms_name, :ok) == :ok
 
-      assert System.start(rss_name) == {:ok, :started}
-      assert System.run(rss_name) == {:ok, :running}
+      assert System.start(rss_name) == :ok
+      assert System.run(rss_name) == :ok
 
-      assert System.start(ros_name) == {:ok, :started}
-      assert System.run(ros_name) == {:ok, :running}
-      assert System.stop(ros_name) == {:ok, :stopped}
+      assert System.start(ros_name) == :ok
+      assert System.run(ros_name) == :ok
+      assert System.stop(ros_name) == :ok
 
-      assert System.start(ses_name, :ok) == {:ok, :started}
+      assert System.start(ses_name, :ok) == :ok
       assert System.stop(ses_name) == {:error, "StopErrorSystem"}
 
-      assert System.start(sos_name, :ok) == {:ok, :started}
-      assert System.stop(sos_name) == {:ok, :stopped}
+      assert System.start(sos_name, :ok) == :ok
+      assert System.stop(sos_name) == :ok
 
-      assert System.start(ios_name, :ok) == {:ok, :started}
-      assert System.stop(ios_name) == {:ok, :stopped}
+      assert System.start(ios_name, :ok) == :ok
+      assert System.stop(ios_name) == :ok
 
       assert System.start(ies_name, :ok) == {:error, "InitSystem"}
 
-      assert System.start(ros_name) == {:ok, :started}
-      assert System.stop(ros_name) == {:ok, :stopped}
+      assert System.start(ros_name) == :ok
+      assert System.stop(ros_name) == :ok
 
       Process.sleep(100) # Give everything a change to shut down properly, otherwise errors may occur when running tests.
     end
   end
 
   defp do_setup(_context) do
-    {:ok, true} = System.register(Exmud.Engine.SystemRunnerTest.StopErrorSystem)
-    {:ok, true} = System.register(Exmud.Engine.SystemRunnerTest.StopOkSystem)
-    {:ok, true} = System.register(Exmud.Engine.SystemRunnerTest.RunOkSystem)
-    {:ok, true} = System.register(Exmud.Engine.SystemRunnerTest.RunStopSystem)
-    {:ok, true} = System.register(Exmud.Engine.SystemRunnerTest.InitOkSystem)
-    {:ok, true} = System.register(Exmud.Engine.SystemRunnerTest.InitErrorSystem)
-    {:ok, true} = System.register(Exmud.Engine.SystemRunnerTest.MessageSystem)
-    {:ok, true} = System.register(Exmud.Engine.SystemRunnerTest.RunOkTimeSystem)
-    {:ok, true} = System.register(Exmud.Engine.SystemRunnerTest.RunSystem)
+    :ok = System.register(Exmud.Engine.SystemRunnerTest.StopErrorSystem)
+    :ok = System.register(Exmud.Engine.SystemRunnerTest.StopOkSystem)
+    :ok = System.register(Exmud.Engine.SystemRunnerTest.RunOkSystem)
+    :ok = System.register(Exmud.Engine.SystemRunnerTest.RunStopSystem)
+    :ok = System.register(Exmud.Engine.SystemRunnerTest.InitOkSystem)
+    :ok = System.register(Exmud.Engine.SystemRunnerTest.InitErrorSystem)
+    :ok = System.register(Exmud.Engine.SystemRunnerTest.MessageSystem)
+    :ok = System.register(Exmud.Engine.SystemRunnerTest.RunOkTimeSystem)
+    :ok = System.register(Exmud.Engine.SystemRunnerTest.RunSystem)
 
     %{ses_name: "StopErrorSystem", sos_name: "StopOkSystem", ios_name: "InitOkSystem", ies_name: "InitErrorSystem",
       rss_name: "RunStopSystem", ros_name: "RunOkSystem", ms_name: "MessageSystem", rots_name: "RunOkTimeSystem",
