@@ -7,6 +7,7 @@ defmodule Exmud.Engine.Test.CallbackTest do
 
   # Test Callbacks
   alias Exmud.Engine.Test.Callback.Basic
+  alias Exmud.Engine.Test.Callback.NotRegistered
 
   describe "global callback tests: " do
     setup [:create_new_object, :register_test_callbacks]
@@ -14,13 +15,13 @@ defmodule Exmud.Engine.Test.CallbackTest do
     @tag callback: true
     @tag engine: true
     test "engine registration" do
-      assert Callback.registered?("foo") == false
+      assert Callback.registered?(NotRegistered) == false
       assert Callback.lookup("foo") == {:error, :no_such_callback}
-      assert Callback.registered?(Basic.name()) == true
+      assert Callback.registered?(Basic) == true
       assert Callback.lookup(Basic.name()) == {:ok, Basic}
       assert Enum.any?(Callback.list_registered(), fn(key) -> key == Basic.name() end) == true
-      assert Callback.unregister(Basic.name()) == :ok
-      assert Callback.registered?(Basic.name()) == false
+      assert Callback.unregister(Basic) == :ok
+      assert Callback.registered?(Basic) == false
       assert Enum.any?(Callback.list_registered(), fn(key) -> key == Basic.name() end) == false
     end
 
@@ -30,7 +31,7 @@ defmodule Exmud.Engine.Test.CallbackTest do
       assert Callback.run(object_id, Basic.key(), :ok, %{}) == {:error, :no_such_callback}
       assert Callback.is_attached?(object_id, Basic.name()) == false
       assert Callback.run(object_id, Basic.key(), :ok, %{}, Basic.name()) == :ok
-      assert Callback.attach(object_id, Basic) == :ok
+      assert Callback.attach(object_id, Basic.name()) == :ok
       assert Callback.run(object_id, Basic.key(), :ok, %{}) == :ok
       assert Callback.detach(object_id, Basic.key()) == :ok
       assert Callback.is_attached?(object_id, Basic.name()) == false
@@ -40,7 +41,7 @@ defmodule Exmud.Engine.Test.CallbackTest do
     @tag engine: true
     test "callback invalid cases" do
       assert Callback.is_attached?(0, "foo") == false
-      assert Callback.attach(0, Basic) == {:error, :no_such_object}
+      assert Callback.attach(0, Basic.name()) == {:error, :no_such_object}
       assert Callback.get(0, "foo") == {:error, :no_such_callback}
       assert Callback.detach(0, "foo") == {:error, :no_such_callback}
     end

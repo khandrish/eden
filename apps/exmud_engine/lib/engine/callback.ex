@@ -106,24 +106,29 @@ defmodule Exmud.Engine.Callback do
   Given the name of a registered callback module, attach the registered module to the Object. If a Callback is already
   attached to the same Object with the same key, the original will be first deleted.
   """
-  def attach(object_id, callback_module) do
-    new_callback_params = %{key: callback_module.key(), name: callback_module.name(), object_id: object_id}
+  def attach(object_id, name) do
+    case lookup(name) do
+      {:ok, callback_module} ->
+        new_callback_params = %{key: callback_module.key(), name: callback_module.name(), object_id: object_id}
 
-    Multi.new()
-    |> Multi.delete_all(:delete_existing_callback, callback_query(object_id, callback_module.key()))
-    |> Multi.insert(:insert_new_callback, Callback.add(%Callback{}, new_callback_params))
-    |> Repo.transaction
-    |> normalize_multi_result(:insert_new_callback)
-    |> case do
-      {:error, errors} ->
-        if Keyword.has_key?(errors, :object_id) do
-          Logger.error("Attempt to add Callback onto non existing object `#{object_id}`")
-          {:error, :no_such_object}
-        else
-          {:error, errors}
+        Multi.new()
+        |> Multi.delete_all(:delete_existing_callback, callback_query(object_id, callback_module.key()))
+        |> Multi.insert(:insert_new_callback, Callback.add(%Callback{}, new_callback_params))
+        |> Repo.transaction
+        |> normalize_multi_result(:insert_new_callback)
+        |> case do
+          {:error, errors} ->
+            if Keyword.has_key?(errors, :object_id) do
+              Logger.error("Attempt to add Callback onto non existing object `#{object_id}`")
+              {:error, :no_such_object}
+            else
+              {:error, errors}
+            end
+          {:ok, _callback} ->
+            :ok
         end
-      {:ok, _callback} ->
-        :ok
+      error ->
+        error
     end
   end
 
@@ -227,18 +232,17 @@ defmodule Exmud.Engine.Callback do
   @doc """
   Check to see if there is a Callback module registered with a given name.
   """
-  def registered?(name) do
-    Logger.info("Checking registration of Callback with name `#{name}`")
-    Cache.exists?(@cache, name) == {:ok, true}
+  def registered?(callback_module) do
+    Logger.info("Checking registration of Callback with name `#{callback_module.name()}`")
+    Cache.exists?(@cache, callback_module.name())
   end
 
   @doc """
   Unregister a call default Callback from the system.
   """
-  def unregister(name) do
-    Logger.info("Unregistering Callback with name `#{name}`")
-    Cache.delete(@cache, name)
-    :ok
+  def unregister(callback_module) do
+    Logger.info("Unregistering Callback with name `#{callback_module.name()}`")
+    Cache.delete(@cache, callback_module.name())
   end
 
 
