@@ -87,11 +87,11 @@ defmodule Exmud.Engine.Attribute do
   #
 
 
-  defp attribute_query(object_id, comp, attribute) do
+  defp attribute_query(object_id, component_name, attribute) do
     from attribute in Attribute,
       inner_join: component in assoc(attribute, :component),
       where: attribute.attribute == ^attribute
-        and component.component == ^comp
+        and component.name == ^component_name
         and component.object_id == ^object_id
   end
 end
