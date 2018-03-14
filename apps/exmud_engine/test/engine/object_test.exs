@@ -59,7 +59,7 @@ defmodule Exmud.Engine.Test.ObjectTest do
       assert object.id == object_id
       assert Component.register(BasicComponent) == :ok
       assert Component.attach(object_id, BasicComponent.name()) == :ok
-      assert Attribute.add(object_id, BasicComponent.name(), "foo", "bar") == {:ok, object_id}
+      assert Attribute.put(object_id, BasicComponent.name(), "foo", "bar") == :ok
       assert Callback.attach(object_id, BasicCallback.name()) == :ok
       assert CommandSet.add(object_id, UUID.generate()) == {:ok, object_id}
       {:ok, object} = Object.get(object_id)
@@ -84,7 +84,7 @@ defmodule Exmud.Engine.Test.ObjectTest do
       assert Component.register(BasicComponent) == :ok
 
       assert Component.attach(object_id1, BasicComponent.name()) == :ok
-      assert Attribute.add(object_id1, BasicComponent.name(), attribute_key, attribute_value) == {:ok, object_id1}
+      assert Attribute.put(object_id1, BasicComponent.name(), attribute_key, attribute_value) == :ok
       assert Callback.attach(object_id1, BasicCallback.name()) == :ok
       assert CommandSet.add(object_id1, command_set) == {:ok, object_id1}
       assert Link.forge(object_id1, object_id2, link_type, "foo") == :ok

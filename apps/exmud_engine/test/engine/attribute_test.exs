@@ -20,17 +20,17 @@ defmodule Exmud.Engine.Test.AttributeTest do
       attribute2 = UUID.generate()
       assert Component.register(Basic) == :ok
       assert Component.attach(object_id, Basic.name()) == :ok
-      assert Attribute.equals(object_id, Basic.name(), attribute, "bar") == {:ok, false}
-      assert Attribute.add(object_id, Basic.name(), attribute, "bar") == {:ok, object_id}
-      assert Attribute.equals(object_id, Basic.name(), attribute, "bar") == {:ok, true}
-      assert Attribute.add(object_id, Basic.name(), attribute2, "bar") == {:ok, object_id}
-      assert Attribute.get(object_id, Basic.name(), attribute) == {:ok, "bar"}
-      assert Attribute.update(object_id, Basic.name(), attribute, "foobar") == {:ok, object_id}
-      assert Attribute.get(object_id, Basic.name(), attribute) == {:ok, "foobar"}
-      assert Attribute.has(object_id, Basic.name(), attribute) == {:ok, true}
-      assert Attribute.remove(object_id, Basic.name(), attribute) == {:ok, object_id}
-      assert Attribute.get(object_id, Basic.name(), attribute) == {:error, :no_such_attribute}
-      assert Attribute.has(object_id, Basic.name(), attribute) == {:ok, false}
+      assert Attribute.equals?(object_id, Basic.name(), attribute, "bar") == false
+      assert Attribute.put(object_id, Basic.name(), attribute, "bar") == :ok
+      assert Attribute.equals?(object_id, Basic.name(), attribute, "bar") == true
+      assert Attribute.put(object_id, Basic.name(), attribute2, "bar") == :ok
+      assert Attribute.read(object_id, Basic.name(), attribute) == {:ok, "bar"}
+      assert Attribute.update(object_id, Basic.name(), attribute, "foobar") == :ok
+      assert Attribute.read(object_id, Basic.name(), attribute) == {:ok, "foobar"}
+      assert Attribute.exists?(object_id, Basic.name(), attribute) == true
+      assert Attribute.delete(object_id, Basic.name(), attribute) == :ok
+      assert Attribute.read(object_id, Basic.name(), attribute) == {:error, :no_such_attribute}
+      assert Attribute.exists?(object_id, Basic.name(), attribute) == false
     end
 
     @tag attribute: true
@@ -41,11 +41,11 @@ defmodule Exmud.Engine.Test.AttributeTest do
       assert Component.register(Basic) == :ok
       assert Component.register(Bad) == :ok
       assert Component.attach(object_id, Basic.name()) == :ok
-      assert Attribute.get(object_id, component2, "foo") == {:error, :no_such_attribute}
-      assert Attribute.add(object_id, component2, "foo", "bar") == {:error, :no_such_component}
-      assert Attribute.has(object_id, Basic.name(), "foo") == {:ok, false}
-      assert Attribute.remove(object_id, Basic.name(), "foo") == {:error, :no_such_attribute}
-      assert Attribute.get(object_id, Basic.name(), "foo") == {:error, :no_such_attribute}
+      assert Attribute.read(object_id, component2, "foo") == {:error, :no_such_attribute}
+      assert Attribute.put(object_id, component2, "foo", "bar") == {:error, :no_such_component}
+      assert Attribute.exists?(object_id, Basic.name(), "foo") == false
+      assert Attribute.delete(object_id, Basic.name(), "foo") == {:error, :no_such_attribute}
+      assert Attribute.read(object_id, Basic.name(), "foo") == {:error, :no_such_attribute}
     end
   end
 

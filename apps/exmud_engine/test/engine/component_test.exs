@@ -59,7 +59,7 @@ defmodule Exmud.Engine.Test.ComponentTest do
       assert Component.attach(object_id, Basic.name()) == :ok
       attribute_key = UUID.generate()
       attribute_data = UUID.generate()
-      assert Attribute.add(object_id, Basic.name(), attribute_key, attribute_data) == {:ok, object_id}
+      assert Attribute.put(object_id, Basic.name(), attribute_key, attribute_data) == :ok
       {:ok, comp} = Component.get(object_id)
       {:ok, comp2} = Component.get(Basic.name())
       assert comp == comp2
