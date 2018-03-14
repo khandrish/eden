@@ -10,10 +10,50 @@ defmodule Exmud.Engine.Object do
 
 
   #
+  # Typespecs
+  #
+
+
+  @typedoc """
+  The unique Key of an Object which identifies it within the Engine.
+  """
+  @type key :: String.t
+
+  @typedoc """
+  The id of an Object on which all operations are to take place.
+  """
+  @type object_id :: integer
+
+  @typedoc """
+  The Object is the basic building block of the Engine. Almost all data in the Engine is contained in an Object.
+  """
+  @type object :: term
+
+  @typedoc """
+  An error which happened during an operation.
+  """
+  @type error :: term
+
+  @typedoc """
+  Filters for specifing which data on an Object to load
+  """
+  @type inclusion_filters :: [:callbacks | :command_sets | :components | :locks | :links | :scripts | :tags]
+
+  @typedoc """
+  A query to be used for finding populations of Objects.
+  """
+  @type object_query :: term
+
+
+  #
   # API
   #
 
 
+  @doc """
+  Create a new Object with a unique key.
+  """
+  @spec new(key) :: {:ok, object_id} | {:error, error}
   def new(key) do
     Object.new(%Object{}, %{key: key})
     |> Repo.insert()
@@ -23,15 +63,34 @@ defmodule Exmud.Engine.Object do
     end
   end
 
+  @doc """
+  Delete an Object by its id.
+  """
+  @spec delete(object_id) :: {:ok, object_id} | {:error, error}
   def delete(object_id) do
     {:ok, _} = Repo.delete(%Object{id: object_id})
-    {:ok, object_id}
+    :ok
   end
 
+  @doc """
+  Get an Object, or multiple objects, by its id.
+
+  Will load all of the data associated with an Object.
+  """
+  @spec get(object_id) :: {:ok, [object]}
   def get(objects) do
     get(objects, @get_inclusion_filters)
   end
 
+  @doc """
+  Get an Object, or multiple objects, by its id while specifying the inclusion filters.
+
+  Inclusion filters allow specifying which data will be preloaded on the Object being returned.
+
+  Can be any of the following:
+  `[:callbacks, :command_sets, :components, :locks, :links, :scripts, :tags]`
+  """
+  @spec get(object_id, inclusion_filters) :: {:ok, [object]}
   def get(object, inclusion_filters) when is_list(object) == false do
     {:ok, results} = get(List.wrap(object), inclusion_filters)
     {:ok, List.first(results)}
@@ -55,6 +114,14 @@ defmodule Exmud.Engine.Object do
     {:ok, results}
   end
 
+  @doc """
+  Query the Engine for Objects based on the passed in query.
+
+  The query is a custom syntax which allows for an arbitary combination and nesting of equality checks. Currently, only
+  equality checks are supported. This is unlikely to change without a refactoring as data is serialized in the database
+  which makes doing relative value checks impossible.
+  """
+  @spec query(object_query) :: {:ok, [object]}
   def query(object_query) do
     result =
       object_query

@@ -32,7 +32,7 @@ defmodule Exmud.Engine.Test.ObjectTest do
     @tag object: true
     @tag engine: true
     test "delete tests", %{object_id: object_id} = _context do
-      assert Object.delete(object_id) == {:ok, object_id}
+      assert Object.delete(object_id) == :ok
     end
 
     @tag object: true
