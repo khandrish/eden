@@ -92,7 +92,7 @@ defmodule Exmud.Engine.Attribute do
   than `equals?/4` but is obviously more flexible.
 
   The passed in function is expected to take two arguments, the first being the Attribute data and the second being the
-  value passed to the `equals?/5` function, and return a boolean value.
+  value passed to the `equals?/5` function, and must return a boolean value.
   """
   @spec equals(object_id, component, attribute, data, comparison_fun) :: {:ok, boolean} | {:error, :no_such_attribute}
   def equals(object_id, component, attribute, data_to_compare, fun) do
