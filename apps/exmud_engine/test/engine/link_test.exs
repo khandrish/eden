@@ -17,7 +17,7 @@ defmodule Exmud.Engine.Test.LinkTest do
       assert Link.linked?(object_id1, object_id2) == true
       assert Link.linked?(object_id1, object_id2, link_type) == true
       assert Link.linked?(object_id1, object_id2, link_type, data) == true
-      assert Link.linked(object_id1, object_id2, link_type, data, fn _, _ -> true end) == {:ok, true}
+      assert Link.linked(object_id1, object_id2, link_type, data, fn d1, d2 -> d1 == d2 end) == {:ok, true}
     end
   end
 

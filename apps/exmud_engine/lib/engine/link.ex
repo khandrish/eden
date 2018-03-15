@@ -146,7 +146,7 @@ defmodule Exmud.Engine.Link do
     case Repo.one(link_query(from, to, type, data)) do
       nil -> {:error, :no_such_link}
       link ->
-        {:ok, comparison_fun.(link.data, data)}
+        {:ok, comparison_fun.(unpack_term(link.data), data)}
     end
   end
 
