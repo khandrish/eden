@@ -3,7 +3,7 @@ defmodule Exmud.Engine.Schema.Link do
 
   schema "link" do
     field :type, :string
-    field :data, :binary
+    field :data, :binary, default: nil
     belongs_to :to, Exmud.Engine.Schema.Object, foreign_key: :to_id
     belongs_to :from, Exmud.Engine.Schema.Object, foreign_key: :from_id
   end

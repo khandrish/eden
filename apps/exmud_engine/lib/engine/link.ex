@@ -1,6 +1,6 @@
 defmodule Exmud.Engine.Link do
   @moduledoc """
-  A `Exmud.Link` is a relationship between two Objects that describes their connection.
+  A `Exmud.Engine.Link` is a one-way relationship between two Objects that describes their connection.
 
   Unlike Scripts, Systems, and Components, Links are lightweight in that they don't require any callback modules or
   prior registration with the Engine to forge a link between two Objects.
@@ -64,10 +64,48 @@ defmodule Exmud.Engine.Link do
 
 
   @doc """
-  Break a specific link between two Objects.
+  Break all Links to or from an Object.
   """
-  @spec break(from, to, type) :: :ok | {:error, :no_such_link}
-  def break(from, to, type) do
+  @spec break_all(object_id) :: :ok | {:error, :no_such_link}
+  def break_all(object_id) do
+    query =
+      from link in Link,
+        where: link.from_id == ^object_id
+          or link.to_id == ^object_id
+
+    query
+    |> Repo.delete_all()
+    |> case do
+      {0, _} -> {:error, :no_such_link}
+      _ -> :ok
+    end
+  end
+
+  @doc """
+  Break all Links between two Objects.
+  """
+  @spec break_all(object_id, object_id) :: :ok | {:error, :no_such_link}
+  def break_all(from, to) do
+    query =
+      from link in Link,
+        where: link.from_id == ^from and link.to_id == ^to,
+        or_where: link.from_id == ^to and link.to_id == ^from
+
+    query
+    |> Repo.delete_all()
+    |> case do
+      {0, _} -> {:error, :no_such_link}
+      _ -> :ok
+    end
+  end
+
+  @doc """
+  Break a specific Link between two Objects.
+
+  Note that the order of the object id's does matter as this method only breaks a single directional link.
+  """
+  @spec break_one(object_id, object_id, type) :: :ok | {:error, :no_such_link}
+  def break_one(from, to, type) do
     link_query(from, to, type)
     |> Repo.delete_all()
     |> case do
@@ -81,7 +119,7 @@ defmodule Exmud.Engine.Link do
   used to define the link itself.
   """
   @spec forge(from, to, type, data) :: :ok | {:error, term}
-  def forge(from, to, type, data \\ %{}) do
+  def forge(from, to, type, data \\ nil) do
     %Link{}
     |> Link.new(%{from_id: from, to_id: to, type: type, data: pack_term(data)})
     |> Repo.insert()
@@ -141,12 +179,11 @@ defmodule Exmud.Engine.Link do
   The passed in function is expected to take two arguments, the first being the Link data and the second being the
   value passed to the `linked/5` function, and must return a boolean value.
   """
-  @spec linked(from, to, type, data, comparison_fun) :: {:ok, data} | {:error, :no_such_link}
-  def linked(from, to, type, data, comparison_fun) do
+  @spec linked?(from, to, type, data, comparison_fun) :: boolean
+  def linked?(from, to, type, data, comparison_fun) do
     case Repo.one(link_query(from, to, type, data)) do
-      nil -> {:error, :no_such_link}
-      link ->
-        {:ok, comparison_fun.(unpack_term(link.data), data)}
+      nil -> false
+      link -> comparison_fun.(unpack_term(link.data), data)
     end
   end
 
