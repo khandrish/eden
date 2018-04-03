@@ -37,12 +37,11 @@ defmodule Exmud.Engine.Test.AttributeTest do
     @tag engine: true
     test "invalid cases", %{object_id: object_id} = _context do
       component = UUID.generate()
-      component2 = UUID.generate()
       assert Component.register(Basic) == :ok
       assert Component.register(Bad) == :ok
       assert Component.attach(object_id, Basic.name()) == :ok
-      assert Attribute.read(object_id, component2, "foo") == {:error, :no_such_attribute}
-      assert Attribute.put(object_id, component2, "foo", "bar") == {:error, :no_such_component}
+      assert Attribute.read(object_id, component, "foo") == {:error, :no_such_attribute}
+      assert Attribute.put(object_id, component, "foo", "bar") == {:error, :no_such_component}
       assert Attribute.exists?(object_id, Basic.name(), "foo") == false
       assert Attribute.delete(object_id, Basic.name(), "foo") == {:error, :no_such_attribute}
       assert Attribute.read(object_id, Basic.name(), "foo") == {:error, :no_such_attribute}

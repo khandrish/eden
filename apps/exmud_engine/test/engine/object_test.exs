@@ -75,7 +75,6 @@ defmodule Exmud.Engine.Test.ObjectTest do
 
       attribute_key = UUID.generate()
       attribute_value = UUID.generate()
-      callback = UUID.generate()
       command_set = UUID.generate()
       link_type = UUID.generate()
       tag = UUID.generate()

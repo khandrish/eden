@@ -2,8 +2,6 @@ defmodule Exmud.Engine.Test.ComponentTest do
   alias Ecto.UUID
   alias Exmud.Engine.Attribute
   alias Exmud.Engine.Component
-  alias Exmud.Engine.ComponentTest.BadExampleComponent, as: BEC
-  alias Exmud.Engine.ComponentTest.ExampleComponent, as: EC
   alias Exmud.Engine.Object
   alias Exmud.Engine.Repo
   require Logger
@@ -40,7 +38,6 @@ defmodule Exmud.Engine.Test.ComponentTest do
     @tag component: true
     @tag engine: true
     test "engine registration" do
-      key = UUID.generate()
       callback_module = UUID.generate()
       assert Component.register(Basic) == :ok
       assert Component.registered?(Basic) == true
