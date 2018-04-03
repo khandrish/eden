@@ -34,15 +34,17 @@ defmodule Exmud.Engine.SystemRunner do
 
   @doc false
   def init({name, args}) do
-    # Either load the System from the database, or create a new System struct. This struct contains the state of the
-    # System as understood by the callback, as well as information used by the Engine to execute the System properly.
-    with {:ok, callback_module} <- Exmud.Engine.System.lookup(name),
-         {:ok, loaded_system} <- load_system(name, callback_module, args)
-    do
-      start_system(loaded_system, args)
-    else
-      {:error, error} -> {:stop, error}
-    end
+    wrap_callback_in_transaction(fn ->
+      # Either load the System from the database, or create a new System struct. This struct contains the state of the
+      # System as understood by the callback, as well as information used by the Engine to execute the System properly.
+      with {:ok, callback_module} <- Exmud.Engine.System.lookup(name),
+           {:ok, loaded_system} <- load_system(name, callback_module, args)
+      do
+        start_system(loaded_system, args)
+      else
+        {:error, error} -> {:stop, error}
+      end
+    end)
   end
 
   defp load_system(name, callback_module, args) do
@@ -102,21 +104,25 @@ defmodule Exmud.Engine.SystemRunner do
   def handle_call(:run, from, system) do
     GenServer.reply(from, :ok)
 
-    run(system)
+    wrap_callback_in_transaction(fn ->
+      run(system)
+    end)
   end
 
   @doc false
   def handle_call({:message, message}, _from, system) do
-    message_result = apply(get_field(system, :callback_module),
-                           :handle_message,
-                           [message, get_field(system, :state)])
+    wrap_callback_in_transaction(fn ->
+      message_result = apply(get_field(system, :callback_module),
+                             :handle_message,
+                             [message, get_field(system, :state)])
 
-    case message_result do
-      {:ok, response, new_state} ->
-        {:reply, {:ok, response}, update_and_persist(system, new_state)}
-      {:error, error, new_state} ->
-        {:reply, {:error, error}, update_and_persist(system, new_state)}
-    end
+      case message_result do
+        {:ok, response, new_state} ->
+          {:reply, {:ok, response}, update_and_persist(system, new_state)}
+        {:error, error, new_state} ->
+          {:reply, {:error, error}, update_and_persist(system, new_state)}
+      end
+    end)
   end
 
   @doc false
@@ -126,38 +132,44 @@ defmodule Exmud.Engine.SystemRunner do
 
   @doc false
   def handle_call({:stop, args}, _from, system) do
-    stop_result = apply(get_field(system, :callback_module),
-                        :stop,
-                        [args, get_field(system, :state)])
+    wrap_callback_in_transaction(fn ->
+      stop_result = apply(get_field(system, :callback_module),
+                          :stop,
+                          [args, get_field(system, :state)])
 
-    case stop_result do
-      {:ok, new_state} ->
-        Logger.info("System `#{get_field(system, :name)}` successfully stopped.")
+      case stop_result do
+        {:ok, new_state} ->
+          Logger.info("System `#{get_field(system, :name)}` successfully stopped.")
 
-        system = update_and_persist(system, new_state)
+          system = update_and_persist(system, new_state)
 
-        {:stop, :normal, :ok, system}
-      {:error, error, new_state} ->
-        Logger.error("Error `#{error}` encountered when stopping System `#{get_field(system, :name)}`.")
+          {:stop, :normal, :ok, system}
+        {:error, error, new_state} ->
+          Logger.error("Error `#{error}` encountered when stopping System `#{get_field(system, :name)}`.")
 
-        system = update_and_persist(system, new_state)
+          system = update_and_persist(system, new_state)
 
-        {:stop, :normal, {:error, error}, system}
-    end
+          {:stop, :normal, {:error, error}, system}
+      end
+    end)
   end
 
   @doc false
   def handle_cast({:message, message}, system) do
-    {_type, _response, new_state} = apply(get_field(system, :callback_module),
-                                          :handle_message,
-                                          [message, get_field(system, :state)])
+    wrap_callback_in_transaction(fn ->
+      {_type, _response, new_state} = apply(get_field(system, :callback_module),
+                                            :handle_message,
+                                            [message, get_field(system, :state)])
 
-    {:noreply, update_and_persist(system, new_state)}
+      {:noreply, update_and_persist(system, new_state)}
+    end)
   end
 
   @doc false
   def handle_info(:run, system) do
-    run(system)
+    wrap_callback_in_transaction(fn ->
+      run(system)
+    end)
   end
 
   defp run(system) do
