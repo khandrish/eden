@@ -34,15 +34,17 @@ defmodule Exmud.Engine.ScriptRunner do
 
   @doc false
   def init({object_id, name, args}) do
-    # Either load the Script from the database, or create a new Script struct. This struct contains the state of the
-    # Script as understood by the callback, as well as information used by the Engine to execute the Script properly.
-    with {:ok, callback_module} <- Exmud.Engine.Script.lookup(name),
-         {:ok, loaded_script} <- load_script(object_id, name, callback_module, args)
-    do
-      start_script(loaded_script, args)
-    else
-      {:error, error} -> {:stop, error}
-    end
+    wrap_callback_in_transaction(fn ->
+      # Either load the Script from the database, or create a new Script struct. This struct contains the state of the
+      # Script as understood by the callback, as well as information used by the Engine to execute the Script properly.
+      with {:ok, callback_module} <- Exmud.Engine.Script.lookup(name),
+           {:ok, loaded_script} <- load_script(object_id, name, callback_module, args)
+      do
+        start_script(loaded_script, args)
+      else
+        {:error, error} -> {:stop, error}
+      end
+    end)
   end
 
   defp load_script(object_id, name, callback_module, args) do
@@ -100,21 +102,25 @@ defmodule Exmud.Engine.ScriptRunner do
   def handle_call(:run, from, script) do
     GenServer.reply(from, :ok)
 
-    run(script)
+    wrap_callback_in_transaction(fn ->
+      run(script)
+    end)
   end
 
   @doc false
   def handle_call({:message, message}, _from, script) do
-    message_result = apply(get_field(script, :callback_module),
-                           :handle_message,
-                           [get_field(script, :object_id), message, get_field(script, :deserialized_state)])
+    wrap_callback_in_transaction(fn ->
+      message_result = apply(get_field(script, :callback_module),
+                             :handle_message,
+                             [get_field(script, :object_id), message, get_field(script, :deserialized_state)])
 
-    case message_result do
-      {:ok, response, new_state} ->
-        {:reply, {:ok, response}, update_and_persist(script, new_state)}
-      {:error, error, new_state} ->
-        {:reply, {:error, error}, update_and_persist(script, new_state)}
-    end
+      case message_result do
+        {:ok, response, new_state} ->
+          {:reply, {:ok, response}, update_and_persist(script, new_state)}
+        {:error, error, new_state} ->
+          {:reply, {:error, error}, update_and_persist(script, new_state)}
+      end
+    end)
   end
 
   @doc false
@@ -124,38 +130,44 @@ defmodule Exmud.Engine.ScriptRunner do
 
   @doc false
   def handle_call({:stop, reason}, _from, script) do
-    stop_result = apply(get_field(script, :callback_module),
-                        :stop,
-                        [get_field(script, :object_id), reason, get_field(script, :deserialized_state)])
+    wrap_callback_in_transaction(fn ->
+      stop_result = apply(get_field(script, :callback_module),
+                          :stop,
+                          [get_field(script, :object_id), reason, get_field(script, :deserialized_state)])
 
-    case stop_result do
-      {:ok, new_state} ->
-        Logger.info("Script `#{get_field(script, :name)}` successfully stopped on Object `#{get_field(script, :object_id)}`.")
+      case stop_result do
+        {:ok, new_state} ->
+          Logger.info("Script `#{get_field(script, :name)}` successfully stopped on Object `#{get_field(script, :object_id)}`.")
 
-        script = update_and_persist(script, new_state)
+          script = update_and_persist(script, new_state)
 
-        {:stop, :normal, :ok, script}
-      {:error, error, new_state} ->
-        Logger.error("Error `#{error}` encountered when stopping Script `#{get_field(script, :name)}` on Object `#{get_field(script, :object_id)}`.")
+          {:stop, :normal, :ok, script}
+        {:error, error, new_state} ->
+          Logger.error("Error `#{error}` encountered when stopping Script `#{get_field(script, :name)}` on Object `#{get_field(script, :object_id)}`.")
 
-        script = update_and_persist(script, new_state)
+          script = update_and_persist(script, new_state)
 
-        {:stop, :normal, {:error, error}, script}
-    end
+          {:stop, :normal, {:error, error}, script}
+      end
+    end)
   end
 
   @doc false
   def handle_cast({:message, message}, script) do
-    {_type, _response, new_state} = apply(get_field(script, :callback_module),
-                                          :handle_message,
-                                          [get_field(script, :object_id), message, get_field(script, :deserialized_state)])
+    wrap_callback_in_transaction(fn ->
+      {_type, _response, new_state} = apply(get_field(script, :callback_module),
+                                            :handle_message,
+                                            [get_field(script, :object_id), message, get_field(script, :deserialized_state)])
 
-    {:noreply, update_and_persist(script, new_state)}
+      {:noreply, update_and_persist(script, new_state)}
+    end)
   end
 
   @doc false
   def handle_info(:run, script) do
-    run(script)
+    wrap_callback_in_transaction(fn ->
+      run(script)
+    end)
   end
 
   defp run(script) do

@@ -1,6 +1,7 @@
 defmodule Exmud.Engine.Utils do
   @moduledoc false
 
+  alias Exmud.Engine.Repo
   import Exmud.Common.Utils
 
   def cache, do: :exmud_engine_cache
@@ -22,5 +23,16 @@ defmodule Exmud.Engine.Utils do
     else
       bin
     end
+  end
+
+  def wrap_callback_in_transaction(callback) do
+    Repo.transaction(fn ->
+      try do
+        callback.()
+      rescue
+        error ->  Repo.rollback(error)
+      end
+    end)
+    |> elem(1)
   end
 end
