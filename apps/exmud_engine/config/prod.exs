@@ -1,10 +1,8 @@
 use Mix.Config
 
-# Do not print debug messages in production
-config :logger, level: :info
-
-config :logger,
-  compile_time_purge_level: :info
+# Do not print debug messages to console in production
+config :logger, :console,
+  level: :info
 
 # Finally import the config/prod.secret.exs
 # which should be versioned separately.

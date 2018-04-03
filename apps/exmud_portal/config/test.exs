@@ -7,7 +7,7 @@ config :exmud_portal, Exmud.Portal.Web.Endpoint,
   server: false
 
 # Print only warnings and errors during test
-config :logger, level: :warn
+config :logger, :console, level: :warn
 
 # Configure your database
 config :exmud_portal, Exmud.Portal.Repo,

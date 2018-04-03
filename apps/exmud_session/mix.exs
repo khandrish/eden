@@ -50,4 +50,11 @@ defmodule Exmud.Session.Mixfile do
   # Specifies which paths to compile per environment.
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_),     do: ["lib"]
+
+  defp aliases do
+    ["test": ["ecto.drop --quiet MIX_ENV=test",
+              "ecto.create --quiet MIX_ENV=test",
+              "ecto.migrate --quiet MIX_ENV=test",
+              "test"]]
+  end
 end
