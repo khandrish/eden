@@ -54,11 +54,14 @@ defmodule Exmud.DB.Repo.EngineRepo.Migrations.InitializeEngineRepo do
 
     create table(:lock) do
       add :object_id, references(:object, [on_delete: :delete_all])
-      add :type, :string
-      add :definition, :string
+      add :access_type, :string
+      add :name, :string
+      add :config, :binary
     end
     create index(:lock, [:object_id])
-    create index(:lock, [:type])
+    create index(:lock, [:access_type])
+    create index(:lock, [:name])
+    create unique_index(:lock, [:object_id, :access_type])
 
     create table(:link) do
       add :from_id, references(:object, [on_delete: :delete_all])
