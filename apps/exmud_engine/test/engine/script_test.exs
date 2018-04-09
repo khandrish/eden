@@ -12,7 +12,12 @@ defmodule Exmud.Engine.Test.ScriptTest do
   alias Exmud.Engine.Test.Script.ErrorStarting
   alias Exmud.Engine.Test.Script.ErrorStopping
   alias Exmud.Engine.Test.Script.Idle
-  alias Exmud.Engine.Test.Script.Run
+  alias Exmud.Engine.Test.Script.RunOnce
+  alias Exmud.Engine.Test.Script.RunInterval
+  alias Exmud.Engine.Test.Script.RunError
+  alias Exmud.Engine.Test.Script.RunErrorInterval
+  alias Exmud.Engine.Test.Script.RunErrorStop
+  alias Exmud.Engine.Test.Script.RunErrorStopping
 
   # Test Scripts
   alias Exmud.Engine.Test.Script.Idle
@@ -48,10 +53,12 @@ defmodule Exmud.Engine.Test.ScriptTest do
     @tag engine: true
     test "handling message", %{object_id: object_id} = _context do
       assert Script.start(object_id, Idle.name()) == :ok
+      assert Script.running?(object_id, Idle.name()) == true
       assert Script.call(object_id, Idle.name(), "ping") == {:ok, "ping"}
       assert Script.cast(object_id, Idle.name(), "ping") == :ok
       assert Script.stop(object_id, Idle.name()) == :ok
       assert Script.start(object_id, ErrorHandlingMessage.name()) == :ok
+      assert Script.running?(object_id, ErrorHandlingMessage.name()) == true
       assert Script.call(object_id, ErrorHandlingMessage.name(), "ping") == {:error, "error"}
       assert Script.cast(object_id, ErrorHandlingMessage.name(), "ping") == :ok
       assert Script.stop(object_id, ErrorHandlingMessage.name()) == :ok
@@ -59,14 +66,55 @@ defmodule Exmud.Engine.Test.ScriptTest do
 
     @tag script: true
     @tag engine: true
-    test "Running Script", %{object_id: object_id} = _context do
-      assert Script.start(object_id, Run.name()) == :ok
-      assert Script.run(object_id, Run.name()) == :ok
+    test "Running Script RunOnce", %{object_id: object_id} = _context do
+      assert Script.start(object_id, RunOnce.name()) == :ok
+      assert Script.running?(object_id, RunOnce.name()) == true
+      assert Script.run(object_id, RunOnce.name()) == :ok
+      assert Script.stop(object_id, RunOnce.name()) == :ok
+    end
+
+    @tag script: true
+    @tag engine: true
+    test "Running Script RunInterval", %{object_id: object_id} = _context do
+      assert Script.start(object_id, RunInterval.name()) == :ok
+      assert Script.running?(object_id, RunInterval.name()) == true
+      assert Script.run(object_id, RunInterval.name()) == :ok
+      assert Script.stop(object_id, RunInterval.name()) == :ok
+    end
+
+    @tag script: true
+    @tag engine: true
+    test "Running Script RunError", %{object_id: object_id} = _context do
+      assert Script.start(object_id, RunError.name()) == :ok
+      assert Script.running?(object_id, RunError.name()) == true
+      assert Script.run(object_id, RunError.name()) == :ok
+      assert Script.stop(object_id, RunError.name()) == :ok
+    end
+
+    @tag script: true
+    @tag engine: true
+    test "Running Script RunErrorInterval", %{object_id: object_id} = _context do
+      assert Script.start(object_id, RunErrorInterval.name()) == :ok
+      assert Script.running?(object_id, RunErrorInterval.name()) == true
+      assert Script.run(object_id, RunErrorInterval.name()) == :ok
       Process.sleep(10) # Give Process enough time to actually run
-      assert Script.run(object_id, Run.name()) == :ok
-      Process.sleep(10) # Give Process enough time to run and stop itself
-      assert Script.start(object_id, Run.name()) == :ok
-      assert Script.run(object_id, Run.name()) == :ok
+      assert Script.stop(object_id, RunErrorInterval.name()) == :ok
+    end
+
+    @tag script: true
+    @tag engine: true
+    test "Running Script RunErrorStop", %{object_id: object_id} = _context do
+      assert Script.start(object_id, RunErrorStop.name()) == :ok
+      assert Script.running?(object_id, RunErrorStop.name()) == true
+      assert Script.run(object_id, RunErrorStop.name()) == :ok
+    end
+
+    @tag script: true
+    @tag engine: true
+    test "Running Script RunErrorStopping", %{object_id: object_id} = _context do
+      assert Script.start(object_id, RunErrorStopping.name()) == :ok
+      assert Script.running?(object_id, RunErrorStopping.name()) == true
+      assert Script.run(object_id, RunErrorStopping.name()) == :ok
     end
 
     @tag script: true
@@ -89,6 +137,7 @@ defmodule Exmud.Engine.Test.ScriptTest do
       assert Script.start(object_id, ErrorInitializing.name()) == {:error, "error"}
       assert Script.start(object_id, ErrorStarting.name()) == {:error, "error"}
       assert Script.start(object_id, ErrorStopping.name()) == :ok
+      assert Script.running?(object_id, ErrorStopping.name()) == true
       assert Script.stop(object_id, ErrorStopping.name()) == {:error, "error"}
     end
 
@@ -96,6 +145,7 @@ defmodule Exmud.Engine.Test.ScriptTest do
     @tag engine: true
     test "purge script data", %{object_id: object_id} = _context do
       assert Script.start(object_id, Idle.name()) == :ok
+      assert Script.running?(object_id, Idle.name()) == true
       assert Script.stop(object_id, Idle.name()) == :ok
       Process.sleep(10) # Give Process enough time to actually stop
       assert Script.purge(object_id, Idle.name()) == :ok
@@ -105,11 +155,20 @@ defmodule Exmud.Engine.Test.ScriptTest do
     @tag engine: true
     test "remove script", %{object_id: object_id} = _context do
       assert Script.start(object_id, Idle.name()) == :ok
+      assert Script.running?(object_id, Idle.name()) == true
       assert Script.detach(object_id, Idle.name()) == :ok
       Process.sleep(10) # Give Process enough time to actually stop
       assert Script.running?(object_id, Idle.name()) == false
       assert Script.is_attached?(object_id, Idle.name()) == false
     end
+  end
+
+  defp checkout(config) do
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Exmud.Engine.Repo)
+
+    Ecto.Adapters.SQL.Sandbox.mode(Exmud.Engine.Repo, {:shared, self()})
+
+    config
   end
 
   defp create_new_object(_context) do
@@ -119,7 +178,17 @@ defmodule Exmud.Engine.Test.ScriptTest do
     %{key: key, object_id: object_id}
   end
 
-  @scripts [Idle, ErrorStarting, ErrorStopping, ErrorInitializing, ErrorHandlingMessage, Run]
+  @scripts [Idle,
+            ErrorStarting,
+            ErrorStopping,
+            ErrorInitializing,
+            ErrorHandlingMessage,
+            RunOnce,
+            RunInterval,
+            RunError,
+            RunErrorInterval,
+            RunErrorStop,
+            RunErrorStopping]
 
   defp register_test_scripts(context) do
     Enum.each(@scripts, &Script.register/1)

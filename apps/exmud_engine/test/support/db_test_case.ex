@@ -12,16 +12,14 @@ defmodule Exmud.Engine.Test.DBTestCase do
     quote do
       alias Ecto.Multi
       alias Exmud.Engine.Repo
-      use ExUnit.Case, async: false
+      use ExUnit.Case, async: true
     end
   end
 
-  setup tags do
+  setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Exmud.Engine.Repo)
 
-    unless tags[:async] do
-      Ecto.Adapters.SQL.Sandbox.mode(Exmud.Engine.Repo, {:shared, self()})
-    end
+    Ecto.Adapters.SQL.Sandbox.mode(Exmud.Engine.Repo, {:shared, self()})
 
     :ok
   end

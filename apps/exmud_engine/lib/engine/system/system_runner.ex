@@ -67,7 +67,7 @@ defmodule Exmud.Engine.SystemRunner do
       system ->
         Logger.info("System `#{name}` loaded from database.")
 
-        {:ok, change(system, callback_module: callback_module, state: deserialize(system.state))}
+        {:ok, change(system, callback_module: callback_module, state: unpack_term(system.state))}
     end
   end
 
@@ -79,11 +79,11 @@ defmodule Exmud.Engine.SystemRunner do
     if elem(start_result, 0) == :ok do
       Logger.info("System `#{get_field(system, :name)}` successfully started.")
 
-      system = change(system, state: serialize(elem(start_result, 1)))
+      system = change(system, state: pack_term(elem(start_result, 1)))
 
       # Save modified state immediately
       {:ok, system} = Repo.insert_or_update(System.cast(system))
-      system = change(system, state: deserialize(system.state))
+      system = change(system, state: unpack_term(system.state))
 
       # If an interval was returned, trigger run after said interval
       if :erlang.tuple_size(start_result) == 3, do: Process.send_after(self(), :run, elem(start_result, 2))
@@ -94,7 +94,7 @@ defmodule Exmud.Engine.SystemRunner do
 
       Logger.error("Encountered error `#{error}` while starting System `#{get_field(system, :name)}`.")
 
-      Repo.insert_or_update(change(system, state: new_state))
+      Repo.insert_or_update(change(system, state: pack_term(new_state)))
 
       {:stop, error}
     end
@@ -227,8 +227,8 @@ defmodule Exmud.Engine.SystemRunner do
   #
 
   defp update_and_persist(system, new_system_state) do
-    system = change(system, state: serialize(new_system_state))
+    system = change(system, state: pack_term(new_system_state))
     {:ok, system} = Repo.update(system)
-    change(system, state: deserialize(system.state))
+    change(system, state: unpack_term(system.state))
   end
 end

@@ -48,6 +48,8 @@ defmodule Exmud.Engine.SystemRunnerTest do
       assert System.start(ros_name) == :ok
       assert System.stop(ros_name) == :ok
 
+      assert System.start(Exmud.Engine.Test.System.ErrorStarting.name()) == {:error, :error}
+
       Process.sleep(100) # Give everything a change to shut down properly, otherwise errors may occur when running tests.
     end
   end
@@ -62,6 +64,7 @@ defmodule Exmud.Engine.SystemRunnerTest do
     :ok = System.register(Exmud.Engine.SystemRunnerTest.MessageSystem)
     :ok = System.register(Exmud.Engine.SystemRunnerTest.RunOkTimeSystem)
     :ok = System.register(Exmud.Engine.SystemRunnerTest.RunSystem)
+    :ok = System.register(Exmud.Engine.Test.System.ErrorStarting)
 
     %{ses_name: "StopErrorSystem", sos_name: "StopOkSystem", ios_name: "InitOkSystem", ies_name: "InitErrorSystem",
       rss_name: "RunStopSystem", ros_name: "RunOkSystem", ms_name: "MessageSystem", rots_name: "RunOkTimeSystem",

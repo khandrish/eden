@@ -5,7 +5,7 @@ defmodule Exmud.Engine.Test.LinkTest do
   require Logger
   use Exmud.Engine.Test.DBTestCase
 
-  describe "Unexists? tests:" do
+  describe "Unlinked tests:" do
     setup [:create_new_objects, :generate_link_types, :generate_data]
 
     @tag link: true

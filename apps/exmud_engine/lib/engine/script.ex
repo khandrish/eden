@@ -31,7 +31,7 @@ defmodule Exmud.Engine.Script do
       def name, do: Atom.to_string(__MODULE__)
 
       @doc false
-      def run(_object_id, state), do: {:ok, state, 60_000}
+      def run(_object_id, state), do: {:ok, state}
 
       @doc false
       def start(_object_id, _args, state), do: {:ok, state, 0}
@@ -243,16 +243,33 @@ defmodule Exmud.Engine.Script do
   Script.
   """
   def start(object_id, name, args \\ nil) do
-    with  {:ok, _} <- Supervisor.start_child(Exmud.Engine.ScriptRunnerSupervisor, [object_id, name, args]),
-
-      do: :ok
+    with {:ok, _} <- Supervisor.start_child(Exmud.Engine.ScriptRunnerSupervisor, [object_id, name, args])
+    do
+      :ok
+    end
   end
 
   @doc """
   Stops a Script if it is started.
   """
-  def stop(object_id, name, args \\ %{}) do
+  def stop(object_id, name, args \\ nil) do
     send_message(:call, object_id, name, {:stop, args})
+  end
+
+  @doc """
+  Update the state of a Script in the database.
+
+  Primarily used by the Engine to persiste the state of a running Script whenever it changes.
+  """
+  def update(object_id, script_name, state) do
+    query =
+      from script in Script,
+        where: script.object_id == ^object_id and script.name == ^script_name
+
+    case Repo.update_all(Script, set: [state: pack_term(state)]) do
+      {1, _} -> :ok
+      _ -> {:error, :no_such_script}
+    end
   end
 
 
@@ -320,6 +337,8 @@ defmodule Exmud.Engine.Script do
       apply(GenServer, method, [via(@script_registry, {object_id, name}), message])
     catch
       :exit, {:noproc, _} -> {:error, :script_not_running}
+      :exit, {:normal, _} -> :ok
+      :exit, {:shutdown, _} -> :ok
     end
   end
 

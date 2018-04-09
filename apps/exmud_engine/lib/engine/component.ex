@@ -58,7 +58,7 @@ defmodule Exmud.Engine.Component do
   @type error :: term
 
   @typedoc "The Object being populated with the Component and its data."
-  @type object_id :: term
+  @type object_id :: integer
 
 
   #
