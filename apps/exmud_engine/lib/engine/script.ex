@@ -117,7 +117,10 @@ defmodule Exmud.Engine.Script do
   @type state :: term
 
   @typedoc "Id of an Object."
-  @type object_id :: term
+  @type object_id :: integer
+
+  @typedoc "The name of the Script as registered with the Engine."
+  @type name :: String.t
 
   alias Exmud.Engine.Cache
   alias Exmud.Engine.Repo
@@ -138,6 +141,7 @@ defmodule Exmud.Engine.Script do
   @doc """
   Call a running Script with a message.
   """
+  @spec call(object_id, name, message) :: {:ok, reply}
   def call(object_id, name, message) do
     send_message(:call, object_id, name, {:message, message})
   end
@@ -145,6 +149,7 @@ defmodule Exmud.Engine.Script do
   @doc """
   Cast a message to a running Script.
   """
+  @spec cast(object_id, name, message) :: :ok
   def cast(object_id, name, message) do
     send_message(:cast, object_id, name, {:message, message})
   end

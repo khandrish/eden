@@ -47,7 +47,7 @@ defmodule Exmud.Engine.Mixfile do
       {:calendar, "~> 0.17.2"},
       {:credo, "~> 0.5", only: [:dev, :test]},
       {:e_queue, "~> 1.0"},
-      {:ecto, "~> 2.1.4"},
+      {:ecto, "~> 2.2"},
       {:ex_doc, ">= 0.14.5", only: :dev},
       {:excoveralls, ">= 0.7.0", only: :test},
       {:exmud_common, in_umbrella: true},

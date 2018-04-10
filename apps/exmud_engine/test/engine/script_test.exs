@@ -22,7 +22,7 @@ defmodule Exmud.Engine.Test.ScriptTest do
   # Test Scripts
   alias Exmud.Engine.Test.Script.Idle
 
-  describe "Tests for scripts:" do
+  describe "Scripts:" do
     setup [:create_new_object, :register_test_scripts]
 
     @tag script: true
@@ -51,12 +51,18 @@ defmodule Exmud.Engine.Test.ScriptTest do
 
     @tag script: true
     @tag engine: true
-    test "handling message", %{object_id: object_id} = _context do
+    test "handling message correctly", %{object_id: object_id} = _context do
       assert Script.start(object_id, Idle.name()) == :ok
       assert Script.running?(object_id, Idle.name()) == true
       assert Script.call(object_id, Idle.name(), "ping") == {:ok, "ping"}
       assert Script.cast(object_id, Idle.name(), "ping") == :ok
       assert Script.stop(object_id, Idle.name()) == :ok
+    end
+
+    @tag script: true
+    @tag engine: true
+    @tag wip: true
+    test "handling message with errors", %{object_id: object_id} = _context do
       assert Script.start(object_id, ErrorHandlingMessage.name()) == :ok
       assert Script.running?(object_id, ErrorHandlingMessage.name()) == true
       assert Script.call(object_id, ErrorHandlingMessage.name(), "ping") == {:error, "error"}
@@ -133,9 +139,19 @@ defmodule Exmud.Engine.Test.ScriptTest do
 
     @tag script: true
     @tag engine: true
-    test "bad scripts", %{object_id: object_id} = _context do
+    test "error initializing", %{object_id: object_id} = _context do
       assert Script.start(object_id, ErrorInitializing.name()) == {:error, "error"}
+    end
+
+    @tag script: true
+    @tag engine: true
+    test "error starting", %{object_id: object_id} = _context do
       assert Script.start(object_id, ErrorStarting.name()) == {:error, "error"}
+    end
+
+    @tag script: true
+    @tag engine: true
+    test "error stopping", %{object_id: object_id} = _context do
       assert Script.start(object_id, ErrorStopping.name()) == :ok
       assert Script.running?(object_id, ErrorStopping.name()) == true
       assert Script.stop(object_id, ErrorStopping.name()) == {:error, "error"}
@@ -161,14 +177,18 @@ defmodule Exmud.Engine.Test.ScriptTest do
       assert Script.running?(object_id, Idle.name()) == false
       assert Script.is_attached?(object_id, Idle.name()) == false
     end
-  end
 
-  defp checkout(config) do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Exmud.Engine.Repo)
+    @tag script: true
+    @tag engine: true
+    test "cast to nonexisting Script", %{object_id: object_id} = _context do
+      assert Script.cast(object_id, Idle.name(), "ping") == :ok
+    end
 
-    Ecto.Adapters.SQL.Sandbox.mode(Exmud.Engine.Repo, {:shared, self()})
-
-    config
+    @tag script: true
+    @tag engine: true
+    test "call to nonexisting Script", %{object_id: object_id} = _context do
+      assert Script.call(object_id, Idle.name(), "ping") == {:error, :script_not_running}
+    end
   end
 
   defp create_new_object(_context) do
