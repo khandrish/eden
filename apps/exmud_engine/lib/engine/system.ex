@@ -125,6 +125,7 @@ defmodule Exmud.Engine.System do
   alias Exmud.Engine.Cache
   alias Exmud.Engine.Repo
   alias Exmud.Engine.Schema.System
+  alias Exmud.Engine.SystemRunner
   import Ecto.Query
   import Exmud.Common.Utils
   import Exmud.Engine.Utils
@@ -207,7 +208,7 @@ defmodule Exmud.Engine.System do
   Start a system.
   """
   def start(name, args \\ nil) do
-    with  {:ok, _} <- Supervisor.start_child(Exmud.Engine.SystemRunnerSupervisor, [name, args]),
+    with  {:ok, _} <- DynamicSupervisor.start_child(Exmud.Engine.CallbackSupervisor, {SystemRunner, [name, args]}),
 
       do: :ok
   end

@@ -19,6 +19,18 @@ defmodule Exmud.Engine.SystemRunner do
 
 
   @doc false
+  def child_spec(args) do
+    %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, args},
+      restart: :transient,
+      shutdown: 5000,
+      type: :worker
+    }
+  end
+
+
+  @doc false
   def start_link(name, args) do
     case GenServer.start_link(__MODULE__, {name, args}, name: via(@system_registry, name)) do
       {:error, {:already_started, _pid}} -> {:error, :already_started}

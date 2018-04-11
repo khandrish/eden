@@ -125,6 +125,7 @@ defmodule Exmud.Engine.Script do
   alias Exmud.Engine.Cache
   alias Exmud.Engine.Repo
   alias Exmud.Engine.Schema.Script
+  alias Exmud.Engine.ScriptRunner
   require Logger
   import Ecto.Query
   import Exmud.Common.Utils
@@ -209,14 +210,16 @@ defmodule Exmud.Engine.Script do
   is a dumb delete.
   """
   def purge(object_id, name) do
-    script_query(object_id, name)
-    |> Repo.one()
-    |> case do
-      nil -> {:error, :no_such_script}
-      script ->
-        {:ok, _} = Repo.delete(script)
-        :ok
-    end
+    wrap_callback_in_transaction(fn ->
+      script_query(object_id, name)
+      |> Repo.one()
+      |> case do
+        nil -> {:error, :no_such_script}
+        script ->
+          {:ok, _} = Repo.delete(script)
+          :ok
+      end
+    end)
   end
 
   @doc """
@@ -239,8 +242,10 @@ defmodule Exmud.Engine.Script do
   see the 'has?/2' method.
   """
   def running?(object_id, name) do
-    result = Registry.lookup(@script_registry, {object_id, name})
-    result != []
+    case send_message(:call, object_id, name, :running) do
+      true -> true
+      _ -> false
+    end
   end
 
   @doc """
@@ -248,7 +253,7 @@ defmodule Exmud.Engine.Script do
   Script.
   """
   def start(object_id, name, args \\ nil) do
-    with {:ok, _} <- Supervisor.start_child(Exmud.Engine.ScriptRunnerSupervisor, [object_id, name, args])
+    with {:ok, _} <- DynamicSupervisor.start_child(Exmud.Engine.CallbackSupervisor, {ScriptRunner, [object_id, name, args]})
     do
       :ok
     end
@@ -343,7 +348,6 @@ defmodule Exmud.Engine.Script do
     catch
       :exit, {:noproc, _} -> {:error, :script_not_running}
       :exit, {:normal, _} -> :ok
-      :exit, {:shutdown, _} -> :ok
     end
   end
 

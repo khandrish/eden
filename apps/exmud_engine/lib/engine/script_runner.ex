@@ -23,6 +23,17 @@ defmodule Exmud.Engine.ScriptRunner do
 
 
   @doc false
+  def child_spec(args) do
+    %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, args},
+      restart: :transient,
+      shutdown: 5000,
+      type: :worker
+    }
+  end
+
+  @doc false
   def start_link(object_id, script_name, args) do
     case GenServer.start_link(__MODULE__, {object_id, script_name, args}, name: via(@script_registry, {object_id, script_name})) do
       {:error, {:already_started, _pid}} -> {:error, :already_started}
@@ -111,7 +122,7 @@ defmodule Exmud.Engine.ScriptRunner do
 
   @doc false
   def handle_call(:run, from, state) do
-    if state.timer_ref != nil do
+    if is_reference(state.timer_ref) do
       Process.cancel_timer(state.timer_ref)
     end
 
@@ -144,8 +155,13 @@ defmodule Exmud.Engine.ScriptRunner do
   end
 
   @doc false
+  def handle_call(:running, _from, state) do
+    {:reply, true, state}
+  end
+
+  @doc false
   def handle_call({:stop, reason}, _from, state) do
-    if state.timer_ref != nil do
+    if is_reference(state.timer_ref) do
       Process.cancel_timer(state.timer_ref)
     end
 

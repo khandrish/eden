@@ -5,18 +5,17 @@ defmodule Exmud.Engine.Application do
   use Application
 
   def start(_type, _args) do
-    import Supervisor.Spec, warn: false
-
     children = [
-      worker(Exmud.Engine.Repo, []),
-      worker(Cachex, [cache(), []]),
-      Registry.child_spec([keys: :unique, name: system_registry()]),
-      Registry.child_spec([keys: :unique, name: script_registry()]),
-      supervisor(Exmud.Engine.SystemRunnerSupervisor, []),
-      supervisor(Exmud.Engine.ScriptRunnerSupervisor, [])
+      Exmud.Engine.Repo,
+      %{
+        id: Cachex,
+        start: {Cachex, :start_link, [cache()]}
+      },
+      {Registry, keys: :unique, name: system_registry()},
+      {Registry, keys: :unique, name: script_registry()},
+      {DynamicSupervisor, strategy: :one_for_one, name: Exmud.Engine.CallbackSupervisor}
     ]
 
-    opts = [strategy: :one_for_one, name: Exmud.Engine.Supervisor]
-    Supervisor.start_link(children, opts)
+    Supervisor.start_link(children, strategy: :one_for_one)
   end
 end
