@@ -54,7 +54,7 @@ defmodule Exmud.Engine.System do
   @doc """
   Handle a message which has been explicitly sent to the System.
   """
-  @callback handle_message(message, state) :: {:ok, reply, state} | {:error, reason}
+  @callback handle_message(object_id, message, state) :: {:ok, reply, state} | {:error, reason}
 
   @doc """
   Called the first, and only the first, time a System is started.
@@ -63,7 +63,7 @@ defmodule Exmud.Engine.System do
   If a System has been previously initialized, the persisted state is loaded from the database and used in the `start/2`
   callback instead.
   """
-  @callback initialize(args) :: {:ok, state} | {:error, reason}
+  @callback initialize(object_id, args) :: {:ok, state} | {:error, reason}
 
   @doc """
   The name of the System.
@@ -73,11 +73,11 @@ defmodule Exmud.Engine.System do
   @doc """
   Called in response to an interval period expiring, or an explicit call to run the System again.
   """
-  @callback run(state) :: {:ok, state} |
-                          {:ok, state, next_iteration} |
-                          {:stop, reason, state} |
-                          {:error, error, state} |
-                          {:error, error, state, next_iteration}
+  @callback run(object_id, state) :: {:ok, state} |
+                                     {:ok, state, next_iteration} |
+                                     {:stop, reason, state} |
+                                     {:error, error, state} |
+                                     {:error, error, state, next_iteration}
 
   @doc """
   Called when the System is being started.
@@ -86,14 +86,14 @@ defmodule Exmud.Engine.System do
   called with the state returned from the previous call, otherwise the state will be loaded from the database and used
   instead. Must return a new state and an optional timeout, in milliseconds, until the next iteration.
   """
-  @callback start(args, state) :: {:ok, state} | {:ok, state, next_iteration} | {:error, error}
+  @callback start(object_id, args, state) :: {:ok, state} | {:ok, state, next_iteration} | {:error, error}
 
   @doc """
   Called when the System is being stopped.
 
   Must return a new state which will be persisted.
   """
-  @callback stop(args, state) :: {:ok, state} | {:error, error}
+  @callback stop(object_id, args, state) :: {:ok, state} | {:error, error}
 
   @typedoc "Arguments passed through to a callback module."
   @type args :: term
@@ -115,6 +115,9 @@ defmodule Exmud.Engine.System do
 
   @typedoc "State used by the callback module."
   @type state :: term
+
+  @typedoc "Id of the Object representing the System within the Engine."
+  @type object_id :: integer
 
 
   #

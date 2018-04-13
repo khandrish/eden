@@ -70,6 +70,11 @@ defmodule Exmud.Engine.Script do
   @callback initialize(object_id, args) :: {:ok, state} | {:error, reason}
 
   @doc """
+  The name of the Script.
+  """
+  @callback name :: String.t
+
+  @doc """
   Called in response to an interval period expiring, or an explicit call to run the Script again. Unlike Systems, a
   Script is always expected to be running.
   """
@@ -86,10 +91,10 @@ defmodule Exmud.Engine.Script do
   called with the state returned from the previous call, otherwise the state will be loaded from the database and used
   instead. Must return a new state.
   """
-  @callback start(object_id,args, state) :: {:ok, state, next_iteration} | {:error, error, state}
+  @callback start(object_id, args, state) :: {:ok, state, next_iteration} | {:error, error, state}
 
   @doc """
-  Called when the system is being stopped.
+  Called when the Script is being stopped.
 
   Must return a new state which will be persisted.
   """
@@ -116,7 +121,7 @@ defmodule Exmud.Engine.Script do
   @typedoc "State used by the callback module."
   @type state :: term
 
-  @typedoc "Id of an Object."
+  @typedoc "Id of the Object the Script is attached to."
   @type object_id :: integer
 
   @typedoc "The name of the Script as registered with the Engine."

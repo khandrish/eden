@@ -12,6 +12,10 @@ defmodule Exmud.Engine.SystemRunner do
 
   @system_registry system_registry()
 
+  defmodule State do
+    defstruct deserialized_state: nil, timer_ref: nil, callback_module: nil, system_name: nil, object_id: nil
+  end
+
 
   #
   # Worker callback used by the supervisor when starting a new system runner.
