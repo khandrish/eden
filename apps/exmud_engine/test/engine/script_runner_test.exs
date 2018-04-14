@@ -143,7 +143,7 @@ defmodule Exmud.Engine.ScriptRunnerTest do
     @tag script_runner: true
     test "by stopping and then having an error during stopping", state do
       state = %{state | callback_module: RunErrorStopping, script_name: RunErrorStopping.name()}
-      {:stop, :normal, state} = ScriptRunner.handle_info(:run, state)
+      {:stop, :normal, _state} = ScriptRunner.handle_info(:run, state)
     end
 
     @tag engine: true

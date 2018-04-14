@@ -238,22 +238,6 @@ defmodule Exmud.Engine.System do
     end
   end
 
-  @doc """
-  Update the state of a System in the database.
-
-  Primarily used by the Engine to persist the state of a running System whenever it changes.
-  """
-  def update(system_name, state) do
-    query =
-      from system in System,
-        where: system.name == ^system_name
-
-    case Repo.update_all(query, set: [state: pack_term(state)]) do
-      {1, _} -> :ok
-      _ -> {:error, :no_such_script}
-    end
-  end
-
 
   #
   # Manipulation of Systems in the Engine.
