@@ -2,7 +2,6 @@ defmodule Exmud.Engine.Schema.Object do
   use Exmud.Common.Schema
 
   schema "object" do
-    field :key, :string
     field :date_created, :utc_datetime
     has_many :callbacks, Exmud.Engine.Schema.Callback, foreign_key: :object_id
     has_many :command_sets, Exmud.Engine.Schema.CommandSet, foreign_key: :object_id
@@ -13,10 +12,9 @@ defmodule Exmud.Engine.Schema.Object do
     has_many :tags, Exmud.Engine.Schema.Tag, foreign_key: :object_id
   end
 
-  def new(object, params \\ %{}) do
-    object
-    |> cast(params, [:key])
+  def new do
+    %Exmud.Engine.Schema.Object{}
+    |> cast(%{}, [])
     |> put_change(:date_created, DateTime.utc_now())
-    |> validate_required([:date_created, :key])
   end
 end

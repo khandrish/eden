@@ -48,9 +48,8 @@ defmodule Exmud.Engine.Test.CommandSetTest do
   end
 
   defp create_new_object(_context) do
-    key = UUID.generate()
-    {:ok, object_id} = Object.new(key)
+    object_id = Object.new!()
 
-    %{key: key, object_id: object_id}
+    %{object_id: object_id}
   end
 end

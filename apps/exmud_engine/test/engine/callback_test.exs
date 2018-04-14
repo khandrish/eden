@@ -48,9 +48,9 @@ defmodule Exmud.Engine.Test.CallbackTest do
   end
 
   defp create_new_object(_context) do
-    key = UUID.generate()
-    {:ok, object_id} = Object.new(key)
-    %{key: key, object_id: object_id}
+    object_id = Object.new!()
+
+    %{object_id: object_id}
   end
 
   @callbacks [Basic]

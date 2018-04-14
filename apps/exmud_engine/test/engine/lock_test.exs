@@ -57,10 +57,8 @@ defmodule Exmud.Engine.Test.LockTest do
   end
 
   defp create_new_objects(context) do
-    key = UUID.generate()
-    {:ok, object_id1} = Object.new(key)
-    key = UUID.generate()
-    {:ok, object_id2} = Object.new(key)
+    object_id1 = Object.new!()
+    object_id2 = Object.new!()
 
     context
     |> Map.put(:object_id1, object_id1)

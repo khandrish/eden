@@ -17,39 +17,19 @@ defmodule Exmud.Engine.Test.ObjectTest do
   # Test Component
   alias Exmud.Engine.Test.Component.Basic, as: BasicComponent
 
-  describe "Standard Ecto usage tests for game object: " do
+  describe "Objects: " do
     setup [:create_new_object, :register_test_callbacks, :register_test_components]
 
     @tag object: true
     @tag engine: true
-    test "bad input tests" do
-      assert Object.new(0) == {:error, [key: "is invalid"]}
-      assert_raise Ecto.StaleEntryError, fn ->
-        Object.delete(0)
-      end
+    test "Delete an Object which doesn't exist" do
+      assert Object.delete(0) == {:error, :no_such_object}
     end
 
     @tag object: true
     @tag engine: true
     test "delete tests", %{object_id: object_id} = _context do
       assert Object.delete(object_id) == :ok
-    end
-
-    @tag object: true
-    @tag engine: true
-    test "query game object tests", %{key: key, object_id: object_id} = _context do
-      invalid_key = UUID.generate()
-      assert Object.query({:and, [{:object, key}]}) == {:ok, [object_id]}
-      assert Object.query({:and, [{:object, invalid_key},{:object, key}]}) == {:ok, []}
-      assert Object.query({:or, [{:object, invalid_key},{:object, key}]}) == {:ok, [object_id]}
-      assert Object.query({:or, [
-                                  {:object, invalid_key},
-                                  {:and, [
-                                          {:object, key},
-                                          {:object, key},
-                                          {:or, [
-                                                  {:object, invalid_key},
-                                                  {:object, key}]}]}]}) == {:ok, [object_id]}
     end
 
     @tag object: true
@@ -69,9 +49,8 @@ defmodule Exmud.Engine.Test.ObjectTest do
 
     @tag object: true
     @tag engine: true
-    test "complex list tests to show composition", %{key: key1, object_id: object_id1} = _context do
-      key2 = UUID.generate()
-      {:ok, object_id2} = Object.new(key2)
+    test "complex list tests to show composition", %{object_id: object_id1} = _context do
+      object_id2 = Object.new!()
 
       attribute_key = UUID.generate()
       attribute_value = UUID.generate()
@@ -90,7 +69,6 @@ defmodule Exmud.Engine.Test.ObjectTest do
       assert Tag.attach(object_id1, tag_category, tag) == :ok
 
       assert Object.query({:and, [
-                                    {:object, key1},
                                     {:attribute, {BasicComponent.name(), attribute_key}},
                                     {:component, BasicComponent.name()},
                                     {:callback, BasicCallback.key()},
@@ -104,9 +82,8 @@ defmodule Exmud.Engine.Test.ObjectTest do
   end
 
   defp create_new_object(_context) do
-    key = UUID.generate()
-    {:ok, object_id} = Object.new(key)
-    %{key: key, object_id: object_id}
+    object_id = Object.new!()
+    %{object_id: object_id}
   end
 
   @callbacks [BasicCallback]

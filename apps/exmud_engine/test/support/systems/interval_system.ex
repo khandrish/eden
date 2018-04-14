@@ -9,7 +9,7 @@ defmodule Exmud.Engine.Test.System.Interval do
 
   @interval 5
 
-  def start(_args, state), do: {:ok, state, @interval}
+  def start(_object_id, _args, state), do: {:ok, state, @interval}
 
-  def run(state), do: {:ok, state, @interval}
+  def run(_object_id, state), do: {:ok, state, @interval}
 end

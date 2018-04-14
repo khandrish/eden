@@ -4,5 +4,5 @@ defmodule Exmud.Engine.Test.System.ErrorStarting do
   """
   use Exmud.Engine.System
 
-  def start(_, _), do: {:error, :error, :ok}
+  def start(_object_id, _, _), do: {:error, :error, :ok}
 end

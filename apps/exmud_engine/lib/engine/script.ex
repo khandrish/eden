@@ -168,12 +168,7 @@ defmodule Exmud.Engine.Script do
   """
   def detach(object_id, name) do
     stop(object_id, name)
-    script_query(object_id, name)
-    |> Repo.delete_all()
-    |> case do
-      {1, _} ->   :ok
-      {0, _} -> {:error, :script_not_removed}
-    end
+    purge(object_id, name)
   end
 
   @doc """
@@ -215,16 +210,12 @@ defmodule Exmud.Engine.Script do
   is a dumb delete.
   """
   def purge(object_id, name) do
-    wrap_callback_in_transaction(fn ->
-      script_query(object_id, name)
-      |> Repo.one()
-      |> case do
-        nil -> {:error, :no_such_script}
-        script ->
-          {:ok, _} = Repo.delete(script)
-          :ok
-      end
-    end)
+    script_query(object_id, name)
+    |> Repo.delete_all()
+    |> case do
+      {1, _} -> :ok
+      {0, _} -> {:error, :no_such_script}
+    end
   end
 
   @doc """
@@ -247,43 +238,57 @@ defmodule Exmud.Engine.Script do
   see the 'has?/2' method.
   """
   def running?(object_id, name) do
-    case send_message(:call, object_id, name, :running) do
-      true -> true
-      _ -> false
-    end
+    send_message(:call, object_id, name, :running) == true
   end
 
   @doc """
   Start a Script on an object. This works for both attaching a new Script to an Object and restarting an existing
   Script.
   """
-  def start(object_id, name, args \\ nil) do
-    with {:ok, _} <- DynamicSupervisor.start_child(Exmud.Engine.CallbackSupervisor, {ScriptRunner, [object_id, name, args]})
-    do
-      :ok
+  def start(object_id, name, callback_module_arguments \\ nil) do
+    with {:ok, callback_module} <- lookup(name)
+      do
+
+      process_registration_name = via(@script_registry, {object_id, name})
+      gen_server_args = [object_id, name, callback_module, callback_module_arguments, process_registration_name]
+
+      with  {:ok, _} <- DynamicSupervisor.start_child(Exmud.Engine.CallbackSupervisor, {ScriptRunner, gen_server_args})
+        do
+          :ok
+      end
     end
   end
 
   @doc """
   Stops a Script if it is started.
   """
-  def stop(object_id, name, args \\ nil) do
-    send_message(:call, object_id, name, {:stop, args})
+  def stop(object_id, name) do
+    case Registry.lookup(@script_registry, {object_id, name}) do
+      [{pid, _}] ->
+        ref = Process.monitor(pid)
+        GenServer.stop(pid, :normal)
+        receive do
+          {:DOWN, ^ref, :process, ^pid, :normal} ->
+            :ok
+        end
+      _ ->
+        {:error, :no_such_script}
+    end
   end
 
   @doc """
   Update the state of a Script in the database.
 
-  Primarily used by the Engine to persiste the state of a running Script whenever it changes.
+  Primarily used by the Engine to persist the state of a running Script whenever it changes.
   """
   def update(object_id, script_name, state) do
     query =
       from script in Script,
         where: script.object_id == ^object_id and script.name == ^script_name
 
-    case Repo.update_all(Script, set: [state: pack_term(state)]) do
+    case Repo.update_all(query, set: [state: pack_term(state)]) do
       {1, _} -> :ok
-      _ -> {:error, :no_such_script}
+      {0, _} -> {:error, :no_such_script}
     end
   end
 
@@ -352,7 +357,6 @@ defmodule Exmud.Engine.Script do
       apply(GenServer, method, [via(@script_registry, {object_id, name}), message])
     catch
       :exit, {:noproc, _} -> {:error, :script_not_running}
-      :exit, {:normal, _} -> :ok
     end
   end
 

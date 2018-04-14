@@ -16,32 +16,7 @@ defmodule Exmud.Engine.System do
   defmacro __using__(_) do
     quote location: :keep do
 
-      @behaviour Exmud.Engine.System
-
-      @doc false
-      def handle_message(message, state), do: {:ok, message, state}
-
-      @doc false
-      def initialize(_args), do: {:ok, nil}
-
-      @doc false
-      def name, do: Atom.to_string(__MODULE__)
-
-      @doc false
-      def run(state), do: {:ok, state}
-
-      @doc false
-      def start(_args, state), do: {:ok, state}
-
-      @doc false
-      def stop(_args, state), do: {:ok, state}
-
-      defoverridable [handle_message: 2,
-                      initialize: 1,
-                      name: 0,
-                      run: 1,
-                      start: 2,
-                      stop: 2]
+      use Exmud.Engine.Script
     end
   end
 
@@ -126,9 +101,10 @@ defmodule Exmud.Engine.System do
 
 
   alias Exmud.Engine.Cache
+  alias Exmud.Engine.Object
   alias Exmud.Engine.Repo
-  alias Exmud.Engine.Schema.System
-  alias Exmud.Engine.SystemRunner
+  alias Exmud.Engine.Schema.Script
+  alias Exmud.Engine.ScriptRunner
   import Ecto.Query
   import Exmud.Common.Utils
   import Exmud.Engine.Utils
@@ -210,10 +186,26 @@ defmodule Exmud.Engine.System do
   @doc """
   Start a system.
   """
-  def start(name, args \\ nil) do
-    with  {:ok, _} <- DynamicSupervisor.start_child(Exmud.Engine.CallbackSupervisor, {SystemRunner, [name, args]}),
+  def start(name, callback_module_arguments \\ nil) do
+    object_id =
+      case Repo.one(system_query(name)) do
+        nil ->
+          Object.new!()
+        system ->
+          system.object_id
+      end
 
-      do: :ok
+    with {:ok, callback_module} <- lookup(name)
+      do
+
+      process_registration_name = via(@system_registry, name)
+      gen_server_args = [object_id, name, callback_module, callback_module_arguments, process_registration_name]
+
+      with  {:ok, _} <- DynamicSupervisor.start_child(Exmud.Engine.CallbackSupervisor, {ScriptRunner, gen_server_args})
+        do
+          :ok
+      end
+    end
   end
 
   @doc """
@@ -227,6 +219,22 @@ defmodule Exmud.Engine.System do
       end
     catch
       :exit, {:noproc, _} -> {:error, :system_not_running}
+    end
+  end
+
+  @doc """
+  Update the state of a System in the database.
+
+  Primarily used by the Engine to persist the state of a running System whenever it changes.
+  """
+  def update(system_name, state) do
+    query =
+      from system in System,
+        where: system.name == ^system_name
+
+    case Repo.update_all(query, set: [state: pack_term(state)]) do
+      {1, _} -> :ok
+      _ -> {:error, :no_such_script}
     end
   end
 
@@ -299,7 +307,7 @@ defmodule Exmud.Engine.System do
   end
 
   defp system_query(name) do
-    from system in System,
-      where: system.name == ^name
+    from script in Script,
+      where: script.name == ^name
   end
 end

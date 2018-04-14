@@ -2,20 +2,19 @@ defmodule Exmud.DB.Repo.EngineRepo.Migrations.InitializeEngineRepo do
   use Ecto.Migration
 
   def change do
-    # Tables which stand on their own and have no relationships
-    create table(:system) do
-      add :name, :string
-      add :state, :binary
-    end
-    create unique_index(:system, [:name])
-
-    # Tables related to game objects
     create table(:object) do
       add :date_created, :timestamptz
       add :key, :string
     end
     create index(:object, [:key])
     create index(:object, [:date_created])
+
+    create table(:system) do
+      add :object_id, references(:object, [on_delete: :delete_all])
+      add :name, :string
+      add :state, :binary
+    end
+    create unique_index(:system, [:name])
 
     create table(:component) do
       add :object_id, references(:object, [on_delete: :delete_all])
