@@ -354,7 +354,7 @@ defmodule Exmud.Engine.Script do
     try do
       apply(GenServer, method, [via(@script_registry, {object_id, name}), message])
     catch
-      :exit, {:noproc, _} -> {:error, :script_not_running}
+      :exit, _ -> {:error, :script_not_running}
     end
   end
 

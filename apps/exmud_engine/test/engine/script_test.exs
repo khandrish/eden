@@ -23,6 +23,9 @@ defmodule Exmud.Engine.Test.ScriptTest do
   alias Exmud.Engine.Test.Script.State
   alias Exmud.Engine.Test.Script.Detach
   alias Exmud.Engine.Test.Script.Purge
+  alias Exmud.Engine.Test.Script.Update
+  alias Exmud.Engine.Test.Script.UnsuccessfulUpdate
+  alias Exmud.Engine.Test.Script.Unregister
 
   describe "scripts interface" do
     setup [:create_new_object, :register_test_scripts]
@@ -43,6 +46,8 @@ defmodule Exmud.Engine.Test.ScriptTest do
     test "with getting state", %{object_id: object_id} = _context do
       assert Script.start(object_id, State.name()) == :ok
       assert Script.get_state(object_id, State.name()) == {:ok, nil}
+      assert Script.stop(object_id, State.name()) == :ok
+      assert Script.get_state(object_id, State.name()) == {:ok, nil}
     end
 
     @tag script: true
@@ -50,6 +55,24 @@ defmodule Exmud.Engine.Test.ScriptTest do
     test "with successful stop", %{object_id: object_id} = _context do
       assert Script.start(object_id, Stop.name()) == :ok
       assert Script.stop(object_id, Stop.name()) == :ok
+    end
+
+    @tag script: true
+    @tag engine: true
+    test "with successful update", %{object_id: object_id} = _context do
+      assert Script.start(object_id, Update.name()) == :ok
+      assert Script.stop(object_id, Update.name()) == :ok
+      assert Script.update(object_id, Update.name(), :bar) == :ok
+      assert Script.get_state(object_id, Update.name()) == {:ok, :bar}
+    end
+
+    @tag script: true
+    @tag engine: true
+    test "with unsuccessful update", %{object_id: object_id} = _context do
+      assert Script.start(object_id, UnsuccessfulUpdate.name()) == :ok
+      assert Script.stop(object_id, UnsuccessfulUpdate.name()) == :ok
+      assert Script.update(object_id, UnsuccessfulUpdate.name(), :bar) == :ok
+      assert Script.get_state(object_id, UnsuccessfulUpdate.name()) == {:ok, :bar}
     end
 
     @tag script: true
@@ -79,7 +102,7 @@ defmodule Exmud.Engine.Test.ScriptTest do
     @tag script: true
     @tag engine: true
     test "with error while purging", %{object_id: object_id} = _context do
-      assert Script.purge(object_id, Purge.name()) == {:error, :no_such_script}
+      assert Script.purge(object_id, "Foo") == {:error, :no_such_script}
     end
 
     @tag script: true
@@ -105,6 +128,30 @@ defmodule Exmud.Engine.Test.ScriptTest do
       assert Script.cast(object_id, Cast.name(), "foo") == :ok
       assert Script.stop(object_id, Cast.name()) == :ok
     end
+
+    @tag script: true
+    @tag engine: true
+    test "by listing registered scripts" do
+      assert Script.list_registered() != []
+    end
+
+    @tag script: true
+    @tag engine: true
+    test "with failed lookup" do
+      assert Script.lookup("foo") == {:error, :no_such_script}
+    end
+
+    @tag script: true
+    @tag engine: true
+    test "by checking registered scripts" do
+      assert Script.registered?(Idle) == true
+    end
+
+    @tag script: true
+    @tag engine: true
+    test "by unregistering scripts" do
+      assert Script.unregister(Unregister) == :ok
+    end
   end
 
   defp create_new_object(_context) do
@@ -120,6 +167,9 @@ defmodule Exmud.Engine.Test.ScriptTest do
             Purge,
             Stop,
             State,
+            UnsuccessfulUpdate,
+            Update,
+            Unregister,
             Detach,
             ErrorStarting,
             ErrorStopping,

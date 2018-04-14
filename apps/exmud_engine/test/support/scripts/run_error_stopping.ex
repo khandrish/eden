@@ -1,13 +1,11 @@
 defmodule Exmud.Engine.Test.Script.RunErrorStopping do
   use Exmud.Engine.Script
 
-  def initialize(_object_id, _args), do: {:ok, :ok}
-
-  def run(_object_id, _) do
-    {:stop, :error, :ok}
+  def run(_object_id, state) do
+    {:stop, :error, state}
   end
 
-  def stop(_object_id, reason, _) do
-    {:error, reason, :ok}
+  def stop(_object_id, args, state) do
+    {:error, args, state}
   end
 end

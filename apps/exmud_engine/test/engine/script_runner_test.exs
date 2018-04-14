@@ -13,6 +13,7 @@ defmodule Exmud.Engine.ScriptRunnerTest do
   alias Exmud.Engine.Test.Script.RunError
   alias Exmud.Engine.Test.Script.RunErrorInterval
   alias Exmud.Engine.Test.Script.RunErrorStop
+  alias Exmud.Engine.Test.Script.RunErrorStopping
   alias Exmud.Engine.Test.Script.Run
 
   describe "script runner" do
@@ -135,6 +136,20 @@ defmodule Exmud.Engine.ScriptRunnerTest do
       state = %{state | callback_module: RunErrorStop, script_name: RunErrorStop.name()}
       {:stop, :normal, state} = ScriptRunner.handle_info(:run, state)
       assert is_reference(state.timer_ref) == false
+    end
+
+    @tag engine: true
+    @tag script_runner: true
+    test "by stopping and then having an error during stopping", state do
+      state = %{state | callback_module: RunErrorStopping, script_name: RunErrorStopping.name()}
+      {:stop, :normal, state} = ScriptRunner.handle_info(:run, state)
+    end
+
+    @tag engine: true
+    @tag script_runner: true
+    test "with info with :stop as message", state do
+      state = %{state | callback_module: RunErrorStop, script_name: RunErrorStop.name()}
+      {:stop, :normal, _state} = ScriptRunner.handle_info(:stop, state)
     end
   end
 

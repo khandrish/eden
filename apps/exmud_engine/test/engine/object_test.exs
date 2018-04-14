@@ -79,6 +79,69 @@ defmodule Exmud.Engine.Test.ObjectTest do
                                     {:tag, {tag_category, tag}}
                                  ]}) == {:ok, [object_id1]}
     end
+
+    @tag object: true
+    @tag engine: true
+    test "query game object tests", %{object_id: object_id} = _context do
+      object_id2 = Object.new!()
+
+      attribute_key = UUID.generate()
+      attribute_value = UUID.generate()
+      command_set = UUID.generate()
+      link_type = UUID.generate()
+      tag = UUID.generate()
+      tag_category = UUID.generate()
+
+      assert Component.register(BasicComponent) == :ok
+
+      assert Component.attach(object_id, BasicComponent.name()) == :ok
+      assert Attribute.put(object_id, BasicComponent.name(), attribute_key, attribute_value) == :ok
+      assert Callback.attach(object_id, BasicCallback.name()) == :ok
+      assert CommandSet.add(object_id, command_set) == {:ok, object_id}
+      assert Link.forge(object_id, object_id2, link_type, "foo") == :ok
+      assert Tag.attach(object_id, tag_category, tag) == :ok
+
+
+
+      assert Object.query({:and, [
+                                    {:attribute, {BasicComponent.name(), attribute_key}},
+                                    {:component, BasicComponent.name()},
+                                    {:callback, BasicCallback.key()},
+                                    {:command_set, command_set},
+                                    {:or, [
+                                      {:link, link_type},
+                                      {:link, {link_type, object_id2}},
+                                      {:link, {link_type, object_id2, "foo"}},
+                                      {:tag, {tag_category, tag}}
+                                    ]}
+                                 ]}) == {:ok, [object_id]}
+
+      assert Object.query({:or, [
+                                    {:attribute, {BasicComponent.name(), attribute_key}},
+                                    {:component, BasicComponent.name()},
+                                    {:callback, BasicCallback.key()},
+                                    {:command_set, command_set},
+                                    {:or, [
+                                      {:link, link_type},
+                                      {:link, {link_type, object_id2}},
+                                      {:link, {link_type, object_id2, "foo"}},
+                                      {:tag, {tag_category, tag}}
+                                    ]}
+                                 ]}) == {:ok, [object_id]}
+
+      # invalid_key = UUID.generate()
+      # assert Object.query({:and, [{:object, key}]}) == {:ok, [object_id]}
+      # assert Object.query({:and, [{:object, invalid_key},{:object, key}]}) == {:ok, []}
+      # assert Object.query({:or, [{:object, invalid_key},{:object, key}]}) == {:ok, [object_id]}
+      # assert Object.query({:or, [
+      #                             {:object, invalid_key},
+      #                             {:and, [
+      #                                     {:object, key},
+      #                                     {:object, key},
+      #                                     {:or, [
+      #                                             {:object, invalid_key},
+      #                                             {:object, key}]}]}]}) == {:ok, [object_id]}
+    end
   end
 
   defp create_new_object(_context) do

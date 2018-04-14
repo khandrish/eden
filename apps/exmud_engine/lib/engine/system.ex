@@ -156,7 +156,7 @@ defmodule Exmud.Engine.System do
       nil -> {:error, :no_such_system}
       system ->
         {:ok, _} = Repo.delete(system)
-        {:ok, deserialize(system.state)}
+        :ok
     end
   end
 
@@ -302,7 +302,7 @@ defmodule Exmud.Engine.System do
     try do
       apply(GenServer, method, [via(@system_registry, name), message])
     catch
-      :exit, {:noproc, _} -> {:error, :system_not_running}
+      :exit, _ -> {:error, :system_not_running}
     end
   end
 
