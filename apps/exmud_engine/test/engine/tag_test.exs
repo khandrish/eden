@@ -20,7 +20,7 @@ defmodule Exmud.Engine.Test.TagTest do
     @tag tag: true
     @tag engine: true
     test "invalid cases" do
-      assert Tag.attach("invalid id", :invalid_tag, "bar") == {:error, :no_such_object}
+      assert Tag.attach("invalid id", :invalid_tag, "bar") == {:error, :unable_to_attach_tag}
       assert Tag.is_attached?(0, "foo", "bar") == false
       assert Tag.detach(0, "foo", "bar") == {:error, :no_such_tag}
     end
