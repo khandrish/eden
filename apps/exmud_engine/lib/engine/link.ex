@@ -417,21 +417,25 @@ defmodule Exmud.Engine.Link do
             and link.data == ^pack_term(data)
   end
 
+  @spec link_count_query(object_id, object_id) :: term
   defp link_count_query(object_id1, object_id2) do
     from link in link_omnidirectional_query(object_id1, object_id2),
       select: count("*")
   end
 
+  @spec link_count_query(object_id, object_id, type) :: term
   defp link_count_query(object_id1, object_id2, type) do
     from link in link_omnidirectional_query(object_id1, object_id2, type),
       select: count("*")
   end
 
+  @spec link_count_query(object_id, object_id, type, data) :: term
   defp link_count_query(object_id1, object_id2, type, data) do
     from link in link_omnidirectional_query(object_id1, object_id2, type, data),
       select: count("*")
   end
 
+  @spec validate_break_result({number :: integer, data :: term}) :: :ok | {:error, :no_such_link}
   defp validate_break_result({0, _}), do: {:error, :no_such_link}
   defp validate_break_result({_some_positive_number, _}), do: :ok
 end
