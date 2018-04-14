@@ -14,6 +14,7 @@ defmodule Exmud.Engine.ScriptRunnerTest do
   alias Exmud.Engine.Test.Script.RunErrorInterval
   alias Exmud.Engine.Test.Script.RunErrorStop
   alias Exmud.Engine.Test.Script.RunErrorStopping
+
   alias Exmud.Engine.Test.Script.Run
 
   describe "script runner" do
