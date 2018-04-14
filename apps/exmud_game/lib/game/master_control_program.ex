@@ -76,7 +76,7 @@ defmodule Exmud.Game.MasterControlProgram do
       Logger.info("Registering `#{callback}`")
 
       # It's ok to assume success here. If the cache can't save a value there are bigger problems to worry about.
-      # This is also during init, so a failure at this level *should* stop the process from starting and replicate that
+      # This is also during init, so a failure at this level will stop the process from starting and propagate that
       # error upwards.
       {:ok, _} = apply(Map.get(@thing_module_map, thing), :register, [key, callback])
     end)
