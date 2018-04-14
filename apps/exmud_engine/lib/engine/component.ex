@@ -16,6 +16,7 @@ defmodule Exmud.Engine.Component do
   alias Exmud.Engine.Schema.Component
   import Ecto.Query
   import Exmud.Common.Utils
+  import Exmud.Engine.Utils
   require Logger
 
 
@@ -34,10 +35,10 @@ defmodule Exmud.Engine.Component do
       def name, do: Atom.to_string(__MODULE__)
 
       @doc false
-      def populate(_object_id), do: :ok
+      def populate(_object_id, _args), do: :ok
 
       defoverridable [name: 0,
-                      populate: 1]
+                      populate: 2]
     end
   end
 
@@ -49,16 +50,35 @@ defmodule Exmud.Engine.Component do
   @callback name :: String.t
 
   @doc """
+  The unique name of the Component.
+
+  This unique string is used for registration in the Engine, and can be used to attach/detach Components.
+  """
+  @callback attributes :: [String.t()]
+
+  @doc """
   Called when a Component has been added to an Object. Is responsible for populating the Component with the necessary
   data.
   """
-  @callback populate(object_id) :: :ok | {:error, error}
-
-  @typedoc "An error message."
-  @type error :: term
+  @callback populate(object_id, args) :: :ok | {:error, attribute, error}
 
   @typedoc "The Object being populated with the Component and its data."
   @type object_id :: integer
+
+  @typedoc "Arguments passed to the Component callback module."
+  @type args :: term
+
+  @typedoc "The name of the Component as registered with the Engine."
+  @type name :: String.t()
+
+  @typedoc "The name of an Attribute belonging to a Component."
+  @type attribute :: String.t()
+
+  @typedoc "An error returned when something has gone wrong."
+  @type error :: atom
+
+  @typedoc "The callback_module that is the implementation of the Component logic."
+  @type callback_module :: atom
 
 
   #
@@ -67,156 +87,40 @@ defmodule Exmud.Engine.Component do
 
 
   @doc """
-  Attach one or more Components to an Object.
-
-  Using a transaction, attach one or more Components and call their populate methods. This means a single error in a
-  single Component will fail the whole operation.
+  Atomically attach a Component to an Object and populate it with attributes using the provided, optional, args.
   """
-  def attach(object_id, components) do
-    components =
-      List.wrap(components)
-      |> Enum.map(fn(component) ->
-        case lookup(component) do
-          {:ok, component} -> {:ok, component}
-          error -> error
-        end
-      end)
-
-    if Enum.all?(components, &(elem(&1, 0) == :ok)) do
-      components = Enum.map(components, &(elem(&1, 1)))
-      try do
-        execute_attach(object_id, components)
-      rescue
-        error in Postgrex.Error ->
-          if error.postgres.code == :unique_violation do
-            {:error, :duplicate_component}
-          else
-            raise error
+  @spec attach(object_id, name, args) :: :ok | {:error, :no_such_object} | {:error, :already_attached} | {:error, error}
+  def attach(object_id, name, args \\ nil) do
+    with {:ok, component} <- lookup(name)
+      do
+        Repo.transaction(fn ->
+          Component.new(%{name: name, object_id: object_id})
+          |> Repo.insert()
+          |> case do
+            {:ok, _} ->
+              case component.populate(object_id, args) do
+                :ok ->
+                  :ok
+                {:error, error} ->
+                  Repo.rollback(error)
+              end
+            {:error, changeset} ->
+              if Keyword.has_key?(changeset.errors, :object_id) do
+                Repo.rollback(:no_such_object)
+              else
+                Repo.rollback(:already_attached)
+              end
           end
-      end
-    else
-      Enum.find(components, &(elem(&1, 0) == :error))
+        end)
+        |> normalize_repo_result()
     end
-  end
-
-  defp execute_attach(object_id, components) do
-    Repo.transaction(fn ->
-      case attach_components(object_id, components) do
-        {:ok, _result} ->
-          Logger.info("Successfully added Components `#{Enum.map(components, &(&1.name()))}` to Object `#{object_id}`")
-          :ok
-        {:error, error} ->
-          Logger.error("Failed to add Components `#{Enum.map(components, &(&1.name()))}` to Object `#{object_id}` because `#{error}`")
-          Repo.rollback(error)
-      end
-    end)
-    |> case do
-      {:ok, _} -> :ok
-      error -> error
-    end
-  end
-
-  defp attach_components(object_id, components) do
-    with :ok <- insert_components(object_id, components),
-      do: populate_components(object_id, components)
-  end
-
-  defp insert_components(object_id, components) do
-    args =
-      components
-      |> Enum.map(fn component ->
-        %{name: component.name(),
-          object_id: object_id}
-      end)
-
-    {count, _} = Repo.insert_all(Component, args)
-
-    if count == length(components) do
-      :ok
-    else
-      {:error, :component_insertion_failed}
-    end
-  end
-
-  defp populate_components(object_id, components) do
-    components
-    |> Enum.map(&(&1.populate(object_id)))
-    |> Enum.all?(fn(:ok) -> true; (_) -> false end)
-    |> if do
-      {:ok, object_id}
-    else
-      {:error, :component_population_failed}
-    end
-  end
-
-  @doc """
-  Retrieve a list of Components that match the provided name or belong to the provided Object id's from the optionally
-  mixed list.
-
-  All Attributes will be preloaded.
-  """
-  def get(names_or_object_ids) when is_list(names_or_object_ids) == false do
-    {:ok, results} =
-      names_or_object_ids
-      |> List.wrap()
-      |> get()
-
-    {:ok, List.first(results)}
-  end
-
-  def get(names_or_object_ids) do
-    {ids, names} = Enum.split_with(names_or_object_ids, &Kernel.is_integer/1)
-
-    query =
-      from component in Component,
-        join: attribute in assoc(component, :attributes),
-        where: component.name in ^names or component.object_id in ^ids,
-        preload: [attributes: attribute]
-
-    result =
-      case Repo.all(query) do
-        [] -> []
-        names ->
-          Enum.map(names, &normalize/1)
-      end
-    {:ok, result}
-  end
-
-  @doc """
-  Retrieve a single of Component that matches the provided name and Object id.
-
-  Note that all Attributes will be preloaded.
-  """
-  def get(object_id, name) do
-    query =
-      from component in Component,
-        where: component.name == ^name
-          and component.object_id == ^object_id,
-        preload: :attributes
-
-    component = Repo.one(query)
-
-    case component do
-      nil ->
-        {:error, :no_such_component}
-      component ->
-        {:ok, normalize(component)}
-    end
-  end
-
-  defp normalize(component) do
-    attributes =
-      Enum.map(component.attributes, fn(attribute) ->
-        %{attribute | data: deserialize(attribute.data)}
-      end)
-
-    %{component | attributes: attributes}
   end
 
   @doc """
   Check to see if a given Component, or list of components, is attached to an Object. Will only return `true` if all
   provided values are matched.
   """
+  @spec all_attached?(object_id, name | [name]) :: boolean
   def all_attached?(object_id, names) do
     names = List.wrap(names)
 
@@ -236,6 +140,7 @@ defmodule Exmud.Engine.Component do
   Check to see if a given Component, or list of components, is attached to an Object. Will return `true` if any of the
   provided values are matched.
   """
+  @spec any_attached?(object_id, name | [name]) :: boolean
   def any_attached?(object_id, names) do
     names = List.wrap(names)
 
@@ -252,8 +157,9 @@ defmodule Exmud.Engine.Component do
   end
 
   @doc """
-  Detach all Components, deleting all associated data, attached to a given Object.
+  Detach all Components, deleting all associated data, attached to a given Object or set of Objects.
   """
+  @spec detach(object_id | [object_id]) :: :ok
   def detach(object_ids) do
     delete_query =
       from component in Component,
@@ -267,6 +173,7 @@ defmodule Exmud.Engine.Component do
   @doc """
   Detach one or more Components, deleting all associated data, attached to a given Object.
   """
+  @spec detach(object_id, name | [name]) :: :ok
   def detach(object_id, names) do
     names = List.wrap(names)
 
@@ -289,7 +196,8 @@ defmodule Exmud.Engine.Component do
   @doc """
   List all Components registered with the Engine.
   """
-  def list_registered() do
+  @spec list_registered :: [callback_module]
+  def list_registered do
     Logger.info("Listing all registered Components")
     Cache.list(@cache)
   end
@@ -297,6 +205,7 @@ defmodule Exmud.Engine.Component do
   @doc """
   Lookup a Component callback module based on the name it was registered with.
   """
+  @spec lookup(name) :: {:ok, callback_module} | {:error, :no_such_component}
   def lookup(name) do
     case Cache.get(@cache, name) do
       {:error, _} ->
@@ -311,17 +220,16 @@ defmodule Exmud.Engine.Component do
   @doc """
   Register a Component callback module with the Engine. Uses the value provided by the `name/0` function as the key.
   """
+  @spec register(callback_module) :: :ok
   def register(callback_module) do
     Logger.info("Registering Component with name `#{callback_module.name}` and module `#{inspect(callback_module)}`")
-    case Cache.set(@cache, callback_module.name(), callback_module) do
-      {:ok, _} -> {:ok, :registered}
-      error -> error
-    end
+    Cache.set(@cache, callback_module.name(), callback_module)
   end
 
   @doc """
   Check to see if a Component callback module is registered with the Engine.
   """
+  @spec registered?(callback_module) :: boolean
   def registered?(callback_module) do
     Logger.info("Checking registration of Component with name `#{callback_module.name()}`")
     Cache.exists?(@cache, callback_module.name())
@@ -330,6 +238,7 @@ defmodule Exmud.Engine.Component do
   @doc """
   Unregister a Component callback module is registered from the Engine.
   """
+  @spec unregister(callback_module) :: :ok
   def unregister(callback_module) do
     Logger.info("Unregistering Component with name `#{callback_module.name()}`")
     Cache.delete(@cache, callback_module.name())

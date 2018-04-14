@@ -1,6 +1,5 @@
 defmodule Exmud.Engine.Test.ComponentTest do
   alias Ecto.UUID
-  alias Exmud.Engine.Attribute
   alias Exmud.Engine.Component
   alias Exmud.Engine.Object
   alias Exmud.Engine.Repo
@@ -11,7 +10,7 @@ defmodule Exmud.Engine.Test.ComponentTest do
   alias Exmud.Engine.Test.Component.Bad
   alias Exmud.Engine.Test.Component.Basic
 
-  describe "Usage tests for components: " do
+  describe "components" do
     setup [:create_new_object, :register_test_components]
 
     @tag component: true
@@ -21,12 +20,10 @@ defmodule Exmud.Engine.Test.ComponentTest do
       assert Component.register(Basic) == :ok
       assert Component.register(Bad) == :ok
       assert Component.attach(object_id, Basic.name()) == :ok
-      assert Component.attach(object_id, Bad.name()) == {:error, :component_population_failed}
+      assert Component.attach(object_id, Bad.name()) == {:error, :fubar}
       assert Component.all_attached?(object_id, Basic.name()) == true
       assert Component.any_attached?(object_id, Basic.name()) == true
       assert Component.all_attached?(object_id, Basic.name()) == true
-      {:ok, result} = Component.get(object_id, Basic.name())
-      assert result.name() == Basic.name()
       assert Component.detach(object_id, Basic.name()) == :ok
       assert Component.all_attached?(object_id, Basic.name()) == false
       assert Component.attach(object_id, Basic.name()) == :ok
@@ -52,14 +49,17 @@ defmodule Exmud.Engine.Test.ComponentTest do
 
     @tag component: true
     @tag engine: true
-    test "get tests", %{object_id: object_id} = _context do
+    test "with wrong object_id" do
+      assert Component.register(Basic) == :ok
+      assert Component.attach(0, Basic.name()) == {:error, :no_such_object}
+    end
+
+    @tag component: true
+    @tag engine: true
+    test "with duplicate component", %{object_id: object_id} = _context do
+      assert Component.register(Basic) == :ok
       assert Component.attach(object_id, Basic.name()) == :ok
-      attribute_key = UUID.generate()
-      attribute_data = UUID.generate()
-      assert Attribute.put(object_id, Basic.name(), attribute_key, attribute_data) == :ok
-      {:ok, comp} = Component.get(object_id)
-      {:ok, comp2} = Component.get(Basic.name())
-      assert comp == comp2
+      assert Component.attach(object_id, Basic.name()) == {:error, :already_attached}
     end
   end
 

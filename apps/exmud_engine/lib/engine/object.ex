@@ -187,8 +187,8 @@ defmodule Exmud.Engine.Object do
     end
   end
 
-  defp build_equality_check_dynamic({:attribute, {component, attribute}}) do
-    dynamic([object, callback, command_set, component, attribute], (attribute.attribute == ^attribute and component.name == ^component))
+  defp build_equality_check_dynamic({:attribute, {component_name, attribute_name}}) do
+    dynamic([object, callback, command_set, component, attribute], (attribute.name == ^attribute_name and component.name == ^component_name))
   end
 
   defp build_equality_check_dynamic({:callback, callback}) do

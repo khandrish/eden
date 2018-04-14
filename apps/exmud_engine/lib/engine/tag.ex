@@ -36,8 +36,7 @@ defmodule Exmud.Engine.Tag do
              object_id: object_id,
              tag: tag}
 
-    %Tag{}
-    |> Tag.add(args)
+    Tag.new(args)
     |> Repo.insert()
     |> normalize_repo_result(object_id)
     |> case do

@@ -14,11 +14,9 @@ defmodule Exmud.Engine.Script do
   system.
   """
 
-
   @doc false
   defmacro __using__(_) do
     quote location: :keep do
-
       @behaviour Exmud.Engine.Script
 
       @doc false
@@ -39,20 +37,18 @@ defmodule Exmud.Engine.Script do
       @doc false
       def stop(_object_id, _reason, state), do: {:ok, state}
 
-      defoverridable [handle_message: 3,
-                      initialize: 2,
-                      name: 0,
-                      run: 2,
-                      start: 3,
-                      stop: 3]
+      defoverridable handle_message: 3,
+                     initialize: 2,
+                     name: 0,
+                     run: 2,
+                     start: 3,
+                     stop: 3
     end
   end
-
 
   #
   # Behavior definition and default callback setup
   #
-
 
   @doc """
   Handle a message which has been explicitly sent to the Script.
@@ -72,17 +68,18 @@ defmodule Exmud.Engine.Script do
   @doc """
   The name of the Script.
   """
-  @callback name :: String.t
+  @callback name :: String.t()
 
   @doc """
   Called in response to an interval period expiring, or an explicit call to run the Script again. Unlike Systems, a
   Script is always expected to be running.
   """
-  @callback run(object_id, state) :: {:ok, state} |
-                                     {:ok, state, next_iteration} |
-                                     {:stop, reason, state} |
-                                     {:error, error, state} |
-                                     {:error, error, state, next_iteration}
+  @callback run(object_id, state) ::
+              {:ok, state}
+              | {:ok, state, next_iteration}
+              | {:stop, reason, state}
+              | {:error, error, state}
+              | {:error, error, state, next_iteration}
 
   @doc """
   Called when the Script is being started.
@@ -125,7 +122,7 @@ defmodule Exmud.Engine.Script do
   @type object_id :: integer
 
   @typedoc "The name of the Script as registered with the Engine."
-  @type name :: String.t
+  @type name :: String.t()
 
   @typedoc "The callback_module that is the implementation of the Script logic."
   @type callback_module :: atom
@@ -141,11 +138,9 @@ defmodule Exmud.Engine.Script do
 
   @script_registry script_registry()
 
-
   #
   # Manipulation of a single Script on an Object
   #
-
 
   @doc """
   Call a running Script with a message.
@@ -190,7 +185,9 @@ defmodule Exmud.Engine.Script do
         script_query(object_id, name)
         |> Repo.one()
         |> case do
-          nil -> {:error, :no_such_script}
+          nil ->
+            {:error, :no_such_script}
+
           script ->
             {:ok, unpack_term(script.state)}
         end
@@ -202,9 +199,7 @@ defmodule Exmud.Engine.Script do
   """
   @spec is_attached?(object_id, name) :: boolean
   def is_attached?(object_id, name) do
-    query =
-      from script in script_query(object_id, name),
-        select: count("*")
+    query = from(script in script_query(object_id, name), select: count("*"))
 
     Repo.one(query) == 1
   end
@@ -256,15 +251,23 @@ defmodule Exmud.Engine.Script do
   """
   @spec start(object_id, name, args :: term) :: :ok | {:error, :no_such_script}
   def start(object_id, name, callback_module_arguments \\ nil) do
-    with {:ok, callback_module} <- lookup(name)
-      do
-
+    with {:ok, callback_module} <- lookup(name) do
       process_registration_name = via(@script_registry, {object_id, name})
-      gen_server_args = [object_id, name, callback_module, callback_module_arguments, process_registration_name]
 
-      with  {:ok, _} <- DynamicSupervisor.start_child(Exmud.Engine.CallbackSupervisor, {ScriptRunner, gen_server_args})
-        do
-          :ok
+      gen_server_args = [
+        object_id,
+        name,
+        callback_module,
+        callback_module_arguments,
+        process_registration_name
+      ]
+
+      with {:ok, _} <-
+             DynamicSupervisor.start_child(
+               Exmud.Engine.CallbackSupervisor,
+               {ScriptRunner, gen_server_args}
+             ) do
+        :ok
       end
     end
   end
@@ -278,10 +281,12 @@ defmodule Exmud.Engine.Script do
       [{pid, _}] ->
         ref = Process.monitor(pid)
         GenServer.stop(pid, :normal)
+
         receive do
           {:DOWN, ^ref, :process, ^pid, :normal} ->
             :ok
         end
+
       _ ->
         {:error, :no_such_script}
     end
@@ -302,11 +307,9 @@ defmodule Exmud.Engine.Script do
     end
   end
 
-
   #
   # Manipulation of Scripts in the Engine.
   #
-
 
   @cache :script_cache
 
@@ -328,6 +331,7 @@ defmodule Exmud.Engine.Script do
       {:error, _} ->
         Logger.error("Lookup failed for Script registered with name `#{name}`")
         {:error, :no_such_script}
+
       result ->
         Logger.info("Lookup succeeded for Script registered with name `#{name}`")
         result
@@ -339,7 +343,12 @@ defmodule Exmud.Engine.Script do
   """
   @spec register(callback_module) :: :ok
   def register(callback_module) do
-    Logger.info("Registering Script with name `#{callback_module.name()}` and module `#{inspect(callback_module)}`")
+    name = callback_module.name()
+
+    Logger.info(
+      "Registering Script with name `#{name}` and module `#{IO.inspect(callback_module)}`"
+    )
+
     Cache.set(@cache, callback_module.name(), callback_module)
   end
 
@@ -361,13 +370,12 @@ defmodule Exmud.Engine.Script do
     Cache.delete(@cache, callback_module.name())
   end
 
-
   #
   # Internal Functions
   #
 
-
-  @spec send_message(method :: atom, object_id, name, message) :: :ok | {:ok, term} | {:error, :script_not_running}
+  @spec send_message(method :: atom, object_id, name, message) ::
+          :ok | {:ok, term} | {:error, :script_not_running}
   defp send_message(method, object_id, name, message) do
     try do
       apply(GenServer, method, [via(@script_registry, {object_id, name}), message])
@@ -378,8 +386,10 @@ defmodule Exmud.Engine.Script do
 
   @spec script_query(object_id, name) :: term
   defp script_query(object_id, name) do
-    from script in Script,
+    from(
+      script in Script,
       where: script.name == ^name,
       where: script.object_id == ^object_id
+    )
   end
 end

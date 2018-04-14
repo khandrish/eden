@@ -7,8 +7,8 @@ defmodule Exmud.Engine.Schema.Tag do
     belongs_to :object, Exmud.Engine.Schema.Object, foreign_key: :object_id
   end
 
-  def add(tag, params \\ %{}) do
-    tag
+  def new(params) do
+    %Exmud.Engine.Schema.Tag{}
     |> cast(params, [:category, :object_id, :tag])
     |> validate_required([:category, :object_id, :tag])
     |> foreign_key_constraint(:object_id)

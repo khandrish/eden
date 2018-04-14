@@ -2,7 +2,7 @@ defmodule Exmud.Engine.Attribute do
   @moduledoc """
   An `Exmud.Component` can have an arbitrary number of attributes associated with it.
 
-  Attributes are where all of the actual data within the engine is stored, and all Attributes belong to a Component
+  Attributes are where all of the actual value within the engine is stored, and all Attributes belong to a Component
   which has been attached to an Object.
   """
 
@@ -25,19 +25,19 @@ defmodule Exmud.Engine.Attribute do
   @type object_id :: integer
 
   @typedoc """
-  The Component on which all operations are to take place.
+  The name of the Component on which all operations are to take place.
   """
-  @type component :: String.t
+  @type component_name :: String.t
 
   @typedoc """
-  The Attribute on which all operations are to take place.
+  The name of the Attribute on which all operations are to take place.
   """
-  @type attribute :: String.t
+  @type attribute_name :: String.t
 
   @typedoc """
-  The data belonging to an Attribute.
+  The value belonging to an Attribute.
   """
-  @type data :: term
+  @type value :: term
 
   @typedoc """
   A function used to compare values for equality.
@@ -57,9 +57,9 @@ defmodule Exmud.Engine.Attribute do
   @doc """
   Remove an Attribute from a Component.
   """
-  @spec delete(object_id, component, attribute) :: :ok | {:error, :no_such_attribute}
-  def delete(object_id, component, attribute) do
-    attribute_query(object_id, component, attribute)
+  @spec delete(object_id, component_name, attribute_name) :: :ok | {:error, :no_such_attribute}
+  def delete(object_id, component_name, attribute_name) do
+    attribute_query(object_id, component_name, attribute_name)
     |> Repo.delete_all()
     |> case do
       {1, _} -> :ok
@@ -71,37 +71,30 @@ defmodule Exmud.Engine.Attribute do
   @doc """
   Returns whether or not the specified Attribute is present on the Component and equal to the provided value.
 
-  Will return `false` if the Object/Component/Attribute do not exist instead of an error. Performs a simple equality
-  check in the database itself rather than client side.
+  When called with anything other than a function as the last argument, a simple in database equality check is
+  performed. If an anonymous function, arity of one, is passed in the Attribute valuewill be retrieved from the database
+  and passed into the function. The function must return a boolean value that indicates whether or not the data matches.
+
+  Since the comparison is done client side using the method in this way is less efficient but more powerful as there is
+  complete control over checking an arbitrarily complex data structure.
   """
-  @spec equals?(object_id, component, attribute, data) :: boolean
-  def equals?(object_id, component, attribute, data) do
+  @spec equals?(object_id, component_name, attribute_name, comparison_fun | value) :: boolean
+  def equals?(object_id, component_name, attribute_name, comparison_fun) when is_function(comparison_fun) do
+    case read(object_id, component_name, attribute_name) do
+      {:ok, attribute_value} ->
+        comparison_fun.(attribute_value)
+      _ ->
+        false
+    end
+  end
+
+  def equals?(object_id, component_name, attribute_name, value) do
     query =
-      from attribute in attribute_query(object_id, component, attribute),
-        where: attribute.data == ^pack_term(data),
+      from attribute in attribute_query(object_id, component_name, attribute_name),
+        where: attribute.value == ^pack_term(value),
         select: count("*")
 
     Repo.one(query) == 1
-  end
-
-  @doc """
-  Returns whether or not the specified Attribute is present on the Component and equal to the provided value.
-
-  As it takes in a function with which to compare the two values the Attribute must be present and populated in the
-  database otherwise an error will be returned. Since the comparison is done client side this call is less efficient
-  than `equals?/4` but is obviously more flexible.
-
-  The passed in function is expected to take two arguments, the first being the Attribute data and the second being the
-  value passed to the `equals?/5` function, and must return a boolean value.
-  """
-  @spec equals(object_id, component, attribute, data, comparison_fun) :: {:ok, boolean} | {:error, :no_such_attribute}
-  def equals(object_id, component, attribute, data_to_compare, fun) do
-    case read(object_id, component, attribute) do
-      {:ok, attribute_data} ->
-        {:ok, fun.(attribute_data, data_to_compare)}
-      error ->
-        error
-    end
   end
 
   @doc """
@@ -109,10 +102,10 @@ defmodule Exmud.Engine.Attribute do
 
   Will return `false` if the Object/Component does not exist instead of an error.
   """
-  @spec exists?(object_id, component, attribute) :: boolean
-  def exists?(object_id, component, attribute) do
+  @spec exists?(object_id, component_name, attribute_name) :: boolean
+  def exists?(object_id, component_name, attribute_name) do
     query =
-      from component in attribute_query(object_id, component, attribute),
+      from component in attribute_query(object_id, component_name, attribute_name),
         select: count("*")
 
     Repo.one(query) == 1
@@ -124,40 +117,46 @@ defmodule Exmud.Engine.Attribute do
   This is a destructive write that does not check for the presence of existing Attribute values. Will return an error
   if the Object/Component does not exist, however.
   """
-  @spec put(object_id, component, attribute, data) :: :ok | {:error, error}
-  def put(object_id, component, attribute, data) do
-    case Component.get(object_id, component) do
-      {:ok, comp} ->
-        args = %{data: pack_term(data),
-                 attribute: attribute}
+  @spec put(object_id, component_name, attribute_name, value) :: :ok | {:error, :no_such_component}
+  def put(object_id, component_name, attribute_name, value) do
+    query =
+      from component in Exmud.Engine.Schema.Component,
+        where: component.object_id == ^object_id
+           and component.name == ^component_name
 
-        Ecto.build_assoc(comp, :attributes, args)
-        |> Repo.insert()
-        |> normalize_repo_result()
-      error ->
-        error
+    case Repo.one(query) do
+      nil ->
+        {:error, :no_such_component}
+      component ->
+        args = %{value: pack_term(value),
+                 name: attribute_name}
+
+        Ecto.build_assoc(component, :attributes, args)
+        |> Repo.insert!()
+
+        :ok
     end
   end
 
   @doc """
   Read the value of an Attribute.
   """
-  @spec read(object_id, component, attribute) :: {:ok, data} | {:error, :no_such_attribute}
-  def read(object_id, component, attribute) do
-    case Repo.one(attribute_query(object_id, component, attribute)) do
+  @spec read(object_id, component_name, attribute_name) :: {:ok, value} | {:error, :no_such_attribute}
+  def read(object_id, component_name, attribute_name) do
+    case Repo.one(attribute_query(object_id, component_name, attribute_name)) do
       nil -> {:error, :no_such_attribute}
-      attribute_data -> {:ok, unpack_term(attribute_data.data)}
+      attribute_value -> {:ok, unpack_term(attribute_value.value)}
     end
   end
 
   @doc """
-  Update a Component.
+  Update an Attribute.
   """
-  @spec update(object_id, component, attribute, data) :: :ok | {:error, :no_such_attribute}
-  def update(object_id, component, attribute, data) do
+  @spec update(object_id, component_name, attribute_name, value) :: :ok | {:error, :no_such_attribute}
+  def update(object_id, component_name, attribute_name, value) do
     query =
-      from attribute in attribute_query(object_id, component, attribute),
-        update: [set: [data: ^pack_term(data)]]
+      from attribute in attribute_query(object_id, component_name, attribute_name),
+        update: [set: [value: ^pack_term(value)]]
 
     case Repo.update_all(query, []) do
       {1, _} -> :ok
@@ -170,11 +169,11 @@ defmodule Exmud.Engine.Attribute do
   # Private functions
   #
 
-
-  defp attribute_query(object_id, component_name, attribute) do
+  @spec attribute_query(object_id, component_name, attribute_name) :: term
+  defp attribute_query(object_id, component_name, attribute_name) do
     from attribute in Attribute,
       inner_join: component in assoc(attribute, :component),
-      where: attribute.attribute == ^attribute
+      where: attribute.name == ^attribute_name
         and component.name == ^component_name
         and component.object_id == ^object_id
   end

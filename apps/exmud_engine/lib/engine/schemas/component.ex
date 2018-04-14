@@ -7,10 +7,11 @@ defmodule Exmud.Engine.Schema.Component do
     has_many :attributes, Exmud.Engine.Schema.Attribute, foreign_key: :component_id
   end
 
-  def add(component, params \\ %{}) do
-    component
-    |> cast(params, [:component, :object_id])
-    |> validate_required([:component, :object_id])
+  def new(params) do
+    %Exmud.Engine.Schema.Component{}
+    |> cast(params, [:name, :object_id])
+    |> validate_required([:name, :object_id])
     |> foreign_key_constraint(:object_id)
+    |> unique_constraint(:name, name: :component_object_id_name_index)
   end
 end
