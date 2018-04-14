@@ -2,6 +2,8 @@ defmodule Exmud.Engine.Tag do
   @moduledoc """
   Tags either exist on an Object, each belonging to a Category/Namespace, or they do not. They have no data associted
   with them other than their existence.
+
+  Tags complement Components, which should be used when anything other than a single boolean value is needed.
   """
 
   alias Exmud.Engine.Repo
