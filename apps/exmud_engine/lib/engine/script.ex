@@ -127,6 +127,9 @@ defmodule Exmud.Engine.Script do
   @typedoc "The name of the Script as registered with the Engine."
   @type name :: String.t
 
+  @typedoc "The callback_module that is the implementation of the Script logic."
+  @type callback_module :: atom
+
   alias Exmud.Engine.Cache
   alias Exmud.Engine.Repo
   alias Exmud.Engine.Schema.Script
@@ -166,6 +169,7 @@ defmodule Exmud.Engine.Script do
   This method first stops the Script if it is running before moving on to removing the Script from the database. It is
   also destructive, with the state of the Script being destroyed at the time of removal.
   """
+  @spec detach(object_id, name) :: :ok | {:error, :no_such_script}
   def detach(object_id, name) do
     stop(object_id, name)
     purge(object_id, name)
@@ -177,6 +181,7 @@ defmodule Exmud.Engine.Script do
   First the running Script will be queried for the state, and then the database. Only if both fail to return a result is
   an error returned.
   """
+  @spec get_state(object_id, name) :: {:ok, term} | {:error, :no_such_script}
   def get_state(object_id, name) do
     try do
       GenServer.call(via(@script_registry, {object_id, name}), :state, :infinity)
@@ -195,6 +200,7 @@ defmodule Exmud.Engine.Script do
   @doc """
   Check to see if a Script is attached to an Object.
   """
+  @spec is_attached?(object_id, name) :: boolean
   def is_attached?(object_id, name) do
     query =
       from script in script_query(object_id, name),
@@ -209,6 +215,7 @@ defmodule Exmud.Engine.Script do
   This method does not checking for a running Script, or in any way ensure that the data can't or won't be rewritten. It
   is a dumb delete.
   """
+  @spec purge(object_id, name) :: :ok | {:error, :no_such_script}
   def purge(object_id, name) do
     script_query(object_id, name)
     |> Repo.delete_all()
@@ -225,6 +232,7 @@ defmodule Exmud.Engine.Script do
   This method ensures that the Script is active and that it will begin the process of running its main loop immediately,
   but offers no other guarantees.
   """
+  @spec run(object_id, name) :: :ok | {:error, :no_such_script}
   def run(object_id, name) do
     send_message(:call, object_id, name, :run)
   end
@@ -237,6 +245,7 @@ defmodule Exmud.Engine.Script do
   check the database to validate that such a Script actively exists. To check if an Object has a Script attached to it,
   see the 'has?/2' method.
   """
+  @spec running?(object_id, name) :: boolean
   def running?(object_id, name) do
     send_message(:call, object_id, name, :running) == true
   end
@@ -245,6 +254,7 @@ defmodule Exmud.Engine.Script do
   Start a Script on an object. This works for both attaching a new Script to an Object and restarting an existing
   Script.
   """
+  @spec start(object_id, name, args :: term) :: :ok | {:error, :no_such_script}
   def start(object_id, name, callback_module_arguments \\ nil) do
     with {:ok, callback_module} <- lookup(name)
       do
@@ -262,6 +272,7 @@ defmodule Exmud.Engine.Script do
   @doc """
   Stops a Script if it is started.
   """
+  @spec stop(object_id, name) :: :ok | {:error, :no_such_script}
   def stop(object_id, name) do
     case Registry.lookup(@script_registry, {object_id, name}) do
       [{pid, _}] ->
@@ -281,8 +292,9 @@ defmodule Exmud.Engine.Script do
 
   Primarily used by the Engine to persist the state of a running Script whenever it changes.
   """
-  def update(object_id, script_name, state) do
-    query = script_query(object_id, script_name)
+  @spec update(object_id, name, state) :: :ok | {:error, :no_such_script}
+  def update(object_id, name, state) do
+    query = script_query(object_id, name)
 
     case Repo.update_all(query, set: [state: pack_term(state)]) do
       {1, _} -> :ok
@@ -301,6 +313,7 @@ defmodule Exmud.Engine.Script do
   @doc """
   List all Scripts which have been registered with the engine since the last start.
   """
+  @spec list_registered :: :ok | [callback_module]
   def list_registered() do
     Logger.info("Listing all registered Scripts")
     Cache.list(@cache)
@@ -309,6 +322,7 @@ defmodule Exmud.Engine.Script do
   @doc """
   Lookup the callback module for the Script with the provided name.
   """
+  @spec lookup(name) :: {:ok, callback_module} | {:error, :no_such_script}
   def lookup(name) do
     case Cache.get(@cache, name) do
       {:error, _} ->
@@ -323,6 +337,7 @@ defmodule Exmud.Engine.Script do
   @doc """
   Register a callback module for a Script with the provided name.
   """
+  @spec register(callback_module) :: :ok
   def register(callback_module) do
     Logger.info("Registering Script with name `#{callback_module.name()}` and module `#{inspect(callback_module)}`")
     Cache.set(@cache, callback_module.name(), callback_module)
@@ -331,6 +346,7 @@ defmodule Exmud.Engine.Script do
   @doc """
   Check to see if a Script has been registered with the provided name.
   """
+  @spec registered?(callback_module) :: boolean
   def registered?(callback_module) do
     Logger.info("Checking registration of Script with name `#{callback_module.name()}`")
     Cache.exists?(@cache, callback_module.name())
@@ -339,6 +355,7 @@ defmodule Exmud.Engine.Script do
   @doc """
   Unregisters the callback module for a Script with the provided name.
   """
+  @spec unregister(callback_module) :: :ok
   def unregister(callback_module) do
     Logger.info("Unregistering Script with name `#{callback_module.name()}`")
     Cache.delete(@cache, callback_module.name())
@@ -350,14 +367,16 @@ defmodule Exmud.Engine.Script do
   #
 
 
+  @spec send_message(method :: atom, object_id, name, message) :: :ok | {:ok, term} | {:error, :script_not_running}
   defp send_message(method, object_id, name, message) do
     try do
       apply(GenServer, method, [via(@script_registry, {object_id, name}), message])
     catch
-      :exit, _ -> {:error, :script_not_running}
+      :exit, _ -> {:error, :no_such_script}
     end
   end
 
+  @spec script_query(object_id, name) :: term
   defp script_query(object_id, name) do
     from script in Script,
       where: script.name == ^name,

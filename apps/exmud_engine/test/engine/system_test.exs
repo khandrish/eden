@@ -52,7 +52,7 @@ defmodule Exmud.Engine.SystemTest do
     @tag system: true
     @tag engine: true
     test "with error while stopping" do
-      assert System.stop("foo") == {:error, :system_not_running}
+      assert System.stop("foo") == {:error, :no_such_system}
     end
 
     @tag system: true

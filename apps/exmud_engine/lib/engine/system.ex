@@ -10,6 +10,9 @@ defmodule Exmud.Engine.System do
   by modifying the value returned from the `run/1` callback. Note that while it is possible to run only in response to
   being explicitly called, short of not implementing the `handle_message/2` callback it is not possible for the Engine
   to run in a schedule only mode. Only you can prevent messages by not calling the System directly in your code.
+
+  Under the hood, Systems are simply Scripts which are treated just a little bit differently. That said, you must not
+  use the same callback module for a System as you do for a Script. It will cause odd and unexpected things to happen.
   """
 
   @doc false
@@ -94,6 +97,12 @@ defmodule Exmud.Engine.System do
   @typedoc "Id of the Object representing the System within the Engine."
   @type object_id :: integer
 
+  @typedoc "The name of the System within the Engine."
+  @type name :: String.t
+
+  @typedoc "The callback_module that is the implementation of the Script logic."
+  @type callback_module :: atom
+
 
   #
   # API
@@ -115,6 +124,7 @@ defmodule Exmud.Engine.System do
   @doc """
   Call a running system with a message.
   """
+  @spec call(name, message) :: {:ok, reply}
   def call(name, message) do
     send_message(:call, name, {:message, message})
   end
@@ -122,6 +132,7 @@ defmodule Exmud.Engine.System do
   @doc """
   Cast a message to a running system.
   """
+  @spec cast(name, message) :: :ok
   def cast(name, message) do
     send_message(:cast, name, {:message, message})
 
@@ -131,6 +142,7 @@ defmodule Exmud.Engine.System do
   @doc """
   Get the state of a system.
   """
+  @spec get_state(name) :: {:ok, term} | {:error, :no_such_system}
   def get_state(name) do
     try do
       GenServer.call(via(@system_registry, name), :state, :infinity)
@@ -149,6 +161,7 @@ defmodule Exmud.Engine.System do
   @doc """
   Purge system data from the database. Does not check if system is running
   """
+  @spec purge(name) :: :ok | {:error, :no_such_system}
   def purge(name) do
     system_query(name)
     |> Repo.one()
@@ -167,17 +180,15 @@ defmodule Exmud.Engine.System do
   This method ensures that the System is active and that it will begin the process of running its main loop immediately,
   but offers no other guarantees.
   """
+  @spec run(name) :: :ok | {:error, :no_such_system}
   def run(name) do
-    try do
-      GenServer.call(via(@system_registry, name), :run, :infinity)
-    catch
-      :exit, {:noproc, _} -> {:error, :system_not_running}
-    end
+    send_message(:call, name, :run)
   end
 
   @doc """
   Check to see if a system is running.
   """
+  @spec running?(name) :: boolean
   def running?(name) do
     send_message(:call, name, :running) == true
   end
@@ -185,6 +196,7 @@ defmodule Exmud.Engine.System do
   @doc """
   Start a system.
   """
+  @spec start(name, args :: term) :: :ok | {:error, :no_such_system}
   def start(name, callback_module_arguments \\ nil) do
     object_id =
       case Repo.one(system_query(name)) do
@@ -210,6 +222,7 @@ defmodule Exmud.Engine.System do
   @doc """
   Stops a system if it is started.
   """
+  @spec stop( name) :: :ok | {:error, :no_such_script}
   def stop(name) do
     case Registry.lookup(@system_registry, name) do
       [{pid, _}] ->
@@ -220,7 +233,7 @@ defmodule Exmud.Engine.System do
             :ok
         end
       _ ->
-        {:error, :system_not_running}
+        {:error, :no_such_system}
     end
   end
 
@@ -229,6 +242,7 @@ defmodule Exmud.Engine.System do
 
   Primarily used by the Engine to persist the state of a running System whenever it changes.
   """
+  @spec update(name, state) :: :ok | {:error, :no_such_system}
   def update(system_name, state) do
     query = system_query(system_name)
 
@@ -249,6 +263,7 @@ defmodule Exmud.Engine.System do
   @doc """
   List all Systems which have been registered with the engine since the last start.
   """
+  @spec list_registered :: :ok | [callback_module]
   def list_registered() do
     Logger.info("Listing all registered Systems")
     Cache.list(@cache)
@@ -257,6 +272,7 @@ defmodule Exmud.Engine.System do
   @doc """
   Lookup the callback module for the System with the provided name.
   """
+  @spec lookup(name) :: {:ok, callback_module} | {:error, :no_such_system}
   def lookup(name) do
     case Cache.get(@cache, name) do
       {:error, _} ->
@@ -271,6 +287,7 @@ defmodule Exmud.Engine.System do
   @doc """
   Register a callback module for a System with the provided name.
   """
+  @spec register(callback_module) :: :ok
   def register(callback_module) do
     Logger.info("Registering System with name `#{callback_module.name}` and module `#{inspect(callback_module)}`")
     Cache.set(@cache, callback_module.name, callback_module)
@@ -279,6 +296,7 @@ defmodule Exmud.Engine.System do
   @doc """
   Check to see if a System has been registered with the provided name.
   """
+  @spec registered?(callback_module) :: boolean
   def registered?(callback_module) do
     Logger.info("Checking registration of System with name `#{callback_module.name()}`")
     Cache.exists?(@cache, callback_module.name())
@@ -287,6 +305,7 @@ defmodule Exmud.Engine.System do
   @doc """
   Unregisters the callback module for a Script with the provided name.
   """
+  @spec unregister(callback_module) :: :ok
   def unregister(callback_module) do
     Logger.info("Unregistering System with name `#{callback_module.name()}`")
     Cache.delete(@cache, callback_module.name())
@@ -297,12 +316,12 @@ defmodule Exmud.Engine.System do
   # Internal Functions
   #
 
-
+  @spec send_message(method :: atom, name, message) :: :ok | {:ok, term} | {:error, :system_not_running}
   defp send_message(method, name, message) do
     try do
       apply(GenServer, method, [via(@system_registry, name), message])
     catch
-      :exit, _ -> {:error, :system_not_running}
+      :exit, _ -> {:error, :no_such_system}
     end
   end
 
