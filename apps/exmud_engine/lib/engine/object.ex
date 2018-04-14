@@ -15,11 +15,6 @@ defmodule Exmud.Engine.Object do
 
 
   @typedoc """
-  The unique Key of an Object which identifies it within the Engine.
-  """
-  @type key :: String.t
-
-  @typedoc """
   The id of an Object on which all operations are to take place.
   """
   @type object_id :: integer
@@ -51,25 +46,30 @@ defmodule Exmud.Engine.Object do
 
 
   @doc """
-  Create a new Object with a unique key.
+  Create a new Object.
   """
-  @spec new(key) :: {:ok, object_id} | {:error, error}
-  def new(key) do
-    Object.new(%Object{}, %{key: key})
-    |> Repo.insert()
-    |> case do
-      {:ok, object} -> {:ok, object.id}
-      {:error, changeset} -> {:error, normalize_ecto_errors(changeset.errors)}
-    end
+  @spec new! :: object_id
+  def new! do
+    %Object{date_created: DateTime.utc_now()}
+    |> Repo.insert!()
+    |> (&(&1.id)).()
   end
 
   @doc """
   Delete an Object by its id.
   """
-  @spec delete(object_id) :: {:ok, object_id} | {:error, error}
+  @spec delete(object_id) :: :ok | {:error, :no_such_object}
   def delete(object_id) do
-    {:ok, _} = Repo.delete(%Object{id: object_id})
-    :ok
+    query =
+      from object in Object,
+        where: object.id == ^object_id
+
+    query
+    |> Repo.delete_all()
+    |> case do
+      {1, _} -> :ok
+      {0, _} -> {:error, :no_such_object}
+    end
   end
 
   @doc """
@@ -96,12 +96,12 @@ defmodule Exmud.Engine.Object do
     {:ok, List.first(results)}
   end
 
-  def get(objects, inclusion_filters) do
-    {ids, keys} = Enum.split_with(objects, &Kernel.is_integer/1)
+  def get(object_ids, inclusion_filters) do
+    object_ids = List.wrap(object_ids)
 
     base_query =
       from object in Object,
-        where: object.key in ^keys or object.id in ^ids
+        where: object.id in ^object_ids
 
     inclusion_filters = List.wrap(inclusion_filters)
 
@@ -201,10 +201,6 @@ defmodule Exmud.Engine.Object do
 
   defp build_equality_check_dynamic({:component, component}) do
     dynamic([object, callback, command_set, component], component.name == ^component)
-  end
-
-  defp build_equality_check_dynamic({:object, key}) do
-    dynamic([object], object.key == ^key)
   end
 
   defp build_equality_check_dynamic({:link, {link_type, to, data}}) do
