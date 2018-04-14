@@ -115,7 +115,7 @@ defmodule Exmud.Engine.Script do
   @typedoc "An error message passed through to the caller."
   @type error :: term
 
-  @typedoc "The reason the System is stopping."
+  @typedoc "The reason the Script is stopping."
   @type reason :: term
 
   @typedoc "State used by the callback module."
