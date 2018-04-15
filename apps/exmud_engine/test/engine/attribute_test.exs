@@ -23,6 +23,7 @@ defmodule Exmud.Engine.Test.AttributeTest do
       assert Attribute.equals?(object_id, Basic.name(), attribute, "bar") == false
       assert Attribute.put(object_id, Basic.name(), attribute, "bar") == :ok
       assert Attribute.equals?(object_id, Basic.name(), attribute, "bar") == true
+      assert Attribute.equals?(object_id, Basic.name(), attribute, &(&1 == "bar")) == true
       assert Attribute.put(object_id, Basic.name(), attribute2, "bar") == :ok
       assert Attribute.read(object_id, Basic.name(), attribute) == {:ok, "bar"}
       assert Attribute.update(object_id, Basic.name(), attribute, "foobar") == :ok

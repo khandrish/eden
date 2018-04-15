@@ -177,7 +177,7 @@ defmodule Exmud.Engine.Lock do
       apply(callback_module, :check, [object_id, accessing_object, unpack_term(lock.config)])
     rescue
       _ ->
-        raise ArgumentError, message: :no_such_lock
+        raise ArgumentError, message: "no such lock"
     end
   end
 

@@ -17,6 +17,7 @@ defmodule Exmud.Common.Utils do
   def normalize_multi_result({:error, _, error, _}, _), do: {:error, error}
 
   def normalize_repo_result({:ok, _}), do: :ok
+  def normalize_repo_result(error), do: error
   def normalize_repo_result({:ok, _}, desired_result), do: {:ok, desired_result}
   def normalize_repo_result({:error, changeset}, _), do: {:error, normalize_ecto_errors(changeset.errors)}
 

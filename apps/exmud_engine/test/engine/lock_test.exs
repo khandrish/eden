@@ -53,6 +53,14 @@ defmodule Exmud.Engine.Test.LockTest do
       assert Lock.check(object_id1, "foo", object_id2) == {:ok, false}
       assert Lock.check!(object_id1, "foo", object_id2) == false
     end
+
+    @tag lock: true
+    @tag engine: true
+    test "when check! input is bad" do
+      assert_raise ArgumentError, "no such lock", fn ->
+        Lock.check!(0, "foo", 0)
+      end
+    end
   end
 
   defp create_new_objects(context) do
