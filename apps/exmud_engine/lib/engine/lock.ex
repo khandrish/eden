@@ -111,32 +111,21 @@ defmodule Exmud.Engine.Lock do
   """
   @spec attach(object_id, access_type, lock_name, lock_config) :: :ok | {:error, :no_such_lock} | {:error, :no_such_object} | {:error, :already_attached}
   def attach(object_id, access_type, lock_name, lock_config \\ %{}) do
-    with {:ok, _callback_module} <- lookup(lock_name)
-      do
-        Lock.new(%{object_id: object_id, access_type: access_type, name: lock_name, config: pack_term(lock_config)})
-        |> Repo.insert()
-        |> case do
-          {:ok, _} ->
-            :ok
-          {:error, changeset} ->
-            if Keyword.has_key?(changeset.errors, :object_id) do
-              Repo.rollback(:no_such_object)
-            else
-              Repo.rollback(:already_attached)
-            end
-        end
-    end
-
     case lookup(lock_name) do
       {:ok, _callback_module} ->
-        wrap_callback_in_transaction(fn ->
-          lock_query(object_id, access_type)
-          |> Repo.delete_all()
-
-          lock = Lock.new(%{object_id: object_id, access_type: access_type, name: lock_name, config: pack_term(lock_config)})
-          Repo.insert!(lock)
-          :ok
-        end)
+        Lock.new(%{object_id: object_id, access_type: access_type, name: lock_name, config: pack_term(lock_config)})
+        |> Repo.insert()
+        |> normalize_repo_result()
+        |> case do
+          {:error, [object_id: _error]} ->
+            Logger.error("Attempt to add Lock with access type `#{access_type}` onto non existing object `#{object_id}`")
+            {:error, :no_such_object}
+          {:error, [access_type: _error]} ->
+            Logger.error("Attempt to add Lock with access type`#{access_type}` onto Object `#{object_id}` when it already exists.")
+            {:error, :already_attached}
+          :ok ->
+            :ok
+        end
       error ->
         error
     end

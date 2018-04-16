@@ -8,12 +8,12 @@ defmodule Exmud.Engine.Test.CallbackTest do
   alias Exmud.Engine.Test.Callback.Basic
   alias Exmud.Engine.Test.Callback.NotRegistered
 
-  describe "global callback tests: " do
+  describe "callbacks" do
     setup [:create_new_object, :register_test_callbacks]
 
     @tag callback: true
     @tag engine: true
-    test "engine registration" do
+    test "with engine registration" do
       assert Callback.registered?(NotRegistered) == false
       assert Callback.lookup("foo") == {:error, :no_such_callback}
       assert Callback.registered?(Basic) == true
@@ -26,7 +26,7 @@ defmodule Exmud.Engine.Test.CallbackTest do
 
     @tag callback: true
     @tag engine: true
-    test "callback lifecycle", %{object_id: object_id} = _context do
+    test "lifecycle", %{object_id: object_id} = _context do
       assert Callback.run(object_id, Basic.key(), :ok, %{}) == {:error, :no_such_callback}
       assert Callback.is_attached?(object_id, Basic.name()) == false
       assert Callback.run(object_id, Basic.key(), :ok, %{}, Basic.name()) == :ok
@@ -38,11 +38,17 @@ defmodule Exmud.Engine.Test.CallbackTest do
 
     @tag callback: true
     @tag engine: true
-    test "callback invalid cases" do
+    test "with invalid cases" do
       assert Callback.is_attached?(0, "foo") == false
       assert Callback.attach(0, Basic.name()) == {:error, :no_such_object}
       assert Callback.get(0, "foo") == {:error, :no_such_callback}
       assert Callback.detach(0, "foo") == {:error, :no_such_callback}
+    end
+
+    @tag callback: true
+    @tag engine: true
+    test "by attaching with invalid callback", %{object_id: object_id} = _context do
+      assert Callback.attach(object_id, "foo") == {:error, :no_such_callback}
     end
   end
 

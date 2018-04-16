@@ -15,6 +15,14 @@ defmodule Exmud.Engine.Test.CommandSetTest do
     @tag engine: true
     test "with successful attach", %{object_id: object_id} = _context do
       assert CommandSet.attach(object_id, Basic.name()) == :ok
+      assert CommandSet.attach(object_id, Basic.name()) == {:error, :already_attached}
+    end
+
+    @tag command_set: true
+    @tag engine: true
+    test "with successful detach!", %{object_id: object_id} = _context do
+      assert CommandSet.attach(object_id, Basic.name()) == :ok
+      assert CommandSet.detach!(object_id, Basic.name()) == :ok
     end
 
     @tag command_set: true

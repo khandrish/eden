@@ -33,6 +33,7 @@ defmodule Exmud.Engine.Test.LockTest do
     test "when an attach/detach lifecycle", %{object_id1: object_id1} = _context do
       assert Lock.attached?(object_id1, "foo") == false
       assert Lock.attach(object_id1, "foo", Basic.name()) == :ok
+      assert Lock.attach(object_id1, "foo", Basic.name()) == {:error, :already_attached}
       assert Lock.attached?(object_id1, "foo") == true
       assert Lock.detach(object_id1, "foo") == :ok
       assert Lock.attached?(object_id1, "foo") == false
@@ -60,6 +61,12 @@ defmodule Exmud.Engine.Test.LockTest do
       assert_raise ArgumentError, "no such lock", fn ->
         Lock.check!(0, "foo", 0)
       end
+    end
+
+    @tag lock: true
+    @tag engine: true
+    test "when attaching to nonexisting Object" do
+      assert Lock.attach(0, "foo", Basic.name()) == {:error, :no_such_object}
     end
   end
 

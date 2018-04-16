@@ -13,5 +13,6 @@ defmodule Exmud.Engine.Schema.Lock do
     |> cast(params, [:access_type, :object_id, :name, :config])
     |> validate_required([:access_type, :object_id, :name])
     |> foreign_key_constraint(:object_id)
+    |> unique_constraint(:access_type, name: :lock_object_id_access_type_index)
   end
 end
