@@ -60,16 +60,16 @@ defmodule Exmud.Engine.Component do
   Called when a Component has been added to an Object. Is responsible for populating the Component with the necessary
   data.
   """
-  @callback populate(object_id, args) :: :ok | {:error, attribute, error}
+  @callback populate(object_id, config) :: :ok | {:error, error}
 
   @typedoc "The Object being populated with the Component and its data."
   @type object_id :: integer
 
-  @typedoc "Arguments passed to the Component callback module."
-  @type args :: term
+  @typedoc "Configuration passed through to a callback module."
+  @type config :: term
 
   @typedoc "The name of the Component as registered with the Engine."
-  @type name :: String.t()
+  @type component_name :: String.t()
 
   @typedoc "The name of an Attribute belonging to a Component."
   @type attribute :: String.t()
@@ -89,30 +89,33 @@ defmodule Exmud.Engine.Component do
   @doc """
   Atomically attach a Component to an Object and populate it with attributes using the provided, optional, args.
   """
-  @spec attach(object_id, name, args) :: :ok | {:error, :no_such_object} | {:error, :already_attached} | {:error, error}
-  def attach(object_id, name, args \\ nil) do
-    with {:ok, component} <- lookup(name)
-      do
+  @spec attach(object_id, component_name, config) :: :ok | {:error, :no_such_object} | {:error, :already_attached} | {:error, error}
+  def attach(object_id, component_name, config \\ nil) do
+    case lookup(component_name) do
+      {:ok, callback_module} ->
         Repo.transaction(fn ->
-          Component.new(%{name: name, object_id: object_id})
+          Component.new(%{name: component_name, object_id: object_id})
           |> Repo.insert()
+          |> normalize_repo_result()
           |> case do
-            {:ok, _} ->
-              case component.populate(object_id, args) do
+            :ok ->
+              case callback_module.populate(object_id, config) do
                 :ok ->
                   :ok
                 {:error, error} ->
                   Repo.rollback(error)
               end
-            {:error, changeset} ->
-              if Keyword.has_key?(changeset.errors, :object_id) do
-                Repo.rollback(:no_such_object)
-              else
-                Repo.rollback(:already_attached)
-              end
+            {:error, [object_id: _error]} ->
+              Logger.error("Attempt to add Component with name `#{component_name}` onto non existing object `#{object_id}`")
+              Repo.rollback(:no_such_object)
+            {:error, [name: _error]} ->
+              Logger.error("Attempt to add Component with name `#{component_name}` onto Object `#{object_id}` when it already exists.")
+              Repo.rollback(:already_attached)
           end
         end)
         |> normalize_repo_result()
+      error ->
+        error
     end
   end
 
@@ -120,40 +123,32 @@ defmodule Exmud.Engine.Component do
   Check to see if a given Component, or list of components, is attached to an Object. Will only return `true` if all
   provided values are matched.
   """
-  @spec all_attached?(object_id, name | [name]) :: boolean
-  def all_attached?(object_id, names) do
-    names = List.wrap(names)
+  @spec all_attached?(object_id, component_name | [component_name]) :: boolean
+  def all_attached?(object_id, component_names) do
+    component_names = List.wrap(component_names)
 
     query =
       from component in Component,
-        where: component.object_id == ^object_id and component.name in ^names,
+        where: component.object_id == ^object_id and component.name in ^component_names,
         select: count("*")
 
-    if Repo.one(query) == length(names) do
-      true
-    else
-      false
-    end
+    Repo.one(query) == length(component_names)
   end
 
   @doc """
   Check to see if a given Component, or list of components, is attached to an Object. Will return `true` if any of the
   provided values are matched.
   """
-  @spec any_attached?(object_id, name | [name]) :: boolean
-  def any_attached?(object_id, names) do
-    names = List.wrap(names)
+  @spec any_attached?(object_id, component_name | [component_name]) :: boolean
+  def any_attached?(object_id, component_names) do
+    component_names = List.wrap(component_names)
 
     query =
       from component in Component,
-        where: component.object_id == ^object_id and component.name in ^names,
+        where: component.object_id == ^object_id and component.name in ^component_names,
         select: count("*")
 
-    if Repo.one(query) >= length(names) do
-      true
-    else
-      false
-    end
+    Repo.one(query) >= length(component_names)
   end
 
   @doc """
@@ -173,13 +168,13 @@ defmodule Exmud.Engine.Component do
   @doc """
   Detach one or more Components, deleting all associated data, attached to a given Object.
   """
-  @spec detach(object_id, name | [name]) :: :ok
-  def detach(object_id, names) do
-    names = List.wrap(names)
+  @spec detach(object_id, component_name | [component_name]) :: :ok
+  def detach(object_id, component_names) do
+    component_names = List.wrap(component_names)
 
     delete_query =
       from component in Component,
-        where: component.name in ^names and component.object_id == ^object_id
+        where: component.name in ^component_names and component.object_id == ^object_id
 
     Repo.delete_all(delete_query)
 
@@ -205,14 +200,14 @@ defmodule Exmud.Engine.Component do
   @doc """
   Lookup a Component callback module based on the name it was registered with.
   """
-  @spec lookup(name) :: {:ok, callback_module} | {:error, :no_such_component}
-  def lookup(name) do
-    case Cache.get(@cache, name) do
+  @spec lookup(component_name) :: {:ok, callback_module} | {:error, :no_such_component}
+  def lookup(component_name) do
+    case Cache.get(@cache, component_name) do
       {:error, _} ->
-        Logger.error("Lookup failed for Component registered with name `#{name}`")
+        Logger.error("Lookup failed for Component registered with name `#{component_name}`")
         {:error, :no_such_component}
       result ->
-        Logger.info("Lookup succeeded for Component registered with name `#{name}`")
+        Logger.info("Lookup succeeded for Component registered with name `#{component_name}`")
         result
     end
   end

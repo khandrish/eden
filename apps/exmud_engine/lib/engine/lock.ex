@@ -121,7 +121,7 @@ defmodule Exmud.Engine.Lock do
             Logger.error("Attempt to add Lock with access type `#{access_type}` onto non existing object `#{object_id}`")
             {:error, :no_such_object}
           {:error, [access_type: _error]} ->
-            Logger.error("Attempt to add Lock with access type`#{access_type}` onto Object `#{object_id}` when it already exists.")
+            Logger.error("Attempt to add Lock with access type `#{access_type}` onto Object `#{object_id}` when it already exists.")
             {:error, :already_attached}
           :ok ->
             :ok
