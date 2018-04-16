@@ -2,10 +2,11 @@ defmodule Exmud.Engine.Callback do
   @moduledoc """
   An `Exmud.Object` can have an arbitrary number of Callbacks associated with it.
 
-  Callbacks are designed to be a more lightweight alternative to swapping out Command Sets when dynamic behavior on an
-  object is required, but a more substantial change feels too heavy handed. There are a few special cases in which the
-  engine will look for Callbacks on an object, such as when an object is being puppeted/unpuppeted. Callbacks are always
-  executed in the context of a Command being executed.
+  Callbacks are designed to work alongside Commands when dynamic behavior on an Object is required. Much like Commands
+  are added/removed on Objects via Command Sets, Callbacks are added/removed from Objects via Callback Sets.
+
+  Designed to be called from within context of a Command, Callbacks can be used for a variety of different tasks such
+  as modifying a string before it gets sent, or sending a message after a certain event has taken place.
 
   When a custom Callback for an Object has not been registered, a default implementation may be used instead. These can
   be specified by passing a name to be used to lookup a default module, which is how the engine behaves for its
@@ -31,6 +32,7 @@ defmodule Exmud.Engine.Callback do
   alias Exmud.Engine.Schema.Callback
   import Ecto.Query
   import Exmud.Common.Utils
+  import Exmud.Engine.Utils
   require Logger
 
 
@@ -106,15 +108,15 @@ defmodule Exmud.Engine.Callback do
   Given the name of a registered callback module, attach the registered module to the Object. If a Callback is already
   attached to the same Object with the same key, the original will be first deleted.
   """
-  def attach(object_id, name) do
+  def attach(object_id, name, args \\ nil) do
     case lookup(name) do
       {:ok, callback_module} ->
-        new_callback_params = %{key: callback_module.key(), name: callback_module.name(), object_id: object_id}
+        new_callback_params = %{key: callback_module.key(), name: callback_module.name(), object_id: object_id, data: pack_term(args)}
 
         Multi.new()
         |> Multi.delete_all(:delete_existing_callback, callback_query(object_id, callback_module.key()))
         |> Multi.insert(:insert_new_callback, Callback.add(%Callback{}, new_callback_params))
-        |> Repo.transaction
+        |> Repo.transaction()
         |> normalize_multi_result(:insert_new_callback)
         |> case do
           {:error, errors} ->

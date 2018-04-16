@@ -314,7 +314,7 @@ defmodule Exmud.Engine.Script do
   @cache :script_cache
 
   @doc """
-  List all Scripts which have been registered with the engine since the last start.
+  List all Scripts which are currently registered with the Engine.
   """
   @spec list_registered :: :ok | [callback_module]
   def list_registered() do

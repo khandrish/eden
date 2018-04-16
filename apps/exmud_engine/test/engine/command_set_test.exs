@@ -6,44 +6,52 @@ defmodule Exmud.Engine.Test.CommandSetTest do
   require Logger
   use Exmud.Engine.Test.DBTestCase
 
-  describe "Tests for command sets:" do
-    setup [:create_new_object]
+  alias Exmud.Engine.Test.CommandSet.Basic
+
+  describe "command set" do
+    setup [:create_new_object, :register_test_command_set]
 
     @tag command_set: true
     @tag engine: true
-    test "lifecycle", %{object_id: object_id} = _context do
-      callback_module = UUID.generate()
-      assert CommandSet.add(object_id, callback_module) == {:ok, object_id}
-      assert CommandSet.has(object_id, callback_module) == {:ok, true}
-      assert CommandSet.has_any(object_id, ["foo"]) == {:ok, false}
-      assert CommandSet.has_any(object_id, [callback_module, "foo"]) == {:ok, true}
-      assert CommandSet.remove(object_id, callback_module) == {:ok, true}
-      assert CommandSet.has(object_id, callback_module) == {:ok, false}
+    test "with successful attach", %{object_id: object_id} = _context do
+      assert CommandSet.attach(object_id, Basic.name()) == :ok
+    end
+
+    @tag command_set: true
+    @tag engine: true
+    test "with has_* checks", %{object_id: object_id} = _context do
+      assert CommandSet.has_all?(object_id, Basic.name()) == false
+      assert CommandSet.has_any?(object_id, [Basic.name()]) == false
+      assert CommandSet.attach(object_id, Basic.name()) == :ok
+      assert CommandSet.has_all?(object_id, Basic.name()) == true
+      assert CommandSet.has_any?(object_id, ["foo"]) == false
+      assert CommandSet.has_any?(object_id, [Basic.name(), "foo"]) == true
+      assert CommandSet.detach(object_id, Basic.name()) == :ok
+      assert CommandSet.has_any?(object_id, Basic.name()) == false
     end
 
     @tag command_set: true
     @tag engine: true
     test "engine registration" do
-      key = UUID.generate()
-      callback_module = UUID.generate()
-      assert CommandSet.register(key, callback_module) == :ok
-      assert CommandSet.registered?(key) == true
-      assert Enum.any?(CommandSet.list_registered(), fn(k) -> key == k end) == true
-      assert CommandSet.lookup(callback_module) == {:error, :no_such_command_set}
-      {:ok, callback} = CommandSet.lookup(key)
-      assert callback == callback_module
-      assert CommandSet.unregister(key) == :ok
-      assert CommandSet.registered?(key) == false
-      assert Enum.any?(CommandSet.list_registered(), fn(k) -> key == k end) == false
+      assert CommandSet.register(Basic) == :ok
+      assert CommandSet.registered?(Basic) == true
+      assert Enum.any?(CommandSet.list_registered(), fn(k) -> Basic.name() == k end) == true
+      assert CommandSet.lookup("foo") == {:error, :no_such_command_set}
+      {:ok, callback} = CommandSet.lookup(Basic.name())
+      assert callback == Basic
+      assert CommandSet.unregister(Basic) == :ok
+      assert CommandSet.registered?(Basic) == false
+      assert Enum.any?(CommandSet.list_registered(), fn(k) -> Basic.name == k end) == false
     end
 
     @tag command_set: true
     @tag engine: true
     test "invalid input" do
-      callback_module = UUID.generate()
-      assert CommandSet.add(0, callback_module) == {:error, :no_such_object}
-      assert CommandSet.has(0, callback_module) == {:ok, false}
-      assert CommandSet.remove(0, callback_module) == {:error, :no_such_command_set}
+      assert CommandSet.attach(0, Basic.name()) == {:error, :no_such_object}
+      assert CommandSet.attach(0, "foo") == {:error, :no_such_command_set}
+      assert CommandSet.has_any?(0, Basic.name()) == false
+      assert CommandSet.has_all?(0, Basic.name()) == false
+      assert CommandSet.detach(0, Basic.name()) == :error
     end
   end
 
@@ -51,5 +59,13 @@ defmodule Exmud.Engine.Test.CommandSetTest do
     object_id = Object.new!()
 
     %{object_id: object_id}
+  end
+
+  @command_sets [Basic]
+
+  defp register_test_command_set(context) do
+    Enum.each(@command_sets, &CommandSet.register/1)
+
+    context
   end
 end

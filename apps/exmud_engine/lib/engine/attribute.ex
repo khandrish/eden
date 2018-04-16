@@ -6,6 +6,7 @@ defmodule Exmud.Engine.Attribute do
   which has been attached to an Object.
   """
 
+  alias Ecto.Multi
   alias Exmud.Engine.Component
   alias Exmud.Engine.Repo
   alias Exmud.Engine.Schema.Attribute
@@ -124,18 +125,22 @@ defmodule Exmud.Engine.Attribute do
         where: component.object_id == ^object_id
            and component.name == ^component_name
 
-    case Repo.one(query) do
-      nil ->
-        {:error, :no_such_component}
-      component ->
-        args = %{value: pack_term(value),
-                 name: attribute_name}
+    wrap_callback_in_transaction(fn ->
+      case Repo.one(query) do
+        nil ->
+          {:error, :no_such_component}
+        component ->
+          new_attribute_params = %{name: attribute_name, value: pack_term(value)}
+          assoc = Ecto.build_assoc(component, :attributes, new_attribute_params)
 
-        Ecto.build_assoc(component, :attributes, args)
-        |> Repo.insert!()
+          Multi.new()
+          |> Multi.delete_all(:delete_existing_attribute, attribute_query(object_id, component_name, attribute_name))
+          |> Multi.insert(:insert_new_attribute, assoc)
+          |> Repo.transaction()
 
-        :ok
-    end
+          :ok
+      end
+    end)
   end
 
   @doc """

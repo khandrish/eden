@@ -118,7 +118,7 @@ defmodule Exmud.Engine.Object do
   Query the Engine for Objects based on the passed in query.
 
   The query is a custom syntax which allows for an arbitary combination and nesting of equality checks. Currently, only
-  equality checks are supported. This is unlikely to change without a refactoring as data is serialized in the database
+  equality checks are supported. This is unlikely to change without a refactoring as data is pack_termd in the database
   which makes doing relative value checks impossible.
   """
   @spec query(object_query) :: {:ok, [object]}
@@ -195,8 +195,8 @@ defmodule Exmud.Engine.Object do
     dynamic([object, callback], callback.key == ^callback)
   end
 
-  defp build_equality_check_dynamic({:command_set, command_set}) do
-    dynamic([object, callback, command_set], command_set.command_set == ^serialize(command_set))
+  defp build_equality_check_dynamic({:command_set, command_set_name}) do
+    dynamic([object, callback, command_set], command_set.name == ^command_set_name)
   end
 
   defp build_equality_check_dynamic({:component, component}) do
@@ -204,7 +204,7 @@ defmodule Exmud.Engine.Object do
   end
 
   defp build_equality_check_dynamic({:link, {link_type, to, data}}) do
-    dynamic([object, callback, command_set, component, attribute, link], (link.type == ^link_type and link.to_id == ^to and link.data == ^serialize(data)))
+    dynamic([object, callback, command_set, component, attribute, link], (link.type == ^link_type and link.to_id == ^to and link.data == ^pack_term(data)))
   end
 
   defp build_equality_check_dynamic({:link, {link_type, to}}) do

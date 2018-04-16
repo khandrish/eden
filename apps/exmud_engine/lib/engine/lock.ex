@@ -109,19 +109,37 @@ defmodule Exmud.Engine.Lock do
 
   Using a transaction, first delete any existing Locks which match the one being added, and add the new one.
   """
-  @spec attach(object_id, access_type, lock_name, lock_config) :: :ok
+  @spec attach(object_id, access_type, lock_name, lock_config) :: :ok | {:error, :no_such_lock} | {:error, :no_such_object} | {:error, :already_attached}
   def attach(object_id, access_type, lock_name, lock_config \\ %{}) do
-    {:ok, :ok} =
-      Repo.transaction(fn ->
-        lock_query(object_id, access_type)
-        |> Repo.delete_all()
+    with {:ok, _callback_module} <- lookup(lock_name)
+      do
+        Lock.new(%{object_id: object_id, access_type: access_type, name: lock_name, config: pack_term(lock_config)})
+        |> Repo.insert()
+        |> case do
+          {:ok, _} ->
+            :ok
+          {:error, changeset} ->
+            if Keyword.has_key?(changeset.errors, :object_id) do
+              Repo.rollback(:no_such_object)
+            else
+              Repo.rollback(:already_attached)
+            end
+        end
+    end
 
-        lock = Lock.new(%{object_id: object_id, access_type: access_type, name: lock_name, config: pack_term(lock_config)})
-        {:ok, _} = Repo.insert(lock)
-        :ok
-      end)
+    case lookup(lock_name) do
+      {:ok, _callback_module} ->
+        wrap_callback_in_transaction(fn ->
+          lock_query(object_id, access_type)
+          |> Repo.delete_all()
 
-    :ok
+          lock = Lock.new(%{object_id: object_id, access_type: access_type, name: lock_name, config: pack_term(lock_config)})
+          Repo.insert!(lock)
+          :ok
+        end)
+      error ->
+        error
+    end
   end
 
   @doc """

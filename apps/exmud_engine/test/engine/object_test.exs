@@ -13,6 +13,7 @@ defmodule Exmud.Engine.Test.ObjectTest do
 
   # Test Callbacks
   alias Exmud.Engine.Test.Callback.Basic, as: BasicCallback
+  alias Exmud.Engine.Test.CommandSet.Basic, as: BasicCommandSet
 
   # Test Component
   alias Exmud.Engine.Test.Component.Basic, as: BasicComponent
@@ -35,13 +36,14 @@ defmodule Exmud.Engine.Test.ObjectTest do
     @tag object: true
     @tag engine: true
     test "object get tests", %{object_id: object_id} = _context do
+      assert CommandSet.register(BasicCommandSet) == :ok
       {:ok, object} = Object.get(object_id)
       assert object.id == object_id
       assert Component.register(BasicComponent) == :ok
       assert Component.attach(object_id, BasicComponent.name()) == :ok
       assert Attribute.put(object_id, BasicComponent.name(), "foo", "bar") == :ok
       assert Callback.attach(object_id, BasicCallback.name()) == :ok
-      assert CommandSet.add(object_id, UUID.generate()) == {:ok, object_id}
+      assert CommandSet.attach(object_id, BasicCommandSet.name()) == :ok
       {:ok, object} = Object.get(object_id)
       assert length(object.components) == 1
       assert length(object.callbacks) == 1
@@ -54,17 +56,17 @@ defmodule Exmud.Engine.Test.ObjectTest do
 
       attribute_key = UUID.generate()
       attribute_value = UUID.generate()
-      command_set = UUID.generate()
       link_type = UUID.generate()
       tag = UUID.generate()
       tag_category = UUID.generate()
 
       assert Component.register(BasicComponent) == :ok
+      assert CommandSet.register(BasicCommandSet) == :ok
 
       assert Component.attach(object_id1, BasicComponent.name()) == :ok
       assert Attribute.put(object_id1, BasicComponent.name(), attribute_key, attribute_value) == :ok
       assert Callback.attach(object_id1, BasicCallback.name()) == :ok
-      assert CommandSet.add(object_id1, command_set) == {:ok, object_id1}
+      assert CommandSet.attach(object_id1, BasicCommandSet.name()) == :ok
       assert Link.forge(object_id1, object_id2, link_type, "foo") == :ok
       assert Tag.attach(object_id1, tag_category, tag) == :ok
 
@@ -72,7 +74,7 @@ defmodule Exmud.Engine.Test.ObjectTest do
                                     {:attribute, {BasicComponent.name(), attribute_key}},
                                     {:component, BasicComponent.name()},
                                     {:callback, BasicCallback.key()},
-                                    {:command_set, command_set},
+                                    {:command_set, BasicCommandSet.name()},
                                     {:link, link_type},
                                     {:link, {link_type, object_id2}},
                                     {:link, {link_type, object_id2, "foo"}},
@@ -87,17 +89,17 @@ defmodule Exmud.Engine.Test.ObjectTest do
 
       attribute_key = UUID.generate()
       attribute_value = UUID.generate()
-      command_set = UUID.generate()
       link_type = UUID.generate()
       tag = UUID.generate()
       tag_category = UUID.generate()
 
       assert Component.register(BasicComponent) == :ok
+      assert CommandSet.register(BasicCommandSet) == :ok
 
       assert Component.attach(object_id, BasicComponent.name()) == :ok
       assert Attribute.put(object_id, BasicComponent.name(), attribute_key, attribute_value) == :ok
       assert Callback.attach(object_id, BasicCallback.name()) == :ok
-      assert CommandSet.add(object_id, command_set) == {:ok, object_id}
+      assert CommandSet.attach(object_id, BasicCommandSet.name()) == :ok
       assert Link.forge(object_id, object_id2, link_type, "foo") == :ok
       assert Tag.attach(object_id, tag_category, tag) == :ok
 
@@ -107,7 +109,7 @@ defmodule Exmud.Engine.Test.ObjectTest do
                                     {:attribute, {BasicComponent.name(), attribute_key}},
                                     {:component, BasicComponent.name()},
                                     {:callback, BasicCallback.key()},
-                                    {:command_set, command_set},
+                                    {:command_set, BasicCommandSet.name()},
                                     {:or, [
                                       {:link, link_type},
                                       {:link, {link_type, object_id2}},
@@ -120,7 +122,7 @@ defmodule Exmud.Engine.Test.ObjectTest do
                                     {:attribute, {BasicComponent.name(), attribute_key}},
                                     {:component, BasicComponent.name()},
                                     {:callback, BasicCallback.key()},
-                                    {:command_set, command_set},
+                                    {:command_set, BasicCommandSet.name()},
                                     {:or, [
                                       {:link, link_type},
                                       {:link, {link_type, object_id2}},
@@ -128,19 +130,6 @@ defmodule Exmud.Engine.Test.ObjectTest do
                                       {:tag, {tag_category, tag}}
                                     ]}
                                  ]}) == {:ok, [object_id]}
-
-      # invalid_key = UUID.generate()
-      # assert Object.query({:and, [{:object, key}]}) == {:ok, [object_id]}
-      # assert Object.query({:and, [{:object, invalid_key},{:object, key}]}) == {:ok, []}
-      # assert Object.query({:or, [{:object, invalid_key},{:object, key}]}) == {:ok, [object_id]}
-      # assert Object.query({:or, [
-      #                             {:object, invalid_key},
-      #                             {:and, [
-      #                                     {:object, key},
-      #                                     {:object, key},
-      #                                     {:or, [
-      #                                             {:object, invalid_key},
-      #                                             {:object, key}]}]}]}) == {:ok, [object_id]}
     end
   end
 
