@@ -1,6 +1,7 @@
 defmodule Exmud.Engine.Schema.CommandSet do
   use Exmud.Common.Schema
 
+  @derive {Jason.Encoder, except: [:config]}
   schema "command_set" do
     field :name, :string
     field :config, :binary

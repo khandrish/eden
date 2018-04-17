@@ -8,8 +8,8 @@ defmodule Exmud.Engine.Schema.Callback do
     belongs_to :object, Exmud.Engine.Schema.Object, foreign_key: :object_id
   end
 
-  def add(callback, params \\ %{}) do
-    callback
+  def new(params) do
+    %Exmud.Engine.Schema.Callback{}
     |> cast(params, [:key, :name, :object_id, :data])
     |> validate_required([:key, :name, :object_id, :data])
     |> foreign_key_constraint(:object_id)

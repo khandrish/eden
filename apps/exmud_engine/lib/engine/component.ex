@@ -12,6 +12,7 @@ defmodule Exmud.Engine.Component do
   """
 
   alias Exmud.Engine.Cache
+  alias Exmud.Engine.ObjectUtil
   alias Exmud.Engine.Repo
   alias Exmud.Engine.Schema.Component
   import Ecto.Query
@@ -89,33 +90,11 @@ defmodule Exmud.Engine.Component do
   @doc """
   Atomically attach a Component to an Object and populate it with attributes using the provided, optional, args.
   """
-  @spec attach(object_id, component_name, config) :: :ok | {:error, :no_such_object} | {:error, :already_attached} | {:error, error}
+  @spec attach(object_id, component_name, config | nil) :: :ok | {:error, :no_such_object} | {:error, :already_attached} | {:error, error}
   def attach(object_id, component_name, config \\ nil) do
-    case lookup(component_name) do
-      {:ok, callback_module} ->
-        Repo.transaction(fn ->
-          Component.new(%{name: component_name, object_id: object_id})
-          |> Repo.insert()
-          |> normalize_repo_result()
-          |> case do
-            :ok ->
-              case callback_module.populate(object_id, config) do
-                :ok ->
-                  :ok
-                {:error, error} ->
-                  Repo.rollback(error)
-              end
-            {:error, [object_id: _error]} ->
-              Logger.error("Attempt to add Component with name `#{component_name}` onto non existing object `#{object_id}`")
-              Repo.rollback(:no_such_object)
-            {:error, [name: _error]} ->
-              Logger.error("Attempt to add Component with name `#{component_name}` onto Object `#{object_id}` when it already exists.")
-              Repo.rollback(:already_attached)
-          end
-        end)
-        |> normalize_repo_result()
-      error ->
-        error
+    with {:ok, callback_module} <- lookup(component_name) do
+      record = Component.new(%{name: component_name, object_id: object_id})
+      ObjectUtil.attach(record, fn -> callback_module.populate(object_id, config) end)
     end
   end
 
@@ -127,10 +106,7 @@ defmodule Exmud.Engine.Component do
   def all_attached?(object_id, component_names) do
     component_names = List.wrap(component_names)
 
-    query =
-      from component in Component,
-        where: component.object_id == ^object_id and component.name in ^component_names,
-        select: count("*")
+    query = count_query(object_id, component_names)
 
     Repo.one(query) == length(component_names)
   end
@@ -143,10 +119,7 @@ defmodule Exmud.Engine.Component do
   def any_attached?(object_id, component_names) do
     component_names = List.wrap(component_names)
 
-    query =
-      from component in Component,
-        where: component.object_id == ^object_id and component.name in ^component_names,
-        select: count("*")
+    query = count_query(object_id, component_names)
 
     Repo.one(query) >= length(component_names)
   end
@@ -157,8 +130,8 @@ defmodule Exmud.Engine.Component do
   @spec detach(object_id | [object_id]) :: :ok
   def detach(object_ids) do
     delete_query =
-      from component in Component,
-        where: component.object_id in ^List.wrap(object_ids)
+       from component in Component,
+         where: component.object_id in ^List.wrap(object_ids)
 
     Repo.delete_all(delete_query)
 
@@ -172,13 +145,26 @@ defmodule Exmud.Engine.Component do
   def detach(object_id, component_names) do
     component_names = List.wrap(component_names)
 
-    delete_query =
-      from component in Component,
-        where: component.name in ^component_names and component.object_id == ^object_id
+    delete_query = component_query(object_id, component_names)
 
     Repo.delete_all(delete_query)
 
     :ok
+  end
+
+  @spec detach(object_id, [component_name]) :: term
+  defp component_query(object_id, component_names) do
+    from component in Component,
+      where: component.name in ^component_names
+         and component.object_id == ^object_id
+  end
+
+  @spec count_query(object_id, [component_name]) :: term
+  defp count_query(object_id, component_names) do
+    from component in Component,
+      where: component.name in ^component_names
+         and component.object_id == ^object_id,
+      select: count("*")
   end
 
 

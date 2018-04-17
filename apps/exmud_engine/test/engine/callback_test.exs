@@ -9,7 +9,7 @@ defmodule Exmud.Engine.Test.CallbackTest do
   alias Exmud.Engine.Test.Callback.NotRegistered
 
   describe "callbacks" do
-    setup [:create_new_object, :register_test_callbacks]
+    setup [:create_new_object, :register_test_callbacks, :create_key]
 
     @tag callback: true
     @tag engine: true
@@ -26,30 +26,34 @@ defmodule Exmud.Engine.Test.CallbackTest do
 
     @tag callback: true
     @tag engine: true
-    test "lifecycle", %{object_id: object_id} = _context do
-      assert Callback.run(object_id, Basic.key(), :ok, %{}) == {:error, :no_such_callback}
+    test "lifecycle", %{key: key, object_id: object_id} = _context do
+      assert Callback.run(object_id, key, :ok, %{}) == {:error, :no_such_callback}
       assert Callback.is_attached?(object_id, Basic.name()) == false
-      assert Callback.run(object_id, Basic.key(), :ok, %{}, Basic.name()) == :ok
-      assert Callback.attach(object_id, Basic.name()) == :ok
-      assert Callback.run(object_id, Basic.key(), :ok, %{}) == :ok
-      assert Callback.detach(object_id, Basic.key()) == :ok
+      assert Callback.run(object_id, key, :ok, %{}, Basic.name()) == :ok
+      assert Callback.attach(object_id, key, Basic.name()) == :ok
+      assert Callback.run(object_id, key, :ok, %{}) == :ok
+      assert Callback.detach(object_id, key) == :ok
       assert Callback.is_attached?(object_id, Basic.name()) == false
     end
 
     @tag callback: true
     @tag engine: true
-    test "with invalid cases" do
+    test "with invalid cases", %{key: key} = _contex do
       assert Callback.is_attached?(0, "foo") == false
-      assert Callback.attach(0, Basic.name()) == {:error, :no_such_object}
+      assert Callback.attach(0, key, Basic.name()) == {:error, :no_such_object}
       assert Callback.get(0, "foo") == {:error, :no_such_callback}
       assert Callback.detach(0, "foo") == {:error, :no_such_callback}
     end
 
     @tag callback: true
     @tag engine: true
-    test "by attaching with invalid callback", %{object_id: object_id} = _context do
-      assert Callback.attach(object_id, "foo") == {:error, :no_such_callback}
+    test "by attaching with invalid callback", %{key: key, object_id: object_id} = _context do
+      assert Callback.attach(object_id, key, "foo") == {:error, :no_such_callback}
     end
+  end
+
+  defp create_key(context) do
+    Map.put(context, :key, UUID.uuid4())
   end
 
   defp create_new_object(_context) do

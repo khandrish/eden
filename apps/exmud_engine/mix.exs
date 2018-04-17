@@ -53,6 +53,7 @@ defmodule Exmud.Engine.Mixfile do
       {:exmud_common, in_umbrella: true},
       {:faker, "~> 0.8.0", only: [:dev, :test]},
       {:inch_ex, ">= 0.5.6", only: :docs},
+      {:jason, "~> 1.0"},
       {:postgrex, "~> 0.13.0"},
       {:uuid, "~> 1.1"}
     ]

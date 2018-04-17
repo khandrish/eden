@@ -15,6 +15,7 @@ defmodule Exmud.Engine.Test.ComponentTest do
 
     @tag component: true
     @tag engine: true
+    @tag wip: true
     test "lifecycle", %{object_id: object_id} = _context do
       assert Component.attach(object_id, "foo") == {:error, :no_such_component}
       assert Component.register(Basic) == :ok

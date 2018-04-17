@@ -36,13 +36,15 @@ defmodule Exmud.Engine.Test.ObjectTest do
     @tag object: true
     @tag engine: true
     test "object get tests", %{object_id: object_id} = _context do
+      callback_key = UUID.generate()
+
       assert CommandSet.register(BasicCommandSet) == :ok
       {:ok, object} = Object.get(object_id)
       assert object.id == object_id
       assert Component.register(BasicComponent) == :ok
       assert Component.attach(object_id, BasicComponent.name()) == :ok
       assert Attribute.put(object_id, BasicComponent.name(), "foo", "bar") == :ok
-      assert Callback.attach(object_id, BasicCallback.name()) == :ok
+      assert Callback.attach(object_id, callback_key, BasicCallback.name()) == :ok
       assert CommandSet.attach(object_id, BasicCommandSet.name()) == :ok
       {:ok, object} = Object.get(object_id)
       assert length(object.components) == 1
@@ -59,13 +61,14 @@ defmodule Exmud.Engine.Test.ObjectTest do
       link_type = UUID.generate()
       tag = UUID.generate()
       tag_category = UUID.generate()
+      callback_key = UUID.generate()
 
       assert Component.register(BasicComponent) == :ok
       assert CommandSet.register(BasicCommandSet) == :ok
 
       assert Component.attach(object_id1, BasicComponent.name()) == :ok
       assert Attribute.put(object_id1, BasicComponent.name(), attribute_key, attribute_value) == :ok
-      assert Callback.attach(object_id1, BasicCallback.name()) == :ok
+      assert Callback.attach(object_id1, callback_key, BasicCallback.name()) == :ok
       assert CommandSet.attach(object_id1, BasicCommandSet.name()) == :ok
       assert Link.forge(object_id1, object_id2, link_type, "foo") == :ok
       assert Tag.attach(object_id1, tag_category, tag) == :ok
@@ -73,7 +76,7 @@ defmodule Exmud.Engine.Test.ObjectTest do
       assert Object.query({:and, [
                                     {:attribute, {BasicComponent.name(), attribute_key}},
                                     {:component, BasicComponent.name()},
-                                    {:callback, BasicCallback.key()},
+                                    {:callback, callback_key},
                                     {:command_set, BasicCommandSet.name()},
                                     {:link, link_type},
                                     {:link, {link_type, object_id2}},
@@ -92,13 +95,14 @@ defmodule Exmud.Engine.Test.ObjectTest do
       link_type = UUID.generate()
       tag = UUID.generate()
       tag_category = UUID.generate()
+      callback_key = UUID.generate()
 
       assert Component.register(BasicComponent) == :ok
       assert CommandSet.register(BasicCommandSet) == :ok
 
       assert Component.attach(object_id, BasicComponent.name()) == :ok
       assert Attribute.put(object_id, BasicComponent.name(), attribute_key, attribute_value) == :ok
-      assert Callback.attach(object_id, BasicCallback.name()) == :ok
+      assert Callback.attach(object_id, callback_key, BasicCallback.name()) == :ok
       assert CommandSet.attach(object_id, BasicCommandSet.name()) == :ok
       assert Link.forge(object_id, object_id2, link_type, "foo") == :ok
       assert Tag.attach(object_id, tag_category, tag) == :ok
@@ -108,7 +112,7 @@ defmodule Exmud.Engine.Test.ObjectTest do
       assert Object.query({:and, [
                                     {:attribute, {BasicComponent.name(), attribute_key}},
                                     {:component, BasicComponent.name()},
-                                    {:callback, BasicCallback.key()},
+                                    {:callback, callback_key},
                                     {:command_set, BasicCommandSet.name()},
                                     {:or, [
                                       {:link, link_type},
@@ -121,7 +125,7 @@ defmodule Exmud.Engine.Test.ObjectTest do
       assert Object.query({:or, [
                                     {:attribute, {BasicComponent.name(), attribute_key}},
                                     {:component, BasicComponent.name()},
-                                    {:callback, BasicCallback.key()},
+                                    {:callback, callback_key},
                                     {:command_set, BasicCommandSet.name()},
                                     {:or, [
                                       {:link, link_type},

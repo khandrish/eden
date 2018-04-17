@@ -28,6 +28,7 @@ defmodule Exmud.Engine.Callback do
 
   alias Ecto.Multi
   alias Exmud.Engine.Cache
+  alias Exmud.Engine.ObjectUtil
   alias Exmud.Engine.Repo
   alias Exmud.Engine.Schema.Callback
   import Ecto.Query
@@ -48,9 +49,6 @@ defmodule Exmud.Engine.Callback do
       @behaviour Exmud.Engine.Callback
 
       @doc false
-      def key, do: Atom.to_string(__MODULE__)
-
-      @doc false
       def name, do: Atom.to_string(__MODULE__)
 
       @doc false
@@ -68,19 +66,6 @@ defmodule Exmud.Engine.Callback do
   well as provide a default name for when a Callback does not exist on an Object.
   """
   @callback name :: String.t
-
-  @doc """
-  The non-unique key of the Callback.
-
-  The key is what is used by the Engine, and by game code, to check for the existence of Callbacks on an Object. For
-  example, one of the built-in Callbacks is the 'pre-puppet' Callback which ensures the Object invoking the 'Puppet'
-  Command has the appropriate permissions. By checking each Object for an Object specific Callback, the default behavior
-  can be overridden and additional checks can be made.
-
-  Keys must be unique on a per-object basis, as with more than one match the Engine won't know which Callback is the one
-  to execute.
-  """
-  @callback key :: String.t
 
   @doc """
   Called when the Engine determines the Callback should be executed.
@@ -104,33 +89,11 @@ defmodule Exmud.Engine.Callback do
 
   @doc """
   Attach a Callback to an Object.
-
-  Given the name of a registered callback module, attach the registered module to the Object. If a Callback is already
-  attached to the same Object with the same key, the original will be first deleted.
   """
-  def attach(object_id, name, args \\ nil) do
-    case lookup(name) do
-      {:ok, callback_module} ->
-        new_callback_params = %{key: callback_module.key(), name: callback_module.name(), object_id: object_id, data: pack_term(args)}
-
-        Multi.new()
-        |> Multi.delete_all(:delete_existing_callback, callback_query(object_id, callback_module.key()))
-        |> Multi.insert(:insert_new_callback, Callback.add(%Callback{}, new_callback_params))
-        |> Repo.transaction()
-        |> normalize_multi_result(:insert_new_callback)
-        |> case do
-          {:error, errors} ->
-            if Keyword.has_key?(errors, :object_id) do
-              Logger.error("Attempt to add Callback onto non existing object `#{object_id}`")
-              {:error, :no_such_object}
-            else
-              {:error, errors}
-            end
-          {:ok, _callback} ->
-            :ok
-        end
-      error ->
-        error
+  def attach(object_id, callback_key, callback_name, config \\ nil) do
+    with {:ok, _} <- lookup(callback_name) do
+      record = Callback.new(%{key: callback_key, name: callback_name, object_id: object_id, data: pack_term(config)})
+      ObjectUtil.attach(record)
     end
   end
 

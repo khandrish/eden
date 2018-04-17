@@ -40,6 +40,7 @@ defmodule Exmud.Engine.CommandSet do
   @type command_set_name :: String.t()
 
   alias Exmud.Engine.Cache
+  alias Exmud.Engine.ObjectUtil
   alias Exmud.Engine.Repo
   alias Exmud.Engine.Schema.CommandSet
   import Ecto.Query
@@ -58,23 +59,9 @@ defmodule Exmud.Engine.CommandSet do
   """
   @spec attach(object_id, command_set_name, config) :: :ok | {:error, :no_such_object} | {:error, :already_attached} | {:error, :no_such_command_set}
   def attach(object_id, command_set_name, config \\ nil) do
-    case lookup(command_set_name) do
-      {:ok, _callback_module} ->
-        CommandSet.new(%{object_id: object_id, name: command_set_name, config: pack_term(config)})
-        |> Repo.insert()
-        |> normalize_repo_result()
-        |> case do
-          {:error, [object_id: _error]} ->
-            Logger.error("Attempt to add Command Set `#{command_set_name}` onto non existing object `#{object_id}`")
-            {:error, :no_such_object}
-          {:error, [name: _error]} ->
-            Logger.error("Attempt to add Command Set `#{command_set_name}` onto Object `#{object_id}` when it already exists.")
-            {:error, :already_attached}
-          :ok ->
-            :ok
-        end
-      error ->
-        error
+    with {:ok, _} <- lookup(command_set_name) do
+      record = CommandSet.new(%{object_id: object_id, name: command_set_name, config: pack_term(config)})
+      ObjectUtil.attach(record)
     end
   end
 
