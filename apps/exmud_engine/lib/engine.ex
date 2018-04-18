@@ -9,8 +9,7 @@ defmodule Exmud.Engine do
   alias Exmud.Game.Schema
 
   def restart do
-    with {:ok, _} <- stop(),
-      do: start()
+    with {:ok, _} <- stop(), do: start()
   end
 
   def start do

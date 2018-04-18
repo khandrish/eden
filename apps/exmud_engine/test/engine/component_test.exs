@@ -39,13 +39,13 @@ defmodule Exmud.Engine.Test.ComponentTest do
       callback_module = UUID.generate()
       assert Component.register(Basic) == :ok
       assert Component.registered?(Basic) == true
-      assert Enum.any?(Component.list_registered(), fn(k) -> Basic.name() == k end) == true
+      assert Enum.any?(Component.list_registered(), fn k -> Basic.name() == k end) == true
       assert Component.lookup(callback_module) == {:error, :no_such_component}
       {:ok, callback} = Component.lookup(Basic.name())
       assert callback == Basic
       assert Component.unregister(Basic) == :ok
       assert Component.registered?(Basic) == false
-      assert Enum.any?(Component.list_registered(), fn(k) -> Basic.name() == k end) == false
+      assert Enum.any?(Component.list_registered(), fn k -> Basic.name() == k end) == false
     end
 
     @tag component: true

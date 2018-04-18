@@ -1,8 +1,7 @@
 use Mix.Config
 
 # Do not print debug messages to console in production
-config :logger, :console,
-  level: :info
+config :logger, :console, level: :info
 
 # Finally import the config/prod.secret.exs
 # which should be versioned separately.

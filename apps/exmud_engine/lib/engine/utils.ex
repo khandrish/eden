@@ -10,7 +10,8 @@ defmodule Exmud.Engine.Utils do
 
   def engine_cfg(key), do: cfg(:exmud_engine, key)
 
-  def unpack_term(<<31 :: size(8), 139 :: size(8), _rest :: binary>> = state), do: deserialize(:zlib.gunzip(state))
+  def unpack_term(<<31::size(8), 139::size(8), _rest::binary>> = state),
+    do: deserialize(:zlib.gunzip(state))
 
   def unpack_term(state), do: deserialize(state)
 
@@ -30,7 +31,7 @@ defmodule Exmud.Engine.Utils do
       try do
         callback.()
       rescue
-        error ->  Repo.rollback(error)
+        error -> Repo.rollback(error)
       end
     end)
     |> elem(1)

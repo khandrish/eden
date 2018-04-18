@@ -345,9 +345,7 @@ defmodule Exmud.Engine.Script do
   def register(callback_module) do
     name = callback_module.name()
 
-    Logger.info(
-      "Registering Script with name `#{name}` and module `#{callback_module}`"
-    )
+    Logger.info("Registering Script with name `#{name}` and module `#{callback_module}`")
 
     Cache.set(@cache, callback_module.name(), callback_module)
   end

@@ -2,10 +2,10 @@ defmodule Exmud.Engine.Schema.Callback do
   use Exmud.Common.Schema
 
   schema "callback" do
-    field :key, :string
-    field :name, :string
-    field :data, :binary
-    belongs_to :object, Exmud.Engine.Schema.Object, foreign_key: :object_id
+    field(:key, :string)
+    field(:name, :string)
+    field(:data, :binary)
+    belongs_to(:object, Exmud.Engine.Schema.Object, foreign_key: :object_id)
   end
 
   def new(params) do

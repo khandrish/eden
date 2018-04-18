@@ -64,7 +64,6 @@ defmodule Exmud.Engine.Test.AttributeTest do
   end
 end
 
-
 defmodule Exmud.Engine.AttributeTest.ExampleComponent do
   def populate do
     {:ok, :populated}

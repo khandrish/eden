@@ -36,16 +36,13 @@ defmodule Exmud.Engine.Callback do
   import Exmud.Engine.Utils
   require Logger
 
-
   #
   # Behavior definition and default callback setup
   #
 
-
   @doc false
   defmacro __using__(_) do
     quote location: :keep do
-
       @behaviour Exmud.Engine.Callback
 
       @doc false
@@ -54,8 +51,8 @@ defmodule Exmud.Engine.Callback do
       @doc false
       def run(command, _args), do: command
 
-      defoverridable [name: 0,
-                      run: 2]
+      defoverridable name: 0,
+                     run: 2
     end
   end
 
@@ -65,7 +62,7 @@ defmodule Exmud.Engine.Callback do
   This unique string is used for registration in the Engine, and can be used to both attach Callbacks to an Object as
   well as provide a default name for when a Callback does not exist on an Object.
   """
-  @callback name :: String.t
+  @callback name :: String.t()
 
   @doc """
   Called when the Engine determines the Callback should be executed.
@@ -81,18 +78,23 @@ defmodule Exmud.Engine.Callback do
   @typedoc "The Command struct representing the state of the Command being processed."
   @type command :: term
 
-
   #
   # API
   #
-
 
   @doc """
   Attach a Callback to an Object.
   """
   def attach(object_id, callback_key, callback_name, config \\ nil) do
     with {:ok, _} <- lookup(callback_name) do
-      record = Callback.new(%{key: callback_key, name: callback_name, object_id: object_id, data: pack_term(config)})
+      record =
+        Callback.new(%{
+          key: callback_key,
+          name: callback_name,
+          object_id: object_id,
+          data: pack_term(config)
+        })
+
       ObjectUtil.attach(record)
     end
   end
@@ -117,13 +119,18 @@ defmodule Exmud.Engine.Callback do
   """
   def get(object_id, key, default_callback_name \\ nil) do
     case Repo.one(callback_query(object_id, key)) do
-      nil -> # No matching Callback found on Object
-        if default_callback_name != nil do # Default Callback name has been provided
+      # No matching Callback found on Object
+      nil ->
+        # Default Callback name has been provided
+        # No default Callback name has been provided
+        if default_callback_name != nil do
           lookup(default_callback_name)
-        else # No default Callback name has been provided
+        else
           {:error, :no_such_callback}
         end
-      callback -> # Callback has been found on Object
+
+      # Callback has been found on Object
+      callback ->
         lookup(callback.name)
     end
   end
@@ -132,13 +139,10 @@ defmodule Exmud.Engine.Callback do
   Check if a Callback is attached to an Object.
   """
   def is_attached?(object_id, key) do
-    query =
-      from callback in callback_query(object_id, key),
-        select: count("*")
+    query = from(callback in callback_query(object_id, key), select: count("*"))
 
     Repo.one(query) == 1
   end
-
 
   @doc """
   When running a callback, the engine first checks to see if there is an object specific implementation before falling
@@ -148,16 +152,15 @@ defmodule Exmud.Engine.Callback do
     case get(object_id, key, default_callback_name) do
       {:ok, callback} ->
         apply(callback, :run, [command, args])
+
       error ->
         error
     end
   end
 
-
   #
   # Manipulation of Callbacks in the Engine.
   #
-
 
   @cache :callback_cache
 
@@ -177,6 +180,7 @@ defmodule Exmud.Engine.Callback do
       {:error, _} ->
         Logger.error("Lookup failed for Callback registered with name `#{name}`")
         {:error, :no_such_callback}
+
       result ->
         Logger.info("Lookup succeeded for Callback registered with name `#{name}`")
         result
@@ -190,7 +194,12 @@ defmodule Exmud.Engine.Callback do
   a second module with the same name as a previous one will overwrite the first entry.
   """
   def register(callback_module) do
-    Logger.info("Registering Callback with name `#{callback_module.name()}` and module `#{inspect(callback_module)}`")
+    Logger.info(
+      "Registering Callback with name `#{callback_module.name()}` and module `#{
+        inspect(callback_module)
+      }`"
+    )
+
     Cache.set(@cache, callback_module.name(), callback_module)
   end
 
@@ -210,15 +219,11 @@ defmodule Exmud.Engine.Callback do
     Cache.delete(@cache, callback_module.name())
   end
 
-
   #
   # Internal Functions
   #
 
-
   defp callback_query(object_id, key) do
-    from callback in Callback,
-      where: callback.object_id == ^object_id
-        and callback.key == ^key
+    from(callback in Callback, where: callback.object_id == ^object_id and callback.key == ^key)
   end
 end

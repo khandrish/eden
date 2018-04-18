@@ -20,16 +20,13 @@ defmodule Exmud.Engine.Component do
   import Exmud.Engine.Utils
   require Logger
 
-
   #
   # Behavior definition and default callback setup
   #
 
-
   @doc false
   defmacro __using__(_) do
     quote location: :keep do
-
       @behaviour Exmud.Engine.Component
 
       @doc false
@@ -38,8 +35,8 @@ defmodule Exmud.Engine.Component do
       @doc false
       def populate(_object_id, _args), do: :ok
 
-      defoverridable [name: 0,
-                      populate: 2]
+      defoverridable name: 0,
+                     populate: 2
     end
   end
 
@@ -48,7 +45,7 @@ defmodule Exmud.Engine.Component do
 
   This unique string is used for registration in the Engine, and can be used to attach/detach Components.
   """
-  @callback name :: String.t
+  @callback name :: String.t()
 
   @doc """
   The unique name of the Component.
@@ -81,16 +78,15 @@ defmodule Exmud.Engine.Component do
   @typedoc "The callback_module that is the implementation of the Component logic."
   @type callback_module :: atom
 
-
   #
   # API
   #
 
-
   @doc """
   Atomically attach a Component to an Object and populate it with attributes using the provided, optional, args.
   """
-  @spec attach(object_id, component_name, config | nil) :: :ok | {:error, :no_such_object} | {:error, :already_attached} | {:error, error}
+  @spec attach(object_id, component_name, config | nil) ::
+          :ok | {:error, :no_such_object} | {:error, :already_attached} | {:error, error}
   def attach(object_id, component_name, config \\ nil) do
     with {:ok, callback_module} <- lookup(component_name) do
       record = Component.new(%{name: component_name, object_id: object_id})
@@ -130,8 +126,7 @@ defmodule Exmud.Engine.Component do
   @spec detach(object_id | [object_id]) :: :ok
   def detach(object_ids) do
     delete_query =
-       from component in Component,
-         where: component.object_id in ^List.wrap(object_ids)
+      from(component in Component, where: component.object_id in ^List.wrap(object_ids))
 
     Repo.delete_all(delete_query)
 
@@ -154,19 +149,20 @@ defmodule Exmud.Engine.Component do
 
   @spec detach(object_id, [component_name]) :: term
   defp component_query(object_id, component_names) do
-    from component in Component,
-      where: component.name in ^component_names
-         and component.object_id == ^object_id
+    from(
+      component in Component,
+      where: component.name in ^component_names and component.object_id == ^object_id
+    )
   end
 
   @spec count_query(object_id, [component_name]) :: term
   defp count_query(object_id, component_names) do
-    from component in Component,
-      where: component.name in ^component_names
-         and component.object_id == ^object_id,
+    from(
+      component in Component,
+      where: component.name in ^component_names and component.object_id == ^object_id,
       select: count("*")
+    )
   end
-
 
   #
   # Manipulation of Components in the Engine.
@@ -192,6 +188,7 @@ defmodule Exmud.Engine.Component do
       {:error, _} ->
         Logger.error("Lookup failed for Component registered with name `#{component_name}`")
         {:error, :no_such_component}
+
       result ->
         Logger.info("Lookup succeeded for Component registered with name `#{component_name}`")
         result
@@ -203,7 +200,12 @@ defmodule Exmud.Engine.Component do
   """
   @spec register(callback_module) :: :ok
   def register(callback_module) do
-    Logger.info("Registering Component with name `#{callback_module.name}` and module `#{inspect(callback_module)}`")
+    Logger.info(
+      "Registering Component with name `#{callback_module.name}` and module `#{
+        inspect(callback_module)
+      }`"
+    )
+
     Cache.set(@cache, callback_module.name(), callback_module)
   end
 

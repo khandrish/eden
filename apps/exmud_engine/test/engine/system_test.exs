@@ -135,16 +135,7 @@ defmodule Exmud.Engine.SystemTest do
     end
   end
 
-  @systems [Idle,
-            Interval,
-            Run,
-            Stop,
-            UnsuccessfulUpdate,
-            Update,
-            Unregister,
-            Cast,
-            Purge,
-            Call]
+  @systems [Idle, Interval, Run, Stop, UnsuccessfulUpdate, Update, Unregister, Cast, Purge, Call]
   defp register_test_systems(context) do
     Enum.each(@systems, &System.register/1)
 

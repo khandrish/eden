@@ -43,13 +43,13 @@ defmodule Exmud.Engine.Test.CommandSetTest do
     test "engine registration" do
       assert CommandSet.register(Basic) == :ok
       assert CommandSet.registered?(Basic) == true
-      assert Enum.any?(CommandSet.list_registered(), fn(k) -> Basic.name() == k end) == true
+      assert Enum.any?(CommandSet.list_registered(), fn k -> Basic.name() == k end) == true
       assert CommandSet.lookup("foo") == {:error, :no_such_command_set}
       {:ok, callback} = CommandSet.lookup(Basic.name())
       assert callback == Basic
       assert CommandSet.unregister(Basic) == :ok
       assert CommandSet.registered?(Basic) == false
-      assert Enum.any?(CommandSet.list_registered(), fn(k) -> Basic.name == k end) == false
+      assert Enum.any?(CommandSet.list_registered(), fn k -> Basic.name() == k end) == false
     end
 
     @tag command_set: true

@@ -17,11 +17,9 @@ defmodule Exmud.Engine.Link do
   import Exmud.Engine.Utils
   import Ecto.Query
 
-
   #
   # Typespecs
   #
-
 
   @typedoc """
   The Object id that is the originator of the link.
@@ -36,7 +34,7 @@ defmodule Exmud.Engine.Link do
   @typedoc """
   The type of link that connects two Objects.
   """
-  @type type :: String.t
+  @type type :: String.t()
 
   @typedoc """
   The data associated with a Link
@@ -58,21 +56,16 @@ defmodule Exmud.Engine.Link do
   """
   @type error :: term
 
-
   #
   # API
   #
-
 
   @doc """
   Break all Links to or from an Object.
   """
   @spec break_all(object_id) :: :ok | {:error, :no_such_link}
   def break_all(object_id) do
-    query =
-      from link in Link,
-        where: link.from_id == ^object_id
-          or link.to_id == ^object_id
+    query = from(link in Link, where: link.from_id == ^object_id or link.to_id == ^object_id)
 
     query
     |> Repo.delete_all()
@@ -85,9 +78,11 @@ defmodule Exmud.Engine.Link do
   @spec break_all(object_id, object_id) :: :ok | {:error, :no_such_link}
   def break_all(object_id1, object_id2) do
     query =
-      from link in Link,
+      from(
+        link in Link,
         where: link.from_id == ^object_id1 and link.to_id == ^object_id2,
         or_where: link.from_id == ^object_id2 and link.to_id == ^object_id1
+      )
 
     query
     |> Repo.delete_all()
@@ -119,21 +114,23 @@ defmodule Exmud.Engine.Link do
   Since the comparison is done client side using the method in this way is less efficient but more powerful as there is
   complete control over checking an arbitrarily complex data structure.
   """
-  @spec break_all(object_id, object_id, type, comparison_fun | data) :: :ok
-                                                                      | {:error, :no_such_link}
-                                                                      | {:error, :unable_to_break_links}
-  def break_all(object_id1, object_id2, link_type, comparison_fun) when is_function(comparison_fun) do
+  @spec break_all(object_id, object_id, type, comparison_fun | data) ::
+          :ok
+          | {:error, :no_such_link}
+          | {:error, :unable_to_break_links}
+  def break_all(object_id1, object_id2, link_type, comparison_fun)
+      when is_function(comparison_fun) do
     query = link_directional_query(object_id1, object_id2, link_type)
 
     links_to_break =
       query
       |> Repo.all()
-      |> Stream.map(&({&1.id, unpack_term(&1.data)}))
-      |> Enum.filter(&(comparison_fun.(elem(&1, 1))))
+      |> Stream.map(&{&1.id, unpack_term(&1.data)})
+      |> Enum.filter(&comparison_fun.(elem(&1, 1)))
 
     if length(links_to_break) > 0 do
       links_to_break
-      |> Enum.reduce(Multi.new(), &(Multi.delete(&2, UUID.uuid4(), %Link{id: elem(&1, 0)})))
+      |> Enum.reduce(Multi.new(), &Multi.delete(&2, UUID.uuid4(), %Link{id: elem(&1, 0)}))
       |> Repo.transaction()
       |> case do
         {:ok, _} -> :ok
@@ -188,26 +185,27 @@ defmodule Exmud.Engine.Link do
   @spec forge_both(object_id, object_id, type, data) :: :ok | {:error, :unable_to_forge_link}
   def forge_both(object_id1, object_id2, type, data \\ nil) do
     paked_data = pack_term(data)
-    links =
+
+    links = [
       [
-        [
-          from_id: object_id1,
-          to_id: object_id2,
-          type: type,
-          data: paked_data
-        ],
-        [
-          from_id: object_id2,
-          to_id: object_id1,
-          type: type,
-          data: paked_data
-        ]
+        from_id: object_id1,
+        to_id: object_id2,
+        type: type,
+        data: paked_data
+      ],
+      [
+        from_id: object_id2,
+        to_id: object_id1,
+        type: type,
+        data: paked_data
       ]
+    ]
 
     Repo.transaction(fn ->
       case Repo.insert_all(Link, links) do
         {2, _} ->
           :ok
+
         _ ->
           Repo.rollback(:unable_to_forge_link)
       end
@@ -256,7 +254,7 @@ defmodule Exmud.Engine.Link do
     query = link_omnidirectional_query(object_id1, object_id2, type)
 
     Repo.all(query)
-    |> Stream.map(&(unpack_term(&1.data)))
+    |> Stream.map(&unpack_term(&1.data))
     |> Enum.filter(comparison_fun)
     |> length() > 0
   end
@@ -274,9 +272,7 @@ defmodule Exmud.Engine.Link do
   """
   @spec exists?(from, to) :: boolean
   def exists?(from, to) do
-    query =
-      from link in link_directional_query(from, to),
-        select: count("*")
+    query = from(link in link_directional_query(from, to), select: count("*"))
 
     Repo.one(query) > 0
   end
@@ -288,9 +284,7 @@ defmodule Exmud.Engine.Link do
   """
   @spec exists?(from, to, type) :: boolean
   def exists?(from, to, type) do
-    query =
-      from link in link_directional_query(from, to, type),
-        select: count("*")
+    query = from(link in link_directional_query(from, to, type), select: count("*"))
 
     Repo.one(query) == 1
   end
@@ -316,9 +310,7 @@ defmodule Exmud.Engine.Link do
   end
 
   def exists?(from, to, type, data) do
-    query =
-      from link in link_directional_query(from, to, type, data),
-        select: count("*")
+    query = from(link in link_directional_query(from, to, type, data), select: count("*"))
 
     Repo.one(query) == 1
   end
@@ -354,85 +346,80 @@ defmodule Exmud.Engine.Link do
     end
   end
 
-
   #
   # Private functions
   #
 
-
   @spec link_directional_query(from, to) :: term
   defp link_directional_query(object_id1, object_id2) do
-    from link in Link,
-      where: link.from_id == ^object_id1
-         and link.to_id == ^object_id2
+    from(link in Link, where: link.from_id == ^object_id1 and link.to_id == ^object_id2)
   end
 
   @spec link_directional_query(from, to, type) :: term
   defp link_directional_query(object_id1, object_id2, type) do
-    from link in Link,
-      where: link.from_id == ^object_id1
-         and link.to_id == ^object_id2
-         and link.type == ^type
+    from(
+      link in Link,
+      where: link.from_id == ^object_id1 and link.to_id == ^object_id2 and link.type == ^type
+    )
   end
 
   @spec link_directional_query(from, to, type, data) :: term
   defp link_directional_query(object_id1, object_id2, type, data) do
-    from link in Link,
-      where: link.from_id == ^object_id1
-         and link.to_id == ^object_id2
-         and link.type == ^type
-         and link.data == ^pack_term(data)
+    from(
+      link in Link,
+      where:
+        link.from_id == ^object_id1 and link.to_id == ^object_id2 and link.type == ^type and
+          link.data == ^pack_term(data)
+    )
   end
 
   @spec link_omnidirectional_query(object_id, object_id) :: term
   defp link_omnidirectional_query(object_id1, object_id2) do
-    from link in Link,
-      where: link.from_id == ^object_id1
-         and link.to_id == ^object_id2,
-      or_where: link.from_id == ^object_id2
-            and link.to_id == ^object_id1
+    from(
+      link in Link,
+      where: link.from_id == ^object_id1 and link.to_id == ^object_id2,
+      or_where: link.from_id == ^object_id2 and link.to_id == ^object_id1
+    )
   end
 
   @spec link_omnidirectional_query(object_id, object_id, type) :: term
   defp link_omnidirectional_query(object_id1, object_id2, type) do
-    from link in Link,
-      where: link.from_id == ^object_id1
-         and link.to_id == ^object_id2
-         and link.type == ^type,
-      or_where: link.from_id == ^object_id2
-            and link.to_id == ^object_id1
-            and link.type == ^type
+    from(
+      link in Link,
+      where: link.from_id == ^object_id1 and link.to_id == ^object_id2 and link.type == ^type,
+      or_where: link.from_id == ^object_id2 and link.to_id == ^object_id1 and link.type == ^type
+    )
   end
 
   @spec link_omnidirectional_query(object_id, object_id, type, data) :: term
   defp link_omnidirectional_query(object_id1, object_id2, type, data) do
-    from link in Link,
-      where: link.from_id == ^object_id1
-         and link.to_id == ^object_id2
-         and link.type == ^type
-         and link.data == ^pack_term(data),
-      or_where: link.from_id == ^object_id2
-            and link.to_id == ^object_id1
-            and link.type == ^type
-            and link.data == ^pack_term(data)
+    from(
+      link in Link,
+      where:
+        link.from_id == ^object_id1 and link.to_id == ^object_id2 and link.type == ^type and
+          link.data == ^pack_term(data),
+      or_where:
+        link.from_id == ^object_id2 and link.to_id == ^object_id1 and link.type == ^type and
+          link.data == ^pack_term(data)
+    )
   end
 
   @spec link_count_query(object_id, object_id) :: term
   defp link_count_query(object_id1, object_id2) do
-    from link in link_omnidirectional_query(object_id1, object_id2),
-      select: count("*")
+    from(link in link_omnidirectional_query(object_id1, object_id2), select: count("*"))
   end
 
   @spec link_count_query(object_id, object_id, type) :: term
   defp link_count_query(object_id1, object_id2, type) do
-    from link in link_omnidirectional_query(object_id1, object_id2, type),
-      select: count("*")
+    from(link in link_omnidirectional_query(object_id1, object_id2, type), select: count("*"))
   end
 
   @spec link_count_query(object_id, object_id, type, data) :: term
   defp link_count_query(object_id1, object_id2, type, data) do
-    from link in link_omnidirectional_query(object_id1, object_id2, type, data),
+    from(
+      link in link_omnidirectional_query(object_id1, object_id2, type, data),
       select: count("*")
+    )
   end
 
   @spec validate_break_result({number :: integer, data :: term}) :: :ok | {:error, :no_such_link}

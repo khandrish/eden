@@ -4,5 +4,4 @@ use Mix.Config
 # you likely want to automate and keep it away from
 # your version control system.
 
-config :exmud_engine, Exmud.Engine.Repo,
-  password: ""
+config :exmud_engine, Exmud.Engine.Repo, password: ""

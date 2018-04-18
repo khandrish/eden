@@ -10,7 +10,8 @@ defmodule Exmud.Engine.Test.LinkTest do
 
     @tag link: true
     @tag engine: true
-    test "forge link with no data", %{object_id1: object_id1, object_id2: object_id2, type1: link_type} = _context do
+    test "forge link with no data",
+         %{object_id1: object_id1, object_id2: object_id2, type1: link_type} = _context do
       assert Link.forge(object_id1, object_id2, link_type) == :ok
       assert Link.exists?(object_id1, object_id2) == true
       assert Link.exists?(object_id1, object_id2, link_type) == true
@@ -20,7 +21,9 @@ defmodule Exmud.Engine.Test.LinkTest do
 
     @tag link: true
     @tag engine: true
-    test "forge link with data", %{object_id1: object_id1, object_id2: object_id2, type1: link_type, data1: data} = _context do
+    test "forge link with data",
+         %{object_id1: object_id1, object_id2: object_id2, type1: link_type, data1: data} =
+           _context do
       assert Link.forge(object_id1, object_id2, link_type, data) == :ok
       assert Link.exists?(object_id1, object_id2) == true
       assert Link.exists?(object_id1, object_id2, link_type) == true
@@ -34,7 +37,9 @@ defmodule Exmud.Engine.Test.LinkTest do
 
     @tag link: true
     @tag engine: true
-    test "break all links on a single object", %{object_id1: object_id1, object_id2: object_id2, type1: link_type, data1: data} = _context do
+    test "break all links on a single object",
+         %{object_id1: object_id1, object_id2: object_id2, type1: link_type, data1: data} =
+           _context do
       assert Link.break_all(object_id1) == :ok
       assert Link.exists?(object_id1, object_id2) == false
       assert Link.exists?(object_id1, object_id2, link_type) == false
@@ -44,7 +49,9 @@ defmodule Exmud.Engine.Test.LinkTest do
 
     @tag link: true
     @tag engine: true
-    test "break all links between two objects", %{object_id1: object_id1, object_id2: object_id2, type1: link_type, data1: data} = _context do
+    test "break all links between two objects",
+         %{object_id1: object_id1, object_id2: object_id2, type1: link_type, data1: data} =
+           _context do
       assert Link.break_all(object_id1, object_id2) == :ok
       assert Link.exists?(object_id1, object_id2) == false
       assert Link.exists?(object_id1, object_id2, link_type) == false
@@ -54,7 +61,9 @@ defmodule Exmud.Engine.Test.LinkTest do
 
     @tag link: true
     @tag engine: true
-    test "break all links between two objects in reverse", %{object_id1: object_id1, object_id2: object_id2, type1: link_type, data1: data} = _context do
+    test "break all links between two objects in reverse",
+         %{object_id1: object_id1, object_id2: object_id2, type1: link_type, data1: data} =
+           _context do
       assert Link.break_all(object_id2, object_id1) == :ok
       assert Link.exists?(object_id1, object_id2) == false
       assert Link.exists?(object_id1, object_id2, link_type) == false
@@ -64,7 +73,15 @@ defmodule Exmud.Engine.Test.LinkTest do
 
     @tag link: true
     @tag engine: true
-    test "break all links of a specific type between two objects", %{object_id1: object_id1, object_id2: object_id2, type1: link_type1, type2: link_type2, data1: data1, data2: data2} = _context do
+    test "break all links of a specific type between two objects",
+         %{
+           object_id1: object_id1,
+           object_id2: object_id2,
+           type1: link_type1,
+           type2: link_type2,
+           data1: data1,
+           data2: data2
+         } = _context do
       assert Link.break_all(object_id2, object_id1, link_type1) == :ok
       assert Link.exists?(object_id1, object_id2) == true
       assert Link.exists?(object_id1, object_id2, link_type1) == false
@@ -75,7 +92,14 @@ defmodule Exmud.Engine.Test.LinkTest do
 
     @tag link: true
     @tag engine: true
-    test "break all links of a specific type with matching data between two objects", %{object_id1: object_id1, object_id2: object_id2, type1: link_type1, type2: link_type2, data1: data1} = _context do
+    test "break all links of a specific type with matching data between two objects",
+         %{
+           object_id1: object_id1,
+           object_id2: object_id2,
+           type1: link_type1,
+           type2: link_type2,
+           data1: data1
+         } = _context do
       assert Link.break_all(object_id1, object_id2, link_type1, data1) == :ok
       assert Link.exists?(object_id1, object_id2) == true
       assert Link.exists?(object_id1, object_id2, link_type1) == false
@@ -84,7 +108,9 @@ defmodule Exmud.Engine.Test.LinkTest do
 
     @tag link: true
     @tag engine: true
-    test "break all links of a specific type with matching fun between two objects", %{object_id1: object_id1, object_id2: object_id2, type1: link_type1, type2: link_type2} = _context do
+    test "break all links of a specific type with matching fun between two objects",
+         %{object_id1: object_id1, object_id2: object_id2, type1: link_type1, type2: link_type2} =
+           _context do
       assert Link.break_all(object_id1, object_id2, link_type1, fn _ -> true end) == :ok
       assert Link.exists?(object_id1, object_id2) == true
       assert Link.exists?(object_id1, object_id2, link_type1) == false
@@ -93,7 +119,15 @@ defmodule Exmud.Engine.Test.LinkTest do
 
     @tag link: true
     @tag engine: true
-    test "break one link between two objects", %{object_id1: object_id1, object_id2: object_id2, type1: link_type1, type2: link_type2, data1: data1, data2: data2} = _context do
+    test "break one link between two objects",
+         %{
+           object_id1: object_id1,
+           object_id2: object_id2,
+           type1: link_type1,
+           type2: link_type2,
+           data1: data1,
+           data2: data2
+         } = _context do
       assert Link.break_one(object_id1, object_id2, link_type1) == :ok
       assert Link.exists?(object_id1, object_id2) == true
       assert Link.exists?(object_id1, object_id2, link_type1) == false
@@ -106,37 +140,51 @@ defmodule Exmud.Engine.Test.LinkTest do
 
     @tag link: true
     @tag engine: true
-    test "check if any links exist", %{object_id1: object_id1, object_id2: object_id2} = _context do
+    test "check if any links exist",
+         %{object_id1: object_id1, object_id2: object_id2} = _context do
       assert Link.any_exist?(object_id1, object_id2) == true
     end
 
     @tag link: true
     @tag engine: true
-    test "check if any links exist of a specific type", %{object_id1: object_id1, object_id2: object_id2, type1: link_type1} = _context do
+    test "check if any links exist of a specific type",
+         %{object_id1: object_id1, object_id2: object_id2, type1: link_type1} = _context do
       assert Link.any_exist?(object_id1, object_id2, link_type1) == true
     end
 
     @tag link: true
     @tag engine: true
-    test "check if any links exist of a specific type and data", %{object_id1: object_id1, object_id2: object_id2, type1: link_type1, data1: data1} = _context do
+    test "check if any links exist of a specific type and data",
+         %{object_id1: object_id1, object_id2: object_id2, type1: link_type1, data1: data1} =
+           _context do
       assert Link.any_exist?(object_id1, object_id2, link_type1, data1) == true
     end
 
     @tag link: true
     @tag engine: true
-    test "check if any links exist of a specific type with a comparison fun", %{object_id1: object_id1, object_id2: object_id2, type1: link_type1, data1: data1} = _context do
+    test "check if any links exist of a specific type with a comparison fun",
+         %{object_id1: object_id1, object_id2: object_id2, type1: link_type1, data1: data1} =
+           _context do
       assert Link.any_exist?(object_id1, object_id2, link_type1, &(data1 == &1)) == true
     end
 
     @tag link: true
     @tag engine: true
-    test "break one link that does not exist", %{object_id1: object_id1, object_id2: object_id2} = _context do
+    test "break one link that does not exist",
+         %{object_id1: object_id1, object_id2: object_id2} = _context do
       assert Link.break_one(object_id2, object_id1, "foo") == {:error, :no_such_link}
     end
 
     @tag link: true
     @tag engine: true
-    test "update one link", %{object_id1: object_id1, object_id2: object_id2, type1: link_type1, data1: data1, data2: data2} = _context do
+    test "update one link",
+         %{
+           object_id1: object_id1,
+           object_id2: object_id2,
+           type1: link_type1,
+           data1: data1,
+           data2: data2
+         } = _context do
       assert Link.update(object_id1, object_id2, link_type1, data2) == :ok
       assert Link.exists?(object_id1, object_id2, link_type1, data1) == false
       assert Link.exists?(object_id1, object_id2, link_type1, data2) == true
@@ -144,7 +192,14 @@ defmodule Exmud.Engine.Test.LinkTest do
 
     @tag link: true
     @tag engine: true
-    test "update all links", %{object_id1: object_id1, object_id2: object_id2, type1: link_type1, data1: data1, data2: data2} = _context do
+    test "update all links",
+         %{
+           object_id1: object_id1,
+           object_id2: object_id2,
+           type1: link_type1,
+           data1: data1,
+           data2: data2
+         } = _context do
       assert Link.update_all(object_id1, object_id2, link_type1, data2) == :ok
       assert Link.exists?(object_id1, object_id2, link_type1, data1) == false
       assert Link.exists?(object_id1, object_id2, link_type1, data2) == true

@@ -8,11 +8,9 @@ defmodule Exmud.Engine.Object do
 
   @get_inclusion_filters [:callbacks, :command_sets, :components, :locks, :links, :scripts, :tags]
 
-
   #
   # Typespecs
   #
-
 
   @typedoc """
   The id of an Object on which all operations are to take place.
@@ -32,18 +30,18 @@ defmodule Exmud.Engine.Object do
   @typedoc """
   Filters for specifing which data on an Object to load
   """
-  @type inclusion_filters :: [:callbacks | :command_sets | :components | :locks | :links | :scripts | :tags]
+  @type inclusion_filters :: [
+          :callbacks | :command_sets | :components | :locks | :links | :scripts | :tags
+        ]
 
   @typedoc """
   A query to be used for finding populations of Objects.
   """
   @type object_query :: term
 
-
   #
   # API
   #
-
 
   @doc """
   Create a new Object.
@@ -52,7 +50,7 @@ defmodule Exmud.Engine.Object do
   def new! do
     %Object{date_created: DateTime.utc_now()}
     |> Repo.insert!()
-    |> (&(&1.id)).()
+    |> (& &1.id).()
   end
 
   @doc """
@@ -60,9 +58,7 @@ defmodule Exmud.Engine.Object do
   """
   @spec delete(object_id) :: :ok | {:error, :no_such_object}
   def delete(object_id) do
-    query =
-      from object in Object,
-        where: object.id == ^object_id
+    query = from(object in Object, where: object.id == ^object_id)
 
     query
     |> Repo.delete_all()
@@ -99,9 +95,7 @@ defmodule Exmud.Engine.Object do
   def get(object_ids, inclusion_filters) do
     object_ids = List.wrap(object_ids)
 
-    base_query =
-      from object in Object,
-        where: object.id in ^object_ids
+    base_query = from(object in Object, where: object.id in ^object_ids)
 
     inclusion_filters = List.wrap(inclusion_filters)
 
@@ -131,18 +125,17 @@ defmodule Exmud.Engine.Object do
     {:ok, result}
   end
 
-
   #
   # Private functions
   #
-
 
   # Query functions
 
   defp build_object_query(object_query) do
     dynamic = build_where(object_query)
 
-    from object in Object,
+    from(
+      object in Object,
       left_join: callback in assoc(object, :callbacks),
       left_join: command_set in assoc(object, :command_sets),
       left_join: component in assoc(object, :components),
@@ -151,6 +144,7 @@ defmodule Exmud.Engine.Object do
       left_join: tag in assoc(object, :tags),
       select: object.id,
       where: ^dynamic
+    )
   end
 
   defp build_where({mode, checks}) do
@@ -159,13 +153,14 @@ defmodule Exmud.Engine.Object do
 
   defp actually_build_where(dynamic, _, []), do: dynamic
 
-  defp actually_build_where(dynamic, mode, [{type, nested_checks} | checks]) when type == :and or type == :or do
+  defp actually_build_where(dynamic, mode, [{type, nested_checks} | checks])
+       when type == :and or type == :or do
     new_dynamic = actually_build_where(nil, type, nested_checks)
 
     dynamic =
       case mode do
-        :and -> dynamic(^dynamic and (^new_dynamic))
-        :or -> dynamic(^dynamic or (^new_dynamic))
+        :and -> dynamic(^dynamic and ^new_dynamic)
+        :or -> dynamic(^dynamic or ^new_dynamic)
       end
 
     actually_build_where(dynamic, mode, checks)
@@ -188,7 +183,10 @@ defmodule Exmud.Engine.Object do
   end
 
   defp build_equality_check_dynamic({:attribute, {component_name, attribute_name}}) do
-    dynamic([object, callback, command_set, component, attribute], (attribute.name == ^attribute_name and component.name == ^component_name))
+    dynamic(
+      [object, callback, command_set, component, attribute],
+      attribute.name == ^attribute_name and component.name == ^component_name
+    )
   end
 
   defp build_equality_check_dynamic({:callback, callback}) do
@@ -204,11 +202,17 @@ defmodule Exmud.Engine.Object do
   end
 
   defp build_equality_check_dynamic({:link, {link_type, to, data}}) do
-    dynamic([object, callback, command_set, component, attribute, link], (link.type == ^link_type and link.to_id == ^to and link.data == ^pack_term(data)))
+    dynamic(
+      [object, callback, command_set, component, attribute, link],
+      link.type == ^link_type and link.to_id == ^to and link.data == ^pack_term(data)
+    )
   end
 
   defp build_equality_check_dynamic({:link, {link_type, to}}) do
-    dynamic([object, callback, command_set, component, attribute, link], (link.type == ^link_type and link.to_id == ^to))
+    dynamic(
+      [object, callback, command_set, component, attribute, link],
+      link.type == ^link_type and link.to_id == ^to
+    )
   end
 
   defp build_equality_check_dynamic({:link, link_type}) do
@@ -216,8 +220,10 @@ defmodule Exmud.Engine.Object do
   end
 
   defp build_equality_check_dynamic({:tag, {category, tag}}) do
-    dynamic([object, callback, command_set, component, attribute, link, tag],
-            (tag.category == ^category and tag.tag == ^tag))
+    dynamic(
+      [object, callback, command_set, component, attribute, link, tag],
+      tag.category == ^category and tag.tag == ^tag
+    )
   end
 
   # Get Query
@@ -226,76 +232,98 @@ defmodule Exmud.Engine.Object do
 
   defp build_get_query(query, [:callbacks | inclusion_filters]) do
     query =
-      from object in query,
+      from(
+        object in query,
         left_join: callback in assoc(object, :callbacks),
         preload: [:callbacks]
+      )
 
     build_get_query(query, inclusion_filters)
   end
 
   defp build_get_query(query, [:command_sets | inclusion_filters]) do
     query =
-      from object in query,
+      from(
+        object in query,
         left_join: command_set in assoc(object, :command_sets),
         preload: [:command_sets]
+      )
 
     build_get_query(query, inclusion_filters)
   end
 
   defp build_get_query(query, [:components | inclusion_filters]) do
     query =
-      from object in query,
+      from(
+        object in query,
         left_join: component in assoc(object, :components),
         left_join: attribute in assoc(component, :attributes),
         preload: [components: {component, attributes: attribute}]
+      )
 
     build_get_query(query, inclusion_filters)
   end
 
   defp build_get_query(query, [:locks | inclusion_filters]) do
     query =
-      from object in query,
+      from(
+        object in query,
         left_join: lock in assoc(object, :locks),
         preload: [:locks]
+      )
 
     build_get_query(query, inclusion_filters)
   end
 
   defp build_get_query(query, [:links | inclusion_filters]) do
     query =
-      from object in query,
+      from(
+        object in query,
         left_join: link in assoc(object, :links),
         preload: [:links]
+      )
 
     build_get_query(query, inclusion_filters)
   end
 
   defp build_get_query(query, [:scripts | inclusion_filters]) do
     query =
-      from object in query,
+      from(
+        object in query,
         left_join: script in assoc(object, :scripts),
         preload: [:scripts]
+      )
 
     build_get_query(query, inclusion_filters)
   end
 
   defp build_get_query(query, [:tags | inclusion_filters]) do
     query =
-      from object in query,
+      from(
+        object in query,
         left_join: tag in assoc(object, :tags),
         preload: [:tags]
+      )
 
     build_get_query(query, inclusion_filters)
   end
 
   defp normalize_get_results(objects, [:components | rest]) do
     objects =
-      Enum.map(objects, fn(object) ->
-        %{object | components: Enum.map(object.components, fn(component) ->
-            %{component | attributes: Enum.map(component.attributes, fn(attribute) ->
-              %{attribute | data: unpack_term(attribute.data)}
-            end)}
-        end)}
+      Enum.map(objects, fn object ->
+        %{
+          object
+          | components:
+              Enum.map(object.components, fn component ->
+                %{
+                  component
+                  | attributes:
+                      Enum.map(component.attributes, fn attribute ->
+                        %{attribute | data: unpack_term(attribute.data)}
+                      end)
+                }
+              end)
+        }
       end)
 
     normalize_get_results(objects, rest)
@@ -303,11 +331,12 @@ defmodule Exmud.Engine.Object do
 
   defp normalize_get_results(objects, [:command_sets | rest]) do
     objects =
-      Enum.map(objects, fn(object) ->
+      Enum.map(objects, fn object ->
         command_sets =
-          Enum.map(object.command_sets, fn(command_set) ->
+          Enum.map(object.command_sets, fn command_set ->
             %{command_set | command_set: unpack_term(command_set.command_set)}
           end)
+
         %{object | command_sets: command_sets}
       end)
 

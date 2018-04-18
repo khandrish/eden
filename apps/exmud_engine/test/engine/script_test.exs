@@ -160,26 +160,28 @@ defmodule Exmud.Engine.Test.ScriptTest do
     %{object_id: object_id}
   end
 
-  @scripts [Idle,
-            Call,
-            Cast,
-            Run,
-            Purge,
-            Stop,
-            State,
-            UnsuccessfulUpdate,
-            Update,
-            Unregister,
-            Detach,
-            ErrorStarting,
-            ErrorStopping,
-            ErrorInitializing,
-            ErrorHandlingMessage,
-            RunInterval,
-            RunError,
-            RunErrorInterval,
-            RunErrorStop,
-            RunErrorStopping]
+  @scripts [
+    Idle,
+    Call,
+    Cast,
+    Run,
+    Purge,
+    Stop,
+    State,
+    UnsuccessfulUpdate,
+    Update,
+    Unregister,
+    Detach,
+    ErrorStarting,
+    ErrorStopping,
+    ErrorInitializing,
+    ErrorHandlingMessage,
+    RunInterval,
+    RunError,
+    RunErrorInterval,
+    RunErrorStop,
+    RunErrorStopping
+  ]
 
   defp register_test_scripts(context) do
     Enum.each(@scripts, &Script.register/1)

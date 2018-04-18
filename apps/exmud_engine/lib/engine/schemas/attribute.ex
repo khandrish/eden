@@ -2,9 +2,9 @@ defmodule Exmud.Engine.Schema.Attribute do
   use Exmud.Common.Schema
 
   schema "attribute" do
-    field :name, :string
-    field :value, :binary
-    belongs_to :component, Exmud.Engine.Schema.Component, foreign_key: :component_id
+    field(:name, :string)
+    field(:value, :binary)
+    belongs_to(:component, Exmud.Engine.Schema.Component, foreign_key: :component_id)
   end
 
   def new(params) do

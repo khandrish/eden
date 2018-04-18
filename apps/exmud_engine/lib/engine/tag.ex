@@ -14,28 +14,24 @@ defmodule Exmud.Engine.Tag do
   require Logger
 
   @typedoc "The Category that the Tag belongs to."
-  @type category :: String.t
+  @type category :: String.t()
 
   @typedoc "The Object that the Tag belongs to."
   @type object_id :: integer
 
   @typedoc "Id of the Object the Script is attached to."
-  @type tag :: String.t
-
+  @type tag :: String.t()
 
   #
   # API
   #
-
 
   @doc """
   Attach a Tag to an Object.
   """
   @spec attach(object_id, category, tag) :: :ok | {:error, :unable_to_attach_tag}
   def attach(object_id, category, tag) do
-    args = %{category: category,
-             object_id: object_id,
-             tag: tag}
+    args = %{category: category, object_id: object_id, tag: tag}
     record = Tag.new(args)
     ObjectUtil.attach(record)
   end
@@ -45,9 +41,7 @@ defmodule Exmud.Engine.Tag do
   """
   @spec is_attached?(object_id, category, tag) :: boolean
   def is_attached?(object_id, category, tag) do
-    query =
-      from tag in tag_query(object_id, category, tag),
-        select: count("*")
+    query = from(tag in tag_query(object_id, category, tag), select: count("*"))
 
     Repo.one(query) == 1
   end
@@ -65,17 +59,15 @@ defmodule Exmud.Engine.Tag do
     end
   end
 
-
   #
   # Private functions
   #
 
-
   @spec tag_query(object_id, category, tag) :: term
   defp tag_query(object_id, category, tag) do
-    from tag in Tag,
-      where: tag.category == ^category
-        and tag.tag == ^tag
-        and tag.object_id == ^object_id
+    from(
+      tag in Tag,
+      where: tag.category == ^category and tag.tag == ^tag and tag.object_id == ^object_id
+    )
   end
 end

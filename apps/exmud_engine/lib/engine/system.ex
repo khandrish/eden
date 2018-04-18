@@ -18,16 +18,13 @@ defmodule Exmud.Engine.System do
   @doc false
   defmacro __using__(_) do
     quote location: :keep do
-
       use Exmud.Engine.Script
     end
   end
 
-
   #
   # Behavior definition and default callback setup
   #
-
 
   @doc """
   Handle a message which has been explicitly sent to the System.
@@ -46,16 +43,17 @@ defmodule Exmud.Engine.System do
   @doc """
   The name of the System.
   """
-  @callback name :: String.t
+  @callback name :: String.t()
 
   @doc """
   Called in response to an interval period expiring, or an explicit call to run the System again.
   """
-  @callback run(object_id, state) :: {:ok, state} |
-                                     {:ok, state, next_iteration} |
-                                     {:stop, reason, state} |
-                                     {:error, error, state} |
-                                     {:error, error, state, next_iteration}
+  @callback run(object_id, state) ::
+              {:ok, state}
+              | {:ok, state, next_iteration}
+              | {:stop, reason, state}
+              | {:error, error, state}
+              | {:error, error, state, next_iteration}
 
   @doc """
   Called when the System is being started.
@@ -64,7 +62,8 @@ defmodule Exmud.Engine.System do
   called with the state returned from the previous call, otherwise the state will be loaded from the database and used
   instead. Must return a new state and an optional timeout, in milliseconds, until the next iteration.
   """
-  @callback start(object_id, args, state) :: {:ok, state} | {:ok, state, next_iteration} | {:error, error}
+  @callback start(object_id, args, state) ::
+              {:ok, state} | {:ok, state, next_iteration} | {:error, error}
 
   @doc """
   Called when the System is being stopped.
@@ -98,16 +97,14 @@ defmodule Exmud.Engine.System do
   @type object_id :: integer
 
   @typedoc "The name of the System within the Engine."
-  @type name :: String.t
+  @type name :: String.t()
 
   @typedoc "The callback_module that is the implementation of the Script logic."
   @type callback_module :: atom
 
-
   #
   # API
   #
-
 
   alias Exmud.Engine.Cache
   alias Exmud.Engine.Object
@@ -151,7 +148,9 @@ defmodule Exmud.Engine.System do
         system_query(name)
         |> Repo.one()
         |> case do
-          nil -> {:error, :no_such_system}
+          nil ->
+            {:error, :no_such_system}
+
           system ->
             {:ok, deserialize(system.state)}
         end
@@ -166,7 +165,9 @@ defmodule Exmud.Engine.System do
     system_query(name)
     |> Repo.one()
     |> case do
-      nil -> {:error, :no_such_system}
+      nil ->
+        {:error, :no_such_system}
+
       system ->
         {:ok, _} = Repo.delete(system)
         :ok
@@ -202,19 +203,28 @@ defmodule Exmud.Engine.System do
       case Repo.one(system_query(name)) do
         nil ->
           Object.new!()
+
         system ->
           system.object_id
       end
 
-    with {:ok, callback_module} <- lookup(name)
-      do
-
+    with {:ok, callback_module} <- lookup(name) do
       process_registration_name = via(@system_registry, name)
-      gen_server_args = [object_id, name, callback_module, callback_module_arguments, process_registration_name]
 
-      with  {:ok, _} <- DynamicSupervisor.start_child(Exmud.Engine.CallbackSupervisor, {ScriptRunner, gen_server_args})
-        do
-          :ok
+      gen_server_args = [
+        object_id,
+        name,
+        callback_module,
+        callback_module_arguments,
+        process_registration_name
+      ]
+
+      with {:ok, _} <-
+             DynamicSupervisor.start_child(
+               Exmud.Engine.CallbackSupervisor,
+               {ScriptRunner, gen_server_args}
+             ) do
+        :ok
       end
     end
   end
@@ -222,16 +232,18 @@ defmodule Exmud.Engine.System do
   @doc """
   Stops a system if it is started.
   """
-  @spec stop( name) :: :ok | {:error, :no_such_script}
+  @spec stop(name) :: :ok | {:error, :no_such_script}
   def stop(name) do
     case Registry.lookup(@system_registry, name) do
       [{pid, _}] ->
         ref = Process.monitor(pid)
         GenServer.stop(pid, :normal)
+
         receive do
           {:DOWN, ^ref, :process, ^pid, :normal} ->
             :ok
         end
+
       _ ->
         {:error, :no_such_system}
     end
@@ -252,11 +264,9 @@ defmodule Exmud.Engine.System do
     end
   end
 
-
   #
   # Manipulation of Systems in the Engine.
   #
-
 
   @cache :system_cache
 
@@ -278,6 +288,7 @@ defmodule Exmud.Engine.System do
       {:error, _} ->
         Logger.error("Lookup failed for System registered with name `#{name}`")
         {:error, :no_such_system}
+
       result ->
         Logger.info("Lookup succeeded for System registered with name `#{name}`")
         result
@@ -289,7 +300,12 @@ defmodule Exmud.Engine.System do
   """
   @spec register(callback_module) :: :ok
   def register(callback_module) do
-    Logger.info("Registering System with name `#{callback_module.name}` and module `#{inspect(callback_module)}`")
+    Logger.info(
+      "Registering System with name `#{callback_module.name}` and module `#{
+        inspect(callback_module)
+      }`"
+    )
+
     Cache.set(@cache, callback_module.name, callback_module)
   end
 
@@ -311,12 +327,12 @@ defmodule Exmud.Engine.System do
     Cache.delete(@cache, callback_module.name())
   end
 
-
   #
   # Internal Functions
   #
 
-  @spec send_message(method :: atom, name, message) :: :ok | {:ok, term} | {:error, :system_not_running}
+  @spec send_message(method :: atom, name, message) ::
+          :ok | {:ok, term} | {:error, :system_not_running}
   defp send_message(method, name, message) do
     try do
       apply(GenServer, method, [via(@system_registry, name), message])
@@ -326,7 +342,6 @@ defmodule Exmud.Engine.System do
   end
 
   defp system_query(name) do
-    from script in Script,
-      where: script.name == ^name
+    from(script in Script, where: script.name == ^name)
   end
 end

@@ -9,7 +9,6 @@ defmodule Exmud.Engine.Test.LockTest do
   alias Exmud.Engine.Test.Lock.NotRegistered
 
   describe "locks and engine registration" do
-
     @tag lock: true
     @tag engine: true
     test "lifecycle" do
@@ -41,7 +40,8 @@ defmodule Exmud.Engine.Test.LockTest do
 
     @tag lock: true
     @tag engine: true
-    test "check a lock which isn't registered", %{object_id1: object_id1, object_id2: object_id2} = _context do
+    test "check a lock which isn't registered",
+         %{object_id1: object_id1, object_id2: object_id2} = _context do
       assert Lock.attach(object_id1, "foo", NotRegistered.name()) == {:error, :no_such_lock}
       assert Lock.check(object_id1, "foo", object_id2) == {:error, :no_such_lock}
     end

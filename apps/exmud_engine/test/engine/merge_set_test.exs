@@ -5,15 +5,14 @@ defmodule Exmud.Engine.Test.MergeSetTest do
   use ExUnit.Case, async: true
 
   describe "merge set" do
-
     @tag merge_set: true
     test "creation" do
       assert MergeSet.new() == %{
-              allow_duplicates: false,
-              keys: [],
-              merge_type: :union,
-              priority: 1
-            }
+               allow_duplicates: false,
+               keys: [],
+               merge_type: :union,
+               priority: 1
+             }
     end
 
     @tag merge_set: true
@@ -27,22 +26,23 @@ defmodule Exmud.Engine.Test.MergeSetTest do
       ms = MergeSet.set_priority(ms, 2)
       ms = MergeSet.set_merge_type(ms, :intersect)
       ms = MergeSet.set_allow_duplicates(ms, true)
+
       assert ms == %{
-              allow_duplicates: true,
-              keys: [],
-              merge_type: :intersect,
-              priority: 2
-            }
+               allow_duplicates: true,
+               keys: [],
+               merge_type: :intersect,
+               priority: 2
+             }
     end
 
     @tag merge_set: true
     test "creation with values" do
       assert MergeSet.new(keys: ["foo"], merge_type: :intersect) == %{
-              allow_duplicates: false,
-              keys: ["foo"],
-              merge_type: :intersect,
-              priority: 1
-            }
+               allow_duplicates: false,
+               keys: ["foo"],
+               merge_type: :intersect,
+               priority: 1
+             }
     end
 
     @tag merge_set: true

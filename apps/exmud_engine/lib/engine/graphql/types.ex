@@ -2,136 +2,127 @@ defmodule Exmud.Engine.Graphql.Types do
   use Absinthe.Schema.Notation
   use Absinthe.Ecto, repo: Exmud.Engine.Repo
 
-
   object :object do
     @desc "The object's key. This is not guarenteed to be unique unless the application enforces it."
-    field :key, :string
+    field(:key, :string)
 
     @desc "The time that the object was created"
-    field :date_created, :utc_datetime
+    field(:date_created, :utc_datetime)
 
     @desc "The callbacks associated with the object."
-    field :callbacks, list_of(:callback), resolve: assoc(:callbacks)
+    field(:callbacks, list_of(:callback), resolve: assoc(:callbacks))
 
     @desc "The command sets associated with the object."
-    field :command_sets, list_of(:command_set), resolve: assoc(:command_sets)
+    field(:command_sets, list_of(:command_set), resolve: assoc(:command_sets))
 
     @desc "The components associated with the object."
-    field :components, list_of(:component), resolve: assoc(:components)
+    field(:components, list_of(:component), resolve: assoc(:components))
 
     @desc "The callbacks associated with the object."
-    field :locks, list_of(:lock), resolve: assoc(:locks)
+    field(:locks, list_of(:lock), resolve: assoc(:locks))
 
     @desc "The relationships associated with the object."
-    field :relationships, list_of(:relationship), resolve: assoc(:relationships)
+    field(:relationships, list_of(:relationship), resolve: assoc(:relationships))
 
     @desc "The scripts associated with the object."
-    field :scripts, list_of(:script), resolve: assoc(:scripts)
+    field(:scripts, list_of(:script), resolve: assoc(:scripts))
 
     @desc "The tags associated with the object."
-    field :tags, list_of(:tag), resolve: assoc(:tags)
+    field(:tags, list_of(:tag), resolve: assoc(:tags))
   end
-
 
   object :attribute do
     @desc "The key that is being stored."
-    field :attribute, :string
+    field(:attribute, :string)
 
     @desc "The value that is being stored."
-    field :data, :binary
+    field(:data, :binary)
 
     @desc "The component that the attribute belongs to."
-    field :cid, :component, resolve: assoc(:component)
+    field(:cid, :component, resolve: assoc(:component))
   end
-
 
   object :command_set do
     @desc "The key that is being stored."
-    field :data, :binary
+    field(:data, :binary)
 
     @desc "The module that represents and seeds a component."
-    field :callback_module, :binary
+    field(:callback_module, :binary)
 
     @desc "The object that the command set belongs to."
-    field :object_id, :object, resolve: assoc(:object)
+    field(:object_id, :object, resolve: assoc(:object))
   end
-
 
   object :component do
     @desc "The key that is being stored."
-    field :attribute, :string
+    field(:attribute, :string)
 
     @desc "The module that represents and seeds a component."
-    field :component, :binary
+    field(:component, :binary)
 
     @desc "The object that the component belongs to."
-    field :object_id, :object, resolve: assoc(:object)
+    field(:object_id, :object, resolve: assoc(:object))
   end
-
 
   object :callback do
     @desc "The callback string that is matched against when checking for callbacks."
-    field :string, :string
+    field(:string, :string)
 
     @desc "The callback module to be used if the callback string is matched."
-    field :callback_function, :binary
+    field(:callback_function, :binary)
 
     @desc "The object that the callback belongs to."
-    field :object_id, :object, resolve: assoc(:object)
+    field(:object_id, :object, resolve: assoc(:object))
   end
-
 
   object :lock do
     @desc "The callback module to be used when checking the lock."
-    field :callback_module, :binary
+    field(:callback_module, :binary)
 
     @desc "The data to be passed to the callback module when checking the lock."
-    field :data, :binary
+    field(:data, :binary)
 
     @desc "The object that the lock belongs to."
-    field :object_id, :object, resolve: assoc(:object)
+    field(:object_id, :object, resolve: assoc(:object))
   end
-
 
   object :relationship do
     @desc "The tag which has been applied to an object."
-    field :relationship, :string
+    field(:relationship, :string)
 
     @desc "The category that the tag belongs to."
-    field :category, :string
+    field(:category, :string)
 
     @desc "The object that the relationship belongs to."
-    field :object, :object, resolve: assoc(:object)
+    field(:object, :object, resolve: assoc(:object))
 
     @desc "The object that is the target of a relationship."
-    field :target, :object, resolve: assoc(:object)
+    field(:target, :object, resolve: assoc(:object))
   end
-
 
   object :script do
     @desc "The name of the script. This is guaranteed to be unique per object."
-    field :name, :string
+    field(:name, :string)
 
     @desc "The callback module that contains the script logic."
-    field :callback_module, :binary
+    field(:callback_module, :binary)
 
     @desc "The state of the script."
-    field :state, :binary
+    field(:state, :binary)
 
     @desc "The object that the script belongs to."
-    field :object_id, :object, resolve: assoc(:object)
+    field(:object_id, :object, resolve: assoc(:object))
   end
-
 
   object :tag do
     @desc "The tag which has been applied to an object."
-    field :tag, :string
+    field(:tag, :string)
 
     @desc "The category that the tag belongs to."
-    field :category, :string
+    field(:category, :string)
 
     @desc "The object that the tag belongs to."
-    field :object_id, :object, resolve: assoc(:object)
+    field(:object_id, :object, resolve: assoc(:object))
   end
 
   @desc """
@@ -140,8 +131,8 @@ defmodule Exmud.Engine.Graphql.Types do
   "2015-06-24T04:50:34Z").
   """
   scalar :utc_datetime, description: "ISOz time" do
-    parse &dt_from_iso8601(&1)
-    serialize &dt_to_iso8601(&1)
+    parse(&dt_from_iso8601(&1))
+    serialize(&dt_to_iso8601(&1))
   end
 
   def dt_from_iso8601(string), do: DateTime.from_iso8601(string)
@@ -152,7 +143,7 @@ defmodule Exmud.Engine.Graphql.Types do
   The `Binary` scalar type represents non-primitive Elixir data structures.
   """
   scalar :binary, description: "Binary blob" do
-    parse &:erlang.binary_to_term(&1)
-    serialize &:erlang.term_to_binary(&1)
+    parse(&:erlang.binary_to_term(&1))
+    serialize(&:erlang.term_to_binary(&1))
   end
 end

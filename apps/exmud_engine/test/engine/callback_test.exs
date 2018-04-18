@@ -18,10 +18,10 @@ defmodule Exmud.Engine.Test.CallbackTest do
       assert Callback.lookup("foo") == {:error, :no_such_callback}
       assert Callback.registered?(Basic) == true
       assert Callback.lookup(Basic.name()) == {:ok, Basic}
-      assert Enum.any?(Callback.list_registered(), fn(key) -> key == Basic.name() end) == true
+      assert Enum.any?(Callback.list_registered(), fn key -> key == Basic.name() end) == true
       assert Callback.unregister(Basic) == :ok
       assert Callback.registered?(Basic) == false
-      assert Enum.any?(Callback.list_registered(), fn(key) -> key == Basic.name() end) == false
+      assert Enum.any?(Callback.list_registered(), fn key -> key == Basic.name() end) == false
     end
 
     @tag callback: true

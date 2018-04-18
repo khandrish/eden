@@ -48,19 +48,23 @@ defmodule Exmud.Engine.CommandSet do
   import Exmud.Engine.Utils
   require Logger
 
-
   #
   # API
   #
 
-
   @doc """
   Attach a Command Set to an Object.
   """
-  @spec attach(object_id, command_set_name, config) :: :ok | {:error, :no_such_object} | {:error, :already_attached} | {:error, :no_such_command_set}
+  @spec attach(object_id, command_set_name, config) ::
+          :ok
+          | {:error, :no_such_object}
+          | {:error, :already_attached}
+          | {:error, :no_such_command_set}
   def attach(object_id, command_set_name, config \\ nil) do
     with {:ok, _} <- lookup(command_set_name) do
-      record = CommandSet.new(%{object_id: object_id, name: command_set_name, config: pack_term(config)})
+      record =
+        CommandSet.new(%{object_id: object_id, name: command_set_name, config: pack_term(config)})
+
       ObjectUtil.attach(record)
     end
   end
@@ -73,8 +77,7 @@ defmodule Exmud.Engine.CommandSet do
     command_set_names = List.wrap(command_set_names)
 
     query =
-      from command_set in command_set_query(object_id, command_set_names),
-        select: count("*")
+      from(command_set in command_set_query(object_id, command_set_names), select: count("*"))
 
     Repo.one(query) == length(command_set_names)
   end
@@ -87,8 +90,7 @@ defmodule Exmud.Engine.CommandSet do
     command_set_names = List.wrap(command_set_names)
 
     query =
-      from command_set in command_set_query(object_id, command_set_names),
-        select: count("*")
+      from(command_set in command_set_query(object_id, command_set_names), select: count("*"))
 
     Repo.one(query) > 0
   end
@@ -129,16 +131,15 @@ defmodule Exmud.Engine.CommandSet do
 
   @spec command_set_query(object_id, [command_set_name]) :: term
   defp command_set_query(object_id, command_set_names) do
-    from command_set in CommandSet,
-      where: command_set.name in ^command_set_names
-        and command_set.object_id == ^object_id
+    from(
+      command_set in CommandSet,
+      where: command_set.name in ^command_set_names and command_set.object_id == ^object_id
+    )
   end
-
 
   #
   # Manipulation of Command Sets in the Engine.
   #
-
 
   @cache :command_set_cache
 
@@ -160,6 +161,7 @@ defmodule Exmud.Engine.CommandSet do
       {:error, _} ->
         Logger.error("Lookup failed for Command Set registered with name `#{name}`")
         {:error, :no_such_command_set}
+
       result ->
         Logger.info("Lookup succeeded for Command Set registered with name `#{name}`")
         result
@@ -172,7 +174,11 @@ defmodule Exmud.Engine.CommandSet do
   @spec register(callback_module) :: :ok
   def register(callback_module) do
     name = callback_module.name()
-    Logger.info("Registering Command Set with name `#{name}` and module `#{inspect(callback_module)}`")
+
+    Logger.info(
+      "Registering Command Set with name `#{name}` and module `#{inspect(callback_module)}`"
+    )
+
     Cache.set(@cache, callback_module.name(), callback_module)
   end
 

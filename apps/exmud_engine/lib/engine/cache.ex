@@ -24,8 +24,8 @@ defmodule Exmud.Engine.Cache do
     {:ok, stream} = Cachex.stream(cache())
 
     stream
-    |> Stream.filter(fn({{cat, _}, _}) -> cat == category end)
-    |> Stream.map(fn({{_category, key}, _callback}) -> key end)
+    |> Stream.filter(fn {{cat, _}, _} -> cat == category end)
+    |> Stream.map(fn {{_category, key}, _callback} -> key end)
     |> Enum.to_list()
   end
 

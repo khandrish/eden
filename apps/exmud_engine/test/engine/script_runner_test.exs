@@ -34,13 +34,17 @@ defmodule Exmud.Engine.ScriptRunnerTest do
     @tag engine: true
     @tag script_runner: true
     test "with error during init callback", state do
-      {:stop, "badness"} = ScriptRunner.init({state.object_id, ErrorInitializing.name(), ErrorInitializing, "badness"})
+      {:stop, "badness"} =
+        ScriptRunner.init(
+          {state.object_id, ErrorInitializing.name(), ErrorInitializing, "badness"}
+        )
     end
 
     @tag engine: true
     @tag script_runner: true
     test "with error durng start callback", state do
-      {:stop, "badness"} = ScriptRunner.init({state.object_id, ErrorStarting.name(), ErrorStarting, "badness"})
+      {:stop, "badness"} =
+        ScriptRunner.init({state.object_id, ErrorStarting.name(), ErrorStarting, "badness"})
     end
 
     @tag engine: true
@@ -59,7 +63,12 @@ defmodule Exmud.Engine.ScriptRunnerTest do
     @tag engine: true
     @tag script_runner: true
     test "with error while handling message call", state do
-      state = %{state | callback_module: ErrorHandlingMessage, script_name: ErrorHandlingMessage.name()}
+      state = %{
+        state
+        | callback_module: ErrorHandlingMessage,
+          script_name: ErrorHandlingMessage.name()
+      }
+
       {:reply, {:error, "foo"}, _state} = ScriptRunner.handle_call({:message, "foo"}, nil, state)
     end
 
@@ -73,7 +82,13 @@ defmodule Exmud.Engine.ScriptRunnerTest do
     @tag engine: true
     @tag script_runner: true
     test "successfully handling state call", state do
-      state = %{state | callback_module: Idle, script_name: Idle.name(), deserialized_state: "foo"}
+      state = %{
+        state
+        | callback_module: Idle,
+          script_name: Idle.name(),
+          deserialized_state: "foo"
+      }
+
       {:reply, {:ok, "foo"}, _state} = ScriptRunner.handle_call(:state, nil, state)
     end
 

@@ -192,7 +192,7 @@ defmodule Exmud.Engine.MergeSet do
       Enum.sort([merge_set_a, merge_set_b], sort_function)
 
     merge_type = higher_priority_merge_set.merge_type
-    comparison_function = comparison_function || &(&1 == &2)
+    comparison_function = comparison_function || (&(&1 == &2))
     allow_duplicates = higher_priority_merge_set.allow_duplicates
 
     merged_keys =

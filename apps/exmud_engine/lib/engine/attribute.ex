@@ -15,7 +15,6 @@ defmodule Exmud.Engine.Attribute do
   import Exmud.Engine.Utils
   require Logger
 
-
   #
   # Typespecs
   #
@@ -28,12 +27,12 @@ defmodule Exmud.Engine.Attribute do
   @typedoc """
   The name of the Component on which all operations are to take place.
   """
-  @type component_name :: String.t
+  @type component_name :: String.t()
 
   @typedoc """
   The name of the Attribute on which all operations are to take place.
   """
-  @type attribute_name :: String.t
+  @type attribute_name :: String.t()
 
   @typedoc """
   The value belonging to an Attribute.
@@ -53,7 +52,6 @@ defmodule Exmud.Engine.Attribute do
   #
   # API
   #
-
 
   @doc """
   Remove an Attribute from a Component.
@@ -80,10 +78,12 @@ defmodule Exmud.Engine.Attribute do
   complete control over checking an arbitrarily complex data structure.
   """
   @spec equals?(object_id, component_name, attribute_name, comparison_fun | value) :: boolean
-  def equals?(object_id, component_name, attribute_name, comparison_fun) when is_function(comparison_fun) do
+  def equals?(object_id, component_name, attribute_name, comparison_fun)
+      when is_function(comparison_fun) do
     case read(object_id, component_name, attribute_name) do
       {:ok, attribute_value} ->
         comparison_fun.(attribute_value)
+
       _ ->
         false
     end
@@ -91,9 +91,11 @@ defmodule Exmud.Engine.Attribute do
 
   def equals?(object_id, component_name, attribute_name, value) do
     query =
-      from attribute in attribute_query(object_id, component_name, attribute_name),
+      from(
+        attribute in attribute_query(object_id, component_name, attribute_name),
         where: attribute.value == ^pack_term(value),
         select: count("*")
+      )
 
     Repo.one(query) == 1
   end
@@ -106,8 +108,10 @@ defmodule Exmud.Engine.Attribute do
   @spec exists?(object_id, component_name, attribute_name) :: boolean
   def exists?(object_id, component_name, attribute_name) do
     query =
-      from component in attribute_query(object_id, component_name, attribute_name),
+      from(
+        component in attribute_query(object_id, component_name, attribute_name),
         select: count("*")
+      )
 
     Repo.one(query) == 1
   end
@@ -118,23 +122,29 @@ defmodule Exmud.Engine.Attribute do
   This is a destructive write that does not check for the presence of existing Attribute values. Will return an error
   if the Object/Component does not exist, however.
   """
-  @spec put(object_id, component_name, attribute_name, value) :: :ok | {:error, :no_such_component}
+  @spec put(object_id, component_name, attribute_name, value) ::
+          :ok | {:error, :no_such_component}
   def put(object_id, component_name, attribute_name, value) do
     query =
-      from component in Exmud.Engine.Schema.Component,
-        where: component.object_id == ^object_id
-           and component.name == ^component_name
+      from(
+        component in Exmud.Engine.Schema.Component,
+        where: component.object_id == ^object_id and component.name == ^component_name
+      )
 
     wrap_callback_in_transaction(fn ->
       case Repo.one(query) do
         nil ->
           {:error, :no_such_component}
+
         component ->
           new_attribute_params = %{name: attribute_name, value: pack_term(value)}
           assoc = Ecto.build_assoc(component, :attributes, new_attribute_params)
 
           Multi.new()
-          |> Multi.delete_all(:delete_existing_attribute, attribute_query(object_id, component_name, attribute_name))
+          |> Multi.delete_all(
+            :delete_existing_attribute,
+            attribute_query(object_id, component_name, attribute_name)
+          )
           |> Multi.insert(:insert_new_attribute, assoc)
           |> Repo.transaction()
 
@@ -146,7 +156,8 @@ defmodule Exmud.Engine.Attribute do
   @doc """
   Read the value of an Attribute.
   """
-  @spec read(object_id, component_name, attribute_name) :: {:ok, value} | {:error, :no_such_attribute}
+  @spec read(object_id, component_name, attribute_name) ::
+          {:ok, value} | {:error, :no_such_attribute}
   def read(object_id, component_name, attribute_name) do
     case Repo.one(attribute_query(object_id, component_name, attribute_name)) do
       nil -> {:error, :no_such_attribute}
@@ -157,11 +168,14 @@ defmodule Exmud.Engine.Attribute do
   @doc """
   Update an Attribute.
   """
-  @spec update(object_id, component_name, attribute_name, value) :: :ok | {:error, :no_such_attribute}
+  @spec update(object_id, component_name, attribute_name, value) ::
+          :ok | {:error, :no_such_attribute}
   def update(object_id, component_name, attribute_name, value) do
     query =
-      from attribute in attribute_query(object_id, component_name, attribute_name),
+      from(
+        attribute in attribute_query(object_id, component_name, attribute_name),
         update: [set: [value: ^pack_term(value)]]
+      )
 
     case Repo.update_all(query, []) do
       {1, _} -> :ok
@@ -169,17 +183,18 @@ defmodule Exmud.Engine.Attribute do
     end
   end
 
-
   #
   # Private functions
   #
 
   @spec attribute_query(object_id, component_name, attribute_name) :: term
   defp attribute_query(object_id, component_name, attribute_name) do
-    from attribute in Attribute,
+    from(
+      attribute in Attribute,
       inner_join: component in assoc(attribute, :component),
-      where: attribute.name == ^attribute_name
-        and component.name == ^component_name
-        and component.object_id == ^object_id
+      where:
+        attribute.name == ^attribute_name and component.name == ^component_name and
+          component.object_id == ^object_id
+    )
   end
 end

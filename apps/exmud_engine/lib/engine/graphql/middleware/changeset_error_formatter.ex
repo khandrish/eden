@@ -1,5 +1,4 @@
 defmodule Exmud.Engine.Graphql.Middleware.ChangesetErrorFormatter do
-
   def call(%{errors: []} = res, _), do: res
 
   def call(%{errors: errors} = res, _), do: %{res | errors: format_changeset_error(errors)}
@@ -21,13 +20,14 @@ defmodule Exmud.Engine.Graphql.Middleware.ChangesetErrorFormatter do
 
   defp format_changeset(changeset) do
     changeset
-      |> interpolate_errors
-      |> Map.to_list
-      |> Enum.flat_map(fn {field, errors} -> field_errors_to_error(changeset, field, errors) end)
+    |> interpolate_errors
+    |> Map.to_list()
+    |> Enum.flat_map(fn {field, errors} -> field_errors_to_error(changeset, field, errors) end)
   end
 
   def field_errors_to_error(changeset, field, errors) do
     field_name = Atom.to_string(field)
+
     Enum.map(errors, fn error ->
       %{
         message: field_name <> " " <> error,

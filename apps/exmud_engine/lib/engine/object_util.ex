@@ -16,7 +16,7 @@ defmodule Exmud.Engine.ObjectUtil do
 
   This unique string is used for registration in the Engine, and can be used to attach/detach Components.
   """
-  @callback name :: String.t
+  @callback name :: String.t()
 
   @typedoc "The Object being populated with the Component and its data."
   @type object_id :: integer
@@ -47,7 +47,12 @@ defmodule Exmud.Engine.ObjectUtil do
   A transaction wraps both the record insert and the callback function. Should an exception be raused during the
   callback, the transaction will rollback and the response `{:error, :callback_failed}` will be returned.
   """
-  @spec attach(record, callback_function) :: :ok | {:error, :no_such_object} | {:error, :already_attached} | {:error, :callback_failed} | {:error, error}
+  @spec attach(record, callback_function) ::
+          :ok
+          | {:error, :no_such_object}
+          | {:error, :already_attached}
+          | {:error, :callback_failed}
+          | {:error, error}
   def attach(record, callback_function \\ nil) do
     Repo.transaction(fn ->
       record
@@ -67,8 +72,10 @@ defmodule Exmud.Engine.ObjectUtil do
           else
             :ok
           end
+
         {:error, [object_id: _error]} ->
           Repo.rollback(:no_such_object)
+
         {:error, [{_, "has already been taken"}]} = _ ->
           Repo.rollback(:already_attached)
       end

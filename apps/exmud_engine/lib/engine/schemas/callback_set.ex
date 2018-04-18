@@ -2,8 +2,8 @@ defmodule Exmud.Engine.Schema.CallbackSet do
   use Exmud.Common.Schema
 
   schema "callback_set" do
-    field :name, :string
-    belongs_to :object, Exmud.Engine.Schema.Object, foreign_key: :object_id
+    field(:name, :string)
+    belongs_to(:object, Exmud.Engine.Schema.Object, foreign_key: :object_id)
   end
 
   def new(params) do

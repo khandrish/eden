@@ -3,7 +3,7 @@ defmodule Exmud.Engine.Graphql.Schema do
   alias Exmud.Engine.Graphql.Resolver.ObjectResolver
   use Absinthe.Schema
   use Absinthe.Schema.Notation
-  import_types Exmud.Engine.Graphql.Types
+  import_types(Exmud.Engine.Graphql.Types)
 
   def middleware(middleware, _field, %{identifier: :mutation}) do
     middleware ++ [Exmud.Engine.Graphql.Middleware.ChangesetErrorFormatter]
@@ -16,46 +16,41 @@ defmodule Exmud.Engine.Graphql.Schema do
   query do
     @desc "Get an object by ID."
     field :object, type: :object do
-
       @desc "The ID of the object"
-      arg :id, :id
+      arg(:id, :id)
 
-      resolve &ObjectResolver.one/2
+      resolve(&ObjectResolver.one/2)
     end
 
     @desc "Get all objects with a particular key."
     field :objects, type: list_of(:object) do
-
       @desc "The key of the object"
-      arg :key, :string
+      arg(:key, :string)
 
-      resolve &ObjectResolver.many/2
+      resolve(&ObjectResolver.many/2)
     end
 
     @desc "Get a component connected to an object."
     field :component, type: :component do
+      arg(:component, :string)
+      arg(:object_id, :id)
 
-      arg :component, :string
-      arg :object_id, :id
-
-      resolve &ComponentResolver.many/2
+      resolve(&ComponentResolver.many/2)
     end
 
     @desc "Get all components by connected to an object."
     field :components, type: :component do
+      arg(:object_id, :id)
 
-      arg :object_id, :id
-
-      resolve &ComponentResolver.many/2
+      resolve(&ComponentResolver.many/2)
     end
 
     @desc "Get all components connected to an object."
     field :component, type: :component do
+      arg(:object_id, :id)
+      arg(:component, :string)
 
-      arg :object_id, :id
-      arg :component, :string
-
-      resolve &ComponentResolver.many/2
+      resolve(&ComponentResolver.many/2)
     end
   end
 end

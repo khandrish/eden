@@ -2,9 +2,9 @@ defmodule Exmud.Engine.Schema.Tag do
   use Exmud.Common.Schema
 
   schema "tag" do
-    field :tag, :string
-    field :category, :string
-    belongs_to :object, Exmud.Engine.Schema.Object, foreign_key: :object_id
+    field(:tag, :string)
+    field(:category, :string)
+    belongs_to(:object, Exmud.Engine.Schema.Object, foreign_key: :object_id)
   end
 
   def new(params) do

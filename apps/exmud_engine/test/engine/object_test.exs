@@ -67,22 +67,28 @@ defmodule Exmud.Engine.Test.ObjectTest do
       assert CommandSet.register(BasicCommandSet) == :ok
 
       assert Component.attach(object_id1, BasicComponent.name()) == :ok
-      assert Attribute.put(object_id1, BasicComponent.name(), attribute_key, attribute_value) == :ok
+
+      assert Attribute.put(object_id1, BasicComponent.name(), attribute_key, attribute_value) ==
+               :ok
+
       assert Callback.attach(object_id1, callback_key, BasicCallback.name()) == :ok
       assert CommandSet.attach(object_id1, BasicCommandSet.name()) == :ok
       assert Link.forge(object_id1, object_id2, link_type, "foo") == :ok
       assert Tag.attach(object_id1, tag_category, tag) == :ok
 
-      assert Object.query({:and, [
-                                    {:attribute, {BasicComponent.name(), attribute_key}},
-                                    {:component, BasicComponent.name()},
-                                    {:callback, callback_key},
-                                    {:command_set, BasicCommandSet.name()},
-                                    {:link, link_type},
-                                    {:link, {link_type, object_id2}},
-                                    {:link, {link_type, object_id2, "foo"}},
-                                    {:tag, {tag_category, tag}}
-                                 ]}) == {:ok, [object_id1]}
+      assert Object.query(
+               {:and,
+                [
+                  {:attribute, {BasicComponent.name(), attribute_key}},
+                  {:component, BasicComponent.name()},
+                  {:callback, callback_key},
+                  {:command_set, BasicCommandSet.name()},
+                  {:link, link_type},
+                  {:link, {link_type, object_id2}},
+                  {:link, {link_type, object_id2, "foo"}},
+                  {:tag, {tag_category, tag}}
+                ]}
+             ) == {:ok, [object_id1]}
     end
 
     @tag object: true
@@ -101,39 +107,48 @@ defmodule Exmud.Engine.Test.ObjectTest do
       assert CommandSet.register(BasicCommandSet) == :ok
 
       assert Component.attach(object_id, BasicComponent.name()) == :ok
-      assert Attribute.put(object_id, BasicComponent.name(), attribute_key, attribute_value) == :ok
+
+      assert Attribute.put(object_id, BasicComponent.name(), attribute_key, attribute_value) ==
+               :ok
+
       assert Callback.attach(object_id, callback_key, BasicCallback.name()) == :ok
       assert CommandSet.attach(object_id, BasicCommandSet.name()) == :ok
       assert Link.forge(object_id, object_id2, link_type, "foo") == :ok
       assert Tag.attach(object_id, tag_category, tag) == :ok
 
+      assert Object.query(
+               {:and,
+                [
+                  {:attribute, {BasicComponent.name(), attribute_key}},
+                  {:component, BasicComponent.name()},
+                  {:callback, callback_key},
+                  {:command_set, BasicCommandSet.name()},
+                  {:or,
+                   [
+                     {:link, link_type},
+                     {:link, {link_type, object_id2}},
+                     {:link, {link_type, object_id2, "foo"}},
+                     {:tag, {tag_category, tag}}
+                   ]}
+                ]}
+             ) == {:ok, [object_id]}
 
-
-      assert Object.query({:and, [
-                                    {:attribute, {BasicComponent.name(), attribute_key}},
-                                    {:component, BasicComponent.name()},
-                                    {:callback, callback_key},
-                                    {:command_set, BasicCommandSet.name()},
-                                    {:or, [
-                                      {:link, link_type},
-                                      {:link, {link_type, object_id2}},
-                                      {:link, {link_type, object_id2, "foo"}},
-                                      {:tag, {tag_category, tag}}
-                                    ]}
-                                 ]}) == {:ok, [object_id]}
-
-      assert Object.query({:or, [
-                                    {:attribute, {BasicComponent.name(), attribute_key}},
-                                    {:component, BasicComponent.name()},
-                                    {:callback, callback_key},
-                                    {:command_set, BasicCommandSet.name()},
-                                    {:or, [
-                                      {:link, link_type},
-                                      {:link, {link_type, object_id2}},
-                                      {:link, {link_type, object_id2, "foo"}},
-                                      {:tag, {tag_category, tag}}
-                                    ]}
-                                 ]}) == {:ok, [object_id]}
+      assert Object.query(
+               {:or,
+                [
+                  {:attribute, {BasicComponent.name(), attribute_key}},
+                  {:component, BasicComponent.name()},
+                  {:callback, callback_key},
+                  {:command_set, BasicCommandSet.name()},
+                  {:or,
+                   [
+                     {:link, link_type},
+                     {:link, {link_type, object_id2}},
+                     {:link, {link_type, object_id2, "foo"}},
+                     {:tag, {tag_category, tag}}
+                   ]}
+                ]}
+             ) == {:ok, [object_id]}
     end
   end
 

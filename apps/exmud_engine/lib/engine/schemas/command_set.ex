@@ -3,9 +3,9 @@ defmodule Exmud.Engine.Schema.CommandSet do
 
   @derive {Jason.Encoder, except: [:config]}
   schema "command_set" do
-    field :name, :string
-    field :config, :binary
-    belongs_to :object, Exmud.Engine.Schema.Object, foreign_key: :object_id
+    field(:name, :string)
+    field(:config, :binary)
+    belongs_to(:object, Exmud.Engine.Schema.Object, foreign_key: :object_id)
   end
 
   def new(params) do

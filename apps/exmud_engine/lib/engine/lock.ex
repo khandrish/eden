@@ -30,16 +30,13 @@ defmodule Exmud.Engine.Lock do
   Without this Lock, a Player would be unable to puppet their newly created Character.
   """
 
-
   #
   # Behavior definition and default callback setup
   #
 
-
   @doc false
   defmacro __using__(_) do
     quote location: :keep do
-
       @behaviour Exmud.Engine.Lock
 
       @doc false
@@ -48,8 +45,8 @@ defmodule Exmud.Engine.Lock do
       @doc false
       def check(_target_object, _accessing_object, _lock_config), do: false
 
-      defoverridable [name: 0,
-                      check: 3]
+      defoverridable name: 0,
+                     check: 3
     end
   end
 
@@ -59,7 +56,7 @@ defmodule Exmud.Engine.Lock do
   This unique string is used for registration in the Engine, and can be used to attach/detach Locks as well as lookup
   callback modules at runtime.
   """
-  @callback name :: String.t
+  @callback name :: String.t()
 
   @doc """
   Called when a Lock is being checked to determine if an Object has permission.
@@ -73,7 +70,7 @@ defmodule Exmud.Engine.Lock do
   @type object_id :: integer
 
   @typedoc "The type of access being checked for on an Object."
-  @type access_type :: String.t
+  @type access_type :: String.t()
 
   @typedoc "The Object attempting to perform an action."
   @type accessing_object :: object_id
@@ -88,7 +85,7 @@ defmodule Exmud.Engine.Lock do
   @type callback_module :: atom
 
   @typedoc "The name that a callback module is registered under with the Engine."
-  @type lock_name :: String.t
+  @type lock_name :: String.t()
 
   alias Exmud.Engine.Cache
   alias Exmud.Engine.Repo
@@ -98,34 +95,49 @@ defmodule Exmud.Engine.Lock do
   import Exmud.Engine.Utils
   require Logger
 
-
   #
   # Manipulation of Locks on an Object.
   #
-
 
   @doc """
   Attach a Lock to an Object.
 
   Using a transaction, first delete any existing Locks which match the one being added, and add the new one.
   """
-  @spec attach(object_id, access_type, lock_name, lock_config) :: :ok | {:error, :no_such_lock} | {:error, :no_such_object} | {:error, :already_attached}
+  @spec attach(object_id, access_type, lock_name, lock_config) ::
+          :ok | {:error, :no_such_lock} | {:error, :no_such_object} | {:error, :already_attached}
   def attach(object_id, access_type, lock_name, lock_config \\ %{}) do
     case lookup(lock_name) do
       {:ok, _callback_module} ->
-        Lock.new(%{object_id: object_id, access_type: access_type, name: lock_name, config: pack_term(lock_config)})
+        Lock.new(%{
+          object_id: object_id,
+          access_type: access_type,
+          name: lock_name,
+          config: pack_term(lock_config)
+        })
         |> Repo.insert()
         |> normalize_repo_result()
         |> case do
           {:error, [object_id: _error]} ->
-            Logger.error("Attempt to add Lock with access type `#{access_type}` onto non existing object `#{object_id}`")
+            Logger.error(
+              "Attempt to add Lock with access type `#{access_type}` onto non existing object `#{
+                object_id
+              }`"
+            )
+
             {:error, :no_such_object}
+
           {:error, [access_type: _error]} ->
-            Logger.error("Attempt to add Lock with access type `#{access_type}` onto Object `#{object_id}` when it already exists.")
+            Logger.error(
+              "Attempt to add Lock with access type `#{access_type}` onto Object `#{object_id}` when it already exists."
+            )
+
             {:error, :already_attached}
+
           :ok ->
             :ok
         end
+
       error ->
         error
     end
@@ -136,9 +148,7 @@ defmodule Exmud.Engine.Lock do
   """
   @spec attached?(object_id, access_type) :: boolean
   def attached?(object_id, access_type) do
-    query =
-      from lock in lock_query(object_id, access_type),
-        select: count("*")
+    query = from(lock in lock_query(object_id, access_type), select: count("*"))
 
     Repo.one(query) == 1
   end
@@ -149,17 +159,25 @@ defmodule Exmud.Engine.Lock do
   Given an Object id and an access type, the Lock is first retrieved and then the matching callback module is retrieved
   before the callbacks 'check' method is called to perform the actual check.
   """
-  @spec check(object_id, access_type, accessing_object) :: {:ok, boolean} | {:error, :no_such_lock}
+  @spec check(object_id, access_type, accessing_object) ::
+          {:ok, boolean} | {:error, :no_such_lock}
   def check(object_id, access_type, accessing_object) do
     query = lock_query(object_id, access_type)
 
     case Repo.one(query) do
       nil ->
         {:error, :no_such_lock}
+
       lock ->
         case lookup(lock.name) do
           {:ok, callback_module} ->
-            {:ok, apply(callback_module, :check, [object_id, accessing_object, unpack_term(lock.config)])}
+            {:ok,
+             apply(callback_module, :check, [
+               object_id,
+               accessing_object,
+               unpack_term(lock.config)
+             ])}
+
           error ->
             error
         end
@@ -201,11 +219,9 @@ defmodule Exmud.Engine.Lock do
     :ok
   end
 
-
   #
   # Manipulation of Locks in the Engine.
   #
-
 
   @cache :lock_cache
 
@@ -227,6 +243,7 @@ defmodule Exmud.Engine.Lock do
       {:error, _} ->
         Logger.error("Lookup failed for Lock registered with name `#{lock_name}`")
         {:error, :no_such_lock}
+
       result ->
         Logger.info("Lookup succeeded for Lock registered with name `#{lock_name}`")
         result
@@ -238,7 +255,12 @@ defmodule Exmud.Engine.Lock do
   """
   @spec register(callback_module) :: :ok
   def register(callback_module) do
-    Logger.info("Registering Lock with name `#{callback_module.name}` and module `#{inspect(callback_module)}`")
+    Logger.info(
+      "Registering Lock with name `#{callback_module.name}` and module `#{
+        inspect(callback_module)
+      }`"
+    )
+
     Cache.set(@cache, callback_module.name, callback_module)
   end
 
@@ -260,16 +282,12 @@ defmodule Exmud.Engine.Lock do
     Cache.delete(@cache, callback_module.name())
   end
 
-
   #
   # Internal Functions
   #
 
-
   @spec lock_query(object_id, access_type) :: term
   defp lock_query(object_id, access_type) do
-    from lock in Lock,
-      where: lock.object_id == ^object_id
-         and lock.access_type == ^access_type
+    from(lock in Lock, where: lock.object_id == ^object_id and lock.access_type == ^access_type)
   end
 end
