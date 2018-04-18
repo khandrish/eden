@@ -17,6 +17,25 @@ defmodule Exmud.Engine.Test.MergeSetTest do
     end
 
     @tag merge_set: true
+    test "with modifications after create" do
+      ms = MergeSet.new()
+      assert MergeSet.has_key?(ms, "foo") == false
+      ms = MergeSet.add_key(ms, "foo")
+      assert MergeSet.has_key?(ms, "foo") == true
+      ms = MergeSet.remove_key(ms, "foo")
+      assert MergeSet.has_key?(ms, "foo") == false
+      ms = MergeSet.set_priority(ms, 2)
+      ms = MergeSet.set_merge_type(ms, :intersect)
+      ms = MergeSet.set_allow_duplicates(ms, true)
+      assert ms == %{
+              allow_duplicates: true,
+              keys: [],
+              merge_type: :intersect,
+              priority: 2
+            }
+    end
+
+    @tag merge_set: true
     test "creation with values" do
       assert MergeSet.new(keys: ["foo"], merge_type: :intersect) == %{
               allow_duplicates: false,
