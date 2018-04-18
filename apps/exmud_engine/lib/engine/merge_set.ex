@@ -157,11 +157,7 @@ defmodule Exmud.Engine.MergeSet do
   end
 
   defp validate([{:keys, value} | rest]) do
-    if is_list(value) and !String.valid?(value) do
-      validate(rest)
-    else
-      raise ArgumentError, "keys was not of the expected type"
-    end
+    validate(rest)
   end
 
   defp validate([{:priority, value} | rest]) do

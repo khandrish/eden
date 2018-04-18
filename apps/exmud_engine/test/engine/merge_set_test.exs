@@ -53,13 +53,6 @@ defmodule Exmud.Engine.Test.MergeSetTest do
     end
 
     @tag merge_set: true
-    test "raises on bad keys value" do
-      assert_raise ArgumentError, "keys was not of the expected type", fn ->
-        MergeSet.new(keys: "foo")
-      end
-    end
-
-    @tag merge_set: true
     test "raises on bad merge_type value" do
       assert_raise ArgumentError, "merge_type was not of the expected type", fn ->
         MergeSet.new(merge_type: :ksadjlsdj)
