@@ -47,6 +47,63 @@ defmodule Exmud.Engine.MergeSet do
   @typedoc "The configuration value for the MergeSet."
   @type value :: term
 
+  @typedoc "The priority for a MergeSet."
+  @type priority :: integer
+
+  @typedoc "The type of merge to perform when merging the MergeSet."
+  @type merge_type :: atom
+
+  @typedoc "Whether or not to allow duplicate keys when merging the MergeSet."
+  @type allow_duplicates :: boolean
+
+  @doc """
+  Add a key to the MergeSet.
+  """
+  @spec add_key(merge_set, key) :: merge_set
+  def add_key(merge_set, key) do
+    %{merge_set | keys: [key | merge_set.keys]}
+  end
+
+  @doc """
+  Add a key to the MergeSet.
+  """
+  @spec has_key?(merge_set, key) :: boolean
+  def has_key?(merge_set, key) do
+    Enum.any?(merge_set.keys, &(&1 == key))
+  end
+
+  @doc """
+  Add a key to the MergeSet.
+  """
+  @spec remove_key(merge_set, key) :: merge_set
+  def remove_key(merge_set, key) do
+    %{merge_set | keys: Enum.filter(merge_set.keys, &(&1 != key))}
+  end
+
+  @doc """
+  Add a key to the MergeSet.
+  """
+  @spec set_allow_duplicates(merge_set, allow_duplicates) :: merge_set
+  def set_allow_duplicates(merge_set, allow_duplicates) do
+    %{merge_set | allow_duplicates: allow_duplicates}
+  end
+
+  @doc """
+  Add a key to the MergeSet.
+  """
+  @spec set_merge_type(merge_set, merge_type) :: merge_set
+  def set_merge_type(merge_set, merge_type) do
+    %{merge_set | merge_type: merge_type}
+  end
+
+  @doc """
+  Add a key to the MergeSet.
+  """
+  @spec set_priority(merge_set, priority) :: merge_set
+  def set_priority(merge_set, priority) do
+    %{merge_set | priority: priority}
+  end
+
   @doc """
   Create a new MergeSet.
 
@@ -88,6 +145,7 @@ defmodule Exmud.Engine.MergeSet do
     end
   end
 
+  @spec validate(options) :: :ok
   defp validate([]), do: :ok
 
   defp validate([{:allow_duplicates, value} | rest]) do
