@@ -170,7 +170,7 @@ defmodule Exmud.Engine.CommandSet do
         |> Stream.map(fn {name, config} ->
           case lookup(name) do
             {:ok, callback_module} ->
-              build_merge_set(callback_module, config)
+              build_merge_set(callback_module, unpack_term(config))
             _ ->
               Logger.error("Command Set '#{name}' found attached to Object '#{object_id}' with no corresponding registered Command Set")
               nil
