@@ -2,15 +2,17 @@ defmodule Exmud.Engine.MergeSet do
   @moduledoc """
   A MergeSet is a set of Keys and some additional metadata configuring how two sets should be merged together.
 
-  As in all cases of merging order does matter when merging MergeSets together, but the addition of the merge type and
-  priority impact the final product of a merge. In the case of priority, a MergeSet with a higher priority will take
-  precedence over one with a lower, otherwise if two MergeSets have the same priority the first one will be assumed to
-  have a higher priority.
+  As in all cases of merging order does matter when merging MergeSets together, but the addition of the merge type,
+  priority, and overrides impact the final product of a merge. In the case of priority, a MergeSet with a higher
+  priority will take precedence over one with a lower, otherwise if two MergeSets have the same priority the first one
+  will be assumed to have a higher priority.
 
-  Once priority has been determined, the merge type from the higher priority merge set is selected and that merge type
-  is used to perform the actual merge. Except for the list of keys, the final MergeSet created from the other two will
-  take all of its properties from the higher priority MergeSet.
+  Once priority has been determined, the merge type from the higher priority MergeSet is selected and that merge type
+  is used to perform the actual merge. If there is a merge type override in the higher priority MergeSet which matches
+  the name of the lower priority MergeSet, that merge type will be used instead.
 
+  The final MergeSet created from the merger will take all of its properties, the keys being the exception, from the
+  higher priority MergeSet.
 
   There are four different types of merges possible:
     Union - All non-duplicate keys from both MergeSets end up in the final MergeSet. The only merge type for which
@@ -18,13 +20,15 @@ defmodule Exmud.Engine.MergeSet do
 
             Example: ["foo", "bar"] + ["foobar", "barfoo"] == ["foo", "bar", "foobar", "barfoo"]
 
-    Intersect - Only keys which exist in both MergeSets end up in the final MergeSet.
+    Intersect - Only keys which exist in both MergeSets end up in the final MergeSet. The key chosen will be from they
+                higher priority MergeSet.
             Example: ["foo", "bar"] + ["foo", "foobar", "barfoo"] == ["foo"]
 
     Replace - The higher priority keys replace the others, no matter if keys match or not.
             Example: ["foo", "bar"] + ["foobar", "barfoo"] == ["foo", "bar"]
 
-    Remove - The higher priority keys replace the other, however any intersecting keys are first removed.
+    Remove - The higher priority keys replace the others, however any intersecting keys are first removed from the
+             higher priority MergeSet.
             Example: ["foo", "bar", "foobar"] + ["foobar", "barfoo"] == ["foo", "bar"]
   """
 
@@ -42,7 +46,7 @@ defmodule Exmud.Engine.MergeSet do
   @type option :: {key, value}
 
   @typedoc "One of the attributes of the MergeSet to configure on creation."
-  @type key :: :allow_duplicates | :keys | :merge_type | :priority
+  @type key :: :allow_duplicates | :keys | :merge_type | :priority | :name
 
   @typedoc "The configuration value for the MergeSet."
   @type value :: term
@@ -55,6 +59,9 @@ defmodule Exmud.Engine.MergeSet do
 
   @typedoc "Whether or not to allow duplicate keys when merging the MergeSet."
   @type allow_duplicates :: boolean
+
+  @typedoc "The name of the MergeSet. Primarily used to check for overrides."
+  @type name :: String.t()
 
   @doc """
   Add a key to the MergeSet.
@@ -105,7 +112,31 @@ defmodule Exmud.Engine.MergeSet do
   end
 
   @doc """
-  Create a new MergeSet.
+  Add an override to the MergeSet.
+  """
+  @spec add_override(merge_set, name, merge_type) :: merge_set
+  def add_override(merge_set, name, merge_type) do
+    %{merge_set | overrides: Map.put(merge_set.overrides, name, merge_type)}
+  end
+
+  @doc """
+  Remove an override to the MergeSet.
+  """
+  @spec remove_override(merge_set, name, merge_type) :: merge_set
+  def remove_override(merge_set, name, merge_type) do
+    %{merge_set | overrides: Map.delete(merge_set.overrides, name, merge_type)}
+  end
+
+  @doc """
+  Remove an override to the MergeSet.
+  """
+  @spec has_override?(merge_set, name) :: boolean
+  def has_override?(merge_set, name) do
+    %{merge_set | overrides: Map.has_key?(merge_set.overrides, name)}
+  end
+
+  @doc """
+  Create a new MergeSet. Must provide a name.
 
   Any of the attributes given in the examples below can be set, however 'allow_duplicates' is only used when the
   'merge_type' is ':union' and ignored in all other cases.
@@ -114,20 +145,24 @@ defmodule Exmud.Engine.MergeSet do
 
   ## Examples
 
-      iex> MergeSet.new
+      iex> MergeSet.new(name: "foo")
       %{
         allow_duplicates: false,
         keys: [],
         merge_type: :union,
-        priority: 1
+        priority: 1,
+        name: "foo",
+        overrides: %{}
       }
 
-      iex> MergeSet.new(priority: 5, merge_type: :intersect)
+      iex> MergeSet.new(name: "foo", priority: 5, merge_type: :intersect)
       %{
         allow_duplicates: false,
         keys: [],
         merge_type: :intersect,
-        priority: 5
+        priority: 5,
+        name: "foo",
+        overrides: %{}
       }
 
   """
@@ -135,45 +170,14 @@ defmodule Exmud.Engine.MergeSet do
     allow_duplicates: false,
     keys: [],
     priority: 1,
-    merge_type: :union
+    merge_type: :union,
+    name: nil,
+    overrides: %{}
   ]
   @spec new(options) :: merge_set
   def new(options \\ []) do
-    with options <- Keyword.merge(@default_options, options),
-         :ok <- validate(options) do
-      Map.new(options)
-    end
-  end
-
-  @spec validate(options) :: :ok
-  defp validate([]), do: :ok
-
-  defp validate([{:allow_duplicates, value} | rest]) do
-    if is_boolean(value) do
-      validate(rest)
-    else
-      raise ArgumentError, "allow_duplicates was not of the expected type"
-    end
-  end
-
-  defp validate([{:keys, value} | rest]) do
-    validate(rest)
-  end
-
-  defp validate([{:priority, value} | rest]) do
-    if is_integer(value) do
-      validate(rest)
-    else
-      raise ArgumentError, "priority was not of the expected type"
-    end
-  end
-
-  defp validate([{:merge_type, value} | rest]) do
-    if value in [:union, :intersect, :remove, :replace] do
-      validate(rest)
-    else
-      raise ArgumentError, "merge_type was not of the expected type"
-    end
+    Keyword.merge(@default_options, options)
+    |> Map.new()
   end
 
   @doc """

@@ -7,12 +7,45 @@ defmodule Exmud.Engine.CommandSet do
   @doc false
   defmacro __using__(_) do
     quote location: :keep do
+      alias Exmud.Engine.MergeSet
       @behaviour Exmud.Engine.CommandSet
 
       @doc false
       def name, do: Atom.to_string(__MODULE__)
 
-      defoverridable name: 0
+
+      @doc false
+      def commands(_config), do: []
+
+      @doc false
+      def merge_priority(_config), do: 1
+
+      @doc false
+      def merge_type(_config), do: :union
+
+      @doc false
+      def merge_keys(config), do: commands(config)
+
+      @doc false
+      def merge_overrides(_config), do: %{}
+
+      @doc false
+      def merge_duplicates(_config), do: false
+
+      @doc false
+      def merge_name(_config), do: name()
+
+      @doc false
+      def merge_function(_config), do: &(&1.name == &2.name)
+
+      defoverridable merge_priority: 1,
+                     merge_type: 1,
+                     name: 0,
+                     merge_keys: 1,
+                     merge_overrides: 1,
+                     merge_duplicates: 1,
+                     merge_name: 1,
+                     merge_function: 1
     end
   end
 
@@ -20,6 +53,11 @@ defmodule Exmud.Engine.CommandSet do
   The name of the Script.
   """
   @callback name :: String.t()
+
+  @doc """
+  The function used to compare one key to another to determine equality.
+  """
+  @callback merge_function(key, key) :: boolean
 
   @typedoc "Configuration passed through to a callback module."
   @type config :: term
@@ -32,6 +70,9 @@ defmodule Exmud.Engine.CommandSet do
 
   @typedoc "The name of the Command Set as registered with the Engine."
   @type name :: String.t()
+
+  @typedoc "A key to be merged."
+  @type key :: term
 
   @typedoc "The callback_module that is the implementation of the Command Set logic."
   @type callback_module :: atom
