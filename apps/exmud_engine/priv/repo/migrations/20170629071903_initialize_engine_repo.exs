@@ -43,6 +43,16 @@ defmodule Exmud.DB.Repo.EngineRepo.Migrations.InitializeEngineRepo do
     create index(:callback, [:key])
     create unique_index(:callback, [:object_id, :key])
 
+    create table(:callback_set) do
+      add :object_id, references(:object, [on_delete: :delete_all])
+      add :name, :string
+      add :config, :binary
+
+      timestamps()
+    end
+    create index(:callback_set, [:object_id])
+    create unique_index(:callback_set, [:name, :object_id])
+
     create table(:command_set) do
       add :object_id, references(:object, [on_delete: :delete_all])
       add :name, :string

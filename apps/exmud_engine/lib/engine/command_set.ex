@@ -56,7 +56,7 @@ defmodule Exmud.Engine.CommandSet do
   @doc """
   The function used to compare one key to another to determine equality when being merged.
   """
-  @callback merge_function(key, key) :: boolean
+  @callback merge_function(config) :: function
 
   @doc """
   The merge type to use when being merged, unless an override matches in which case that is used instead.
@@ -177,7 +177,7 @@ defmodule Exmud.Engine.CommandSet do
           end
         end)
         |> Stream.reject(&(&1 == nil))
-        |> Enum.sort(&(&1.priority >= &2.priority))
+        |> Enum.sort(&(&1.priority < &2.priority))
         |> Enum.reduce(MergeSet.new(), fn (higher_priority_merge_set, lower_priority_merge_set) ->
           MergeSet.merge(higher_priority_merge_set, lower_priority_merge_set)
         end)

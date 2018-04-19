@@ -84,6 +84,13 @@ defmodule Exmud.Engine.Test.CommandSetTest do
       assert CommandSet.attach(object_id, Basic.name()) == :ok
       assert CommandSet.build_active_command_list(object_id) == ["foo", "farboo"]
     end
+
+    @tag command_set: true
+    test "with building a command list when CommandSet has been unregistered", %{object_id: object_id} = _context do
+      assert CommandSet.attach(object_id, Replace.name()) == :ok
+      assert CommandSet.unregister(Replace) == :ok
+      assert CommandSet.build_active_command_list(object_id) == []
+    end
   end
 
   defp create_new_object(_context) do

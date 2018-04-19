@@ -217,7 +217,7 @@ defmodule Exmud.Engine.MergeSet do
   defp sort(nil, nil), do: true
   defp sort(nil, _priority_b), do: false
   defp sort(_priority_a, nil), do: true
-  defp sort(priority_a, priority_b), do: priority_a >= priority_b
+  defp sort(priority_a, priority_b), do: priority_a < priority_b
 
   @spec merge_keys(key, merge_set, merge_set, comparison_function, allow_duplicates :: boolean) ::
           [term]
