@@ -1,5 +1,4 @@
 defmodule Exmud.Engine.Test.CommandSetTest do
-  alias Ecto.UUID
   alias Exmud.Engine.CommandSet
   alias Exmud.Engine.Object
   alias Exmud.Engine.Repo

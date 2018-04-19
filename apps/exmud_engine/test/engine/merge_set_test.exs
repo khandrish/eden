@@ -1,5 +1,4 @@
 defmodule Exmud.Engine.Test.MergeSetTest do
-  alias Exmud.Engine.Object
   alias Exmud.Engine.MergeSet
   require Logger
   use ExUnit.Case, async: true
@@ -11,7 +10,9 @@ defmodule Exmud.Engine.Test.MergeSetTest do
                allow_duplicates: false,
                keys: [],
                merge_type: :union,
-               priority: 1
+               priority: 1,
+               name: nil,
+               overrides: %{}
              }
     end
 
@@ -31,7 +32,9 @@ defmodule Exmud.Engine.Test.MergeSetTest do
                allow_duplicates: true,
                keys: [],
                merge_type: :intersect,
-               priority: 2
+               priority: 2,
+               name: nil,
+               overrides: %{}
              }
     end
 
@@ -41,29 +44,10 @@ defmodule Exmud.Engine.Test.MergeSetTest do
                allow_duplicates: false,
                keys: ["foo"],
                merge_type: :intersect,
-               priority: 1
+               priority: 1,
+               name: nil,
+               overrides: %{}
              }
-    end
-
-    @tag merge_set: true
-    test "raises on bad allow_duplicates value" do
-      assert_raise ArgumentError, "allow_duplicates was not of the expected type", fn ->
-        MergeSet.new(allow_duplicates: "foo")
-      end
-    end
-
-    @tag merge_set: true
-    test "raises on bad merge_type value" do
-      assert_raise ArgumentError, "merge_type was not of the expected type", fn ->
-        MergeSet.new(merge_type: :ksadjlsdj)
-      end
-    end
-
-    @tag merge_set: true
-    test "raises on bad priority value" do
-      assert_raise ArgumentError, "priority was not of the expected type", fn ->
-        MergeSet.new(priority: "foo")
-      end
     end
 
     @tag merge_set: true
@@ -107,6 +91,20 @@ defmodule Exmud.Engine.Test.MergeSetTest do
       ms3 = MergeSet.merge(ms1, ms2)
       assert length(ms3.keys) == 2
       assert "foo" in ms3.keys and "foobar" in ms3.keys
+    end
+
+    @tag merge_set: true
+    test "with overrides" do
+      ms1 = MergeSet.new(keys: ["foo"], overrides: %{"foo" => :replace}, merge_type: :union)
+      assert MergeSet.has_override?(ms1, "foo")
+      assert MergeSet.has_override?(ms1, "foobar") == false
+      ms1 = MergeSet.add_override(ms1, "foobar", :intersect)
+      assert MergeSet.has_override?(ms1, "foobar") == true
+      ms1 = MergeSet.remove_override(ms1, "foobar")
+      ms2 = MergeSet.new(keys: ["bar"], name: "foo")
+      ms3 = MergeSet.merge(ms1, ms2)
+      assert length(ms3.keys) == 1
+      assert "foo" in ms3.keys
     end
   end
 end

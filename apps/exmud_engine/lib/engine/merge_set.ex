@@ -122,9 +122,9 @@ defmodule Exmud.Engine.MergeSet do
   @doc """
   Remove an override to the MergeSet.
   """
-  @spec remove_override(merge_set, name, merge_type) :: merge_set
-  def remove_override(merge_set, name, merge_type) do
-    %{merge_set | overrides: Map.delete(merge_set.overrides, name, merge_type)}
+  @spec remove_override(merge_set, name) :: merge_set
+  def remove_override(merge_set, name) do
+    %{merge_set | overrides: Map.delete(merge_set.overrides, name)}
   end
 
   @doc """
@@ -132,7 +132,7 @@ defmodule Exmud.Engine.MergeSet do
   """
   @spec has_override?(merge_set, name) :: boolean
   def has_override?(merge_set, name) do
-    %{merge_set | overrides: Map.has_key?(merge_set.overrides, name)}
+    Map.has_key?(merge_set.overrides, name)
   end
 
   @doc """
@@ -191,7 +191,13 @@ defmodule Exmud.Engine.MergeSet do
     [higher_priority_merge_set, lower_priority_merge_set] =
       Enum.sort([merge_set_a, merge_set_b], sort_function)
 
-    merge_type = higher_priority_merge_set.merge_type
+    merge_type =
+      if Map.has_key?(higher_priority_merge_set.overrides, lower_priority_merge_set.name) do
+        higher_priority_merge_set.overrides[lower_priority_merge_set.name]
+      else
+        higher_priority_merge_set.merge_type
+      end
+
     comparison_function = comparison_function || (&(&1 == &2))
     allow_duplicates = higher_priority_merge_set.allow_duplicates
 

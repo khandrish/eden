@@ -55,9 +55,36 @@ defmodule Exmud.Engine.CommandSet do
   @callback name :: String.t()
 
   @doc """
-  The function used to compare one key to another to determine equality.
+  The function used to compare one key to another to determine equality when being merged.
   """
   @callback merge_function(key, key) :: boolean
+
+  @doc """
+  The merge type to use when being merged, unless an override matches in which case that is used instead.
+  Default to ':union'
+  """
+  @callback merge_type(config) :: merge_type
+
+  @doc """
+  The overrides to check against when determining merge_type. If any match the name of a lower priority CommandSet, the
+  specified merge type will be used instead of what is returned by 'merge_type/1'
+  """
+  @callback merge_overrides(config) :: merge_type
+
+  @doc """
+  The keys to be merged.
+  """
+  @callback merge_keys(config) :: [key]
+
+  @doc """
+  The name to use when checking for overrides. Defaults to the name of the CommandSet as provided by 'name/1'.
+  """
+  @callback merge_name(config) :: String.t()
+
+  @doc """
+  The priority of the CommandSet when being merged. Default is 1.
+  """
+  @callback merge_priority(config) :: integer
 
   @typedoc "Configuration passed through to a callback module."
   @type config :: term
@@ -76,6 +103,9 @@ defmodule Exmud.Engine.CommandSet do
 
   @typedoc "The callback_module that is the implementation of the Command Set logic."
   @type callback_module :: atom
+
+  @typedoc "One of a finite set of types of merges that can take place."
+  @type merge_type :: :union | :intersect | :remove | :replace
 
   @typedoc "The name of the Command Set as registered with the Engine."
   @type command_set_name :: String.t()
