@@ -47,6 +47,8 @@ defmodule Exmud.DB.Repo.EngineRepo.Migrations.InitializeEngineRepo do
       add :object_id, references(:object, [on_delete: :delete_all])
       add :name, :string
       add :config, :binary
+
+      timestamps()
     end
     create index(:command_set, [:object_id])
     create unique_index(:command_set, [:name, :object_id])

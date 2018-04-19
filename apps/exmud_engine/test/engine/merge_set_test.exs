@@ -10,7 +10,7 @@ defmodule Exmud.Engine.Test.MergeSetTest do
                allow_duplicates: false,
                keys: [],
                merge_type: :union,
-               priority: 1,
+               priority: nil,
                name: nil,
                overrides: %{}
              }
@@ -44,7 +44,7 @@ defmodule Exmud.Engine.Test.MergeSetTest do
                allow_duplicates: false,
                keys: ["foo"],
                merge_type: :intersect,
-               priority: 1,
+               priority: nil,
                name: nil,
                overrides: %{}
              }

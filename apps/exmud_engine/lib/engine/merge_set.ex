@@ -169,7 +169,7 @@ defmodule Exmud.Engine.MergeSet do
   @default_options [
     allow_duplicates: false,
     keys: [],
-    priority: 1,
+    priority: nil,
     merge_type: :union,
     name: nil,
     overrides: %{}
@@ -186,7 +186,7 @@ defmodule Exmud.Engine.MergeSet do
   """
   @spec merge(merge_set, merge_set, comparison_function) :: merge_set
   def merge(merge_set_a, merge_set_b, comparison_function \\ nil) do
-    sort_function = &(&1.priority >= &2.priority)
+    sort_function = &(sort(&1.priority, &2.priority))
 
     [higher_priority_merge_set, lower_priority_merge_set] =
       Enum.sort([merge_set_a, merge_set_b], sort_function)
@@ -212,6 +212,12 @@ defmodule Exmud.Engine.MergeSet do
 
     %{merge_set_a | keys: merged_keys}
   end
+
+  @spec sort(priority | nil, priority | nil) :: boolean
+  defp sort(nil, nil), do: true
+  defp sort(nil, _priority_b), do: false
+  defp sort(_priority_a, nil), do: true
+  defp sort(priority_a, priority_b), do: priority_a >= priority_b
 
   @spec merge_keys(key, merge_set, merge_set, comparison_function, allow_duplicates :: boolean) ::
           [term]

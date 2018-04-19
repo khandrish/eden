@@ -6,6 +6,8 @@ defmodule Exmud.Engine.Schema.CommandSet do
     field(:name, :string)
     field(:config, :binary)
     belongs_to(:object, Exmud.Engine.Schema.Object, foreign_key: :object_id)
+
+    timestamps()
   end
 
   def new(params) do
