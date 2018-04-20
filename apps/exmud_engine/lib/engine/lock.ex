@@ -40,7 +40,7 @@ defmodule Exmud.Engine.Lock do
       @behaviour Exmud.Engine.Lock
 
       @doc false
-      def name, do: Atom.to_string(__MODULE__)
+      def name, do: List.last(String.split(Atom.to_string(__MODULE__), "."))
 
       @doc false
       def check(_target_object, _accessing_object, _lock_config), do: false
