@@ -6,7 +6,7 @@ defmodule Exmud.Common.Mixfile do
       # Standard arguments
       app: :exmud_common,
       deps: deps(),
-      elixir: "~> 1.5",
+      elixir: "~> 1.6.1",
       elixirc_paths: elixirc_paths(Mix.env),
       version: "0.1.0",
 
@@ -18,7 +18,11 @@ defmodule Exmud.Common.Mixfile do
       lockfile: "../../mix.lock",
 
       # Run arguments
-      preferred_cli_env: ["coveralls": :test, "coveralls.detail": :test, "coveralls.post": :test, "coveralls.html": :test],
+      preferred_cli_env: [
+        "coveralls": :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test],
       start_permanent: Mix.env == :prod,
       test_coverage: [tool: ExCoveralls]
     ]
