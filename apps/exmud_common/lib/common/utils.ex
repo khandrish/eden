@@ -9,7 +9,7 @@ defmodule Exmud.Common.Utils do
   def normalize_ecto_errors(errors), do: Enum.map(errors, fn({key, {error, _}}) -> {key, error} end)
 
   def normalize_multi_result({:ok, _results}), do: :ok
-  def normalize_multi_result({:ok, results}, desired_result), do: {:ok, results[desired_result]}
+  def normalize_multi_result({:ok, results}, desired_result), do: {:ok, results[desired_result] || desired_result}
 
   def normalize_multi_result({:error, _, %Ecto.Changeset{} = changeset, _}, _) do
     {:error, normalize_ecto_errors(changeset.errors)}
@@ -25,6 +25,9 @@ defmodule Exmud.Common.Utils do
 
   def normalize_repo_result({:ok, _}, desired_result), do: {:ok, desired_result}
   def normalize_repo_result({:error, changeset}, _), do: {:error, normalize_ecto_errors(changeset.errors)}
+
+  def normalize_insert_result({:ok, record}), do: {:ok, record.id}
+  def normalize_insert_result({:error, changeset}), do: {:error, normalize_ecto_errors(changeset.errors)}
 
   def via(registry, key), do: {:via, Registry, {registry, key}}
 end
