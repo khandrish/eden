@@ -10,6 +10,7 @@ defmodule Exmud.Engine.Utils do
 
   def engine_cfg(key), do: cfg(:exmud_engine, key)
 
+  # Check to see if the gzip header is present, and if it is gunzip first.
   def unpack_term(<<31::size(8), 139::size(8), _rest::binary>> = state),
     do: :erlang.binary_to_term(:zlib.gunzip(state))
 
