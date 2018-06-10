@@ -25,13 +25,13 @@ defmodule Exmud.DB.Repo.EngineRepo.Migrations.InitializeEngineRepo do
     create unique_index(:component, [:object_id, :name])
 
     create table(:attribute) do
-      add :name, :string
+      add :key, :string
       add :component_id, references(:component, [on_delete: :delete_all])
       add :value, :binary
     end
-    create index(:attribute, [:name])
+    create index(:attribute, [:key])
     create index(:attribute, [:component_id])
-    create unique_index(:attribute, [:name, :component_id])
+    create unique_index(:attribute, [:key, :component_id])
 
     create table(:callback) do
       add :object_id, references(:object, [on_delete: :delete_all])
@@ -55,13 +55,15 @@ defmodule Exmud.DB.Repo.EngineRepo.Migrations.InitializeEngineRepo do
 
     create table(:command_set) do
       add :object_id, references(:object, [on_delete: :delete_all])
-      add :name, :string
+      add :callback_module, :string
       add :config, :binary
+      add :visibility, :string
 
       timestamps()
     end
     create index(:command_set, [:object_id])
-    create unique_index(:command_set, [:name, :object_id])
+    create index(:command_set, [:visibility])
+    create unique_index(:command_set, [:callback_module, :object_id])
 
     create table(:lock) do
       add :object_id, references(:object, [on_delete: :delete_all])
