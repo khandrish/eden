@@ -11,9 +11,9 @@ defmodule Exmud.Engine.Utils do
   def engine_cfg(key), do: cfg(:exmud_engine, key)
 
   def unpack_term(<<31::size(8), 139::size(8), _rest::binary>> = state),
-    do: deserialize(:zlib.gunzip(state))
+    do: :erlang.binary_to_term(:zlib.gunzip(state))
 
-  def unpack_term(state), do: deserialize(state)
+  def unpack_term(state), do: :erlang.binary_to_term(state)
 
   @compression_threshold_bytes cfg(:exmud_engine, :byte_size_to_compress)
   def pack_term(state) do
