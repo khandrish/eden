@@ -30,9 +30,9 @@ defmodule Exmud.Engine.Attribute do
   @type component_name :: String.t()
 
   @typedoc """
-  The name of the Attribute on which all operations are to take place.
+  The key of the Attribute on which all operations are to take place.
   """
-  @type attribute_name :: String.t()
+  @type attribute_key :: String.t()
 
   @typedoc """
   The value belonging to an Attribute.
@@ -56,9 +56,9 @@ defmodule Exmud.Engine.Attribute do
   @doc """
   Remove an Attribute from a Component.
   """
-  @spec delete(object_id, component_name, attribute_name) :: :ok | {:error, :no_such_attribute}
-  def delete(object_id, component_name, attribute_name) do
-    attribute_query(object_id, component_name, attribute_name)
+  @spec delete(object_id, component_name, attribute_key) :: :ok | {:error, :no_such_attribute}
+  def delete(object_id, component_name, attribute_key) do
+    attribute_query(object_id, component_name, attribute_key)
     |> Repo.delete_all()
     |> case do
       {1, _} -> :ok
@@ -77,10 +77,10 @@ defmodule Exmud.Engine.Attribute do
   Since the comparison is done client side using the method in this way is less efficient but more powerful as there is
   complete control over checking an arbitrarily complex data structure.
   """
-  @spec equals?(object_id, component_name, attribute_name, comparison_fun | value) :: boolean
-  def equals?(object_id, component_name, attribute_name, comparison_fun)
+  @spec equals?(object_id, component_name, attribute_key, comparison_fun | value) :: boolean
+  def equals?(object_id, component_name, attribute_key, comparison_fun)
       when is_function(comparison_fun) do
-    case read(object_id, component_name, attribute_name) do
+    case read(object_id, component_name, attribute_key) do
       {:ok, attribute_value} ->
         comparison_fun.(attribute_value)
 
@@ -89,10 +89,10 @@ defmodule Exmud.Engine.Attribute do
     end
   end
 
-  def equals?(object_id, component_name, attribute_name, value) do
+  def equals?(object_id, component_name, attribute_key, value) do
     query =
       from(
-        attribute in attribute_query(object_id, component_name, attribute_name),
+        attribute in attribute_query(object_id, component_name, attribute_key),
         where: attribute.value == ^pack_term(value),
         select: count("*")
       )
@@ -105,11 +105,11 @@ defmodule Exmud.Engine.Attribute do
 
   Will return `false` if the Object/Component does not exist instead of an error.
   """
-  @spec exists?(object_id, component_name, attribute_name) :: boolean
-  def exists?(object_id, component_name, attribute_name) do
+  @spec exists?(object_id, component_name, attribute_key) :: boolean
+  def exists?(object_id, component_name, attribute_key) do
     query =
       from(
-        component in attribute_query(object_id, component_name, attribute_name),
+        component in attribute_query(object_id, component_name, attribute_key),
         select: count("*")
       )
 
@@ -122,9 +122,9 @@ defmodule Exmud.Engine.Attribute do
   This is a destructive write that does not check for the presence of existing Attribute values. Will return an error
   if the Object/Component does not exist, however.
   """
-  @spec put(object_id, component_name, attribute_name, value) ::
+  @spec put(object_id, component_name, attribute_key, value) ::
           :ok | {:error, :no_such_component}
-  def put(object_id, component_name, attribute_name, value) do
+  def put(object_id, component_name, attribute_key, value) do
     query =
       from(
         component in Exmud.Engine.Schema.Component,
@@ -137,13 +137,13 @@ defmodule Exmud.Engine.Attribute do
           {:error, :no_such_component}
 
         component ->
-          new_attribute_params = %{name: attribute_name, value: pack_term(value)}
+          new_attribute_params = %{name: attribute_key, value: pack_term(value)}
           assoc = Ecto.build_assoc(component, :attributes, new_attribute_params)
 
           Multi.new()
           |> Multi.delete_all(
             :delete_existing_attribute,
-            attribute_query(object_id, component_name, attribute_name)
+            attribute_query(object_id, component_name, attribute_key)
           )
           |> Multi.insert(:insert_new_attribute, assoc)
           |> Repo.transaction()
@@ -156,10 +156,10 @@ defmodule Exmud.Engine.Attribute do
   @doc """
   Read the value of an Attribute.
   """
-  @spec read(object_id, component_name, attribute_name) ::
+  @spec read(object_id, component_name, attribute_key) ::
           {:ok, value} | {:error, :no_such_attribute}
-  def read(object_id, component_name, attribute_name) do
-    case Repo.one(attribute_query(object_id, component_name, attribute_name)) do
+  def read(object_id, component_name, attribute_key) do
+    case Repo.one(attribute_query(object_id, component_name, attribute_key)) do
       nil -> {:error, :no_such_attribute}
       attribute_value -> {:ok, unpack_term(attribute_value.value)}
     end
@@ -168,12 +168,12 @@ defmodule Exmud.Engine.Attribute do
   @doc """
   Update an Attribute.
   """
-  @spec update(object_id, component_name, attribute_name, value) ::
+  @spec update(object_id, component_name, attribute_key, value) ::
           :ok | {:error, :no_such_attribute}
-  def update(object_id, component_name, attribute_name, value) do
+  def update(object_id, component_name, attribute_key, value) do
     query =
       from(
-        attribute in attribute_query(object_id, component_name, attribute_name),
+        attribute in attribute_query(object_id, component_name, attribute_key),
         update: [set: [value: ^pack_term(value)]]
       )
 
@@ -187,14 +187,14 @@ defmodule Exmud.Engine.Attribute do
   # Private functions
   #
 
-  @spec attribute_query(object_id, component_name, attribute_name) :: term
-  defp attribute_query(object_id, component_name, attribute_name) do
+  @spec attribute_query(object_id, component_name, attribute_key) :: term
+  defp attribute_query(object_id, component_name, attribute_key) do
     from(
       attribute in Attribute,
       inner_join: component in assoc(attribute, :component),
-      where:
-        attribute.name == ^attribute_name and component.name == ^component_name and
-          component.object_id == ^object_id
+      where: attribute.key == ^attribute_key
+         and component.name == ^component_name
+         and component.object_id == ^object_id
     )
   end
 end
