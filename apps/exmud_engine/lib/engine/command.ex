@@ -1,13 +1,12 @@
 defmodule Exmud.Engine.Command do
   @moduledoc """
-  A Command is a piece of game logic intended to be invoked on behalf on an Object, whether this be by a Player who has
-  puppeted an Object, a script, or by the Engine via some external trigger.
+  A Command is a piece of game logic intended to be invoked on behalf on an Object, whether this be by a player who has puppeted an Object, a Script, or by the Engine via some external trigger.
 
   A Command has multiple attributes:
     Key - The action to be taken. This can be more than one word, so 'open third window' or 'tap second case' are just
           as valid as 'look' or 'move'.
 
-    Aliases - Aliases by which the command can be known. When a command string is being processed, both the exact verb
+    Aliases - Aliases by which the command can be known. When a command string is being processed, both the key
               and the aliases are used to determine a match. That also means that both verbs and aliases are checked
               during a merge between Command Sets.
 
@@ -19,18 +18,13 @@ defmodule Exmud.Engine.Command do
               Command Set, any conflicts would be decided in the favor of the 'retreat' command so even shorter aliases
               become a possibility.
 
-    Parser - While a built in parser has been provided, overriding the 'parse/1' hook allows for the customized
-             processing of the command string after the verb. So for the command 'look under the shelf in the bathroom'
-             the string provided to the parser would be 'under the shelf in the bathroom'.
-
-             The returned value from this function is passed to the execution callback.
-
     Executor - A do-nothing default implementation has been provided simply to make a Command work out-of-the-box, but
                every Command will require its own implementation of the 'execute/1' callback. This is where the actual
                logic execution for a Command takes place.
 
                The callback is wrapped in a transaction, ensuring that all data can be accessed as if the Command
-               execution function was the sole process.
+               execution function was the sole process. This also means the callback may need to be retried, and as
+               such must be side effect free, except for manipulating the database of course.
 
     Locks - Locks help determine who/what has access to the Command itself. It's not enough for a Command to end up in
             the final merged Command Set, the caller must also have permissions for the Command itself. This defaults
@@ -49,15 +43,18 @@ defmodule Exmud.Engine.Command do
   """
 
   alias Ecto.Multi
+  alias Exmud.Engine.Command.ExecutionContext
   alias Exmud.Engine.Repo
-  import Ecto.Query
   import Exmud.Common.Utils
   import Exmud.Engine.Utils
   require Logger
+  use GenServer, restart: :transient
+
 
   #
   # Behavior definition and default callback setup
   #
+
 
   @doc false
   defmacro __using__(_) do
@@ -80,18 +77,14 @@ defmodule Exmud.Engine.Command do
       def locks, do: [Exmud.Engine.Lock.Any]
 
       @doc false
-      def parse(args_string), do: Exmud.Engine.CommandParser.parse(args_string)
-
-      @doc false
-      def args_regex(_args_string), do: ~r/$/
+      def argument_regex(_args_string), do: engine_cfg(:command_argument_regex)
 
       defoverridable aliases: 0,
                      doc_generation: 0,
                      doc_category: 0,
                      execute: 1,
                      locks: 0,
-                     parse: 1,
-                     args_regex: 1
+                     argument_regex: 1
     end
   end
 
@@ -101,13 +94,18 @@ defmodule Exmud.Engine.Command do
   @callback aliases :: [String.t()]
 
   @doc """
-  Called when the Engine determines the Command should be executed. This means all the matching, parsing, and
-  permissions checks have passed.
+  Called when the Engine determines the Command should be executed. This means all the matching, parsing, and permissions checks have passed.
 
-  An execution context is passed to the callback function, populated with several helpful bits of information to aid in
-  the execution of the command. See 'Exmud.Engine.CommandContext'.
+  An execution context is passed to the callback function, populated with several helpful bits of information to aid in the execution of the command. See 'Exmud.Engine.CommandContext'.
   """
   @callback execute(context) :: :ok | {:error, error}
+
+  @doc """
+  This callback allows for arbitrarily overriding the middleware pipeline executed on a Command.
+
+  It receives the name of a Middleware module and an `%Exmud.Engine.Command.ExecutionContext{}` struct and should return one or more Middleware modules. If returning a single module name it does not have to be wrapped in a list.
+  """
+  @callback middware(middleware, Exmud.Engine.Command.ExecutionContext.t()) :: middleware | [middleware]
 
   @doc """
   The action to be taken.
@@ -125,14 +123,9 @@ defmodule Exmud.Engine.Command do
   @callback doc_category :: String.t()
 
   @doc """
-  Parse the argument string into a format expected by the execute callback.
-  """
-  @callback parse(args_string :: String.t()) :: term
-
-  @doc """
   The compiled regex expression that the argument string must pass before the parse callback is called.
   """
-  @callback args_regex :: term
+  @callback argument_regex :: term
 
   @typedoc "Arguments passed through to a callback module."
   @type args :: term
@@ -143,94 +136,31 @@ defmodule Exmud.Engine.Command do
   @typedoc "An error message."
   @type error :: term
 
+  @typedoc "The name of a Middleware module."
+  @type middleware :: atom
 
   #
   # API
   #
 
 
+  @default_command_pipeline engine_cfg(:command_pipeline)
+
   @doc false
-  def execute(object_id, command_string) do
-    gen_server_args = [
-      object_id,
-      command_string
-    ]
+  def execute(caller, raw_input, pipeline \\ @default_command_pipeline) do
+    context = %ExecutionContext{caller: caller, raw_input: raw_input}
 
-    with {:ok, _} <-
-           DynamicSupervisor.start_child(
-             Exmud.Engine.CommandSupervisor,
-             {CommandExecutor, gen_server_args}
-           ) do
-      :ok
+    execute_steps(pipeline, context)
+  end
+
+  defp execute_steps([], execution_context), do: execution_context
+
+  defp execute_steps([pipeline_step | pipeline_steps], execution_context) do
+    case pipeline_step.execute(execution_context) do
+      {:ok, execution_context} ->
+        execute_steps(pipeline_steps, execution_context)
+      error ->
+        error
     end
-  end
-
-  #
-  # Manipulation of Callbacks in the Engine.
-  #
-
-  @cache :callback_cache
-
-  @doc """
-  List all Callbacks currently registered with the Engine.
-  """
-  def list_registered() do
-    Logger.info("Listing all registered Callbacks")
-    Cache.list(@cache)
-  end
-
-  @doc """
-  Return the Callback module that has been registered with a given name.
-  """
-  def lookup(name) do
-    case Cache.get(@cache, name) do
-      {:error, _} ->
-        Logger.error("Lookup failed for Callback registered with name `#{name}`")
-        {:error, :no_such_callback}
-
-      result ->
-        Logger.info("Lookup succeeded for Callback registered with name `#{name}`")
-        result
-    end
-  end
-
-  @doc """
-  Callbacks are registered with the Engine via a unique name.
-
-  Takes in a Callback module, calling the 'name/0' method on said module, and registers it with the Engine. Registering
-  a second module with the same name as a previous one will overwrite the first entry.
-  """
-  def register(callback_module) do
-    Logger.info(
-      "Registering Callback with name `#{callback_module.name()}` and module `#{
-        inspect(callback_module)
-      }`"
-    )
-
-    Cache.set(@cache, callback_module.name(), callback_module)
-  end
-
-  @doc """
-  Check to see if there is a Callback module registered with a given name.
-  """
-  def registered?(callback_module) do
-    Logger.info("Checking registration of Callback with name `#{callback_module.name()}`")
-    Cache.exists?(@cache, callback_module.name())
-  end
-
-  @doc """
-  Unregister a call default Callback from the system.
-  """
-  def unregister(callback_module) do
-    Logger.info("Unregistering Callback with name `#{callback_module.name()}`")
-    Cache.delete(@cache, callback_module.name())
-  end
-
-  #
-  # Internal Functions
-  #
-
-  defp callback_query(object_id, key) do
-    from(callback in Callback, where: callback.object_id == ^object_id and callback.key == ^key)
   end
 end

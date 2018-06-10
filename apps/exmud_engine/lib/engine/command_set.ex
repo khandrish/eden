@@ -1,8 +1,11 @@
 defmodule Exmud.Engine.CommandSet do
   @moduledoc """
-  Command Sets not only allow Commands to be added to/removed from Objects in bulk, but they define the rules by which
-  multiple Command Sets on an Object can be merged to present a final unified set of Commands for further processing.
+  Command Sets not only allow Commands to be added to/removed from Objects in bulk, but they define the rules by which multiple Command Sets can be merged to present a final unified set of Commands for further processing.
   """
+
+  defstruct [
+    :merge_set
+  ]
 
   @doc false
   defmacro __using__(_) do
@@ -34,7 +37,7 @@ defmodule Exmud.Engine.CommandSet do
       def merge_name(_config), do: name()
 
       @doc false
-      def merge_function(_config), do: &(&1.name == &2.name)
+      def visibility(_config), do: "both"
 
       defoverridable commands: 1,
                      merge_priority: 1,
@@ -44,23 +47,18 @@ defmodule Exmud.Engine.CommandSet do
                      merge_overrides: 1,
                      merge_duplicates: 1,
                      merge_name: 1,
-                     merge_function: 1
+                     visibility: 1
     end
   end
 
   @doc """
-  The name of the Script.
+  The name of the Command Set. This is a friendly name that can be used to help identify Command Sets in a UI and within the game.
   """
   @callback name :: String.t()
 
   @doc """
-  The function used to compare one key to another to determine equality when being merged.
-  """
-  @callback merge_function(config) :: function
-
-  @doc """
   The merge type to use when being merged, unless an override matches in which case that is used instead.
-  Default to ':union'
+  Defaults to ':union'
   """
   @callback merge_type(config) :: merge_type
 
@@ -76,12 +74,12 @@ defmodule Exmud.Engine.CommandSet do
   @callback merge_keys(config) :: [key]
 
   @doc """
-  The name to use when checking for overrides. Defaults to the name of the CommandSet as provided by 'name/1'.
+  The name to use when checking for overrides. Defaults to the name of the CommandSet as provided by 'name/0'.
   """
   @callback merge_name(config) :: String.t()
 
   @doc """
-  The generated list of commands that are contained in the Command Set.
+  The list of commands that are contained in the Command Set.
   """
   @callback commands(config) :: [term]
 
@@ -89,6 +87,11 @@ defmodule Exmud.Engine.CommandSet do
   The priority of the CommandSet when being merged. Default is 1.
   """
   @callback merge_priority(config) :: integer
+
+  @doc """
+  The visibility of the Command Set. Can be one of '"internal" | "external" | "both"'. Defaults to '"both"'.
+  """
+  @callback visibility(config) :: "internal" | "external" | "both"
 
   @typedoc "Configuration passed through to a callback module."
   @type config :: term
@@ -99,11 +102,11 @@ defmodule Exmud.Engine.CommandSet do
   @typedoc "Id of the Object the Command Set is attached to."
   @type object_id :: integer
 
-  @typedoc "The name of the Command Set as registered with the Engine."
+  @typedoc "The name of the Command Set."
   @type name :: String.t()
 
-  @typedoc "A Command to be executed by the Engine."
-  @type command :: term
+  @typedoc "A Command callback module that implements the 'Exmud.Engine.Command' behaviour."
+  @type command :: atom
 
   @typedoc "A key to be merged."
   @type key :: term
@@ -114,10 +117,8 @@ defmodule Exmud.Engine.CommandSet do
   @typedoc "One of a finite set of types of merges that can take place."
   @type merge_type :: :union | :intersect | :remove | :replace
 
-  @typedoc "The name of the Command Set as registered with the Engine."
-  @type command_set_name :: String.t()
-
   alias Exmud.Engine.Cache
+  alias Exmud.Engine.Command
   alias Exmud.Engine.MergeSet
   alias Exmud.Engine.ObjectUtil
   alias Exmud.Engine.Repo
@@ -134,63 +135,153 @@ defmodule Exmud.Engine.CommandSet do
   @doc """
   Attach a Command Set to an Object.
   """
-  @spec attach(object_id, command_set_name, config) ::
+  @spec attach(object_id, callback_module, config) ::
           :ok
           | {:error, :no_such_object}
           | {:error, :already_attached}
-          | {:error, :no_such_command_set}
-  def attach(object_id, command_set_name, config \\ nil) do
-    with {:ok, _} <- lookup(command_set_name) do
-      record =
-        CommandSet.new(%{object_id: object_id, name: command_set_name, config: pack_term(config)})
+  def attach(object_id, callback_module, config \\ nil) do
+    record =
+      CommandSet.new(%{object_id: object_id, callback_module: Atom.to_string(callback_module), config: pack_term(config), visibility: callback_module.visibility(config)})
 
-      ObjectUtil.attach(record)
-    end
+    ObjectUtil.attach(record)
   end
 
   @doc """
-  Build the active list of Commands for an Object.
+  Given either an '%Ecto.Query{}' struct that returns a list of Object ids, or a list of Object ids explicitly, build the list of Commands that the caller has access to.
 
-  The active list of Commands is the result of merging all Command Sets attached to an Object in a determanistic order.
-  The oldest attached Command Set is used as the base, with increasingly newer Command Sets merged on top while still
-  respecting priority. If the oldest Command Set also happens to have the highest priority, it will be merged last.
+  Given that every Command is executed in the context of a calling Object, and that Command Sets can have differing visibilities such as internal to an Object as is the case for many default Commands, a failure to include the calling Object in the context query could break an unknown number of things. Don't do it.
+
+  ## Ecto query
+
+  When providing an '%Ecto.Query{}' struct the query should only contain 'where' and 'join' statements.
+
+  Example:
+  '''
+  context_query = from(
+    object in Object,
+    join: game_object_component in assoc(object, :components),
+    join: game_object_location_attribute in assoc(game_object_component, :attributes),
+    where: game_object_component.object_id == object.id
+      and game_object_component.name == "GameObject"
+      and game_object_component.id == game_object_location_attribute.component_id
+      and game_object_location_attribute.key == "location"
+      and game_object_location_attribute.value == ^location,
+    select: object.id
+  )
+
+  build_active_command_list(caller, context_query)
+  '''
+
+  ## List
+
+  Single values are wrapped in a list.
+
+  Examples:
+  '''
+  object = 42
+  build_active_command_list(object, object)
+  '''
+  '''
+  object = 42
+  context = [42, 1, 3, 5, 7, 11, 13, 17, 23, 27]
+  build_active_command_list(object, context)
+  '''
+
+  The active Command list is the result of merging all Command Sets attached to a set of Objects in a determanistic order.
+
+  All Command Sets within the context are retrieved and then sorted from oldest to newest, and then grouped by priority, and then further still within each priority group by type of merge to be performed...which is then further prioritized
+
+  Once the Command Sets have been properly grouped and sorted and flattened they are then merged in order until a single Command Set remains.
+
+  The list of Commands is the extracted and returned from this Command Set.
   """
-  @spec build_active_command_list(object_id) :: [] | [command]
-  def build_active_command_list(object_id) do
-    query =
-      from cs in command_set_query(object_id),
-        select: {cs.name, cs.config},
-        order_by: [asc: cs.inserted_at]
+  @spec build_active_command_list(caller, query | object_id | [object_id]) :: [] | [command]
+  def build_active_command_list(caller, context) when is_integer(context) do
+    build_active_command_list(caller, List.wrap(context))
+  end
 
-    case Repo.all(query) do
+  def build_active_command_list(caller, context) when is_list(context) do
+    query = from(
+      object in Object,
+      join: command_set in assoc(object, :command_sets), on: object.id == command_set.object_id,
+      select: {command_set.callback_module, command_set.config},
+      where: object.id in ^context and command_set.visibility != "internal" and object.id != ^caller,
+      or_where: object.id in ^context and command_set.visibility != "external" and object.id == ^caller,
+      order_by: [asc: command_set.inserted_at]
+    )
+
+    do_build(query)
+  end
+
+  def build_active_command_list(caller, context_query) do
+    query = from(
+      object in Object,
+      join: obj in subquery(context_query), on: object.id == obj.id,
+      join: command_set in assoc(object, :command_sets), on: object.id == command_set.object_id,
+      select: {command_set.object_id, command_set.callback_module, command_set.config},
+      where: command_set.visibility != "internal" and object.id != ^caller,
+      or_where: command_set.visibility != "external" and object.id == ^caller,
+      order_by: [asc: command_set.inserted_at]
+    )
+
+    do_build(query)
+  end
+
+  @spec do_build(term) :: [] | [command]
+  defp do_build(context_query) do
+    case Repo.all(context_query) do
       [] ->
         []
       command_sets ->
         command_sets
-        |> Stream.map(fn {name, config} ->
-          case lookup(name) do
-            {:ok, callback_module} ->
-              build_merge_set(callback_module, unpack_term(config))
-            _ ->
-              Logger.error("Command Set '#{name}' found attached to Object '#{object_id}' with no corresponding registered Command Set")
-              nil
-          end
+        |> Stream.map(fn {object_id, callback_module, config} ->
+          build_merge_set(object_id, String.to_existing_atom(callback_module), unpack_term(config))
         end)
-        |> Stream.reject(&(&1 == nil))
-        |> Enum.sort(&(&1.priority < &2.priority))
+        |> Enum.group_by(&(&1.priority))
+        |> Enum.sort(&(List.first(&1)[priority] <= List.first(&2)[priority]))
+        |> Enum.map(fn priority_group ->
+          priority_group
+          |> Enum.group_by(&(&1.merge_type))
+          |> Enum.sort(&sort_by_merge_type/2)
+        end)
+        |> List.flatten()
         |> Enum.reduce(MergeSet.new(), fn (higher_priority_merge_set, lower_priority_merge_set) ->
-          MergeSet.merge(higher_priority_merge_set, lower_priority_merge_set)
+          MergeSet.merge(higher_priority_merge_set, lower_priority_merge_set, &comparison_function/2)
         end)
         |> (&(&1.keys)).()
     end
   end
 
-  @spec build_merge_set(callback_module, config) :: term
-  defp build_merge_set(callback_module, config) do
+  @spec sort_by_merge_type([struct()], [struct()]) :: boolean
+  defp sort_by_merge_type(merge_group_1, merge_group_2) do
+    case {List.first(merge_group_1), List.first(merge_group_2)} do
+      {%{merge_type: :union}, _} -> true
+      {%{merge_type: :intersect}, %{merge_type: :union}} -> false
+      {%{merge_type: :intersect}, _} -> true
+      {%{merge_type: :replace}, %{merge_type: :remove}} -> false
+      {%{merge_type: :replace}, _} -> true
+      {%{merge_type: :remove}, _} -> false
+    end
+  end
+
+  # Used within MergeSet when merging. In the case of a Command Set, the keys are callback modules which implement the Exmud.Engine.Command behaviour. When comparing Commands, both the key and the aliases need to be checked for conflict.
+  @spec comparison_function(term, term) :: boolean
+  defp comparison_function(key_a, key_b) do
+    key_and_aliases_a = List.wrap(key_a.callback_module.key) ++ key_a.callback_module.aliases
+    key_and_aliases_b = List.wrap(key_b.callback_module.key) ++ key_b.callback_module.aliases
+    Enum.any?(key_and_aliases_a, &(&1 in key_and_aliases_b))
+  end
+
+  @spec build_merge_set(object_id, callback_module, config) :: term
+  defp build_merge_set(object_id, callback_module, config) do
+    keys =
+      config
+      |> callback_module.merge_keys()
+      |> Enum.map(&(%Command{object_id: object_id, key: &1, callback_module: callback_module}))
+
     MergeSet.new(
       allow_duplicates: callback_module.merge_duplicates(config),
-      function: callback_module.merge_function(config),
-      keys: callback_module.merge_keys(config),
+      keys: keys,
       name: callback_module.merge_name(config),
       overrides: callback_module.merge_overrides(config),
       priority: callback_module.merge_priority(config),
@@ -201,68 +292,49 @@ defmodule Exmud.Engine.CommandSet do
   @doc """
   Check to see if an Object has all of the provided Command Sets attached.
   """
-  @spec has_all?(object_id, command_set_name | [command_set_name]) :: boolean
-  def has_all?(object_id, command_set_names) do
-    command_set_names = List.wrap(command_set_names)
+  @spec has_all?(object_id, callback_module | [callback_module]) :: boolean
+  def has_all?(object_id, command_set_callback_modules) do
+    command_set_callback_modules = List.wrap(command_set_callback_modules)
 
     query =
-      from(command_set in command_set_query(object_id, command_set_names), select: count("*"))
+      from(command_set in command_set_query(object_id, command_set_callback_modules), select: count("*"))
 
-    Repo.one(query) == length(command_set_names)
+    Repo.one(query) == length(command_set_callback_modules)
   end
 
   @doc """
   Check to see if an Object has any of the provided Command Sets attached.
   """
-  @spec has_any?(object_id, command_set_name | [command_set_name]) :: boolean
-  def has_any?(object_id, command_set_names) do
-    command_set_names = List.wrap(command_set_names)
+  @spec has_any?(object_id, callback_module | [callback_module]) :: boolean
+  def has_any?(object_id, command_set_callback_modules) do
+    command_set_callback_modules = List.wrap(command_set_callback_modules)
 
     query =
-      from(command_set in command_set_query(object_id, command_set_names), select: count("*"))
+      from(command_set in command_set_query(object_id, command_set_callback_modules), select: count("*"))
 
     Repo.one(query) > 0
   end
 
   @doc """
-  Detach one or more Command Sets from an Object atomically. If one cannot be detached, none will be.
-  """
-  @spec detach(object_id, command_set_name | [command_set_name]) :: :ok | :error
-  def detach(object_id, command_set_names) do
-    command_set_names = List.wrap(command_set_names)
-
-    Repo.transaction(fn ->
-      command_set_query(object_id, command_set_names)
-      |> Repo.delete_all()
-      |> case do
-        {number_deleted, _} when number_deleted == length(command_set_names) -> :ok
-        _ -> Repo.rollback(:error)
-      end
-    end)
-    |> elem(1)
-  end
-
-  @doc """
   Detach one or more Command Sets from an Object.
-
-  No attempt will be made to validate how many were actually detached, making this method more useful for
-  fire-and-forget type deletes where some or all of the Command Sets may not actually exist on the Object
   """
-  @spec detach!(object_id, command_set_name | [command_set_name]) :: :ok
-  def detach!(object_id, command_set_names) do
-    command_set_names = List.wrap(command_set_names)
+  @spec detach(object_id, callback_module | [callback_module]) :: :ok
+  def detach(object_id, command_set_callback_modules) do
+    command_set_callback_modules = List.wrap(command_set_callback_modules)
 
-    command_set_query(object_id, command_set_names)
+    command_set_query(object_id, command_set_callback_modules)
     |> Repo.delete_all()
 
     :ok
   end
 
-  @spec command_set_query(object_id, [command_set_name]) :: term
-  defp command_set_query(object_id, command_set_names) do
+  @spec command_set_query(object_id, [callback_module]) :: term
+  defp command_set_query(object_id, command_set_callback_modules) do
+    command_set_callback_modules = command_set_callback_modules |> Enum.map(&Atom.to_string/1)
+
     from(
       command_set in CommandSet,
-      where: command_set.name in ^command_set_names and command_set.object_id == ^object_id
+      where: command_set.callback_module in ^command_set_callback_modules and command_set.object_id == ^object_id
     )
   end
 
@@ -272,68 +344,5 @@ defmodule Exmud.Engine.CommandSet do
       command_set in CommandSet,
       where: command_set.object_id == ^object_id
     )
-  end
-
-  #
-  # Manipulation of Command Sets in the Engine.
-  #
-
-  @cache :command_set_cache
-
-  @doc """
-  List all Command Sets which are currently registered with the Engine.
-  """
-  @spec list_registered :: [] | [callback_module]
-  def list_registered() do
-    Logger.info("Listing all registered Command Sets")
-    Cache.list(@cache)
-  end
-
-  @doc """
-  Lookup the callback module for the Command Set with the provided name.
-  """
-  @spec lookup(name) :: {:ok, callback_module} | {:error, :no_such_command_set}
-  def lookup(name) do
-    case Cache.get(@cache, name) do
-      {:error, _} ->
-        Logger.error("Lookup failed for Command Set registered with name `#{name}`")
-        {:error, :no_such_command_set}
-
-      result ->
-        Logger.info("Lookup succeeded for Command Set registered with name `#{name}`")
-        result
-    end
-  end
-
-  @doc """
-  Register a callback module for a Command Set with the provided name.
-  """
-  @spec register(callback_module) :: :ok
-  def register(callback_module) do
-    name = callback_module.name()
-
-    Logger.info(
-      "Registering Command Set with name `#{name}` and module `#{inspect(callback_module)}`"
-    )
-
-    Cache.set(@cache, callback_module.name(), callback_module)
-  end
-
-  @doc """
-  Check to see if a Command Set has been registered with the provided name.
-  """
-  @spec registered?(callback_module) :: boolean
-  def registered?(callback_module) do
-    Logger.info("Checking registration of Command Set with name `#{callback_module.name()}`")
-    Cache.exists?(@cache, callback_module.name())
-  end
-
-  @doc """
-  Unregisters the callback module for a Command Set with the provided name.
-  """
-  @spec unregister(callback_module) :: :ok
-  def unregister(callback_module) do
-    Logger.info("Unregistering Command Set with name `#{callback_module.name()}`")
-    Cache.delete(@cache, callback_module.name())
   end
 end
