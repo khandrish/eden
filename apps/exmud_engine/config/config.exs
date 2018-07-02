@@ -22,7 +22,9 @@ config :exmud_engine,
 
 config :exmud_engine,
   command_pipeline: [
-    Exmud.Engine.Command.Middleware.BuildActiveCommandList
+    Exmud.Engine.Command.Middleware.FilterSystemCommands,
+    Exmud.Engine.Command.Middleware.BuildActiveCommandList,
+    Exmud.Engine.Command.Middleware.MatchCommand
   ]
 
 # It is also possible to import configuration files, relative to this

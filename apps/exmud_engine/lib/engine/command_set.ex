@@ -11,6 +11,7 @@ defmodule Exmud.Engine.CommandSet do
   defmacro __using__(_) do
     quote location: :keep do
       @behaviour Exmud.Engine.CommandSet
+      require Exmud.Engine.Constants
 
       @doc false
       def name, do: Atom.to_string(__MODULE__)
@@ -37,12 +38,11 @@ defmodule Exmud.Engine.CommandSet do
       def merge_name(_config), do: name()
 
       @doc false
-      def visibility(_config), do: "both"
+      def visibility(_config), do: command_set_visibility_both()
 
       defoverridable commands: 1,
                      merge_priority: 1,
                      merge_type: 1,
-                     name: 0,
                      merge_keys: 1,
                      merge_overrides: 1,
                      merge_duplicates: 1,
@@ -127,6 +127,7 @@ defmodule Exmud.Engine.CommandSet do
   import Exmud.Common.Utils
   import Exmud.Engine.Utils
   require Logger
+  require Exmud.Engine.Constants
 
   #
   # API
@@ -204,9 +205,9 @@ defmodule Exmud.Engine.CommandSet do
     query = from(
       object in Object,
       join: command_set in assoc(object, :command_sets), on: object.id == command_set.object_id,
-      select: {command_set.callback_module, command_set.config},
-      where: object.id in ^context and command_set.visibility != "internal" and object.id != ^caller,
-      or_where: object.id in ^context and command_set.visibility != "external" and object.id == ^caller,
+      select: {command_set.object_id, command_set.callback_module, command_set.config},
+      where: object.id in ^context and command_set.visibility != command_set_visibility_internal() and object.id != ^caller,
+      or_where: object.id in ^context and command_set.visibility != command_set_visibility_external() and object.id == ^caller,
       order_by: [asc: command_set.inserted_at]
     )
 
@@ -219,8 +220,8 @@ defmodule Exmud.Engine.CommandSet do
       join: obj in subquery(context_query), on: object.id == obj.id,
       join: command_set in assoc(object, :command_sets), on: object.id == command_set.object_id,
       select: {command_set.object_id, command_set.callback_module, command_set.config},
-      where: command_set.visibility != "internal" and object.id != ^caller,
-      or_where: command_set.visibility != "external" and object.id == ^caller,
+      where: command_set.visibility != command_set_visibility_internal() and object.id != ^caller,
+      or_where: command_set.visibility != command_set_visibility_external() and object.id == ^caller,
       order_by: [asc: command_set.inserted_at]
     )
 
@@ -252,6 +253,7 @@ defmodule Exmud.Engine.CommandSet do
     end
   end
 
+  # Order, from first-to-last, is union, intersect, replace, and remove
   @spec sort_by_merge_type([struct()], [struct()]) :: boolean
   defp sort_by_merge_type(merge_group_1, merge_group_2) do
     case {List.first(merge_group_1), List.first(merge_group_2)} do
@@ -267,8 +269,8 @@ defmodule Exmud.Engine.CommandSet do
   # Used within MergeSet when merging. In the case of a Command Set, the keys are callback modules which implement the Exmud.Engine.Command behaviour. When comparing Commands, both the key and the aliases need to be checked for conflict.
   @spec comparison_function(term, term) :: boolean
   defp comparison_function(key_a, key_b) do
-    key_and_aliases_a = List.wrap(key_a.callback_module.key) ++ key_a.callback_module.aliases
-    key_and_aliases_b = List.wrap(key_b.callback_module.key) ++ key_b.callback_module.aliases
+    key_and_aliases_a = [key_a.callback_module.key | key_a.callback_module.aliases]
+    key_and_aliases_b = [key_b.callback_module.key | key_b.callback_module.aliases]
     Enum.any?(key_and_aliases_a, &(&1 in key_and_aliases_b))
   end
 

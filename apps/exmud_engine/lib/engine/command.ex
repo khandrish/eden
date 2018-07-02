@@ -60,6 +60,7 @@ defmodule Exmud.Engine.Command do
   defmacro __using__(_) do
     quote location: :keep do
       @behaviour Exmud.Engine.Command
+      require Exmud.Engine.Constants
 
       @doc false
       def aliases, do: []
@@ -68,7 +69,7 @@ defmodule Exmud.Engine.Command do
       def doc_generation, do: true
 
       @doc false
-      def doc_category, do: "General"
+      def doc_category, do: command_doc_category_general()
 
       @doc false
       def execute(_context), do: :ok
@@ -101,13 +102,6 @@ defmodule Exmud.Engine.Command do
   @callback execute(context) :: :ok | {:error, error}
 
   @doc """
-  This callback allows for arbitrarily overriding the middleware pipeline executed on a Command.
-
-  It receives the name of a Middleware module and an `%Exmud.Engine.Command.ExecutionContext{}` struct and should return one or more Middleware modules. If returning a single module name it does not have to be wrapped in a list.
-  """
-  @callback middware(middleware, Exmud.Engine.Command.ExecutionContext.t()) :: middleware | [middleware]
-
-  @doc """
   The action to be taken.
   """
   @callback key :: String.t()
@@ -136,31 +130,35 @@ defmodule Exmud.Engine.Command do
   @typedoc "An error message."
   @type error :: term
 
-  @typedoc "The name of a Middleware module."
-  @type middleware :: atom
-
   #
   # API
   #
 
 
-  @default_command_pipeline engine_cfg(:command_pipeline)
+  @default_command_pipeline engine_cfg( :command_pipeline )
 
   @doc false
-  def execute(caller, raw_input, pipeline \\ @default_command_pipeline) do
-    context = %ExecutionContext{caller: caller, raw_input: raw_input}
+  def execute( caller, raw_input, pipeline \\ @default_command_pipeline ) do
+    context = %ExecutionContext{ caller: caller, raw_input: raw_input }
 
-    execute_steps(pipeline, context)
+    execute_steps( pipeline, context )
   end
 
-  defp execute_steps([], execution_context), do: execution_context
+  defp execute_steps( [], execution_context ) do
+    %{ execution_context | pipeline_steps: Enum.reverse( execution_context.pipeline_steps ) }
+  end
 
-  defp execute_steps([pipeline_step | pipeline_steps], execution_context) do
-    case pipeline_step.execute(execution_context) do
-      {:ok, execution_context} ->
-        execute_steps(pipeline_steps, execution_context)
-      error ->
-        error
+  defp execute_steps( [ pipeline_step | pipeline_steps ], execution_context ) do
+    case pipeline_step.execute( execution_context ) do
+      { :ok, execution_context } = ok_result ->
+        execute_steps( pipeline_steps, update_execution_context( ok_result, execution_context ) )
+      { :error, error } = error_result ->
+        { :error, error, pipeline_step, update_execution_context( error_result, execution_context ) }
     end
+  end
+
+  defp update_execution_context( result, execution_context ) do
+    updated_pipeline_results = [ { pipeline_step, result } | execution_context.pipeline_steps ]
+    %{ execution_context | pipeline_steps: updated_pipeline_results }
   end
 end
