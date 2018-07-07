@@ -14,7 +14,7 @@ defmodule Exmud.Engine.CommandSet do
       require Exmud.Engine.Constants
 
       @doc false
-      def name, do: Atom.to_string(__MODULE__)
+      def name(_config), do: Atom.to_string(__MODULE__) |> String.split(".") |> List.last()
 
       @doc false
       def commands(_config), do: []
@@ -26,16 +26,10 @@ defmodule Exmud.Engine.CommandSet do
       def merge_type(_config), do: :union
 
       @doc false
-      def merge_keys(config), do: commands(config)
-
-      @doc false
       def merge_overrides(_config), do: %{}
 
       @doc false
       def merge_duplicates(_config), do: false
-
-      @doc false
-      def merge_name(_config), do: name()
 
       @doc false
       def visibility(_config), do: command_set_visibility_both()
@@ -43,10 +37,9 @@ defmodule Exmud.Engine.CommandSet do
       defoverridable commands: 1,
                      merge_priority: 1,
                      merge_type: 1,
-                     merge_keys: 1,
                      merge_overrides: 1,
                      merge_duplicates: 1,
-                     merge_name: 1,
+                     name: 1,
                      visibility: 1
     end
   end
@@ -67,16 +60,6 @@ defmodule Exmud.Engine.CommandSet do
   specified merge type will be used instead of what is returned by 'merge_type/1'
   """
   @callback merge_overrides(config) :: merge_type
-
-  @doc """
-  The keys to be merged.
-  """
-  @callback merge_keys(config) :: [key]
-
-  @doc """
-  The name to use when checking for overrides. Defaults to the name of the CommandSet as provided by 'name/0'.
-  """
-  @callback merge_name(config) :: String.t()
 
   @doc """
   The list of commands that are contained in the Command Set.
@@ -278,13 +261,13 @@ defmodule Exmud.Engine.CommandSet do
   defp build_merge_set(object_id, callback_module, config) do
     keys =
       config
-      |> callback_module.merge_keys()
+      |> callback_module.commands()
       |> Enum.map(&(%Command{object_id: object_id, key: &1, callback_module: callback_module}))
 
     MergeSet.new(
       allow_duplicates: callback_module.merge_duplicates(config),
       keys: keys,
-      name: callback_module.merge_name(config),
+      name: callback_module.name(config),
       overrides: callback_module.merge_overrides(config),
       priority: callback_module.merge_priority(config),
       merge_type: callback_module.merge_type(config)

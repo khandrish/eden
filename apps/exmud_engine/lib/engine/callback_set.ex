@@ -22,7 +22,7 @@ defmodule Exmud.Engine.CallbackSet do
       def merge_type(_config), do: :union
 
       @doc false
-      def merge_keys(config), do: callbacks(config)
+      def callbacks(config), do: callbacks(config)
 
       @doc false
       def merge_overrides(_config), do: %{}
@@ -31,7 +31,7 @@ defmodule Exmud.Engine.CallbackSet do
       def merge_duplicates(_config), do: false
 
       @doc false
-      def merge_name(_config), do: name()
+      def name(_config), do: name()
 
       @doc false
       def merge_function(_config), do: &(&1.name == &2.name)
@@ -39,17 +39,16 @@ defmodule Exmud.Engine.CallbackSet do
       defoverridable callbacks: 1,
                      merge_priority: 1,
                      merge_type: 1,
-                     name: 0,
-                     merge_keys: 1,
+                     callbacks: 1,
                      merge_overrides: 1,
                      merge_duplicates: 1,
-                     merge_name: 1,
+                     name: 1,
                      merge_function: 1
     end
   end
 
   @doc """
-  The name of the Callback.
+  The name of the Callback. Defaults to the final segment of the module name.
   """
   @callback name :: String.t()
 
@@ -71,19 +70,9 @@ defmodule Exmud.Engine.CallbackSet do
   @callback merge_overrides(config) :: merge_type
 
   @doc """
-  The keys to be merged.
+  The Callback modules that are a part of the CallbackSet.
   """
-  @callback merge_keys(config) :: [key]
-
-  @doc """
-  The name to use when checking for overrides. Defaults to the name of the CallbackSet as provided by 'name/1'.
-  """
-  @callback merge_name(config) :: String.t()
-
-  @doc """
-  The generated list of callbacks that are contained in the CallbackSet.
-  """
-  @callback callbacks(config) :: [term]
+  @callback callbacks(config) :: [key]
 
   @doc """
   The priority of the CallbackSet when being merged. Default is 1.
@@ -99,7 +88,7 @@ defmodule Exmud.Engine.CallbackSet do
   @typedoc "Id of the Object the CallbackSet is attached to."
   @type object_id :: integer
 
-  @typedoc "The name of the CallbackSet as registered with the Engine."
+  @typedoc "The name of the CallbackSet. Defaults to the final segment of the module name."
   @type name :: String.t()
 
   @typedoc "A Callback to be executed by the Engine."
@@ -113,9 +102,6 @@ defmodule Exmud.Engine.CallbackSet do
 
   @typedoc "One of a finite set of types of merges that can take place."
   @type merge_type :: :union | :intersect | :remove | :replace
-
-  @typedoc "The name of the CallbackSet as registered with the Engine."
-  @type callback_set_name :: String.t()
 
   alias Exmud.Engine.Cache
   alias Exmud.Engine.MergeSet
@@ -134,15 +120,15 @@ defmodule Exmud.Engine.CallbackSet do
   @doc """
   Attach a Callback Set to an Object.
   """
-  @spec attach(object_id, callback_set_name, config) ::
+  @spec attach(object_id, name, config) ::
           :ok
           | {:error, :no_such_object}
           | {:error, :already_attached}
           | {:error, :no_such_callback_set}
-  def attach(object_id, callback_set_name, config \\ nil) do
-    with {:ok, _} <- lookup(callback_set_name) do
+  def attach(object_id, name, config \\ nil) do
+    with {:ok, _} <- lookup(name) do
       record =
-        CallbackSet.new(%{object_id: object_id, name: callback_set_name, config: pack_term(config)})
+        CallbackSet.new(%{object_id: object_id, name: name, config: pack_term(config)})
 
       ObjectUtil.attach(record)
     end
@@ -190,8 +176,8 @@ defmodule Exmud.Engine.CallbackSet do
     MergeSet.new(
       allow_duplicates: callback_module.merge_duplicates(config),
       function: callback_module.merge_function(config),
-      keys: callback_module.merge_keys(config),
-      name: callback_module.merge_name(config),
+      keys: callback_module.callbacks(config),
+      name: callback_module.name(config),
       overrides: callback_module.merge_overrides(config),
       priority: callback_module.merge_priority(config),
       merge_type: callback_module.merge_type(config)
@@ -201,25 +187,25 @@ defmodule Exmud.Engine.CallbackSet do
   @doc """
   Check to see if an Object has all of the provided Callback Sets attached.
   """
-  @spec has_all?(object_id, callback_set_name | [callback_set_name]) :: boolean
-  def has_all?(object_id, callback_set_names) do
-    callback_set_names = List.wrap(callback_set_names)
+  @spec has_all?(object_id, name | [name]) :: boolean
+  def has_all?(object_id, names) do
+    names = List.wrap(names)
 
     query =
-      from(callback_set in callback_set_query(object_id, callback_set_names), select: count("*"))
+      from(callback_set in callback_set_query(object_id, names), select: count("*"))
 
-    Repo.one(query) == length(callback_set_names)
+    Repo.one(query) == length(names)
   end
 
   @doc """
   Check to see if an Object has any of the provided Callback Sets attached.
   """
-  @spec has_any?(object_id, callback_set_name | [callback_set_name]) :: boolean
-  def has_any?(object_id, callback_set_names) do
-    callback_set_names = List.wrap(callback_set_names)
+  @spec has_any?(object_id, name | [name]) :: boolean
+  def has_any?(object_id, names) do
+    names = List.wrap(names)
 
     query =
-      from(callback_set in callback_set_query(object_id, callback_set_names), select: count("*"))
+      from(callback_set in callback_set_query(object_id, names), select: count("*"))
 
     Repo.one(query) > 0
   end
@@ -227,15 +213,15 @@ defmodule Exmud.Engine.CallbackSet do
   @doc """
   Detach one or more Callback Sets from an Object atomically. If one cannot be detached, none will be.
   """
-  @spec detach(object_id, callback_set_name | [callback_set_name]) :: :ok | :error
-  def detach(object_id, callback_set_names) do
-    callback_set_names = List.wrap(callback_set_names)
+  @spec detach(object_id, name | [name]) :: :ok | :error
+  def detach(object_id, names) do
+    names = List.wrap(names)
 
     Repo.transaction(fn ->
-      callback_set_query(object_id, callback_set_names)
+      callback_set_query(object_id, names)
       |> Repo.delete_all()
       |> case do
-        {number_deleted, _} when number_deleted == length(callback_set_names) -> :ok
+        {number_deleted, _} when number_deleted == length(names) -> :ok
         _ -> Repo.rollback(:error)
       end
     end)
@@ -248,21 +234,21 @@ defmodule Exmud.Engine.CallbackSet do
   No attempt will be made to validate how many were actually detached, making this method more useful for
   fire-and-forget type deletes where some or all of the Callback Sets may not actually exist on the Object
   """
-  @spec detach!(object_id, callback_set_name | [callback_set_name]) :: :ok
-  def detach!(object_id, callback_set_names) do
-    callback_set_names = List.wrap(callback_set_names)
+  @spec detach!(object_id, name | [name]) :: :ok
+  def detach!(object_id, names) do
+    names = List.wrap(names)
 
-    callback_set_query(object_id, callback_set_names)
+    callback_set_query(object_id, names)
     |> Repo.delete_all()
 
     :ok
   end
 
-  @spec callback_set_query(object_id, [callback_set_name]) :: term
-  defp callback_set_query(object_id, callback_set_names) do
+  @spec callback_set_query(object_id, [name]) :: term
+  defp callback_set_query(object_id, names) do
     from(
       callback_set in CallbackSet,
-      where: callback_set.name in ^callback_set_names and callback_set.object_id == ^object_id
+      where: callback_set.name in ^names and callback_set.object_id == ^object_id
     )
   end
 
