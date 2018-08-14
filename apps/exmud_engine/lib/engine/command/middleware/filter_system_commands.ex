@@ -5,15 +5,14 @@ defmodule Exmud.Engine.Command.Middleware.FilterSystemCommands do
 
   @behaviour Exmud.Engine.Command.Middleware
 
-  alias Exmud.Engine.CommandSet
   alias Exmud.Engine.Command.NoMatch
-  require Exmud.Engine.Constants
+  import Exmud.Engine.Constants
 
-  def execute(execution_context) do
-    if Regex.match?(system_command_prefix(), execution_context.raw_input) do
-      {:ok, %{execution_context | raw_input: NoMatch.key()}}
+  def execute( execution_context ) do
+    if Regex.match?( system_command_prefix(), execution_context.raw_input ) do
+      { :ok, %{ execution_context | raw_input: NoMatch.key( nil ) } }
     else
-      {:ok, execution_context}
+      { :ok, execution_context }
     end
   end
 end

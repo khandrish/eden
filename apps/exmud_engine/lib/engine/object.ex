@@ -2,7 +2,6 @@ defmodule Exmud.Engine.Object do
   alias Exmud.Engine.Repo
   alias Exmud.Engine.Schema.Object
   import Ecto.Query
-  import Exmud.Common.Utils
   import Exmud.Engine.Utils
   require Logger
 

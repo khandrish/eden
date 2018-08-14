@@ -85,7 +85,7 @@ defmodule Exmud.Engine.Test.CallbackSetTest do
       assert CallbackSet.build_active_callback_list(object_id) == ["foo", "farboo"]
     end
 
-    @tag command_set: true
+    @tag callback_set: true
     test "with building a command list when CallbackSet has been unregistered", %{object_id: object_id} = _context do
       assert CallbackSet.attach(object_id, Replace.name()) == :ok
       assert CallbackSet.unregister(Replace) == :ok

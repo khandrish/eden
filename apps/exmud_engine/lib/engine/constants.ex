@@ -1,37 +1,37 @@
 defmodule Exmud.Engine.Constants do
-  defmacro command_execution_success do
-    quote do: "success"
+  def command_execution_success do
+    "success"
   end
 
-  defmacro command_execution_failure do
-    quote do: "failure"
+  def command_execution_failure do
+    "failure"
   end
 
-  defmacro command_set_visibility_internal do
-    quote do: "internal"
+  def command_set_visibility_internal do
+    "internal"
   end
 
-  defmacro command_set_visibility_external do
-    quote do: "external"
+  def command_set_visibility_external do
+    "external"
   end
 
-  defmacro command_set_visibility_both do
-    quote do: "both"
+  def command_set_visibility_both do
+    "both"
   end
 
-  defmacro command_doc_merge_type_union do
-    quote do: "union"
+  def command_doc_merge_type_union do
+    "union"
   end
 
-  defmacro command_doc_category_general do
-    quote do: "General"
+  def command_doc_category_general do
+    "General"
   end
 
-  defmacro system_command_prefix do
-    quote do: ~r/^CMD_/
+  def system_command_prefix do
+    ~r/^CMD_/
   end
 
-  defmacro command_multi_match_key do
-    quote do: "multi_match_commands"
+  def command_multi_match_key do
+    "multi_match_commands"
   end
 end

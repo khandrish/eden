@@ -9,11 +9,11 @@ defmodule Exmud.Engine.Command.MultiMatch do
 
   use Exmud.Engine.Command
 
-  @impl
-  def doc_generation, do: false
+  @impl true
+  def doc_generation( _config ), do: false
 
-  @impl
-  def execute(execution_context) do
+  @impl true
+  def execute( execution_context ) do
     # Save multiple commands to calling object, probably via new component/attribute to be used by multi
     # Add a dynamically generated command set to the calling Object with Commands that will allow triggering of saved/matched commands
     # Send message to player warning of multiple match error and detailing commands that are now available
@@ -27,6 +27,6 @@ defmodule Exmud.Engine.Command.MultiMatch do
     execution_context
   end
 
-  @impl
-  def key, do: "CMD_MULTI_MATCH"
+  @impl true
+  def key( _config ), do: "CMD_MULTI_MATCH"
 end

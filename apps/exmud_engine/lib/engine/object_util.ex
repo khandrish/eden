@@ -4,11 +4,8 @@ defmodule Exmud.Engine.ObjectUtil do
   basic game development, you may discontinue reading.
   """
 
-  alias Exmud.Engine.Cache
   alias Exmud.Engine.Repo
-  import Ecto.Query
   import Exmud.Common.Utils
-  import Exmud.Engine.Utils
   require Logger
 
   @doc """
@@ -54,32 +51,26 @@ defmodule Exmud.Engine.ObjectUtil do
           | {:error, :callback_failed}
           | {:error, error}
   def attach(record, callback_function \\ nil) do
-    Repo.transaction(fn ->
-      record
-      |> Repo.insert()
-      |> normalize_repo_result()
-      |> case do
-        :ok ->
-          if is_function(callback_function) do
-            try do
-              case callback_function.() do
-                :ok -> :ok
-                {:error, error} -> Repo.rollback(error)
-              end
-            rescue
-              _ -> Repo.rollback(:callback_failed)
-            end
-          else
-            :ok
-          end
-
-        {:error, [object_id: _error]} ->
-          Repo.rollback(:no_such_object)
-
-        {:error, [{_, "has already been taken"}]} = _ ->
-          Repo.rollback(:already_attached)
-      end
-    end)
+    record
+    |> Repo.insert()
     |> normalize_repo_result()
+    |> case do
+      :ok ->
+        if is_function(callback_function) do
+          try do
+            callback_function.()
+          rescue
+            _ -> { :error, :callback_failed }
+          end
+        else
+          :ok
+        end
+
+      {:error, [object_id: _error]} ->
+        { :error, :no_such_object }
+
+      {:error, [{_, "has already been taken"}]} = _ ->
+        { :error, :already_attached }
+    end
   end
 end

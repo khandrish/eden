@@ -7,45 +7,41 @@ defmodule Exmud.Engine.Test.AttributeTest do
   use Exmud.Engine.Test.DBTestCase
 
   # Test Components
-  alias Exmud.Engine.Test.Component.Bad
   alias Exmud.Engine.Test.Component.Basic
 
   describe "Usage tests for attributes:" do
-    setup [:create_new_object, :register_test_components]
+    setup [:create_new_object]
 
     @tag attribute: true
     @tag engine: true
     test "lifecycle", %{object_id: object_id} = _context do
       attribute = UUID.generate()
       attribute2 = UUID.generate()
-      assert Component.register(Basic) == :ok
-      assert Component.attach(object_id, Basic.name()) == :ok
-      assert Attribute.equals?(object_id, Basic.name(), attribute, "bar") == false
-      assert Attribute.put(object_id, Basic.name(), attribute, "bar") == :ok
-      assert Attribute.equals?(object_id, Basic.name(), attribute, "bar") == true
-      assert Attribute.equals?(object_id, Basic.name(), attribute, &(&1 == "bar")) == true
-      assert Attribute.put(object_id, Basic.name(), attribute2, "bar") == :ok
-      assert Attribute.read(object_id, Basic.name(), attribute) == {:ok, "bar"}
-      assert Attribute.update(object_id, Basic.name(), attribute, "foobar") == :ok
-      assert Attribute.read(object_id, Basic.name(), attribute) == {:ok, "foobar"}
-      assert Attribute.exists?(object_id, Basic.name(), attribute) == true
-      assert Attribute.delete(object_id, Basic.name(), attribute) == :ok
-      assert Attribute.read(object_id, Basic.name(), attribute) == {:error, :no_such_attribute}
-      assert Attribute.exists?(object_id, Basic.name(), attribute) == false
+      assert Component.attach(object_id, Basic) == :ok
+      assert Attribute.equals?(object_id, Basic, attribute, "bar") == false
+      assert Attribute.put(object_id, Basic, attribute, "bar") == :ok
+      assert Attribute.equals?(object_id, Basic, attribute, "bar") == true
+      assert Attribute.equals?(object_id, Basic, attribute, &(&1 == "bar")) == true
+      assert Attribute.put(object_id, Basic, attribute2, "bar") == :ok
+      assert Attribute.read(object_id, Basic, attribute) == {:ok, "bar"}
+      assert Attribute.update(object_id, Basic, attribute, "foobar") == :ok
+      assert Attribute.read(object_id, Basic, attribute) == {:ok, "foobar"}
+      assert Attribute.exists?(object_id, Basic, attribute) == true
+      assert Attribute.delete(object_id, Basic, attribute) == :ok
+      assert Attribute.read(object_id, Basic, attribute) == {:error, :no_such_attribute}
+      assert Attribute.exists?(object_id, Basic, attribute) == false
     end
 
     @tag attribute: true
     @tag engine: true
     test "invalid cases", %{object_id: object_id} = _context do
       component = UUID.generate()
-      assert Component.register(Basic) == :ok
-      assert Component.register(Bad) == :ok
-      assert Component.attach(object_id, Basic.name()) == :ok
+      assert Component.attach( object_id, Basic ) == :ok
       assert Attribute.read(object_id, component, "foo") == {:error, :no_such_attribute}
       assert Attribute.put(object_id, component, "foo", "bar") == {:error, :no_such_component}
-      assert Attribute.exists?(object_id, Basic.name(), "foo") == false
-      assert Attribute.delete(object_id, Basic.name(), "foo") == {:error, :no_such_attribute}
-      assert Attribute.read(object_id, Basic.name(), "foo") == {:error, :no_such_attribute}
+      assert Attribute.exists?(object_id, Basic, "foo") == false
+      assert Attribute.delete(object_id, Basic, "foo") == {:error, :no_such_attribute}
+      assert Attribute.read(object_id, Basic, "foo") == {:error, :no_such_attribute}
     end
   end
 
@@ -53,19 +49,5 @@ defmodule Exmud.Engine.Test.AttributeTest do
     object_id = Object.new!()
 
     %{object_id: object_id}
-  end
-
-  @components [Basic, Bad]
-
-  defp register_test_components(context) do
-    Enum.each(@components, &Component.register/1)
-
-    context
-  end
-end
-
-defmodule Exmud.Engine.AttributeTest.ExampleComponent do
-  def populate do
-    {:ok, :populated}
   end
 end

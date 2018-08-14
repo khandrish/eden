@@ -7,16 +7,16 @@ defmodule Exmud.Engine.Command.NoMatch do
 
   use Exmud.Engine.Command
 
-  @impl
-  def doc_generation, do: false
+  @impl true
+  def doc_generation( _config ), do: false
 
-  @impl
-  def execute(execution_context) do
-    # Add message to player via calling Object to execution context
+  @impl true
+  def execute( execution_context ) do
+    # Add message to player, via calling Object, to execution context
 
     execution_context
   end
 
-  @impl
-  def key, do: "CMD_NO_MATCH"
+  @impl true
+  def key( _config ), do: "CMD_NO_MATCH"
 end

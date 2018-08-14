@@ -9,15 +9,17 @@ defmodule Exmud.Engine.Command.Middleware.BuildActiveCommandList do
 
   alias Exmud.Engine.CommandSet
 
-  def execute(execution_context) do
-    {:ok,
-     %{
-       execution_context
-       | command_list:
-           CommandSet.build_active_command_list(
-             execution_context.caller,
-             execution_context.caller
-           )
-     }}
+  def execute( execution_context ) do
+    {
+      :ok,
+      %{
+        execution_context
+        | command_list:
+            CommandSet.build_active_command_list(
+              execution_context.caller,
+              execution_context.caller
+            )
+      }
+    }
   end
 end

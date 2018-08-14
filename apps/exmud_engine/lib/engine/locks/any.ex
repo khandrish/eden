@@ -4,5 +4,5 @@ defmodule Exmud.Engine.Lock.Any do
   """
 
   @doc false
-  def check(_target_object, _accessing_object, _lock_config), do: true
+  def check( _target_object, _accessing_object, _lock_config ), do: true
 end
