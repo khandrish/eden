@@ -18,11 +18,11 @@ defmodule Exmud.DB.Repo.EngineRepo.Migrations.InitializeEngineRepo do
 
     create table(:component) do
       add :object_id, references(:object, [on_delete: :delete_all])
-      add :name, :string
+      add :callback_module, :binary
     end
-    create index(:component, [:name])
+    create index(:component, [:callback_module])
     create index(:component, [:object_id])
-    create unique_index(:component, [:object_id, :name])
+    create unique_index(:component, [:object_id, :callback_module], name: :component_object_id_callback_module_index)
 
     create table(:attribute) do
       add :name, :string
@@ -33,46 +33,27 @@ defmodule Exmud.DB.Repo.EngineRepo.Migrations.InitializeEngineRepo do
     create index(:attribute, [:component_id])
     create unique_index(:attribute, [:name, :component_id])
 
-    create table(:callback) do
-      add :object_id, references(:object, [on_delete: :delete_all])
-      add :key, :string
-      add :name, :string
-      add :data, :binary
-    end
-    create index(:callback, [:object_id])
-    create index(:callback, [:key])
-    create unique_index(:callback, [:object_id, :key])
-
-    create table(:callback_set) do
-      add :object_id, references(:object, [on_delete: :delete_all])
-      add :name, :string
-      add :config, :binary
-
-      timestamps()
-    end
-    create index(:callback_set, [:object_id])
-    create unique_index(:callback_set, [:name, :object_id])
-
     create table(:command_set) do
       add :object_id, references(:object, [on_delete: :delete_all])
-      add :name, :string
+      add :callback_module, :binary
       add :config, :binary
+      add :visibility, :string
 
       timestamps()
     end
     create index(:command_set, [:object_id])
-    create unique_index(:command_set, [:name, :object_id])
+    create index(:command_set, [:visibility])
+    create unique_index(:command_set, [:callback_module, :object_id], name: :command_set_callback_module_index)
 
     create table(:lock) do
       add :object_id, references(:object, [on_delete: :delete_all])
       add :access_type, :string
-      add :name, :string
+      add :callback_module, :binary
       add :config, :binary
     end
     create index(:lock, [:object_id])
     create index(:lock, [:access_type])
-    create index(:lock, [:name])
-    create unique_index(:lock, [:object_id, :access_type])
+    create unique_index(:lock, [:object_id, :access_type], name: :lock_object_id_access_type_index)
 
     create table(:link) do
       add :from_id, references(:object, [on_delete: :delete_all])

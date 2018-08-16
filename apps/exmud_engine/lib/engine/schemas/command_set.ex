@@ -1,10 +1,10 @@
 defmodule Exmud.Engine.Schema.CommandSet do
   use Exmud.Common.Schema
 
-  @derive {Jason.Encoder, except: [:config]}
   schema "command_set" do
-    field(:name, :string)
+    field(:callback_module, :string)
     field(:config, :binary)
+    field(:visibility, :binary)
     belongs_to(:object, Exmud.Engine.Schema.Object, foreign_key: :object_id)
 
     timestamps()
@@ -12,9 +12,9 @@ defmodule Exmud.Engine.Schema.CommandSet do
 
   def new(params) do
     %Exmud.Engine.Schema.CommandSet{}
-    |> cast(params, [:config, :name, :object_id])
-    |> validate_required([:config, :name, :object_id])
+    |> cast(params, [:config, :callback_module, :object_id, :visibility])
+    |> validate_required([:config, :callback_module, :object_id, :visibility])
     |> foreign_key_constraint(:object_id)
-    |> unique_constraint(:name, name: :command_set_name_object_id_index)
+    |> unique_constraint(:callback_module, name: :command_set_callback_module_index)
   end
 end

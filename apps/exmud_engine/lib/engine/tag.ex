@@ -10,7 +10,6 @@ defmodule Exmud.Engine.Tag do
   alias Exmud.Engine.Repo
   alias Exmud.Engine.Schema.Tag
   import Ecto.Query
-  import Exmud.Common.Utils
   require Logger
 
   @typedoc "The Category that the Tag belongs to."

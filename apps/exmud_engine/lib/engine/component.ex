@@ -11,12 +11,10 @@ defmodule Exmud.Engine.Component do
   appropriate.
   """
 
-  alias Exmud.Engine.Cache
   alias Exmud.Engine.ObjectUtil
   alias Exmud.Engine.Repo
   alias Exmud.Engine.Schema.Component
   import Ecto.Query
-  import Exmud.Common.Utils
   import Exmud.Engine.Utils
   require Logger
 
@@ -25,40 +23,22 @@ defmodule Exmud.Engine.Component do
   #
 
   @doc false
-  defmacro __using__(_) do
+  defmacro __using__( _ ) do
     quote location: :keep do
       @behaviour Exmud.Engine.Component
 
       @doc false
-      def name, do: Atom.to_string(__MODULE__)
+      def populate( _object_id, _args ), do: :ok
 
-      @doc false
-      def populate(_object_id, _args), do: :ok
-
-      defoverridable name: 0,
-                     populate: 2
+      defoverridable populate: 2
     end
   end
-
-  @doc """
-  The unique name of the Component.
-
-  This unique string is used for registration in the Engine, and can be used to attach/detach Components.
-  """
-  @callback name :: String.t()
-
-  @doc """
-  The unique name of the Component.
-
-  This unique string is used for registration in the Engine, and can be used to attach/detach Components.
-  """
-  @callback attributes :: [String.t()]
 
   @doc """
   Called when a Component has been added to an Object. Is responsible for populating the Component with the necessary
   data.
   """
-  @callback populate(object_id, config) :: :ok | {:error, error}
+  @callback populate( object_id, config ) :: :ok | { :error, error }
 
   @typedoc "The Object being populated with the Component and its data."
   @type object_id :: integer
@@ -66,69 +46,78 @@ defmodule Exmud.Engine.Component do
   @typedoc "Configuration passed through to a callback module."
   @type config :: term
 
-  @typedoc "The name of the Component as registered with the Engine."
-  @type component_name :: String.t()
-
-  @typedoc "The name of an Attribute belonging to a Component."
-  @type attribute :: String.t()
-
   @typedoc "An error returned when something has gone wrong."
   @type error :: atom
 
   @typedoc "The callback_module that is the implementation of the Component logic."
   @type callback_module :: atom
 
+  @typedoc "A callback module which implements the 'Exmud.Engine.Component' behavior."
+  @type component :: module
+
+
   #
   # API
   #
 
+
   @doc """
   Atomically attach a Component to an Object and populate it with attributes using the provided, optional, args.
   """
-  @spec attach(object_id, component_name, config | nil) ::
-          :ok | {:error, :no_such_object} | {:error, :already_attached} | {:error, error}
-  def attach(object_id, component_name, config \\ nil) do
-    with {:ok, callback_module} <- lookup(component_name) do
-      record = Component.new(%{name: component_name, object_id: object_id})
-      ObjectUtil.attach(record, fn -> callback_module.populate(object_id, config) end)
-    end
+  @spec attach( object_id, component, config | nil ) ::
+          :ok | { :error, :no_such_object } | { :error, :already_attached } | { :error, error }
+  def attach( object_id, component, config \\ nil ) do
+      record = Component.new( %{ callback_module: pack_term( component ), object_id: object_id } )
+      ObjectUtil.attach( record, fn -> component.populate( object_id, config ) end )
+  end
+
+  @doc """
+  See 'all_attached?/2'.
+  """
+  @spec attached?( object_id, component ) :: boolean
+  def attached?( object_id, component ) do
+    all_attached?( object_id, component )
   end
 
   @doc """
   Check to see if a given Component, or list of components, is attached to an Object. Will only return `true` if all
   provided values are matched.
   """
-  @spec all_attached?(object_id, component_name | [component_name]) :: boolean
-  def all_attached?(object_id, component_names) do
-    component_names = List.wrap(component_names)
+  @spec all_attached?( object_id, component | [ component ] ) :: boolean
+  def all_attached?( object_id, components ) do
+    components = List.wrap( components )
+    query = get_count_query( object_id, components )
 
-    query = count_query(object_id, component_names)
-
-    Repo.one(query) == length(component_names)
+    Repo.one( query ) == length( components )
   end
 
   @doc """
   Check to see if a given Component, or list of components, is attached to an Object. Will return `true` if any of the
   provided values are matched.
   """
-  @spec any_attached?(object_id, component_name | [component_name]) :: boolean
-  def any_attached?(object_id, component_names) do
-    component_names = List.wrap(component_names)
+  @spec any_attached?( object_id, component | [ component ] ) :: boolean
+  def any_attached?( object_id, components ) do
+    components = List.wrap( components )
+    query = get_count_query( object_id, components )
 
-    query = count_query(object_id, component_names)
+    Repo.one( query ) > 0
+  end
 
-    Repo.one(query) >= length(component_names)
+  defp get_count_query( object_id, components ) do
+    components = List.wrap( components )
+    components = Enum.map( components, fn component -> pack_term( component ) end )
+    count_query( object_id, components )
   end
 
   @doc """
   Detach all Components, deleting all associated data, attached to a given Object or set of Objects.
   """
-  @spec detach(object_id | [object_id]) :: :ok
-  def detach(object_ids) do
+  @spec detach( object_id | [ object_id ] ) :: :ok
+  def detach( object_ids ) do
     delete_query =
-      from(component in Component, where: component.object_id in ^List.wrap(object_ids))
+      from( component in Component, where: component.object_id in ^List.wrap( object_ids ) )
 
-    Repo.delete_all(delete_query)
+    Repo.delete_all( delete_query )
 
     :ok
   end
@@ -136,94 +125,30 @@ defmodule Exmud.Engine.Component do
   @doc """
   Detach one or more Components, deleting all associated data, attached to a given Object.
   """
-  @spec detach(object_id, component_name | [component_name]) :: :ok
-  def detach(object_id, component_names) do
-    component_names = List.wrap(component_names)
+  @spec detach( object_id, component | [ component ] ) :: :ok
+  def detach( object_id, components ) do
+    components = List.wrap( components )
+    components = Enum.map( components, fn component -> pack_term( component ) end )
+    delete_query = component_query( object_id, components )
 
-    delete_query = component_query(object_id, component_names)
-
-    Repo.delete_all(delete_query)
+    Repo.delete_all( delete_query )
 
     :ok
   end
 
-  @spec detach(object_id, [component_name]) :: term
-  defp component_query(object_id, component_names) do
+  @spec component_query( object_id, [ component ] ) :: term
+  defp component_query( object_id, components ) do
     from(
       component in Component,
-      where: component.name in ^component_names and component.object_id == ^object_id
+      where: component.callback_module in ^components and component.object_id == ^object_id
     )
   end
 
-  @spec count_query(object_id, [component_name]) :: term
-  defp count_query(object_id, component_names) do
+  @spec count_query( object_id, [ component ] ) :: term
+  defp count_query( object_id, components ) do
     from(
-      component in Component,
-      where: component.name in ^component_names and component.object_id == ^object_id,
-      select: count("*")
+      component in component_query( object_id, components ),
+      select: count( "*" )
     )
-  end
-
-  #
-  # Manipulation of Components in the Engine.
-  #
-
-  @cache :component_cache
-
-  @doc """
-  List all Components registered with the Engine.
-  """
-  @spec list_registered :: [callback_module]
-  def list_registered do
-    Logger.info("Listing all registered Components")
-    Cache.list(@cache)
-  end
-
-  @doc """
-  Lookup a Component callback module based on the name it was registered with.
-  """
-  @spec lookup(component_name) :: {:ok, callback_module} | {:error, :no_such_component}
-  def lookup(component_name) do
-    case Cache.get(@cache, component_name) do
-      {:error, _} ->
-        Logger.error("Lookup failed for Component registered with name `#{component_name}`")
-        {:error, :no_such_component}
-
-      result ->
-        Logger.info("Lookup succeeded for Component registered with name `#{component_name}`")
-        result
-    end
-  end
-
-  @doc """
-  Register a Component callback module with the Engine. Uses the value provided by the `name/0` function as the key.
-  """
-  @spec register(callback_module) :: :ok
-  def register(callback_module) do
-    Logger.info(
-      "Registering Component with name `#{callback_module.name}` and module `#{
-        inspect(callback_module)
-      }`"
-    )
-
-    Cache.set(@cache, callback_module.name(), callback_module)
-  end
-
-  @doc """
-  Check to see if a Component callback module is registered with the Engine.
-  """
-  @spec registered?(callback_module) :: boolean
-  def registered?(callback_module) do
-    Logger.info("Checking registration of Component with name `#{callback_module.name()}`")
-    Cache.exists?(@cache, callback_module.name())
-  end
-
-  @doc """
-  Unregister a Component callback module is registered from the Engine.
-  """
-  @spec unregister(callback_module) :: :ok
-  def unregister(callback_module) do
-    Logger.info("Unregistering Component with name `#{callback_module.name()}`")
-    Cache.delete(@cache, callback_module.name())
   end
 end

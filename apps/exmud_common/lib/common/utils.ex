@@ -30,4 +30,14 @@ defmodule Exmud.Common.Utils do
   def normalize_insert_result({:error, changeset}), do: {:error, normalize_ecto_errors(changeset.errors)}
 
   def via(registry, key), do: {:via, Registry, {registry, key}}
+
+  def get_moduledoc( module, language \\ "en" ) do
+    docs = Code.fetch_docs( module )
+    case elem(docs, 4) do
+      :none ->
+        :none
+      doc_languages ->
+        String.trim( Map.get(doc_languages, language) )
+    end
+  end
 end

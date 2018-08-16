@@ -10,12 +10,16 @@ config :exmud_engine, Exmud.Engine.Repo,
   username: "exmud_engine"
 
 config :exmud_engine,
-  callbacks: [],
-  command_sets: [],
-  components: [],
-  scripts: [],
-  systems: [],
-  byte_size_to_compress: 1024
+  byte_size_to_compress: 1024,
+  # The regex used by default to determine if an argument string matches for a Command.
+  command_argument_regex: ~r/$/,
+  command_pipeline: [
+    Exmud.Engine.Command.Middleware.FilterSystemCommands,
+    Exmud.Engine.Command.Middleware.BuildActiveCommandList,
+    Exmud.Engine.Command.Middleware.MatchCommand,
+    Exmud.Engine.Command.Middleware.ParseArgs,
+    Exmud.Engine.Command.Middleware.ExecuteMatchedCommand
+  ]
 
 # It is also possible to import configuration files, relative to this
 # directory. For example, you can emulate configuration per environment

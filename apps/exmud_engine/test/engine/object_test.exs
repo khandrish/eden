@@ -1,7 +1,6 @@
 defmodule Exmud.Engine.Test.ObjectTest do
   alias Ecto.UUID
   alias Exmud.Engine.Attribute
-  alias Exmud.Engine.Callback
   alias Exmud.Engine.CommandSet
   alias Exmud.Engine.Component
   alias Exmud.Engine.Object
@@ -12,14 +11,13 @@ defmodule Exmud.Engine.Test.ObjectTest do
   use Exmud.Engine.Test.DBTestCase
 
   # Test Callbacks
-  alias Exmud.Engine.Test.Callback.Basic, as: BasicCallback
   alias Exmud.Engine.Test.CommandSet.Basic, as: BasicCommandSet
 
   # Test Component
   alias Exmud.Engine.Test.Component.Basic, as: BasicComponent
 
   describe "Objects: " do
-    setup [:create_new_object, :register_test_callbacks, :register_test_components]
+    setup [:create_new_object]
 
     @tag object: true
     @tag engine: true
@@ -36,19 +34,13 @@ defmodule Exmud.Engine.Test.ObjectTest do
     @tag object: true
     @tag engine: true
     test "object get tests", %{object_id: object_id} = _context do
-      callback_key = UUID.generate()
-
-      assert CommandSet.register(BasicCommandSet) == :ok
       {:ok, object} = Object.get(object_id)
       assert object.id == object_id
-      assert Component.register(BasicComponent) == :ok
-      assert Component.attach(object_id, BasicComponent.name()) == :ok
-      assert Attribute.put(object_id, BasicComponent.name(), "foo", "bar") == :ok
-      assert Callback.attach(object_id, callback_key, BasicCallback.name()) == :ok
-      assert CommandSet.attach(object_id, BasicCommandSet.name()) == :ok
+      assert Component.attach(object_id, BasicComponent) == :ok
+      assert Attribute.put(object_id, BasicComponent, "foo", "bar") == :ok
+      assert CommandSet.attach(object_id, BasicCommandSet) == :ok
       {:ok, object} = Object.get(object_id)
       assert length(object.components) == 1
-      assert length(object.callbacks) == 1
     end
 
     @tag object: true
@@ -61,28 +53,22 @@ defmodule Exmud.Engine.Test.ObjectTest do
       link_type = UUID.generate()
       tag = UUID.generate()
       tag_category = UUID.generate()
-      callback_key = UUID.generate()
 
-      assert Component.register(BasicComponent) == :ok
-      assert CommandSet.register(BasicCommandSet) == :ok
+      assert Component.attach(object_id1, BasicComponent) == :ok
 
-      assert Component.attach(object_id1, BasicComponent.name()) == :ok
-
-      assert Attribute.put(object_id1, BasicComponent.name(), attribute_key, attribute_value) ==
+      assert Attribute.put(object_id1, BasicComponent, attribute_key, attribute_value) ==
                :ok
 
-      assert Callback.attach(object_id1, callback_key, BasicCallback.name()) == :ok
-      assert CommandSet.attach(object_id1, BasicCommandSet.name()) == :ok
+      assert CommandSet.attach(object_id1, BasicCommandSet) == :ok
       assert Link.forge(object_id1, object_id2, link_type, "foo") == :ok
       assert Tag.attach(object_id1, tag_category, tag) == :ok
 
       assert Object.query(
                {:and,
                 [
-                  {:attribute, {BasicComponent.name(), attribute_key}},
-                  {:component, BasicComponent.name()},
-                  {:callback, callback_key},
-                  {:command_set, BasicCommandSet.name()},
+                  {:attribute, {BasicComponent, attribute_key}},
+                  {:component, BasicComponent},
+                  {:command_set, BasicCommandSet},
                   {:link, link_type},
                   {:link, {link_type, object_id2}},
                   {:link, {link_type, object_id2, "foo"}},
@@ -101,28 +87,22 @@ defmodule Exmud.Engine.Test.ObjectTest do
       link_type = UUID.generate()
       tag = UUID.generate()
       tag_category = UUID.generate()
-      callback_key = UUID.generate()
 
-      assert Component.register(BasicComponent) == :ok
-      assert CommandSet.register(BasicCommandSet) == :ok
+      assert Component.attach(object_id, BasicComponent) == :ok
 
-      assert Component.attach(object_id, BasicComponent.name()) == :ok
-
-      assert Attribute.put(object_id, BasicComponent.name(), attribute_key, attribute_value) ==
+      assert Attribute.put(object_id, BasicComponent, attribute_key, attribute_value) ==
                :ok
 
-      assert Callback.attach(object_id, callback_key, BasicCallback.name()) == :ok
-      assert CommandSet.attach(object_id, BasicCommandSet.name()) == :ok
+      assert CommandSet.attach(object_id, BasicCommandSet) == :ok
       assert Link.forge(object_id, object_id2, link_type, "foo") == :ok
       assert Tag.attach(object_id, tag_category, tag) == :ok
 
       assert Object.query(
                {:and,
                 [
-                  {:attribute, {BasicComponent.name(), attribute_key}},
-                  {:component, BasicComponent.name()},
-                  {:callback, callback_key},
-                  {:command_set, BasicCommandSet.name()},
+                  {:attribute, {BasicComponent, attribute_key}},
+                  {:component, BasicComponent},
+                  {:command_set, BasicCommandSet},
                   {:or,
                    [
                      {:link, link_type},
@@ -136,10 +116,9 @@ defmodule Exmud.Engine.Test.ObjectTest do
       assert Object.query(
                {:or,
                 [
-                  {:attribute, {BasicComponent.name(), attribute_key}},
-                  {:component, BasicComponent.name()},
-                  {:callback, callback_key},
-                  {:command_set, BasicCommandSet.name()},
+                  {:attribute, {BasicComponent, attribute_key}},
+                  {:component, BasicComponent},
+                  {:command_set, BasicCommandSet},
                   {:or,
                    [
                      {:link, link_type},
@@ -155,21 +134,5 @@ defmodule Exmud.Engine.Test.ObjectTest do
   defp create_new_object(_context) do
     object_id = Object.new!()
     %{object_id: object_id}
-  end
-
-  @callbacks [BasicCallback]
-
-  defp register_test_callbacks(context) do
-    Enum.each(@callbacks, &Callback.register/1)
-
-    context
-  end
-
-  @components [BasicComponent]
-
-  defp register_test_components(context) do
-    Enum.each(@components, &Component.register/1)
-
-    context
   end
 end

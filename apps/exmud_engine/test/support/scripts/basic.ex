@@ -1,3 +1,3 @@
 defmodule Exmud.Engine.Test.Script.Basic do
-  use Exmud.Engine.Callback
+  use Exmud.Engine.Script
 end
