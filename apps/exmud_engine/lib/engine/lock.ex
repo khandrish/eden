@@ -84,7 +84,7 @@ defmodule Exmud.Engine.Lock do
     Lock.new( %{
       object_id: object_id,
       access_type: access_type,
-      callback_module: Atom.to_string( callback_module ),
+      callback_module: pack_term( callback_module ),
       config: pack_term( lock_config )
     } )
     |> Repo.insert()
@@ -135,7 +135,7 @@ defmodule Exmud.Engine.Lock do
 
       { callback_module, config } ->
         { :ok,
-          apply( String.to_existing_atom( callback_module ), :check, [
+          apply( unpack_term( callback_module ), :check, [
             object_id,
             accessing_object,
             unpack_term( config )

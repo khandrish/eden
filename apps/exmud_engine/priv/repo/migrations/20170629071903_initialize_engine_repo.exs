@@ -33,28 +33,9 @@ defmodule Exmud.DB.Repo.EngineRepo.Migrations.InitializeEngineRepo do
     create index(:attribute, [:component_id])
     create unique_index(:attribute, [:name, :component_id])
 
-    create table(:callback) do
-      add :object_id, references(:object, [on_delete: :delete_all])
-      add :key, :string
-      add :data, :binary
-    end
-    create index(:callback, [:object_id])
-    create index(:callback, [:key])
-    create unique_index(:callback, [:key, :object_id], name: :callback_object_id_key_index)
-
-    create table(:callback_set) do
-      add :object_id, references(:object, [on_delete: :delete_all])
-      add :name, :string
-      add :config, :binary
-
-      timestamps()
-    end
-    create index(:callback_set, [:object_id])
-    create unique_index(:callback_set, [:name, :object_id])
-
     create table(:command_set) do
       add :object_id, references(:object, [on_delete: :delete_all])
-      add :callback_module, :string
+      add :callback_module, :binary
       add :config, :binary
       add :visibility, :string
 
@@ -72,7 +53,7 @@ defmodule Exmud.DB.Repo.EngineRepo.Migrations.InitializeEngineRepo do
     end
     create index(:lock, [:object_id])
     create index(:lock, [:access_type])
-    create unique_index(:lock, [:object_id, :access_type])
+    create unique_index(:lock, [:object_id, :access_type], name: :lock_object_id_access_type_index)
 
     create table(:link) do
       add :from_id, references(:object, [on_delete: :delete_all])

@@ -67,8 +67,7 @@ defmodule Exmud.Engine.CommandSet do
   @callback allow_duplicates( config ) :: merge_type
 
   @doc """
-  The overrides to check against when determining merge_type. If any match the name of a lower priority CommandSet, the
-  specified merge type will be used instead of what is returned by 'merge_type/1'
+  The overrides to check against when determining merge_type. If any match the name of a lower priority CommandSet, the specified merge type will be used instead of what is returned by 'merge_type/1'
   """
   @callback merge_overrides( config ) :: merge_type
 
@@ -145,7 +144,7 @@ defmodule Exmud.Engine.CommandSet do
       CommandSet.new(
         %{
           object_id: object_id,
-          callback_module: Atom.to_string( callback_module ),
+          callback_module: pack_term( callback_module ),
           config: pack_term( config ),
           visibility: callback_module.visibility( config )
         }
@@ -248,7 +247,7 @@ defmodule Exmud.Engine.CommandSet do
         command_sets
         # Transform each command set from database into a merge set
         |> Enum.reduce( [], fn { object_id, callback_module, config }, list ->
-          [ build_merge_set( object_id, String.to_existing_atom( callback_module ), unpack_term( config ) ) | list ]
+          [ build_merge_set( object_id, unpack_term( callback_module ), unpack_term( config ) ) | list ]
         end)
         |> Enum.reverse()
         |> Enum.sort( fn first_merge_set, second_merge_set ->

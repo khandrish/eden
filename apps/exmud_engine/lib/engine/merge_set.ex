@@ -35,8 +35,7 @@ defmodule Exmud.Engine.MergeSet do
   @typedoc "A map holding  a set of arbitrary terms as keys and metadata describing how to merge said set."
   @type merge_set :: map()
 
-  @typedoc "A callback function allowing for the comparison of two arbirarily complex terms. Returning `true` means the
-  terms are equal."
+  @typedoc "A callback function allowing for the comparison of two arbirarily complex terms. Returning `true` means the terms are equal."
   @type comparison_function :: function()
 
   @typedoc "A list of options used to configure the MergeSet on creation"
@@ -71,10 +70,10 @@ defmodule Exmud.Engine.MergeSet do
   #
 
   @enforce_keys [:name, :priority]
-  defstruct allow_duplicates: false, keys: MapSet.new(), priority: nil, merge_type: :union, name: nil, overrides: %{}
+  defstruct allow_duplicates: false, keys: [], priority: nil, merge_type: :union, name: nil, overrides: %{}
   @type t :: %Exmud.Engine.MergeSet{
     allow_duplicates: boolean,
-    keys: MapSet.t(),
+    keys: [term],
     priority: integer,
     merge_type: merge_type,
     name: String.t(),
@@ -87,7 +86,7 @@ defmodule Exmud.Engine.MergeSet do
   """
   @spec add_key( merge_set, key ) :: merge_set
   def add_key( merge_set, key ) do
-    %{ merge_set | keys: MapSet.put( merge_set.keys, key ) }
+    %{ merge_set | keys: List.insert_at(merge_set.keys, -1, key ) }
   end
 
   @doc """
@@ -95,7 +94,17 @@ defmodule Exmud.Engine.MergeSet do
   """
   @spec has_key?( merge_set, key ) :: boolean
   def has_key?( merge_set, key ) do
-    MapSet.member?( merge_set.keys, key )
+    Enum.any?( merge_set.keys, &( &1 == key ) )
+  end
+
+  @doc """
+  Check the MergeSet to see if it already contains a key.
+  """
+  @spec has_key?( merge_set, key, comparison_function ) :: boolean
+  def has_key?( merge_set, key, comparison_function ) do
+    Enum.any?( merge_set.keys, fn ms_key ->
+      comparison_function.( key, ms_key )
+    end )
   end
 
   @doc """
@@ -103,7 +112,7 @@ defmodule Exmud.Engine.MergeSet do
   """
   @spec remove_key( merge_set, key ) :: merge_set
   def remove_key( merge_set, key ) do
-    %{ merge_set | keys: MapSet.delete( merge_set.keys, key ) }
+    %{ merge_set | keys: Enum.reject( merge_set.keys, &( &1 == key ) ) }
   end
 
   @doc """
@@ -191,7 +200,7 @@ defmodule Exmud.Engine.MergeSet do
   defp sort( nil, nil ), do: true
   defp sort( nil, _priority_b ), do: false
   defp sort( _priority_a, nil ), do: true
-  defp sort( priority_a, priority_b ), do: priority_a < priority_b
+  defp sort( priority_a, priority_b ), do: priority_a >= priority_b
 
   @spec merge_keys( key, merge_set, merge_set, comparison_function, allow_duplicates :: boolean ) ::
           [ term ]
