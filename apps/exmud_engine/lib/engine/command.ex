@@ -39,7 +39,7 @@ defmodule Exmud.Engine.Command do
   # Struct definition
   #
 
-  @enforce_keys [:key, :execute, :object_id]
+  @enforce_keys [ :key, :execute, :object_id ]
   defstruct key: nil,
             aliases: [],
             doc_generation: false,
@@ -96,7 +96,7 @@ defmodule Exmud.Engine.Command do
       def locks( _config ) , do: [ Exmud.Engine.Lock.Any ]
 
       @doc false
-      def argument_regex( _config ), do: engine_cfg(:command_argument_regex)
+      def argument_regex( _config ), do: engine_cfg( :command_argument_regex )
 
       defoverridable aliases: 1,
                      doc_generation: 1,
