@@ -18,7 +18,7 @@ defmodule Exmud.Engine.Script do
       def handle_message( _object_id, message, state ), do: { :ok, message, state }
 
       @doc false
-      def initialize( _object_id, _args ), do: { :ok, nil }
+      def initialize( object_id, _args ), do: { :ok, object_id }
 
       @doc false
       def run( _object_id, state ), do: { :ok, state }
@@ -71,9 +71,7 @@ defmodule Exmud.Engine.Script do
   @doc """
   Called when the Script is being started.
 
-  If this is the first time the Script has been started it will immediately follow a call to 'initialize/2' and will be
-  called with the state returned from the previous call, otherwise the state will be loaded from the database and used
-  instead. Must return a new state.
+  If this is the first time the Script has been started it will immediately follow a call to 'initialize/2' and will be called with the state returned from the previous call, otherwise the state will be loaded from the database and used instead. Must return a new state.
   """
   @callback start( object_id, args, state ) :: { :ok, state, next_iteration} | { :error, error, state }
 
@@ -112,6 +110,8 @@ defmodule Exmud.Engine.Script do
   @type callback_module :: atom
 
   alias Exmud.Engine.Cache
+  alias Exmud.Engine.CallbackSupervisor
+  alias Exmud.Engine.ObjectUtil
   alias Exmud.Engine.Repo
   alias Exmud.Engine.Schema.Script
   alias Exmud.Engine.ScriptRunner
@@ -119,6 +119,8 @@ defmodule Exmud.Engine.Script do
   import Ecto.Query
   import Exmud.Common.Utils
   import Exmud.Engine.Utils
+  import Exmud.Engine.Constants
+  import Exmud.Engine.ObjectUtil
 
   @script_registry script_registry()
 
@@ -127,11 +129,57 @@ defmodule Exmud.Engine.Script do
   #
 
   @doc """
+  Attach a Script to an Object.
+  """
+  @spec attach( object_id, callback_module, args | nil ) :: :ok | { :error, :no_such_object | :already_attached }
+  def attach( object_id, callback_module, config \\ nil ) do
+    initialization_result =
+      apply( callback_module, :initialize, [ object_id, config ] )
+
+      case initialization_result do
+        { :ok, new_state } ->
+          Logger.info(
+            "Script `#{ callback_module }` successfully initialized for Object `#{ object_id }`."
+          )
+
+          script =
+            %{ object_id: object_id, callback_module: pack_term( callback_module ), state: pack_term( new_state ) }
+            |> Exmud.Engine.Schema.Script.new()
+
+          ObjectUtil.attach( script )
+
+          :ok
+
+        {_, error} = error_result ->
+          Logger.error(
+            "Encountered error `#{ error }` while initializing Script `#{ callback_module }` for Object `#{
+              object_id
+            }`."
+          )
+
+          error_result
+      end
+  end
+
+  @doc """
   Call a running Script with a message.
   """
   @spec call( object_id, callback_module, message ) :: { :ok, reply }
   def call( object_id, callback_module, message ) do
     send_message( :call, object_id, callback_module, { :message, message } )
+  end
+
+  @doc """
+  Call a running Script with a message, or use that message as the argument for starting that Script on that Object.
+  """
+  @spec call_or_start( object_id, callback_module, message ) :: :ok | { :ok, term } | { :error, :no_such_script }
+  def call_or_start( object_id, callback_module, message ) do
+    case send_message( :call, object_id, callback_module, { :message, message } ) do
+      { :error, _ } ->
+        start( object_id, callback_module, message )
+      ok_result ->
+        ok_result
+    end
   end
 
   @doc """
@@ -158,12 +206,12 @@ defmodule Exmud.Engine.Script do
 
   First the running Script will be queried for the state, and then the database. Only if both fail to return a result is an error returned.
   """
-  @spec get_state( object_id, callback_module ) :: { :ok, term} | { :error, :no_such_script }
+  @spec get_state( object_id, callback_module ) :: { :ok, term } | { :error, :no_such_script }
   def get_state( object_id, callback_module ) do
     try do
-      GenServer.call( via( @script_registry, { object_id, callback_module } ), :state, :infinity)
+      GenServer.call( via( @script_registry, { object_id, callback_module } ), :state, :infinity )
     catch
-      :exit, { :noproc, _} ->
+      :exit, { :noproc, _ } ->
         script_query( object_id, callback_module )
         |> Repo.one()
         |> case do
@@ -222,28 +270,40 @@ defmodule Exmud.Engine.Script do
   end
 
   @doc """
-  Start a Script on an object. This works for both attaching a new Script to an Object and restarting an existing Script.
+  Start a Script on an object. The Script must already be attached.
   """
-  @spec start( object_id, callback_module, args :: term ) :: :ok | { :error, :no_such_script }
-  def start( object_id, callback_module, callback_module_arguments \\ nil ) do
-    with { :ok, callback_module } <- lookup( callback_module ) do
-      process_registration_callback_module = via( @script_registry, { object_id, callback_module } )
+  @spec start( object_id, callback_module, args | nil ) :: :ok | { :error, :no_such_script }
+  def start( object_id, callback_module, start_args \\ nil ) do
+    gen_server_args = [
+      object_id,
+      callback_module,
+      start_args
+    ]
 
-      gen_server_args = [
-        object_id,
-        callback_module,
-        callback_module,
-        callback_module_arguments,
-        process_registration_callback_module
-      ]
+    with { :ok, _ } <-  DynamicSupervisor.start_child( CallbackSupervisor, { ScriptRunner, gen_server_args } ) do
+      :ok
+    end
+  end
 
-      with { :ok, _} <-
-             DynamicSupervisor.start_child(
-               Exmud.Engine.CallbackSupervisor,
-               { ScriptRunner, gen_server_args }
-             ) do
-        :ok
-      end
+  @doc """
+  Start a Script on an object. The Script must already be attached.
+  """
+  @spec start_all( object_id, args ) ::
+    { :ok, %{ required( module() ) => :ok | { :error, :already_started } } } | { :error, :no_scripts_attached }
+  def start_all( object_id, start_args \\ nil ) do
+    from(
+      script in Script,
+      where: script.object_id == ^object_id
+    )
+    |> Repo.all()
+    |> case do
+      [] ->
+        { :error, :no_scripts_attached }
+      scripts ->
+        Enum.reduce( %{}, fn script, map ->
+          callback_module = unpack_term( script.callback_module )
+          Map.put(map, callback_module, start( object_id, callback_module, start_args ) )
+        end)
     end
   end
 
@@ -258,7 +318,7 @@ defmodule Exmud.Engine.Script do
         GenServer.stop( pid, :normal )
 
         receive do
-          { :DOWN, ^ref, :process, ^pid, :normal} ->
+          { :DOWN, ^ref, :process, ^pid, :normal } ->
             :ok
         end
 
@@ -300,7 +360,7 @@ defmodule Exmud.Engine.Script do
   defp script_query( object_id, callback_module ) do
     from(
       script in Script,
-      where: script.callback_module == ^callback_module,
+      where: script.callback_module == ^pack_term( callback_module ),
       where: script.object_id == ^object_id
     )
   end

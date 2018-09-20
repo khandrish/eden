@@ -1,18 +1,15 @@
 defmodule Exmud.Engine.Application do
   @moduledoc false
 
-  import Exmud.Engine.Utils
+  import Exmud.Engine.Constants
   use Application
 
   def start(_type, _args) do
     children = [
       Exmud.Engine.Repo,
-      %{
-        id: Cachex,
-        start: {Cachex, :start_link, [cache()]}
-      },
       {Registry, keys: :unique, name: system_registry()},
       {Registry, keys: :unique, name: script_registry()},
+      {Registry, keys: :unique, name: player_registry()},
       {DynamicSupervisor, strategy: :one_for_one, name: Exmud.Engine.CallbackSupervisor},
       {DynamicSupervisor, strategy: :one_for_one, name: Exmud.Engine.CommandSupervisor}
     ]

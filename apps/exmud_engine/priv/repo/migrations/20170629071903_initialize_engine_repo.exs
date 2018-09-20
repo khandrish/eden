@@ -58,7 +58,7 @@ defmodule Exmud.DB.Repo.EngineRepo.Migrations.InitializeEngineRepo do
     create table(:link) do
       add :from_id, references(:object, [on_delete: :delete_all])
       add :type, :string
-      add :data, :binary
+      add :state, :binary
       add :to_id, references(:object, [on_delete: :delete_all])
     end
     create index(:link, [:from_id])
@@ -67,13 +67,13 @@ defmodule Exmud.DB.Repo.EngineRepo.Migrations.InitializeEngineRepo do
     create unique_index(:link, [:from_id, :type, :to_id])
 
     create table(:script) do
-      add :name, :string
+      add :callback_module, :binary
       add :object_id, references(:object, [on_delete: :delete_all])
       add :state, :binary
     end
-    create index(:script, [:name])
+    create index(:script, [:callback_module])
     create index(:script, [:object_id])
-    create unique_index(:script, [:object_id, :name])
+    create unique_index(:script, [:object_id, :callback_module])
 
     create table(:tag) do
       add :category, :string

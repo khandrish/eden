@@ -28,129 +28,98 @@ defmodule Exmud.Engine.Test.ScriptTest do
   alias Exmud.Engine.Test.Script.Unregister
 
   describe "scripts interface" do
-    setup [:create_new_object, :register_test_scripts]
+    setup [ :create_new_object ]
 
-    @tag script: true
-    @tag engine: true
-    test "with successful start", %{object_id: object_id} = _context do
-      assert Script.running?(object_id, Idle.name()) == false
-      assert Script.start(object_id, Idle.name()) == :ok
-      assert Script.is_attached?(object_id, Idle.name()) == true
-      assert Script.running?(object_id, Idle.name()) == true
-      assert Script.stop(object_id, Idle.name()) == :ok
-      assert Script.start(object_id, Idle.name()) == :ok
+    test "by stopping and starting", %{object_id: object_id} = _context do
+      assert Script.running?(object_id, Idle) == false
+      assert Script.attach(object_id, Idle) == :ok
+      assert Script.is_attached?(object_id, Idle) == true
+      assert Script.running?(object_id, Idle) == false
+      assert Script.start(object_id, Idle) == :ok
+      assert Script.running?(object_id, Idle) == true
+      assert Script.stop(object_id, Idle) == :ok
+      assert Script.running?(object_id, Idle) == false
     end
 
-    @tag script: true
-    @tag engine: true
-    test "with getting state", %{object_id: object_id} = _context do
-      assert Script.start(object_id, State.name()) == :ok
-      assert Script.get_state(object_id, State.name()) == {:ok, nil}
-      assert Script.stop(object_id, State.name()) == :ok
-      assert Script.get_state(object_id, State.name()) == {:ok, nil}
+    test "by getting state", %{object_id: object_id} = _context do
+      assert Script.attach(object_id, State) == :ok
+      assert Script.start(object_id, State) == :ok
+      assert Script.get_state(object_id, State) == {:ok, object_id}
+      assert Script.stop(object_id, State) == :ok
+      assert Script.get_state(object_id, State) == {:ok, object_id}
     end
 
-    @tag script: true
-    @tag engine: true
+    test "by calling or starting", %{object_id: object_id} = _context do
+      assert Script.call_or_start( object_id, Idle, nil ) == { :error, :no_such_script }
+      assert Script.attach(object_id, Idle) == :ok
+      assert Script.call_or_start( object_id, Idle, nil ) == :ok
+    end
+
     test "with successful stop", %{object_id: object_id} = _context do
-      assert Script.start(object_id, Stop.name()) == :ok
-      assert Script.stop(object_id, Stop.name()) == :ok
+      assert Script.attach(object_id, Stop) == :ok
+      assert Script.start(object_id, Stop) == :ok
+      assert Script.stop(object_id, Stop) == :ok
     end
 
-    @tag script: true
-    @tag engine: true
     test "with successful update", %{object_id: object_id} = _context do
-      assert Script.start(object_id, Update.name()) == :ok
-      assert Script.stop(object_id, Update.name()) == :ok
-      assert Script.update(object_id, Update.name(), :bar) == :ok
-      assert Script.get_state(object_id, Update.name()) == {:ok, :bar}
+      assert Script.attach(object_id, Update) == :ok
+      assert Script.start(object_id, Update) == :ok
+      assert Script.stop(object_id, Update) == :ok
+      assert Script.update(object_id, Update, :bar) == :ok
+      assert Script.get_state(object_id, Update) == {:ok, :bar}
     end
 
-    @tag script: true
-    @tag engine: true
     test "with unsuccessful update", %{object_id: object_id} = _context do
-      assert Script.start(object_id, UnsuccessfulUpdate.name()) == :ok
-      assert Script.stop(object_id, UnsuccessfulUpdate.name()) == :ok
-      assert Script.update(object_id, UnsuccessfulUpdate.name(), :bar) == :ok
-      assert Script.get_state(object_id, UnsuccessfulUpdate.name()) == {:ok, :bar}
+      assert Script.attach(object_id, UnsuccessfulUpdate) == :ok
+      assert Script.start(object_id, UnsuccessfulUpdate) == :ok
+      assert Script.stop(object_id, UnsuccessfulUpdate) == :ok
+      assert Script.update(object_id, UnsuccessfulUpdate, :bar) == :ok
+      assert Script.get_state(object_id, UnsuccessfulUpdate) == {:ok, :bar}
     end
 
-    @tag script: true
-    @tag engine: true
     test "with successful detach", %{object_id: object_id} = _context do
-      assert Script.start(object_id, Detach.name()) == :ok
-      assert Script.stop(object_id, Detach.name()) == :ok
-      assert Script.is_attached?(object_id, Detach.name()) == true
-      assert Script.detach(object_id, Detach.name()) == :ok
-      assert Script.get_state(object_id, Detach.name()) == {:error, :no_such_script}
+      assert Script.attach(object_id, Detach) == :ok
+      assert Script.start(object_id, Detach) == :ok
+      assert Script.stop(object_id, Detach) == :ok
+      assert Script.is_attached?(object_id, Detach) == true
+      assert Script.detach(object_id, Detach) == :ok
+      assert Script.get_state(object_id, Detach) == {:error, :no_such_script}
     end
 
-    @tag script: true
-    @tag engine: true
     test "with error while stopping non existing script", %{object_id: object_id} = _context do
       assert Script.stop(object_id, "foo") == {:error, :no_such_script}
     end
 
-    @tag script: true
-    @tag engine: true
     test "with successful run", %{object_id: object_id} = _context do
-      assert Script.start(object_id, Run.name()) == :ok
-      assert Script.run(object_id, Run.name()) == :ok
-      assert Script.stop(object_id, Run.name()) == :ok
+      assert Script.attach(object_id, Run) == :ok
+      assert Script.start(object_id, Run) == :ok
+      assert Script.run(object_id, Run) == :ok
+      assert Script.stop(object_id, Run) == :ok
     end
 
-    @tag script: true
-    @tag engine: true
     test "with error while purging", %{object_id: object_id} = _context do
-      assert Script.purge(object_id, "Foo") == {:error, :no_such_script}
+      assert Script.purge(object_id, Idle) == {:error, :no_such_script}
     end
 
-    @tag script: true
-    @tag engine: true
     test "with successful purge", %{object_id: object_id} = _context do
-      assert Script.start(object_id, Purge.name()) == :ok
-      assert Script.purge(object_id, Purge.name()) == :ok
-      assert Script.stop(object_id, Purge.name()) == :ok
+      assert Script.attach(object_id, Purge) == :ok
+      assert Script.start(object_id, Purge) == :ok
+      assert Script.purge(object_id, Purge) == :ok
+      assert Script.stop(object_id, Purge) == :ok
     end
 
-    @tag script: true
-    @tag engine: true
     test "with successful call", %{object_id: object_id} = _context do
-      assert Script.start(object_id, Call.name()) == :ok
-      assert Script.call(object_id, Call.name(), "foo") == {:ok, "foo"}
-      assert Script.stop(object_id, Call.name()) == :ok
+      assert Script.attach(object_id, Call) == :ok
+      assert Script.start(object_id, Call) == :ok
+      assert Script.call(object_id, Call, "foo") == {:ok, "foo"}
+      assert Script.stop(object_id, Call) == :ok
     end
 
-    @tag script: true
-    @tag engine: true
     test "with successful cast", %{object_id: object_id} = _context do
-      assert Script.start(object_id, Cast.name()) == :ok
-      assert Script.cast(object_id, Cast.name(), "foo") == :ok
-      assert Script.stop(object_id, Cast.name()) == :ok
-    end
-
-    @tag script: true
-    @tag engine: true
-    test "by listing registered scripts" do
-      assert Script.list_registered() != []
-    end
-
-    @tag script: true
-    @tag engine: true
-    test "with failed lookup" do
-      assert Script.lookup("foo") == {:error, :no_such_script}
-    end
-
-    @tag script: true
-    @tag engine: true
-    test "by checking registered scripts" do
-      assert Script.registered?(Idle) == true
-    end
-
-    @tag script: true
-    @tag engine: true
-    test "by unregistering scripts" do
-      assert Script.unregister(Unregister) == :ok
+      assert Script.attach(object_id, Cast) == :ok
+      assert Script.start(object_id, Cast) == :ok
+      assert Script.cast(object_id, Cast, "foo") == :ok
+      assert Script.stop(object_id, Cast) == :ok
     end
   end
 
@@ -158,34 +127,5 @@ defmodule Exmud.Engine.Test.ScriptTest do
     object_id = Object.new!()
 
     %{object_id: object_id}
-  end
-
-  @scripts [
-    Idle,
-    Call,
-    Cast,
-    Run,
-    Purge,
-    Stop,
-    State,
-    UnsuccessfulUpdate,
-    Update,
-    Unregister,
-    Detach,
-    ErrorStarting,
-    ErrorStopping,
-    ErrorInitializing,
-    ErrorHandlingMessage,
-    RunInterval,
-    RunError,
-    RunErrorInterval,
-    RunErrorStop,
-    RunErrorStopping
-  ]
-
-  defp register_test_scripts(context) do
-    Enum.each(@scripts, &Script.register/1)
-
-    context
   end
 end

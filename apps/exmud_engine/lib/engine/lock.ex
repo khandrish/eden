@@ -27,6 +27,7 @@ defmodule Exmud.Engine.Lock do
   defmacro __using__( _ ) do
     quote location: :keep do
       @behaviour Exmud.Engine.Lock
+      import Exmud.Engine.Constants
 
       @doc false
       def check( _target_object, _accessing_object, _lock_config ), do: false

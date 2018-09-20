@@ -7,6 +7,14 @@ defmodule Exmud.Engine.Object do
 
   @get_inclusion_filters [ :command_sets, :components, :locks, :links, :scripts, :tags ]
 
+  defstruct command_sets: MapSet.new,
+            components: MapSet.new,
+            locks: MapSet.new,
+            links: MapSet.new,
+            scripts: MapSet.new,
+            tags: MapSet.new,
+            relationships: MapSet.new
+
   #
   # Typespecs
   #
@@ -184,6 +192,15 @@ defmodule Exmud.Engine.Object do
     dynamic(
       [ object, command_set, component, attribute ],
       attribute.name == ^attribute_name and component.callback_module == ^pack_term( component )
+    )
+  end
+
+  defp build_equality_check_dynamic( { :attribute, { component, attribute_name, attribute_value } } ) do
+    dynamic(
+      [ object, command_set, component, attribute ],
+      attribute.name == ^attribute_name
+        and component.callback_module == ^pack_term( component )
+        and attribute.value == ^pack_term( attribute_value )
     )
   end
 

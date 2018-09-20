@@ -4,13 +4,14 @@ defmodule Exmud.Engine.ScriptRunner do
   alias Exmud.Engine.Repo
   alias Exmud.Engine.Script
   import Ecto.Query
+  import Exmud.Engine.Constants
+  import Exmud.Common.Utils
   import Exmud.Engine.Utils
   require Logger
   use GenServer
 
   defmodule State do
     defstruct callback_module: nil,
-              callback_module: nil,
               deserialized_state: nil,
               object_id: nil,
               timer_ref: nil
@@ -40,9 +41,6 @@ defmodule Exmud.Engine.ScriptRunner do
   @typedoc "Id of the Object the Script is attached to."
   @type object_id :: integer
 
-  @typedoc "The callback_module of the Script as registered with the Engine."
-  @type callback_module :: String.t()
-
   @typedoc "A child spec for starting a process under a Supervisor."
   @type child_spec :: term
 
@@ -52,15 +50,14 @@ defmodule Exmud.Engine.ScriptRunner do
   @typedoc "The callback_module that is the implementation of the Script logic."
   @type callback_module :: atom
 
-  @typedoc "Arguments being passed to the callback_module."
-  @type callback_module_arguments :: atom
+  @script_registry script_registry()
 
   #
   # Worker callback used by the supervisor when starting a new Script Runner.
   #
 
   @doc false
-  @spec child_spec(args :: term) :: {:ok, child_spec}
+  @spec child_spec(args :: term) :: { :ok, child_spec}
   def child_spec(args) do
     %{
       id: __MODULE__,
@@ -75,21 +72,14 @@ defmodule Exmud.Engine.ScriptRunner do
   @spec start_link(
           object_id,
           callback_module,
-          callback_module,
-          callback_module_arguments,
-          process_registration_callback_module
-        ) :: :ok | {:error, :already_started}
-  def start_link(
-        object_id,
-        callback_module,
-        callback_module,
-        callback_module_arguments,
-        process_registration_callback_module
-      ) do
-    init_args = {object_id, callback_module, callback_module_arguments}
+          args
+        ) :: :ok | { :error, :already_started }
+  def start_link( object_id, callback_module, start_args ) do
+    start_args = { object_id, callback_module, start_args }
+    registered_name = via( @script_registry, { object_id, callback_module } )
 
-    case GenServer.start_link(__MODULE__, init_args, callback_module: process_registration_callback_module) do
-      {:error, {:already_started, _pid}} -> {:error, :already_started}
+    case GenServer.start_link( __MODULE__, start_args, name: registered_name ) do
+      { :error, { :already_started, _pid } } -> { :error, :already_started }
       result -> result
     end
   end
@@ -99,82 +89,50 @@ defmodule Exmud.Engine.ScriptRunner do
   #
 
   @doc false
-  @spec init({object_id, callback_module, callback_module_arguments}) ::
-          {:ok, state} | {:stop, error}
-  def init({object_id, callback_module, callback_module_arguments}) do
-    wrap_callback_in_transaction(fn ->
-      # Load the Script from the database, or create a new Script entry in the DB.
-      with {:ok, state} <-
-             load_callback(object_id, callback_module, callback_module_arguments) do
-        start_script(state, callback_module_arguments)
+  @spec init( { object_id, callback_module, args } ) :: { :ok, state } | { :stop, error }
+  def init( { object_id, callback_module, start_args } ) do
+    wrap_callback_in_transaction( fn ->
+      # Load the Script from the database.
+      with { :ok, state } <- load_state( object_id, callback_module ) do
+        start_script( state, start_args )
       else
-        {:error, error} -> {:stop, error}
+        { :error, error } -> { :stop, error }
       end
     end)
   end
 
-  @spec load_callback(object_id, callback_module, callback_module_arguments) ::
-          {:ok, state} | {:error, error}
-  defp load_callback(object_id, callback_module, callback_module_arguments) do
-    case Repo.one(script_query(object_id, callback_module)) do
+  @spec load_state( object_id, callback_module ) :: { :ok, state } | { :error, error }
+  defp load_state( object_id, callback_module ) do
+    case Repo.one( script_query( object_id, callback_module ) ) do
       nil ->
         Logger.info(
-          "Script `#{callback_module}` not found in the database for Object `#{object_id}`."
+          "Script `#{ callback_module }` not found in the database for Object `#{ object_id }`."
         )
 
-        initialization_result =
-          apply(callback_module, :initialize, [object_id, callback_module_arguments])
-
-        case initialization_result do
-          {:ok, new_state} ->
-            Logger.info(
-              "Script `#{callback_module}` successfully initialized for Object `#{object_id}`."
-            )
-
-            %{object_id: object_id, callback_module: callback_module, state: pack_term(new_state)}
-            |> Exmud.Engine.Schema.Script.new()
-            |> Repo.insert!()
-
-            {:ok,
-             %State{
-               object_id: object_id,
-               callback_module: callback_module,
-               deserialized_state: new_state,
-               callback_module: callback_module
-             }}
-
-          {_, error} = result ->
-            Logger.error(
-              "Encountered error `#{error}` while initializing Script `#{callback_module}` for Object `#{
-                object_id
-              }`."
-            )
-
-            result
-        end
+        { :error, :no_such_script }
 
       script ->
-        Logger.info("Script `#{callback_module}` loaded from database for Object `#{object_id}`.")
+        Logger.info( "Script `#{ callback_module }` loaded from database for Object `#{ object_id }`." )
 
-        {:ok,
-         %State{
-           object_id: script.object_id,
-           callback_module: script.callback_module,
-           deserialized_state: unpack_term(script.state),
-           callback_module: callback_module
-         }}
+        { :ok,
+          %State{
+            object_id: script.object_id,
+            callback_module: callback_module,
+            deserialized_state: unpack_term( script.state )
+          }
+        }
     end
   end
 
-  @spec start_script(state, args) :: {:ok, state} | {:stop, error}
-  defp start_script(state, start_args) do
+  @spec start_script( state, args ) :: { :ok, state } | { :stop, error }
+  defp start_script( state, start_args ) do
     start_result =
-      apply(state.callback_module, :start, [state.object_id, start_args, state.deserialized_state])
+      apply( state.callback_module, :start, [ state.object_id, start_args, state.deserialized_state ] )
 
     case start_result do
-      {:ok, new_state, send_after} ->
+      { :ok, new_state, send_after } ->
         Logger.info(
-          "Script `#{state.callback_module}` successfully started for Object `#{state.object_id}`."
+          "Script `#{ state.callback_module }` successfully started for Object `#{ state.object_id }`."
         )
 
         persist_if_changed(
@@ -185,15 +143,13 @@ defmodule Exmud.Engine.ScriptRunner do
         )
 
         # Trigger run after interval
-        ref = Process.send_after(self(), :run, send_after)
+        ref = Process.send_after( self(), :run, send_after )
 
-        {:ok, %{state | deserialized_state: new_state, timer_ref: ref}}
+        { :ok, %{ state | deserialized_state: new_state, timer_ref: ref } }
 
-      {:error, error, new_state} ->
+      { :error, error, new_state } ->
         Logger.error(
-          "Encountered error `#{error}` while starting Script `#{state.callback_module}` for Object `#{
-            state.object_id
-          }`."
+          "Encountered error `#{ error }` while starting Script `#{ state.callback_module }` for Object `#{ state.object_id }`."
         )
 
         persist_if_changed(
@@ -203,36 +159,36 @@ defmodule Exmud.Engine.ScriptRunner do
           new_state
         )
 
-        {:stop, error}
+        { :stop, error }
     end
   end
 
   @doc false
-  @spec handle_call(:run, from :: term, state) :: {:reply, :ok, state}
-  def handle_call(:run, _from, state) do
-    if is_reference(state.timer_ref) do
-      Process.cancel_timer(state.timer_ref)
+  @spec handle_call( :run, from :: term, state ) :: { :reply, :ok, state }
+  def handle_call( :run, _from, state ) do
+    if is_reference( state.timer_ref ) do
+      Process.cancel_timer( state.timer_ref )
     end
 
-    ref = Process.send_after(self(), :run, 0)
+    ref = Process.send_after( self(), :run, 0 )
 
-    {:reply, :ok, %{state | timer_ref: ref}}
+    { :reply, :ok, %{ state | timer_ref: ref } }
   end
 
   @doc false
-  @spec handle_call({:message, message}, from :: term, state) ::
-          {:reply, {:ok, response}, state} | {:reply, {:error, error}, state}
-  def handle_call({:message, message}, _from, state) do
-    wrap_callback_in_transaction(fn ->
+  @spec handle_call( { :message, message }, from :: term, state ) ::
+          { :reply, { :ok, response }, state } | { :reply, { :error, error }, state }
+  def handle_call( { :message, message }, _from, state ) do
+    wrap_callback_in_transaction( fn ->
       message_result =
-        apply(state.callback_module, :handle_message, [
+        apply( state.callback_module, :handle_message, [
           state.object_id,
           message,
           state.deserialized_state
-        ])
+        ] )
 
       case message_result do
-        {:ok, response, new_state} ->
+        { :ok, response, new_state } ->
           persist_if_changed(
             state.object_id,
             state.callback_module,
@@ -240,9 +196,9 @@ defmodule Exmud.Engine.ScriptRunner do
             new_state
           )
 
-          {:reply, {:ok, response}, %{state | deserialized_state: new_state}}
+          { :reply, { :ok, response }, %{ state | deserialized_state: new_state } }
 
-        {:error, error, new_state} ->
+        { :error, error, new_state } ->
           persist_if_changed(
             state.object_id,
             state.callback_module,
@@ -250,27 +206,27 @@ defmodule Exmud.Engine.ScriptRunner do
             new_state
           )
 
-          {:reply, {:error, error}, %{state | deserialized_state: new_state}}
+          { :reply, { :error, error }, %{ state | deserialized_state: new_state } }
       end
     end)
   end
 
   @doc false
-  @spec handle_call(:state, from :: term, state) :: {:reply, {:ok, response}, state}
-  def handle_call(:state, _from, state) do
-    {:reply, {:ok, state.deserialized_state}, state}
+  @spec handle_call( :state, from :: term, state ) :: { :reply, { :ok, response }, state }
+  def handle_call( :state, _from, state ) do
+    { :reply, { :ok, state.deserialized_state }, state }
   end
 
   @doc false
-  @spec handle_call(:running, from :: term, state) :: {:reply, true, state}
-  def handle_call(:running, _from, state) do
-    {:reply, true, state}
+  @spec handle_call( :running, from :: term, state ) :: { :reply, true, state }
+  def handle_call( :running, _from, state ) do
+    { :reply, true, state }
   end
 
   @doc false
-  @spec handle_call({:stop, args}, from :: term, state) ::
-          {:reply, :ok, state} | {:reply, {:error, error}, state}
-  def handle_call({:stop, args}, _from, state) do
+  @spec handle_call({ :stop, args}, from :: term, state ) ::
+          { :reply, :ok, state } | { :reply, { :error, error}, state }
+  def handle_call({ :stop, args}, _from, state ) do
     if is_reference(state.timer_ref) do
       Process.cancel_timer(state.timer_ref)
     end
@@ -282,9 +238,9 @@ defmodule Exmud.Engine.ScriptRunner do
       Process.send_after(self(), :stop, 0)
 
       case stop_result do
-        {:ok, new_state} ->
+        { :ok, new_state } ->
           Logger.info(
-            "Script `#{state.callback_module}` successfully stopped for Object `#{state.object_id}`."
+            "Script `#{state.callback_module }` successfully stopped for Object `#{state.object_id}`."
           )
 
           persist_if_changed(
@@ -294,13 +250,12 @@ defmodule Exmud.Engine.ScriptRunner do
             new_state
           )
 
-          {:reply, :ok, %{state | deserialized_state: new_state}}
+          { :reply, :ok, %{state | deserialized_state: new_state } }
 
-        {:error, error, new_state} ->
+        { :error, error, new_state } ->
           Logger.error(
-            "Error `#{error}` encountered when stopping Script `#{state.callback_module}` for Object `#{
-              state.object_id
-            }`."
+            "Error `#{ error }` encountered when stopping Script `#{ state.callback_module }` for Object `#{
+              state.object_id }`."
           )
 
           persist_if_changed(
@@ -310,51 +265,51 @@ defmodule Exmud.Engine.ScriptRunner do
             new_state
           )
 
-          {:reply, {:error, error}, %{state | deserialized_state: new_state}}
+          { :reply, { :error, error}, %{ state | deserialized_state: new_state } }
       end
     end)
   end
 
   @doc false
-  @spec handle_cast({:message, message}, state) :: {:noreply, state}
-  def handle_cast({:message, message}, state) do
-    wrap_callback_in_transaction(fn ->
-      {_type, _response, new_state} =
+  @spec handle_cast(  { :message, message }, state ) :: { :noreply, state }
+  def handle_cast( { :message, message }, state ) do
+    wrap_callback_in_transaction( fn ->
+      { _type, _response, new_state } =
         apply(state.callback_module, :handle_message, [
           state.object_id,
           message,
           state.deserialized_state
-        ])
+        ] )
 
-      persist_if_changed(state.object_id, state.callback_module, state.deserialized_state, new_state)
+      persist_if_changed( state.object_id, state.callback_module, state.deserialized_state, new_state )
 
-      {:noreply, %{state | deserialized_state: new_state}}
+      { :noreply, %{ state | deserialized_state: new_state } }
     end)
   end
 
   @doc false
-  @spec handle_info(:run, state) :: {:noreply, state} | {:stop, :normal, state}
-  def handle_info(:run, state) do
-    state = %{state | timer_ref: nil}
+  @spec handle_info( :run, state ) :: { :noreply, state } | { :stop, :normal, state }
+  def handle_info( :run, state ) do
+    state = %{ state | timer_ref: nil }
 
-    wrap_callback_in_transaction(fn ->
-      run(state)
+    wrap_callback_in_transaction( fn ->
+      run( state )
     end)
   end
 
   @doc false
-  @spec handle_info(:stop, state) :: {:stop, :normal, state}
-  def handle_info(:stop, state) do
-    {:stop, :normal, state}
+  @spec handle_info( :stop, state ) :: { :stop, :normal, state }
+  def handle_info( :stop, state ) do
+    { :stop, :normal, state }
   end
 
-  @spec run(state) :: {:noreply, state} | {:stop, :normal, state}
-  defp run(state) do
-    run_result = apply(state.callback_module, :run, [state.object_id, state.deserialized_state])
+  @spec run( state ) :: { :noreply, state } | { :stop, :normal, state }
+  defp run( state ) do
+    run_result = apply( state.callback_module, :run, [ state.object_id, state.deserialized_state ] )
 
     case run_result do
-      {:ok, new_state} ->
-        Logger.info("Script `#{state.callback_module}` successfully ran.")
+      { :ok, new_state } ->
+        Logger.info( "Script `#{ state.callback_module }` successfully ran." )
 
         persist_if_changed(
           state.object_id,
@@ -363,14 +318,14 @@ defmodule Exmud.Engine.ScriptRunner do
           new_state
         )
 
-        {:noreply, %{state | deserialized_state: new_state}}
+        { :noreply, %{ state | deserialized_state: new_state } }
 
-      {:ok, new_state, interval} ->
+      { :ok, new_state, interval } ->
         Logger.info(
-          "Script `#{state.callback_module}` successfully ran. Running again in #{interval} milliseconds."
+          "Script `#{ state.callback_module }` successfully ran. Running again in #{ interval } milliseconds."
         )
 
-        ref = Process.send_after(self(), :run, interval)
+        ref = Process.send_after( self(), :run, interval )
 
         persist_if_changed(
           state.object_id,
@@ -379,10 +334,10 @@ defmodule Exmud.Engine.ScriptRunner do
           new_state
         )
 
-        {:noreply, %{state | deserialized_state: new_state, timer_ref: ref}}
+        { :noreply, %{ state | deserialized_state: new_state, timer_ref: ref } }
 
-      {:error, error, new_state} ->
-        Logger.error("Error `#{error}` encountered when running Script `#{state.callback_module}`.")
+      { :error, error, new_state } ->
+        Logger.error( "Error `#{ error }` encountered when running Script `#{ state.callback_module }`." )
 
         persist_if_changed(
           state.object_id,
@@ -391,16 +346,16 @@ defmodule Exmud.Engine.ScriptRunner do
           new_state
         )
 
-        {:noreply, %{state | deserialized_state: new_state}}
+        { :noreply, %{ state | deserialized_state: new_state } }
 
-      {:error, error, new_state, interval} ->
+      { :error, error, new_state, interval } ->
         Logger.error(
-          "Error `#{error}` encountered when running Script `#{state.callback_module}`.  Running again in #{
+          "Error `#{ error }` encountered when running Script `#{ state.callback_module }`.  Running again in #{
             interval
           } milliseconds."
         )
 
-        ref = Process.send_after(self(), :run, interval)
+        ref = Process.send_after( self(), :run, interval )
 
         persist_if_changed(
           state.object_id,
@@ -409,22 +364,22 @@ defmodule Exmud.Engine.ScriptRunner do
           new_state
         )
 
-        {:noreply, %{state | deserialized_state: new_state, timer_ref: ref}}
+        { :noreply, %{ state | deserialized_state: new_state, timer_ref: ref } }
 
-      {:stop, reason, new_state} ->
-        Logger.info("Script `#{state.callback_module}` stopping after run.")
+      { :stop, reason, new_state } ->
+        Logger.info( "Script `#{state.callback_module }` stopping after run." )
 
-        stop_result = apply(state.callback_module, :stop, [state.object_id, reason, new_state])
+        stop_result = apply( state.callback_module, :stop, [ state.object_id, reason, new_state ] )
 
         script_state =
           case stop_result do
-            {:ok, script_state} ->
-              Logger.info("Script `#{state.callback_module}` successfully stopped.")
+            { :ok, script_state } ->
+              Logger.info( "Script `#{ state.callback_module }` successfully stopped." )
               script_state
 
-            {:error, error, script_state} ->
+            { :error, error, script_state } ->
               Logger.error(
-                "Error `#{error}` encountered when stopping Script `#{state.callback_module}`."
+                "Error `#{ error }` encountered when stopping Script `#{ state.callback_module }`."
               )
 
               script_state
@@ -437,7 +392,7 @@ defmodule Exmud.Engine.ScriptRunner do
           script_state
         )
 
-        {:stop, :normal, %{state | deserialized_state: script_state}}
+        { :stop, :normal, %{ state | deserialized_state: script_state } }
     end
   end
 
@@ -445,15 +400,15 @@ defmodule Exmud.Engine.ScriptRunner do
   # Private Functions
   #
 
-  @spec persist_if_changed(object_id, callback_module, state, state) :: term
-  defp persist_if_changed(object_id, callback_module, old_state, new_state) do
+  @spec persist_if_changed( object_id, callback_module, state, state ) :: term
+  defp persist_if_changed( object_id, callback_module, old_state, new_state ) do
     if new_state != old_state do
-      :ok = Script.update(object_id, callback_module, new_state)
+      :ok = Script.update( object_id, callback_module, new_state )
     end
   end
 
-  @spec script_query(object_id, callback_module) :: term
-  defp script_query(object_id, callback_module) do
+  @spec script_query( object_id, callback_module ) :: term
+  defp script_query( object_id, callback_module ) do
     from(
       script in Exmud.Engine.Schema.Script,
       where: script.object_id == ^object_id and script.callback_module == ^pack_term( callback_module )

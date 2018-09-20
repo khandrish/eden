@@ -5,8 +5,6 @@ defmodule Exmud.Engine.Utils do
   import Exmud.Common.Utils
 
   def cache, do: :exmud_engine_cache
-  def system_registry, do: :exmud_engine_system_registry
-  def script_registry, do: :exmud_engine_script_registry
 
   def engine_cfg(key), do: cfg(:exmud_engine, key)
 

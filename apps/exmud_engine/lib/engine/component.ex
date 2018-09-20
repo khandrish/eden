@@ -26,6 +26,8 @@ defmodule Exmud.Engine.Component do
   defmacro __using__( _ ) do
     quote location: :keep do
       @behaviour Exmud.Engine.Component
+      alias Exmud.Engine.Attribute
+      import Exmud.Engine.Constants
 
       @doc false
       def populate( _object_id, _args ), do: :ok

@@ -4,7 +4,7 @@ use Mix.Config
 
 config :exmud_engine, Exmud.Engine.Repo,
   adapter: Ecto.Adapters.Postgres,
-  database: "exmud_engine_#{Mix.env()}",
+  database: "exmud_engine_#{ Mix.env() }",
   hostname: "localhost",
   pool_size: 10,
   username: "exmud_engine"
@@ -19,7 +19,8 @@ config :exmud_engine,
     Exmud.Engine.Command.Middleware.MatchCommand,
     Exmud.Engine.Command.Middleware.ParseArgs,
     Exmud.Engine.Command.Middleware.ExecuteMatchedCommand
-  ]
+  ],
+  player_template: Exmud.Engine.Template.DefaultPlayerTemplate
 
 # It is also possible to import configuration files, relative to this
 # directory. For example, you can emulate configuration per environment
@@ -27,4 +28,4 @@ config :exmud_engine,
 # Configuration from the imported file will override the ones defined
 # here (which is why it is important to import them last).
 #
-import_config "#{Mix.env()}.exs"
+import_config "#{ Mix.env() }.exs"

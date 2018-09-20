@@ -2,12 +2,9 @@ defmodule Exmud.Engine.Link do
   @moduledoc """
   A `Exmud.Engine.Link` is a one-way relationship between two Objects that describes their connection.
 
-  Unlike Scripts, Systems, and Components, Links are lightweight in that they don't require any callback modules or
-  prior registration with the Engine to forge a link between two Objects.
+  Unlike Scripts, Systems, and Components, Links are lightweight in that they don't require any callback modules to forge a link between two Objects.
 
-  While Links can have data associated with them, it is not required. A Link could represent a simple parent/child
-  relationship which is effectively boolean and requires no additional data, or it could represent two Objects which
-  are exists? in combat which are a certain distance from the other which must be tracked.
+  While Links can have state associated with them, it is not required. A Link could represent a simple parent/child relationship which is effectively boolean and requires no additional state, or it could represent two Objects which are in combat which are a certain distance from the other which must be tracked.
   """
 
   alias Ecto.Multi
@@ -37,9 +34,9 @@ defmodule Exmud.Engine.Link do
   @type type :: String.t()
 
   @typedoc """
-  The data associated with a Link
+  The state associated with a Link
   """
-  @type data :: term
+  @type state :: term
 
   @typedoc """
   The id of an Object.
@@ -106,15 +103,11 @@ defmodule Exmud.Engine.Link do
   @doc """
   Break all Links of a specific type that matches a specific criteria between two Objects.
 
-  When called with anything other than a function as the last argument, a simple in database equality check is
-  performed. If an anonymous function, arity of one, is passed in the Link data will be retrieved from the database to
-  be passed into the function.
+  When called with anything other than a function as the last argument, a simple in database equality check is performed. If an anonymous function, arity of one, is passed in the Link state will be retrieved from the database to be passed into the function.
 
-  If a function is passed in the Link must be present and populated in the database otherwise an error will be returned.
-  Since the comparison is done client side using the method in this way is less efficient but more powerful as there is
-  complete control over checking an arbitrarily complex data structure.
+  If a function is passed in the Link must be present and populated in the database otherwise an error will be returned. Since the comparison is done client side using the method in this way is less efficient but more powerful as there is complete control over checking an arbitrarily complex state structure.
   """
-  @spec break_all(object_id, object_id, type, comparison_fun | data) ::
+  @spec break_all(object_id, object_id, type, comparison_fun | state) ::
           :ok
           | {:error, :no_such_link}
           | {:error, :unable_to_break_links}
@@ -125,7 +118,7 @@ defmodule Exmud.Engine.Link do
     links_to_break =
       query
       |> Repo.all()
-      |> Stream.map(&{&1.id, unpack_term(&1.data)})
+      |> Stream.map(&{&1.id, unpack_term(&1.state)})
       |> Enum.filter(&comparison_fun.(elem(&1, 1)))
 
     if length(links_to_break) > 0 do
@@ -141,8 +134,8 @@ defmodule Exmud.Engine.Link do
     end
   end
 
-  def break_all(object_id1, object_id2, link_type, data) do
-    query = link_omnidirectional_query(object_id1, object_id2, link_type, data)
+  def break_all(object_id1, object_id2, link_type, state) do
+    query = link_omnidirectional_query(object_id1, object_id2, link_type, state)
 
     query
     |> Repo.delete_all()
@@ -162,13 +155,12 @@ defmodule Exmud.Engine.Link do
   end
 
   @doc """
-  Link two Objects together, providing a type string that describes the link along with some optional data which can be
-  used to define the link itself.
+  Link two Objects together, providing a type string that describes the link along with some optional state which can be used to define the link itself.
   """
-  @spec forge(from, to, type, data) :: :ok | {:error, term}
-  def forge(from, to, type, data \\ nil) do
+  @spec forge(from, to, type, state) :: :ok | {:error, term}
+  def forge(from, to, type, state \\ nil) do
     %Link{}
-    |> Link.new(%{from_id: from, to_id: to, type: type, data: pack_term(data)})
+    |> Link.new(%{from_id: from, to_id: to, type: type, state: pack_term(state)})
     |> Repo.insert()
     |> case do
       {:ok, _} -> :ok
@@ -177,27 +169,26 @@ defmodule Exmud.Engine.Link do
   end
 
   @doc """
-  Link two Objects together bidirectionally, providing a type string that describes the link along with some optional
-  data which can be used to define the link itself.
+  Link two Objects together bidirectionally, providing a type string that describes the link along with some optional state which can be used to define the link itself.
 
-  Two seperate links will be created with the same type and same data, each one pointing in the opposite direction.
+  Two seperate links will be created with the same type and same state, each one pointing in the opposite direction.
   """
-  @spec forge_both(object_id, object_id, type, data) :: :ok | {:error, :unable_to_forge_link}
-  def forge_both(object_id1, object_id2, type, data \\ nil) do
-    paked_data = pack_term(data)
+  @spec forge_both(object_id, object_id, type, state) :: :ok | {:error, :unable_to_forge_link}
+  def forge_both(object_id1, object_id2, type, state \\ nil) do
+    paked_data = pack_term(state)
 
     links = [
       [
         from_id: object_id1,
         to_id: object_id2,
         type: type,
-        data: paked_data
+        state: paked_data
       ],
       [
         from_id: object_id2,
         to_id: object_id1,
         type: type,
-        data: paked_data
+        state: paked_data
       ]
     ]
 
@@ -242,25 +233,22 @@ defmodule Exmud.Engine.Link do
 
   Note that the order of the object id's does not matter. Any matching link in any direction will return true.
 
-  When called with anything other than a function as the last argument, a simple in database equality check is
-  performed. If an anonymous function, arity of one, is passed in the Link data will be retrieved from the database to
-  be passed into the function. The function must return a boolean value that indicates whether or not the data matches.
+  When called with anything other than a function as the last argument, a simple in database equality check is performed. If an anonymous function, arity of one, is passed in the Link state will be retrieved from the database to be passed into the function. The function must return a boolean value that indicates whether or not the state matches.
 
-  Since the comparison is done client side using the method in this way is less efficient but more powerful as there is
-  complete control over checking an arbitrarily complex data structure.
+  Since the comparison is done client side using the method in this way is less efficient but more powerful as there is complete control over checking an arbitrarily complex state structure.
   """
-  @spec any_exist?(object_id, object_id, type, comparison_fun | data) :: boolean
+  @spec any_exist?(object_id, object_id, type, comparison_fun | state) :: boolean
   def any_exist?(object_id1, object_id2, type, comparison_fun) when is_function(comparison_fun) do
     query = link_omnidirectional_query(object_id1, object_id2, type)
 
     Repo.all(query)
-    |> Stream.map(&unpack_term(&1.data))
+    |> Stream.map(&unpack_term(&1.state))
     |> Enum.filter(comparison_fun)
     |> length() > 0
   end
 
-  def any_exist?(object_id1, object_id2, type, data) do
-    query = link_count_query(object_id1, object_id2, type, data)
+  def any_exist?(object_id1, object_id2, type, state) do
+    query = link_count_query(object_id1, object_id2, type, state)
 
     Repo.one(query) > 0
   end
@@ -290,40 +278,37 @@ defmodule Exmud.Engine.Link do
   end
 
   @doc """
-  Returns a boolean indicating whether or not the two objects are linked by a specified type of link with data to match.
+  Returns a boolean indicating whether or not the two objects are linked by a specified type of link with state to match.
 
   Note that the order of the object id's does matter. Only links originating from the first Object are checked.
 
-  When called with anything other than a function as the last argument, a simple in database equality check is
-  performed. If an anonymous function, arity of one, is passed in the Link data will be retrieved from the database to
-  be passed into the function. The function must return a boolean value that indicates whether or not the data matches.
+  When called with anything other than a function as the last argument, a simple in database equality check is performed. If an anonymous function, arity of one, is passed in the Link state will be retrieved from the database to be passed into the function. The function must return a boolean value that indicates whether or not the state matches.
 
-  Since the comparison is done client side using the method in this way is less efficient but more powerful as there is
-  complete control over checking an arbitrarily complex data structure.
+  Since the comparison is done client side using the method in this way is less efficient but more powerful as there is complete control over checking an arbitrarily complex state structure.
   """
-  @spec exists?(from, to, type, comparison_fun | data) :: boolean
+  @spec exists?(from, to, type, comparison_fun | state) :: boolean
   def exists?(from, to, type, comparison_fun) when is_function(comparison_fun) do
     case Repo.one(link_directional_query(from, to, type)) do
       nil -> false
-      link -> comparison_fun.(unpack_term(link.data))
+      link -> comparison_fun.(unpack_term(link.state))
     end
   end
 
-  def exists?(from, to, type, data) do
-    query = from(link in link_directional_query(from, to, type, data), select: count("*"))
+  def exists?(from, to, type, state) do
+    query = from(link in link_directional_query(from, to, type, state), select: count("*"))
 
     Repo.one(query) == 1
   end
 
   @doc """
-  Update the data associated with a Link between two Objects.
+  Update the state associated with a Link between two Objects.
 
   Note that the order of the object id's does matter. Only links originating from the first Object are updated.
   """
-  @spec update(from, to, type, data) :: :ok | {:error, :no_such_link}
-  def update(from, to, type, data) do
+  @spec update(from, to, type, state) :: :ok | {:error, :no_such_link}
+  def update(from, to, type, state) do
     link_directional_query(from, to, type)
-    |> Repo.update_all(set: [data: pack_term(data)])
+    |> Repo.update_all(set: [state: pack_term(state)])
     |> case do
       {0, _} -> {:error, :no_such_link}
       _ -> :ok
@@ -331,15 +316,14 @@ defmodule Exmud.Engine.Link do
   end
 
   @doc """
-  Update the data associated with a Link between two Objects.
+  Update the state associated with a Link between two Objects.
 
-  Note that the order of the object id's does not matter. All links between the two Objects that match the type are
-  updated.
+  Note that the order of the object id's does not matter. All links between the two Objects that match the type are updated.
   """
-  @spec update_all(object_id, object_id, type, data) :: :ok | {:error, :no_such_link}
-  def update_all(object_id1, object_id2, type, data) do
+  @spec update_all(object_id, object_id, type, state) :: :ok | {:error, :no_such_link}
+  def update_all(object_id1, object_id2, type, state) do
     link_omnidirectional_query(object_id1, object_id2, type)
-    |> Repo.update_all(set: [data: pack_term(data)])
+    |> Repo.update_all(set: [state: pack_term(state)])
     |> case do
       {0, _} -> {:error, :no_such_link}
       _ -> :ok
@@ -363,13 +347,13 @@ defmodule Exmud.Engine.Link do
     )
   end
 
-  @spec link_directional_query(from, to, type, data) :: term
-  defp link_directional_query(object_id1, object_id2, type, data) do
+  @spec link_directional_query(from, to, type, state) :: term
+  defp link_directional_query(object_id1, object_id2, type, state) do
     from(
       link in Link,
       where:
         link.from_id == ^object_id1 and link.to_id == ^object_id2 and link.type == ^type and
-          link.data == ^pack_term(data)
+          link.state == ^pack_term(state)
     )
   end
 
@@ -391,16 +375,16 @@ defmodule Exmud.Engine.Link do
     )
   end
 
-  @spec link_omnidirectional_query(object_id, object_id, type, data) :: term
-  defp link_omnidirectional_query(object_id1, object_id2, type, data) do
+  @spec link_omnidirectional_query(object_id, object_id, type, state) :: term
+  defp link_omnidirectional_query(object_id1, object_id2, type, state) do
     from(
       link in Link,
       where:
         link.from_id == ^object_id1 and link.to_id == ^object_id2 and link.type == ^type and
-          link.data == ^pack_term(data),
+          link.state == ^pack_term(state),
       or_where:
         link.from_id == ^object_id2 and link.to_id == ^object_id1 and link.type == ^type and
-          link.data == ^pack_term(data)
+          link.state == ^pack_term(state)
     )
   end
 
@@ -414,15 +398,15 @@ defmodule Exmud.Engine.Link do
     from(link in link_omnidirectional_query(object_id1, object_id2, type), select: count("*"))
   end
 
-  @spec link_count_query(object_id, object_id, type, data) :: term
-  defp link_count_query(object_id1, object_id2, type, data) do
+  @spec link_count_query(object_id, object_id, type, state) :: term
+  defp link_count_query(object_id1, object_id2, type, state) do
     from(
-      link in link_omnidirectional_query(object_id1, object_id2, type, data),
+      link in link_omnidirectional_query(object_id1, object_id2, type, state),
       select: count("*")
     )
   end
 
-  @spec validate_break_result({number :: integer, data :: term}) :: :ok | {:error, :no_such_link}
+  @spec validate_break_result({number :: integer, state :: term}) :: :ok | {:error, :no_such_link}
   defp validate_break_result({0, _}), do: {:error, :no_such_link}
   defp validate_break_result({_some_positive_number, _}), do: :ok
 end
