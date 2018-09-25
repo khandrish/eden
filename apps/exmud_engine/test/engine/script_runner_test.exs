@@ -1,20 +1,19 @@
 defmodule Exmud.Engine.Worker.ScriptWorkerTest do
   alias Exmud.Engine.Object
   alias Exmud.Engine.Script
-  alias Exmud.Engine.Worker.ScriptWorker
-  use Exmud.Engine.Test.DBTestCase
-
-  alias Exmud.Engine.Test.Script.Idle
+  alias Exmud.Engine.Test.Script.ErrorHandlingMessage
   alias Exmud.Engine.Test.Script.ErrorInitializing
   alias Exmud.Engine.Test.Script.ErrorStarting
-  alias Exmud.Engine.Test.Script.ErrorHandlingMessage
   alias Exmud.Engine.Test.Script.ErrorStopping
-  alias Exmud.Engine.Test.Script.RunInterval
+  alias Exmud.Engine.Test.Script.Idle
+  alias Exmud.Engine.Test.Script.Run
   alias Exmud.Engine.Test.Script.RunError
   alias Exmud.Engine.Test.Script.RunErrorInterval
   alias Exmud.Engine.Test.Script.RunErrorStop
   alias Exmud.Engine.Test.Script.RunErrorStopping
-  alias Exmud.Engine.Test.Script.Run
+  alias Exmud.Engine.Test.Script.RunInterval
+  alias Exmud.Engine.Worker.ScriptWorker
+  use Exmud.Engine.Test.DBTestCase
 
   describe "script runner" do
     setup [ :create_state ]
