@@ -20,6 +20,14 @@ defmodule Exmud.Engine.Template do
   # Behavior definition and default callback setup
   #
 
+  @callback command_sets( term() ) :: :ok | { :error, atom() }
+  @callback components( term() ) :: :ok | { :error, atom() }
+  @callback links( term() ) :: :ok | { :error, atom() }
+  @callback locks( term() ) :: :ok | { :error, atom() }
+  @callback scripts( term() ) :: :ok | { :error, atom() }
+  @callback tags( term() ) :: :ok | { :error, atom() }
+
+
   @doc false
   defmacro __using__(_) do
     quote location: :keep do

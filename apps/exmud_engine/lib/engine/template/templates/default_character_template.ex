@@ -14,7 +14,7 @@ defmodule Exmud.Engine.Template.DefaultCharacterTemplate do
   alias Exmud.Engine.Template.LockEntry
 
   @doc false
-  @impl
+  @impl true
   @spec command_sets( Map.t() ) :: [ CommandSetEntry.t() ]
   def command_sets( config ) do
     [
@@ -26,7 +26,7 @@ defmodule Exmud.Engine.Template.DefaultCharacterTemplate do
   end
 
   @doc false
-  @impl
+  @impl true
   @spec components( Map.t() ) :: [ ComponentEntry.t() ]
   def components( config ) do
     [
@@ -38,7 +38,7 @@ defmodule Exmud.Engine.Template.DefaultCharacterTemplate do
   end
 
   @doc false
-  @impl
+  @impl true
   @spec locks( Map.t() ) :: [ LockEntry.t() ]
   def locks( _config ) do
     [
@@ -51,7 +51,7 @@ defmodule Exmud.Engine.Template.DefaultCharacterTemplate do
   end
 
   @doc false
-  @impl
+  @impl true
   @spec tags( Map.t() ) :: [ TagEntry.t() ]
   def tags( _config ) do
     [

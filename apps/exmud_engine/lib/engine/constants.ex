@@ -2,7 +2,7 @@ defmodule Exmud.Engine.Constants do
   @moduledoc """
   A set of functions returning static values to help avoid hardcoding values throughout the code.
   """
-  
+
   def command_execution_success, do: "success"
 
   def command_execution_failure, do: "failure"
@@ -26,10 +26,6 @@ defmodule Exmud.Engine.Constants do
   def player_registry, do: :exmud_engine_player_registry
 
 
-  def engine_tag_category, do: "__ENGINE__"
-  def player_tag, do: "player"
-  def character_tag, do: "character"
-
 
   #
   #
@@ -37,7 +33,9 @@ defmodule Exmud.Engine.Constants do
   #
   #
 
+  def engine_tag_category, do: "__ENGINE__"
   def player_tag, do: "player"
+  def character_tag, do: "character"
 
 
   #

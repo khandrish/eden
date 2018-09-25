@@ -1,4 +1,4 @@
-defmodule Exmud.Engine.ScriptRunner do
+defmodule Exmud.Engine.Worker.ScriptWorker do
   @moduledoc false
 
   alias Exmud.Engine.Repo
@@ -29,7 +29,7 @@ defmodule Exmud.Engine.ScriptRunner do
   @typedoc "An error message passed through to the caller."
   @type error :: term
 
-  @typedoc "A response from the ScriptRunner or the callback module."
+  @typedoc "A response from the ScriptWorker or the callback module."
   @type response :: term
 
   @typedoc "The reason the Script is stopping."
@@ -45,7 +45,7 @@ defmodule Exmud.Engine.ScriptRunner do
   @type child_spec :: term
 
   @typedoc "a :via tuple allowing for Systems and Scripts to be registered seperately."
-  @type process_registration_callback_module :: term
+  @type registered_name :: term
 
   @typedoc "The callback_module that is the implementation of the Script logic."
   @type callback_module :: atom
@@ -57,11 +57,11 @@ defmodule Exmud.Engine.ScriptRunner do
   #
 
   @doc false
-  @spec child_spec(args :: term) :: { :ok, child_spec}
-  def child_spec(args) do
+  @spec child_spec( args :: term ) :: child_spec
+  def child_spec( args ) do
     %{
       id: __MODULE__,
-      start: {__MODULE__, :start_link, args},
+      start: { __MODULE__, :start_link, args },
       restart: :transient,
       shutdown: 1000,
       type: :worker
@@ -75,8 +75,8 @@ defmodule Exmud.Engine.ScriptRunner do
           args
         ) :: :ok | { :error, :already_started }
   def start_link( object_id, callback_module, start_args ) do
-    start_args = { object_id, callback_module, start_args }
     registered_name = via( @script_registry, { object_id, callback_module } )
+    start_args = { object_id, callback_module, start_args }
 
     case GenServer.start_link( __MODULE__, start_args, name: registered_name ) do
       { :error, { :already_started, _pid } } -> { :error, :already_started }
@@ -101,7 +101,7 @@ defmodule Exmud.Engine.ScriptRunner do
     end)
   end
 
-  @spec load_state( object_id, callback_module ) :: { :ok, state } | { :error, error }
+  @spec load_state( object_id, callback_module ) :: { :ok, state } | { :error, :no_such_script }
   defp load_state( object_id, callback_module ) do
     case Repo.one( script_query( object_id, callback_module ) ) do
       nil ->

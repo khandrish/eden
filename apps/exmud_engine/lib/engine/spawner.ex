@@ -9,6 +9,7 @@ defmodule Exmud.Engine.Spawner do
   alias Exmud.Engine.Lock
   alias Exmud.Engine.Object
   alias Exmud.Engine.Repo
+  alias Exmud.Engine.Script
   alias Exmud.Engine.Tag
   alias Exmud.Engine.Template
   import Exmud.Common.Utils
@@ -19,7 +20,7 @@ defmodule Exmud.Engine.Spawner do
       # Callback modules will be called which could have bugs
       try do
         object_id = Object.new!()
-        template = Template.build_template( template, object_id, config )
+        template = Template.build_template( template, config )
 
         process_template( template, object_id, config )
       rescue

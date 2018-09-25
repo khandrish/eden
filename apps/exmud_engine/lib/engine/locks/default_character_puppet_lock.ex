@@ -5,7 +5,7 @@ defmodule Exmud.Engine.Lock.DefaultCharacterPuppetLock do
   use Exmud.Engine.Lock
 
   @doc false
-  @impl
+  @impl true
   def check( _target_object, accessing_object, lock_config ) when is_map( lock_config ) do
     Map.get( lock_config, "owner" ) == accessing_object
   end

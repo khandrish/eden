@@ -54,11 +54,6 @@ defmodule Exmud.Engine.Script do
   @callback initialize( object_id, args) :: { :ok, state } | { :error, reason}
 
   @doc """
-  The callback_module of the Script.
-  """
-  @callback callback_module :: String.t()
-
-  @doc """
   Called in response to an interval period expiring, or an explicit call to run the Script again. Unlike Systems, a Script is always expected to be running.
   """
   @callback run( object_id, state ) ::
@@ -109,24 +104,24 @@ defmodule Exmud.Engine.Script do
   @typedoc "The callback_module that is the implementation of the Script logic."
   @type callback_module :: atom
 
-  alias Exmud.Engine.Cache
   alias Exmud.Engine.CallbackSupervisor
   alias Exmud.Engine.ObjectUtil
   alias Exmud.Engine.Repo
   alias Exmud.Engine.Schema.Script
-  alias Exmud.Engine.ScriptRunner
+  alias Exmud.Engine.Worker.ScriptWorker
   require Logger
   import Ecto.Query
   import Exmud.Common.Utils
   import Exmud.Engine.Utils
   import Exmud.Engine.Constants
-  import Exmud.Engine.ObjectUtil
 
   @script_registry script_registry()
+
 
   #
   # Manipulation of a single Script on an Object
   #
+
 
   @doc """
   Attach a Script to an Object.
@@ -270,7 +265,7 @@ defmodule Exmud.Engine.Script do
   end
 
   @doc """
-  Start a Script on an object. The Script must already be attached.
+  Start a specific Script on an Object. The Script must already be attached.
   """
   @spec start( object_id, callback_module, args | nil ) :: :ok | { :error, :no_such_script }
   def start( object_id, callback_module, start_args \\ nil ) do
@@ -280,13 +275,13 @@ defmodule Exmud.Engine.Script do
       start_args
     ]
 
-    with { :ok, _ } <-  DynamicSupervisor.start_child( CallbackSupervisor, { ScriptRunner, gen_server_args } ) do
+    with { :ok, _ } <-  DynamicSupervisor.start_child( CallbackSupervisor, { ScriptWorker, gen_server_args } ) do
       :ok
     end
   end
 
   @doc """
-  Start a Script on an object. The Script must already be attached.
+  Start all Scripts on an Object. Will only start attached Scripts.
   """
   @spec start_all( object_id, args ) ::
     { :ok, %{ required( module() ) => :ok | { :error, :already_started } } } | { :error, :no_scripts_attached }
@@ -300,7 +295,7 @@ defmodule Exmud.Engine.Script do
       [] ->
         { :error, :no_scripts_attached }
       scripts ->
-        Enum.reduce( %{}, fn script, map ->
+        Enum.reduce( scripts, %{}, fn script, map ->
           callback_module = unpack_term( script.callback_module )
           Map.put(map, callback_module, start( object_id, callback_module, start_args ) )
         end)

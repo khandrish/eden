@@ -6,6 +6,7 @@ defmodule Exmud.Engine.Test.ScriptTest do
   use Exmud.Engine.Test.DBTestCase
 
   # Alias Script modules for use in tests
+  alias Exmud.Engine.Test.Script.Basic
   alias Exmud.Engine.Test.Script.ErrorHandlingMessage
   alias Exmud.Engine.Test.Script.ErrorInitializing
   alias Exmud.Engine.Test.Script.ErrorStarting
@@ -16,16 +17,8 @@ defmodule Exmud.Engine.Test.ScriptTest do
   alias Exmud.Engine.Test.Script.RunErrorInterval
   alias Exmud.Engine.Test.Script.RunErrorStop
   alias Exmud.Engine.Test.Script.RunErrorStopping
-  alias Exmud.Engine.Test.Script.Cast
-  alias Exmud.Engine.Test.Script.Call
+  alias Exmud.Engine.Test.Script.RunInterval
   alias Exmud.Engine.Test.Script.Run
-  alias Exmud.Engine.Test.Script.Stop
-  alias Exmud.Engine.Test.Script.State
-  alias Exmud.Engine.Test.Script.Detach
-  alias Exmud.Engine.Test.Script.Purge
-  alias Exmud.Engine.Test.Script.Update
-  alias Exmud.Engine.Test.Script.UnsuccessfulUpdate
-  alias Exmud.Engine.Test.Script.Unregister
 
   describe "scripts interface" do
     setup [ :create_new_object ]
@@ -42,11 +35,11 @@ defmodule Exmud.Engine.Test.ScriptTest do
     end
 
     test "by getting state", %{object_id: object_id} = _context do
-      assert Script.attach(object_id, State) == :ok
-      assert Script.start(object_id, State) == :ok
-      assert Script.get_state(object_id, State) == {:ok, object_id}
-      assert Script.stop(object_id, State) == :ok
-      assert Script.get_state(object_id, State) == {:ok, object_id}
+      assert Script.attach(object_id, Basic) == :ok
+      assert Script.start(object_id, Basic) == :ok
+      assert Script.get_state(object_id, Basic) == {:ok, object_id}
+      assert Script.stop(object_id, Basic) == :ok
+      assert Script.get_state(object_id, Basic) == {:ok, object_id}
     end
 
     test "by calling or starting", %{object_id: object_id} = _context do
@@ -56,34 +49,26 @@ defmodule Exmud.Engine.Test.ScriptTest do
     end
 
     test "with successful stop", %{object_id: object_id} = _context do
-      assert Script.attach(object_id, Stop) == :ok
-      assert Script.start(object_id, Stop) == :ok
-      assert Script.stop(object_id, Stop) == :ok
+      assert Script.attach(object_id, Basic) == :ok
+      assert Script.start(object_id, Basic) == :ok
+      assert Script.stop(object_id, Basic) == :ok
     end
 
     test "with successful update", %{object_id: object_id} = _context do
-      assert Script.attach(object_id, Update) == :ok
-      assert Script.start(object_id, Update) == :ok
-      assert Script.stop(object_id, Update) == :ok
-      assert Script.update(object_id, Update, :bar) == :ok
-      assert Script.get_state(object_id, Update) == {:ok, :bar}
-    end
-
-    test "with unsuccessful update", %{object_id: object_id} = _context do
-      assert Script.attach(object_id, UnsuccessfulUpdate) == :ok
-      assert Script.start(object_id, UnsuccessfulUpdate) == :ok
-      assert Script.stop(object_id, UnsuccessfulUpdate) == :ok
-      assert Script.update(object_id, UnsuccessfulUpdate, :bar) == :ok
-      assert Script.get_state(object_id, UnsuccessfulUpdate) == {:ok, :bar}
+      assert Script.attach(object_id, Basic) == :ok
+      assert Script.start(object_id, Basic) == :ok
+      assert Script.stop(object_id, Basic) == :ok
+      assert Script.update(object_id, Basic, :bar) == :ok
+      assert Script.get_state(object_id, Basic) == {:ok, :bar}
     end
 
     test "with successful detach", %{object_id: object_id} = _context do
-      assert Script.attach(object_id, Detach) == :ok
-      assert Script.start(object_id, Detach) == :ok
-      assert Script.stop(object_id, Detach) == :ok
-      assert Script.is_attached?(object_id, Detach) == true
-      assert Script.detach(object_id, Detach) == :ok
-      assert Script.get_state(object_id, Detach) == {:error, :no_such_script}
+      assert Script.attach(object_id, Basic) == :ok
+      assert Script.start(object_id, Basic) == :ok
+      assert Script.stop(object_id, Basic) == :ok
+      assert Script.is_attached?(object_id, Basic) == true
+      assert Script.detach(object_id, Basic) == :ok
+      assert Script.get_state(object_id, Basic) == {:error, :no_such_script}
     end
 
     test "with error while stopping non existing script", %{object_id: object_id} = _context do
@@ -102,24 +87,24 @@ defmodule Exmud.Engine.Test.ScriptTest do
     end
 
     test "with successful purge", %{object_id: object_id} = _context do
-      assert Script.attach(object_id, Purge) == :ok
-      assert Script.start(object_id, Purge) == :ok
-      assert Script.purge(object_id, Purge) == :ok
-      assert Script.stop(object_id, Purge) == :ok
+      assert Script.attach(object_id, Basic) == :ok
+      assert Script.start(object_id, Basic) == :ok
+      assert Script.purge(object_id, Basic) == :ok
+      assert Script.stop(object_id, Basic) == :ok
     end
 
     test "with successful call", %{object_id: object_id} = _context do
-      assert Script.attach(object_id, Call) == :ok
-      assert Script.start(object_id, Call) == :ok
-      assert Script.call(object_id, Call, "foo") == {:ok, "foo"}
-      assert Script.stop(object_id, Call) == :ok
+      assert Script.attach(object_id, Basic) == :ok
+      assert Script.start(object_id, Basic) == :ok
+      assert Script.call(object_id, Basic, "foo") == {:ok, "foo"}
+      assert Script.stop(object_id, Basic) == :ok
     end
 
     test "with successful cast", %{object_id: object_id} = _context do
-      assert Script.attach(object_id, Cast) == :ok
-      assert Script.start(object_id, Cast) == :ok
-      assert Script.cast(object_id, Cast, "foo") == :ok
-      assert Script.stop(object_id, Cast) == :ok
+      assert Script.attach(object_id, Basic) == :ok
+      assert Script.start(object_id, Basic) == :ok
+      assert Script.cast(object_id, Basic, "foo") == :ok
+      assert Script.stop(object_id, Basic) == :ok
     end
   end
 

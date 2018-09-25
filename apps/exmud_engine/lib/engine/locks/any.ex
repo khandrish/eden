@@ -5,6 +5,6 @@ defmodule Exmud.Engine.Lock.Any do
   use Exmud.Engine.Lock
 
   @doc false
-  @impl
+  @impl true
   def check( _target_object, _accessing_object, _lock_config ), do: true
 end

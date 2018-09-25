@@ -2,6 +2,10 @@ defmodule Exmud.DB.Repo.EngineRepo.Migrations.InitializeEngineRepo do
   use Ecto.Migration
 
   def change do
+    create table(:engine) do
+      add :initialized, :boolean
+    end
+
     create table(:object) do
       add :date_created, :timestamptz
       add :key, :string
@@ -10,11 +14,10 @@ defmodule Exmud.DB.Repo.EngineRepo.Migrations.InitializeEngineRepo do
     create index(:object, [:date_created])
 
     create table(:system) do
-      add :object_id, references(:object, [on_delete: :delete_all])
-      add :name, :string
+      add :callback_module, :binary
       add :state, :binary
     end
-    create unique_index(:system, [:name])
+    create unique_index(:system, [:callback_module])
 
     create table(:component) do
       add :object_id, references(:object, [on_delete: :delete_all])
