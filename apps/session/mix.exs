@@ -4,7 +4,7 @@ defmodule Exmud.Session.Mixfile do
   def project do
     [
       # Standard arguments
-      app: :exmud_session,
+      app: :session,
       deps: deps(),
       elixir: "~> 1.7.0",
       elixirc_paths: elixirc_paths(Mix.env),
@@ -34,15 +34,15 @@ defmodule Exmud.Session.Mixfile do
   defp deps do
     [
       {:calendar, "~> 0.17.2"},
-      {:credo, "~> 0.5", only: [:dev, :test]},
+      {:credo, "~> 0.10.2", only: [:dev, :test]},
       {:e_queue, "~> 1.0"},
-      {:ecto, "~> 2.1.4"},
-      {:ex_doc, ">= 0.14.5", only: :dev},
-      {:excoveralls, ">= 0.7.0", only: :test},
+      {:ecto, "~> 2.2"},
+      {:ex_doc, ">= 0.19.1", only: :dev},
+      {:excoveralls, ">= 0.10.1", only: :test},
       {:exmud_common, in_umbrella: true},
-      {:faker, "~> 0.8.0", only: [:dev, :test]},
-      {:inch_ex, ">= 0.5.6", only: :docs},
-      {:postgrex, "~> 0.13.0"},
+      {:faker, "~> 0.10.0", only: [:dev, :test]},
+      {:inch_ex, ">= 1.0.1", only: :docs},
+      {:postgrex, "~> 0.13.5"},
       {:uuid, "~> 1.1"}
     ]
   end

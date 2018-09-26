@@ -4,7 +4,7 @@ defmodule Exmud.Common.Mixfile do
   def project do
     [
       # Standard arguments
-      app: :exmud_common,
+      app: :common,
       deps: deps(),
       elixir: "~> 1.7.0",
       elixirc_paths: elixirc_paths(Mix.env),
@@ -36,11 +36,11 @@ defmodule Exmud.Common.Mixfile do
 
   defp deps do
     [
-      {:credo, "~> 0.5", only: [:dev, :test]},
+      {:credo, "~> 0.10.2", only: [:dev, :test]},
       {:ecto, "~> 2.2"},
-      {:ex_doc, ">= 0.14.5", only: :dev},
-      {:excoveralls, ">= 0.7.0", only: :test},
-      {:inch_ex, ">= 0.5.6", only: :docs}
+      {:ex_doc, ">= 0.19.1", only: :dev},
+      {:excoveralls, ">= 0.10.1", only: :test},
+      {:inch_ex, ">= 1.0.1", only: :docs}
     ]
   end
 

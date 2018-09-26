@@ -2,7 +2,7 @@ defmodule Exmud.Game.Mixfile do
   use Mix.Project
 
   def project do
-    [app: :exmud_game,
+    [app: :game,
      version: "0.1.0",
      build_path: "../../_build",
      config_path: "../../config/config.exs",
@@ -40,8 +40,8 @@ defmodule Exmud.Game.Mixfile do
   # Type "mix help deps" for more examples and options
   defp deps do
     [
-      {:exmud_common, in_umbrella: true},
-      {:exmud_engine, in_umbrella: true}
+      {:common, in_umbrella: true},
+      {:engine, in_umbrella: true}
     ]
   end
 end

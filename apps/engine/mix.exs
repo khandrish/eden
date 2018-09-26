@@ -5,7 +5,7 @@ defmodule Exmud.Engine.Mixfile do
     [
       # Standard arguments
       aliases: aliases(),
-      app: :exmud_engine,
+      app: :engine,
       deps: deps(),
       elixir: "~> 1.7.0",
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -50,20 +50,17 @@ defmodule Exmud.Engine.Mixfile do
 
   defp deps do
     [
-      {:absinthe, "~> 1.3"},
-      {:absinthe_ecto, "~> 0.1.0"},
-      {:cachex, "~> 2.1"},
-      {:calendar, "~> 0.17.2"},
-      {:credo, "~> 0.5", only: [:dev, :test]},
+      {:calendar, "~> 0.17.4"},
+      {:credo, "~> 0.10.2", only: [:dev, :test]},
       {:e_queue, "~> 1.0"},
       {:ecto, "~> 2.2"},
-      {:ex_doc, ">= 0.14.5", only: :dev},
-      {:excoveralls, ">= 0.7.0", only: :test},
-      {:exmud_common, in_umbrella: true},
-      {:faker, "~> 0.8.0", only: [:dev, :test]},
-      {:inch_ex, ">= 0.5.6", only: :docs},
-      {:jason, "~> 1.0"},
-      {:postgrex, "~> 0.13.0"},
+      {:ex_doc, ">= 0.19.1", only: :dev},
+      {:excoveralls, ">= 0.10.1", only: :test},
+      {:common, in_umbrella: true},
+      {:faker, "~> 0.10.0", only: [:dev, :test]},
+      {:inch_ex, ">= 1.0.1", only: :docs},
+      {:jason, "~> 1.1.1"},
+      {:postgrex, "~> 0.13.5"},
       {:uuid, "~> 1.1"}
     ]
   end
