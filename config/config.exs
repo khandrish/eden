@@ -7,7 +7,11 @@ use Mix.Config
 # they all use the same configuration. While one could
 # configure all applications here, we prefer to delegate
 # back to each application for organization purposes.
-import_config "../apps/*/config/config.exs"
+import_config "../apps/common/config/config.exs" # Common comes first so there can be orderly config overrides
+import_config "../apps/engine/config/config.exs" # Engine comes before Game so that Engine settings can be overriden
+import_config "../apps/game/config/config.exs"
+import_config "../apps/account/config/config.exs" # Order doesn't really matter other than coming after Common
+import_config "../apps/session/config/config.exs"
 
 # Sample configuration (overrides the imported configuration above):
 #
