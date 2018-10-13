@@ -1,4 +1,4 @@
-defmodule Exmud.Engine.Lock.DefaultCharacterPuppetLock do
+defmodule Exmud.Game.Contributions.Core.Lock.DefaultCharacterPuppetLock do
   @moduledoc """
   Allows puppeting of a Character by its owning Player
   """

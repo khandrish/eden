@@ -1,4 +1,4 @@
-defmodule Exmud.Engine.Lock.None do
+defmodule Exmud.Game.Contributions.Core.Lock.None do
   @moduledoc """
   This lock performs no checks, but instead fails immediately.
   """

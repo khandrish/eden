@@ -1,4 +1,4 @@
-defmodule Exmud.Engine.Component.PlayerComponent do
+defmodule Exmud.Game.Contributions.Core.Component.PlayerComponent do
   @moduledoc """
   A Player is the in-engine representation of an Account.
 

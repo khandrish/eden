@@ -1,4 +1,4 @@
-defmodule Exmud.Engine.Component.BasicCharacterComponent do
+defmodule Exmud.Game.Contributions.Core.Component.BasicCharacterComponent do
   @moduledoc """
   A Character is a Game Object that acts as the Player's avatar within the game world.
 
