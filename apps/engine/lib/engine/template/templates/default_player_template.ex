@@ -12,10 +12,7 @@ defmodule Exmud.Engine.Template.DefaultPlayerTemplate do
   @doc false
   def components( config ) do
     [
-      %ComponentEntry{
-        callback_module: Exmud.Engine.Component.PlayerComponent,
-        config: config
-      }
+      
     ]
   end
 

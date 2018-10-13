@@ -5,6 +5,7 @@ defmodule Exmud.Engine.Template.ScriptEntry do
   defstruct [ :callback_module, :config ]
   @type t :: %Exmud.Engine.Template.ScriptEntry{
     callback_module: module(),
-    config: term()
+    attach_config: term(),
+    start_config: term()
   }
 end

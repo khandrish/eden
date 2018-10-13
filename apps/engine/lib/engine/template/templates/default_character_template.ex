@@ -4,7 +4,7 @@ defmodule Exmud.Engine.Template.DefaultCharacterTemplate do
 
   The minimum config that must be provided is:
     %{
-      player: 123,
+      player_id: 123,
       name: "Gimli"
     }
   """
@@ -31,7 +31,7 @@ defmodule Exmud.Engine.Template.DefaultCharacterTemplate do
   def components( config ) do
     [
       %ComponentEntry{
-        callback_module: Exmud.Engine.Component.DefaultCharacterComponent,
+        callback_module: Exmud.Engine.Component.BasicCharacterComponent,
         config: config
       }
     ]
@@ -44,7 +44,7 @@ defmodule Exmud.Engine.Template.DefaultCharacterTemplate do
     [
       %Exmud.Engine.Template.LockEntry{
         callback_module: Exmud.Engine.Lock.DefaultCharacterPuppetLock,
-        config: %{},
+        config: %{ "player_id" => config["player_id"] },
         access_type: "puppet"
       }
     ]

@@ -20,7 +20,7 @@ defmodule Exmud.Engine.MergeSet do
 
             Example: ["foo", "bar"] + ["foobar", "barfoo"] == ["foo", "bar", "foobar", "barfoo"]
 
-    Intersect - Only keys which exist in both MergeSets end up in the final MergeSet. The key chosen will be from they
+    Intersect - Only keys which exist in both MergeSets end up in the final MergeSet. The key chosen will be from the
                 higher priority MergeSet.
             Example: ["foo", "bar"] + ["foo", "foobar", "barfoo"] == ["foo"]
 
@@ -56,7 +56,7 @@ defmodule Exmud.Engine.MergeSet do
   @typedoc "The type of merge to perform when merging the MergeSet."
   @type merge_type :: :union | :intersect | :replace | :remove
 
-  @typedoc "Whether or not to allow duplicate keys when merging the MergeSet."
+  @typedoc "Whether or not to allow duplicate keys when merging the MergeSet. Only applies to a union merge."
   @type allow_duplicates :: boolean
 
   @typedoc "The name of the MergeSet. Primarily used to check for overrides."
@@ -140,8 +140,7 @@ defmodule Exmud.Engine.MergeSet do
   end
 
   @doc """
-  Merge two MergeSets according to their priority and merge type rules. An optional comparison callback function allows
-  for the checking of two arbitrarily complex values.
+  Merge two MergeSets according to their priority and merge type rules. An optional comparison callback function allows for the checking of two arbitrarily complex values.
   """
   @spec merge( merge_set, merge_set | nil, comparison_function ) :: merge_set
   def merge( merge_set_a, merge_set_b, comparison_function \\ nil )
@@ -186,13 +185,13 @@ defmodule Exmud.Engine.MergeSet do
   @spec sort_by_merge_type( [ struct() ], [ struct() ] ) :: boolean
   def sort_by_merge_type( merge_set_1, merge_set_2 ) do
     case { merge_set_1, merge_set_2 } do
-    { %{ merge_type: :union }, _ } -> true
-    { %{ merge_type: :intersect }, %{ merge_type: :union } } -> false
-    { %{ merge_type: :intersect }, _ } -> true
-    { %{ merge_type: :replace }, %{ merge_type: :remove } } -> false
-    { %{ merge_type: :replace }, _ } -> true
-    { %{ merge_type: :remove }, %{ merge_type: :remove } } -> true
-    { %{ merge_type: :remove }, _ } -> false
+      { %{ merge_type: :union }, _ } -> true
+      { %{ merge_type: :intersect }, %{ merge_type: :union } } -> false
+      { %{ merge_type: :intersect }, _ } -> true
+      { %{ merge_type: :replace }, %{ merge_type: :remove } } -> false
+      { %{ merge_type: :replace }, _ } -> true
+      { %{ merge_type: :remove }, %{ merge_type: :remove } } -> true
+      { %{ merge_type: :remove }, _ } -> false
     end
   end
 
@@ -202,8 +201,7 @@ defmodule Exmud.Engine.MergeSet do
   defp sort( _priority_a, nil ), do: true
   defp sort( priority_a, priority_b ), do: priority_a >= priority_b
 
-  @spec merge_keys( key, merge_set, merge_set, comparison_function, allow_duplicates :: boolean ) ::
-          [ term ]
+  @spec merge_keys( key, merge_set, merge_set, comparison_function, allow_duplicates :: boolean ) :: [ term ]
   defp merge_keys( :union, higher_priority_keys, lower_priority_keys, _comparison_function, true ) do
     higher_priority_keys ++ lower_priority_keys
   end

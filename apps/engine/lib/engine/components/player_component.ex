@@ -8,7 +8,7 @@ defmodule Exmud.Engine.Component.PlayerComponent do
   use Exmud.Engine.Component
   alias Exmud.Engine.Attribute
 
-  @spec populate( integer, Map.t() ) :: :ok | :error
+  @spec populate( integer, Map.t() ) :: :ok | { :error, :no_such_component }
   def populate( object_id, config ) do
     Attribute.put( object_id, __MODULE__, account_id(), Map.get( config, account_id() ) )
   end

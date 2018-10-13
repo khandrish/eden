@@ -1,6 +1,8 @@
 defmodule Exmud.Engine.Spawner do
   @moduledoc """
   The Spawner takes in a Template and constructs a Game Object.
+
+  On successful return of the function, a new Game Object will have been created and saved into the DB as an atomic action. Scripts attached to an Object are also started immediately. They don't have to remain active but that is up to the logic of the individual Script. Just know that they will be started.
   """
 
   alias Exmud.Engine.CommandSet
@@ -14,78 +16,49 @@ defmodule Exmud.Engine.Spawner do
   alias Exmud.Engine.Template
   import Exmud.Common.Utils
 
-  def spawn( template, config ) when is_atom( template ) and is_map( config ) do
+  @doc """
+  Creates a new Object while spawning a Template. See `spawn/4`.
+   """
+  @spec spawn( %Template{}, term(), boolean() ) :: :ok
+  def spawn( %Template{} = template, config, start_scripts \\ true ) when is_boolean( start_scripts ) do
+    spawn( Object.new!(), template, config, start_scripts )
+  end
+
+  @doc """
+  Spawning an Object from a Template is an atomic operation, where everything is constructed correctly or nothing is.
+  """
+  @spec spawn( integer(), %Template{}, term(), boolean() ) :: :ok
+  def spawn( object_id, %Template{} = template, config, start_scripts \\ true ) when is_integer( object_id)
+                                                                                and is_boolean( start_scripts ) do
     # Creating a Game Object from a template should be an atomic operation
     Repo.transaction( fn ->
-      # Callback modules will be called which could have bugs
-      try do
-        object_id = Object.new!()
         template = Template.build_template( template, config )
 
-        process_template( template, object_id, config )
-      rescue
-        _ ->
-        Repo.rollback( :unhandled_exception )
-      end
+        Enum.each( template.command_sets, fn command_set ->
+          :ok = CommandSet.attach( object_id, command_set.callback_module, command_set.config )
+        end )
+
+        Enum.each( template.components, fn component ->
+          :ok = Component.attach( object_id, component.callback_module, component.config )
+        end )
+
+        Enum.each( template.links, fn link ->
+          :ok = Link.forge( link.to, link.type, link.config )
+        end )
+
+        Enum.each( template.locks, fn lock ->
+          :ok = Lock.attach( object_id, lock.access_type, lock.callback_module, lock.config )
+        end )
+
+        Enum.each( template.tags, fn tag ->
+          :ok = Tag.attach( object_id, tag.category, tag.tag )
+        end )
+
+        Enum.each( template.scripts, fn script ->
+          :ok = Script.attach( object_id, script.callback_module, script.attach_config )
+          :ok = Script.start( object_id, script.callback_module, script.start_config )
+        end )
     end )
     |> normalize_repo_result()
-  end
-
-  defp process_template( %Template{ command_sets: [], command_sets_done: false } = template, object_id, config ) do
-    process_template( %{ template | command_sets_done: true }, object_id, config )
-  end
-
-  defp process_template( %Template{ command_sets: [ command_set | rest ] } = template, object_id, config ) do
-    :ok = CommandSet.attach( object_id, command_set.callback_module, command_set.config )
-    process_template( %{ template | command_sets: rest }, object_id, config )
-  end
-
-  defp process_template( %Template{ components: [], components_done: false } = template, object_id, config ) do
-    process_template( %{ template | components_done: true }, object_id, config )
-  end
-
-  defp process_template( %Template{ components: [ component | rest ] } = template, object_id, config ) do
-    :ok = Component.attach( object_id, component.callback_module, component.config )
-    process_template( %{ template | components: rest }, object_id, config )
-  end
-
-  defp process_template( %Template{ links: [], links_done: false } = template, object_id, config ) do
-    process_template( %{ template | links_done: true }, object_id, config )
-  end
-
-  defp process_template( %Template{ links: [ link | rest ] } = template, object_id, config ) do
-    :ok = Link.forge( link.to, link.type, link.state )
-    process_template( %{ template | links: rest }, object_id, config )
-  end
-
-  defp process_template( %Template{ locks: [], locks_done: false } = template, object_id, config ) do
-    process_template( %{ template | locks_done: true }, object_id, config )
-  end
-
-  defp process_template( %Template{ locks: [ lock | rest ] } = template, object_id, config ) do
-    :ok = Lock.attach( object_id, lock.access_type, lock.callback_module, lock.config )
-    process_template( %{ template | locks: rest }, object_id, config )
-  end
-
-  defp process_template( %Template{ tags: [], tags_done: false } = template, object_id, config ) do
-    process_template( %{ template | tags_done: true }, object_id, config )
-  end
-
-  defp process_template( %Template{ tags: [ tag | rest ] } = template, object_id, config ) do
-    :ok = Tag.attach( object_id, tag.category, tag.tag )
-    process_template( %{ template | tags: rest }, object_id, config )
-  end
-
-  defp process_template( %Template{ scripts: [], scripts_done: false } = template, object_id, config ) do
-    process_template( %{ template | scripts_done: true }, object_id, config )
-  end
-
-  defp process_template( %Template{ scripts: [ script | rest ] } = template, object_id, config ) do
-    :ok = Script.start( object_id, script.callback_module, script.config )
-    process_template( %{ template | scripts: rest }, object_id, config )
-  end
-
-  defp process_template( _template, _object_id, _config ) do
-    :ok
   end
 end

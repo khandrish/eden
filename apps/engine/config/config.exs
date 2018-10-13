@@ -20,6 +20,8 @@ config :exmud_engine,
     Exmud.Engine.Command.Middleware.ParseArgs,
     Exmud.Engine.Command.Middleware.ExecuteMatchedCommand
   ],
+  # This Component must be present in the below Template.
+  player_component: Exmud.Engine.Component.DefaultPlayerComponent,
   player_template: Exmud.Engine.Template.DefaultPlayerTemplate
 
 # It is also possible to import configuration files, relative to this
