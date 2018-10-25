@@ -7,7 +7,7 @@ defmodule Exmud.Engine.Command do
       The action to be taken. This can be more than one word, so 'open third window' or 'tap second case' are just as valid as 'look' or 'move'.
 
     Aliases:
-      Aliases by which the command can be known. When a command string is being processed, both the key and the aliases are used to determine a match. That also means that both verbs and aliases are checked during a merge between Command Sets.
+      Aliases by which the command can be known. When a command string is being processed, both the key and the aliases are used to determine a match. That also means that both keys and aliases are checked during a merge between Command Sets.
 
       One example would be the alias 'flee' for the command 'retreat'. Another primary use is the explicit whitelisting of short cuts for Commands. The 'retreat' command might allow for 'retrea', 'retre', and 'retr' to match but nothing shorter due to potential conflicts with a wider range of Commands.
 
@@ -16,7 +16,7 @@ defmodule Exmud.Engine.Command do
     Executor:
       A do-nothing default implementation has been provided simply to make a Command work out-of-the-box, but every Command will require its own implementation of the 'execute/1' callback. This is where the actual logic execution for a Command takes place.
 
-      The callback is wrapped in a transaction, ensuring that all data can be accessed as if the Command execution function was the sole process. This also means the callback may need to be retried, and as such must be side effect free, except for manipulating the database of course.
+      The callback is wrapped in a transaction, ensuring that all data can be accessed as if the Command execution function was the sole process. This also means the callback may need to be retried and as such must be side effect free, except for manipulating the database of course.
 
     Locks:
       Locks help determine who/what has access to the Command itself. It's not enough for a Command to end up in the final merged Command Set, the caller must also have permissions for the Command itself. This defaults to allowing all callers.
@@ -176,10 +176,10 @@ defmodule Exmud.Engine.Command do
   #
 
 
-  @default_command_pipeline engine_cfg( :command_pipeline )
+  @command_pipeline engine_cfg( :command_pipeline )
 
   @doc false
-  def execute( caller, raw_input, pipeline \\ @default_command_pipeline ) do
+  def execute( caller, raw_input, pipeline \\ @command_pipeline ) do
     context = %ExecutionContext{ caller: caller, raw_input: raw_input }
 
     execute_steps( pipeline, context )

@@ -9,25 +9,30 @@ defmodule Exmud.Engine.Script do
   While each Script instance has its own state, please note that this state is only for that data which helps the Script itself run, and should not be used to store any data expected to be used/accessed by any other entity within the system.
   """
 
+  defmodule Result do
+    defstruct [ :events, :next_iteration, :state ]
+  end
+
   @doc false
   defmacro __using__( _ ) do
     quote location: :keep do
       @behaviour Exmud.Engine.Script
+      alias Exmud.Engine.Script.Result
 
       @doc false
-      def handle_message( _object_id, message, state ), do: { :ok, message, state }
+      def handle_message( _object_id, message, state ), do: { :ok, message, %Result{ state: state } }
 
       @doc false
-      def initialize( object_id, _args ), do: { :ok, object_id }
+      def initialize( object_id, _args ), do: { :ok, %Result{ state: nil } }
 
       @doc false
-      def run( _object_id, state ), do: { :ok, state }
+      def run( _object_id, state ), do: { :ok, %Result{ state: state } }
 
       @doc false
-      def start( _object_id, _args, state ), do: { :ok, state, 0 }
+      def start( _object_id, _args, state ), do: { :ok, %Result{ do: 0, state: state } }
 
       @doc false
-      def stop( _object_id, _reason, state ), do: { :ok, state }
+      def stop( _object_id, _reason, state ), do: { :ok, %Result{ state: state } }
 
       defoverridable handle_message: 3,
                      initialize: 2,

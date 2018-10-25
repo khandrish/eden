@@ -6,7 +6,7 @@ defmodule Exmud.Engine.Command.Middleware do
 
   See 'Exmud.Engine.Command.Execution' for further details.
 
-  Middleware can be configurd for use in a couple of ways:
+  Middleware can be configured for use in a couple of ways:
 
   1. Override the default command processing pipeline configuration.
   2. Provide an override pipeline on execution of a Command.
@@ -15,7 +15,7 @@ defmodule Exmud.Engine.Command.Middleware do
 
   Overriding the pipeline via config changes how every command is processed. Check the existing config before overriding to ensure critical steps in the pipeline are not missed.
 
-  Note: The override should be done in the exmud_game application and not the exmud_engine application. The default pipeline should be left as is in case of future updates so there aren't constant git conflicts.
+  Note: The override should be done in the Game application and not the Engine application. Unless contributing there should be no need to modify anything in the Engine.
 
   Example:
 
