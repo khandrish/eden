@@ -1,4 +1,4 @@
-defmodule Exmud.Engine.Template.DefaultPlayerTemplate do
+defmodule Exmud.Game.Contributions.Core.Template.Player do
   use Exmud.Engine.Template
   alias Exmud.Engine.Template.ComponentEntry
 
@@ -12,7 +12,7 @@ defmodule Exmud.Engine.Template.DefaultPlayerTemplate do
   @doc false
   def components( config ) do
     [
-      
+
     ]
   end
 

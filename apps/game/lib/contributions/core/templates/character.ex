@@ -1,4 +1,4 @@
-defmodule Exmud.Engine.Template.DefaultCharacterTemplate do
+defmodule Exmud.Game.Contributions.Core.Template.Character do
   @moduledoc """
   A Character belongs to a Player, and as such a Player must be provided when spawning a new Character.
 
@@ -19,7 +19,7 @@ defmodule Exmud.Engine.Template.DefaultCharacterTemplate do
   def command_sets( config ) do
     [
       %CommandSetEntry{
-        callback_module: Exmud.Engine.Component.DefaultCharacterCommandSet,
+        callback_module: Exmud.Engine.Component.CharacterCommandSet,
         config: config
       }
     ]
@@ -31,7 +31,7 @@ defmodule Exmud.Engine.Template.DefaultCharacterTemplate do
   def components( config ) do
     [
       %ComponentEntry{
-        callback_module: Exmud.Engine.Component.BasicCharacterComponent,
+        callback_module: Exmud.Engine.Component.CharacterComponent,
         config: config
       }
     ]
@@ -40,10 +40,10 @@ defmodule Exmud.Engine.Template.DefaultCharacterTemplate do
   @doc false
   @impl true
   @spec locks( Map.t() ) :: [ LockEntry.t() ]
-  def locks( _config ) do
+  def locks( config ) do
     [
       %Exmud.Engine.Template.LockEntry{
-        callback_module: Exmud.Engine.Lock.DefaultCharacterPuppetLock,
+        callback_module: Exmud.Engine.Lock.CharacterPuppetLock,
         config: %{ "player_id" => config["player_id"] },
         access_type: "puppet"
       }
