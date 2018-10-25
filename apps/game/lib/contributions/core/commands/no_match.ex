@@ -1,4 +1,4 @@
-defmodule Exmud.Engine.Command.NoMatch do
+defmodule Exmud.Game.Contributions.Core.Command.NoMatch do
   @moduledoc """
   This system Command is invoked when no matches have been made while processing an input string.
 

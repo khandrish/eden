@@ -1,4 +1,4 @@
-defmodule Exmud.Engine.Command.MultiMatch do
+defmodule Exmud.Game.Contributions.Core.Command.MultiMatch do
   @moduledoc """
   This system Command is invoked when multiple matches have been made while processing an input string.
 

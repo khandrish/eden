@@ -1,4 +1,4 @@
-defmodule Exmud.Engine.Command.Middleware.ExecuteMatchedCommand do
+defmodule Exmud.Game.Contributions.Command.Middleware.ExecuteMatchedCommand do
   @moduledoc """
   The matched command, after all of the prepatory work has been completed, can finally be executed.
   """

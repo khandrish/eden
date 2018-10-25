@@ -1,4 +1,4 @@
-defmodule Exmud.Engine.Command.Middleware.BuildActiveCommandList do
+defmodule Exmud.Game.Contributions.Command.Middleware.BuildActiveCommandList do
   @moduledoc """
   This default implementation considers the caller to be the whole context, doing nothing more than building the active list of Commands from it.
 

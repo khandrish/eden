@@ -1,4 +1,4 @@
-defmodule Exmud.Engine.Command.Middleware.FilterSystemCommands do
+defmodule Exmud.Game.Contributions.Command.Middleware.FilterSystemCommands do
   @moduledoc """
   This middleware prevents system commands from being sent as input. Any system command is mapped to a no match error.
   """

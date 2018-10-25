@@ -7,6 +7,19 @@ config :exmud_game,
   player_component: Exmud.Engine.Component.DefaultPlayerComponent,
   player_template: Exmud.Engine.Template.DefaultPlayerTemplate
 
+config :exmud_enging,
+  byte_size_to_compress: 1024, # Default value. Can be changed freely.
+  command_argument_regex: ~r/$/, # See Exmud.Engine.Command
+  command_pipeline: [
+    Exmud.Game.Contributions.Core.Command.Middleware.FilterSystemCommands,
+    Exmud.Game.Contributions.Core.Command.Middleware.BuildActiveCommandList,
+    Exmud.Game.Contributions.Core.Command.Middleware.MatchCommand,
+    Exmud.Game.Contributions.Core.Command.Middleware.ParseArgs,
+    Exmud.Game.Contributions.Core.Command.Middleware.ExecuteMatchedCommand
+  ],
+  system_command_multi_match: Exmud.Game.Contributions.Core.Command.MultiMatch,
+  system_command_no_match: Exmud.Game.Contributions.Core.Command.NoMatch
+
 # It is also possible to import configuration files, relative to this
 # directory. For example, you can emulate configuration per environment
 # by uncommenting the line below and defining dev.exs, test.exs and such.

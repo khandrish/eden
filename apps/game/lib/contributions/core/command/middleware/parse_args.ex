@@ -1,4 +1,4 @@
-defmodule Exmud.Engine.Command.Middleware.ParseArgs do
+defmodule Exmud.Game.Contributions.Command.Middleware.ParseArgs do
   @moduledoc """
   The arg string, which is everything after the matched command, should be processed before the Command is executed.
   """
