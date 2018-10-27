@@ -27,7 +27,7 @@ defmodule Exmud.Engine.Spawner do
   @doc """
   Spawning an Object from a Template is an atomic operation, where everything is constructed correctly or nothing is.
   """
-  @spec spawn( integer(), %Template{}, term(), boolean() ) :: :ok
+  @spec spawn( object_id :: integer(), %Template{}, term(), boolean() ) :: :ok
   def spawn( object_id, %Template{} = template, config, start_scripts \\ true ) when is_integer( object_id)
                                                                                 and is_boolean( start_scripts ) do
     # Creating a Game Object from a template should be an atomic operation
@@ -55,8 +55,8 @@ defmodule Exmud.Engine.Spawner do
         end )
 
         Enum.each( template.scripts, fn script ->
-          :ok = Script.attach( object_id, script.callback_module, script.attach_config )
-          :ok = Script.start( object_id, script.callback_module, script.start_config )
+          :ok = Script.attach( object_id, script.callback_module, script.config )
+          :ok = Script.start( object_id, script.callback_module, script.config )
         end )
     end )
     |> normalize_repo_result()
