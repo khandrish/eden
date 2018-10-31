@@ -9,7 +9,7 @@ defmodule Exmud.Engine.Attribute do
   alias Exmud.Engine.Repo
   alias Exmud.Engine.Schema.Attribute
   import Ecto.Query
-  import Exmud.Engine.Utils
+  import Exmud.Common.Utils
   require Logger
 
   #
@@ -98,6 +98,23 @@ defmodule Exmud.Engine.Attribute do
   end
 
   @doc """
+  Returns whether or not the specified Attribute is present on the Component.
+
+  Will return `false` if the Object/Component does not exist instead of an error.
+  """
+  @spec exists?( object_id, component, attribute_name ) :: boolean
+  def exists?( object_id, component, attribute_name ) when is_integer( object_id ) do
+    component = pack_term( component )
+    query =
+      from(
+        component in attribute_query( object_id, component, attribute_name ),
+        select: count( "*" )
+      )
+
+    Repo.one( query ) == 1
+  end
+
+  @doc """
   Returns whether or not the specified value is present on any Object.
 
   Will return `false` if the Component does not exist instead of an error.
@@ -120,7 +137,6 @@ defmodule Exmud.Engine.Attribute do
     end )
   end
 
-  @spec exists?( component, attribute_name, value ) :: boolean
   def exists?( component, attribute_name, value ) do
     component = pack_term( component )
     query =
@@ -134,23 +150,6 @@ defmodule Exmud.Engine.Attribute do
       )
 
     Repo.one( query ) >= 1
-  end
-
-  @doc """
-  Returns whether or not the specified Attribute is present on the Component.
-
-  Will return `false` if the Object/Component does not exist instead of an error.
-  """
-  @spec exists?( object_id, component, attribute_name ) :: boolean
-  def exists?( object_id, component, attribute_name ) do
-    component = pack_term( component )
-    query =
-      from(
-        component in attribute_query( object_id, component, attribute_name ),
-        select: count( "*" )
-      )
-
-    Repo.one( query ) == 1
   end
 
   @doc """
@@ -222,16 +221,6 @@ defmodule Exmud.Engine.Attribute do
   #
   # Private functions
   #
-
-  @spec attribute_query( component, attribute_name ) :: term
-  defp attribute_query( object_id, component, attribute_name ) do
-    from(
-      attribute in Attribute,
-      inner_join: comp in assoc( attribute, :component ),
-      where: attribute.name == ^attribute_name
-         and comp.callback_module == ^component
-    )
-  end
 
   @spec attribute_query( object_id, component, attribute_name ) :: term
   defp attribute_query(object_id, component, attribute_name) do

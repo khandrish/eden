@@ -4,7 +4,6 @@ defmodule Exmud.Engine.Test.MergeSetTest do
   use ExUnit.Case, async: true
 
   describe "merge set" do
-    @tag merge_set: true
     test "creation" do
       assert %MergeSet{ name: "test", priority: 1, keys: [ "bar" ] } == %MergeSet{
                allow_duplicates: false,
@@ -16,7 +15,6 @@ defmodule Exmud.Engine.Test.MergeSetTest do
              }
     end
 
-    @tag merge_set: true
     test "with modifications after create" do
       ms = %MergeSet{ name: "test", priority: 2, keys: [ "bar" ] }
       assert MergeSet.has_key?( ms, "foo" ) == false
@@ -35,7 +33,6 @@ defmodule Exmud.Engine.Test.MergeSetTest do
              }
     end
 
-    @tag merge_set: true
     test "creation with values" do
       assert %MergeSet{ name: "test", priority: 1, keys: [ "foo" ], merge_type: :intersect } == %MergeSet{
                allow_duplicates: false,
@@ -47,7 +44,6 @@ defmodule Exmud.Engine.Test.MergeSetTest do
              }
     end
 
-    @tag merge_set: true
     test "with simple union" do
       ms1 = %MergeSet{ name: "test", priority: 1, keys: [ "foo" ] }
       ms2 = %MergeSet{ name: "test", priority: 1, keys: [ "bar" ] }
@@ -55,8 +51,6 @@ defmodule Exmud.Engine.Test.MergeSetTest do
       assert "foo" in ms3.keys and "bar" in ms3.keys
     end
 
-    @tag wip: true
-    @tag merge_set: true
     test "with simple union allowing duplicates" do
       ms1 = %MergeSet{ name: "test", priority: 2, keys: [ "foo" ], allow_duplicates: true }
       ms2 = %MergeSet{ name: "test", priority: 1, keys: [ "bar", "foo" ] }
@@ -64,7 +58,6 @@ defmodule Exmud.Engine.Test.MergeSetTest do
       assert length( ms3.keys ) == 3
     end
 
-    @tag merge_set: true
     test "with simple intersect" do
       ms1 = %MergeSet{ name: "test", priority: 1, keys: [ "foo", "foobar" ], merge_type: :intersect }
       ms2 = %MergeSet{ name: "test", priority: 1, keys: [ "foobar", "bar" ] }
@@ -73,7 +66,6 @@ defmodule Exmud.Engine.Test.MergeSetTest do
       assert "foobar" in ms3.keys
     end
 
-    @tag merge_set: true
     test "with simple remove" do
       ms1 = %MergeSet{ name: "test", priority: 1, keys: [ "foo", "foobar" ], merge_type: :remove }
       ms2 = %MergeSet{ name: "test", priority: 1, keys: [ "foo", "foobar", "bar" ] }
@@ -82,7 +74,6 @@ defmodule Exmud.Engine.Test.MergeSetTest do
       assert "bar" in ms3.keys
     end
 
-    @tag merge_set: true
     test "with simple replace" do
       ms1 = %MergeSet{ name: "test", priority: 1, keys: [ "foo", "foobar" ], merge_type: :replace }
       ms2 = %MergeSet{ name: "test", priority: 1, keys: [ "foo", "foobar", "bar" ] }
@@ -91,7 +82,6 @@ defmodule Exmud.Engine.Test.MergeSetTest do
       assert "foo" in ms3.keys and "foobar" in ms3.keys
     end
 
-    @tag merge_set: true
     test "with overrides" do
       ms1 = %MergeSet{
         name: "test",

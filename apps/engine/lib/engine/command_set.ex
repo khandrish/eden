@@ -124,7 +124,6 @@ defmodule Exmud.Engine.CommandSet do
   alias Exmud.Engine.Schema.CommandSet
   import Ecto.Query
   import Exmud.Common.Utils
-  import Exmud.Engine.Utils
   require Logger
   import Exmud.Engine.Constants
 

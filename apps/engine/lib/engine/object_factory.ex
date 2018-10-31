@@ -1,4 +1,4 @@
-defmodule Exmud.Engine.Spawner do
+defmodule Exmud.Engine.ObjectFactory do
   @moduledoc """
   The Spawner takes in a Template and constructs a Game Object.
 
@@ -10,28 +10,26 @@ defmodule Exmud.Engine.Spawner do
   alias Exmud.Engine.Link
   alias Exmud.Engine.Lock
   alias Exmud.Engine.Object
-  alias Exmud.Engine.Repo
   alias Exmud.Engine.Script
   alias Exmud.Engine.Tag
   alias Exmud.Engine.Template
-  import Exmud.Common.Utils
+  import Exmud.Engine.Utils
 
   @doc """
   Creates a new Object while spawning a Template. See `spawn/4`.
-   """
-  @spec spawn( %Template{}, term(), boolean() ) :: :ok
-  def spawn( %Template{} = template, config, start_scripts \\ true ) when is_boolean( start_scripts ) do
-    spawn( Object.new!(), template, config, start_scripts )
+  """
+  @spec generate( %Template{}, term() ) :: :ok
+  def generate( %Template{} = template, config ) do
+    spawn( Object.new!(), template, config )
   end
 
   @doc """
   Spawning an Object from a Template is an atomic operation, where everything is constructed correctly or nothing is.
   """
-  @spec spawn( object_id :: integer(), %Template{}, term(), boolean() ) :: :ok
-  def spawn( object_id, %Template{} = template, config, start_scripts \\ true ) when is_integer( object_id)
-                                                                                and is_boolean( start_scripts ) do
+  @spec generate( object_id :: integer(), %Template{}, term() ) :: :ok
+  def generate( object_id, %Template{} = template, config ) when is_integer( object_id)  do
     # Creating a Game Object from a template should be an atomic operation
-    Repo.transaction( fn ->
+    wrap_callback_in_retryable_transaction( fn ->
         template = Template.build_template( template, config )
 
         Enum.each( template.command_sets, fn command_set ->
@@ -59,6 +57,7 @@ defmodule Exmud.Engine.Spawner do
           :ok = Script.start( object_id, script.callback_module, script.config )
         end )
     end )
-    |> normalize_repo_result()
+
+    :ok
   end
 end

@@ -16,11 +16,11 @@ defmodule Exmud.Engine.Test.DBTestCase do
     end
   end
 
-  setup do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Exmud.Engine.Repo)
-
-    Ecto.Adapters.SQL.Sandbox.mode(Exmud.Engine.Repo, {:shared, self()})
-
-    :ok
-  end
+  # setup do
+  #   :ok = Ecto.Adapters.SQL.Sandbox.checkout(Exmud.Engine.Repo)
+  #
+  #   Ecto.Adapters.SQL.Sandbox.mode(Exmud.Engine.Repo, {:shared, self()})
+  #
+  #   :ok
+  # end
 end

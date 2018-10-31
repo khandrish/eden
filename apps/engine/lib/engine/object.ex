@@ -2,7 +2,7 @@ defmodule Exmud.Engine.Object do
   alias Exmud.Engine.Repo
   alias Exmud.Engine.Schema.Object
   import Ecto.Query
-  import Exmud.Engine.Utils
+  import Exmud.Common.Utils
   require Logger
 
   @get_inclusion_filters [ :command_sets, :components, :locks, :links, :scripts, :tags ]

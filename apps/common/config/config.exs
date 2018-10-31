@@ -5,10 +5,7 @@ use Mix.Config
 config :exmud_common, ecto_repos: []
 
 config :exmud_common,
-  # Database backoff strategy configuration
-  db_transaction_retries: 9,
-  db_transaction_retry_delay_base_in_ms: 1,
-  db_transaction_retry_delay_cap_in_ms: 100
+  byte_size_to_compress: 1024
 
 # It is also possible to import configuration files, relative to this
 # directory. For example, you can emulate configuration per environment

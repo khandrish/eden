@@ -3,9 +3,6 @@ defmodule Exmud.Common.Utils do
 
   def cfg(first_key, second_key), do: Application.get_env(first_key, second_key)
 
-  def deserialize(term), do: :erlang.binary_to_term(term)
-  def serialize(term), do: :erlang.term_to_binary(term)
-
   def normalize_ecto_errors(errors), do: Enum.map(errors, fn({key, {error, _}}) -> {key, error} end)
 
   def normalize_multi_result({:ok, _results}), do: :ok
@@ -38,6 +35,31 @@ defmodule Exmud.Common.Utils do
         :none
       doc_languages ->
         String.trim( Map.get(doc_languages, language) )
+    end
+  end
+
+  # Check to see if the gzip header is present, and if it is gunzip first.
+  def unpack_term( << 31::size( 8 ), 139::size( 8 ), 8::size( 8 ), _rest::binary >> = bin ) do
+    try do
+      bin
+      |> :zlib.gunzip()
+      |> :erlang.binary_to_term()
+    rescue
+      :data_error ->
+        :erlang.binary_to_term( bin )
+    end
+  end
+
+  def unpack_term( bin ), do: :erlang.binary_to_term( bin )
+
+  @compression_threshold_bytes Application.get_env( :exmud_common, :byte_size_to_compress )
+  def pack_term( term ) do
+    bin = :erlang.term_to_binary( term )
+
+    if byte_size( bin ) >= @compression_threshold_bytes do
+      :zlib.gzip( bin )
+    else
+      bin
     end
   end
 end

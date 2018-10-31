@@ -11,7 +11,6 @@ defmodule Exmud.Engine.Link do
   alias Exmud.Engine.Repo
   alias Exmud.Engine.Schema.Link
   import Exmud.Common.Utils
-  import Exmud.Engine.Utils
   import Ecto.Query
 
   #
@@ -173,7 +172,7 @@ defmodule Exmud.Engine.Link do
 
   Two seperate links will be created with the same type and same state, each one pointing in the opposite direction.
   """
-  @spec forge_both(object_id, object_id, type, state) :: :ok | {:error, :unable_to_forge_link}
+  @spec forge_both(object_id, object_id, type, state) :: :ok
   def forge_both(object_id1, object_id2, type, state \\ nil) do
     paked_data = pack_term(state)
 
@@ -192,16 +191,9 @@ defmodule Exmud.Engine.Link do
       ]
     ]
 
-    Repo.transaction(fn ->
-      case Repo.insert_all(Link, links) do
-        {2, _} ->
-          :ok
+    {2, _} = Repo.insert_all(Link, links)
 
-        _ ->
-          Repo.rollback(:unable_to_forge_link)
-      end
-    end)
-    |> normalize_repo_result()
+    :ok
   end
 
   @doc """

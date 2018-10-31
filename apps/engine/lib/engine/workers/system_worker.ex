@@ -62,6 +62,7 @@ defmodule Exmud.Engine.Worker.SystemWorker do
 
   @spec start_link( callback_module, args ) :: :ok | { :error, :already_started }
   def start_link( callback_module, start_args ) do
+    # Systems and modules have a one-to-one relationship. Make the key the module name.
     registered_name = via( @system_registry, callback_module )
     start_args = { callback_module, start_args }
 
@@ -77,15 +78,13 @@ defmodule Exmud.Engine.Worker.SystemWorker do
 
   @spec init( { callback_module, args } ) :: { :ok, state } | { :stop, error }
   def init( { callback_module, start_args } ) do
-    wrap_callback_in_transaction( fn ->
-      # Load the System from the database.
-      with { :ok, state } <- load_state( callback_module ) do
-        start_system( state, start_args )
-      else
-        { :error, error } ->
-          { :stop, error }
-      end
-    end)
+    # Load the System from the database. A System must be explicitly initialized before a worker can be started
+    with { :ok, state } <- load_state( callback_module ) do
+      start_system( state, start_args )
+    else
+      { :error, error } ->
+        { :stop, error }
+    end
   end
 
   @spec load_state( callback_module ) :: { :ok, state } | { :error, :no_such_system }
@@ -129,7 +128,7 @@ defmodule Exmud.Engine.Worker.SystemWorker do
         { :ok, %{ state | deserialized_state: new_state, timer_ref: ref } }
 
       { :error, error, new_state } ->
-        Logger.error( "Encountered error `#{ error }` while starting System." )
+        Logger.error( "Encountered error `#{ error }` while starting System `#{ state.callback_module }`." )
 
         persist_if_changed(
           state.callback_module,
@@ -157,33 +156,19 @@ defmodule Exmud.Engine.Worker.SystemWorker do
   @spec handle_call( { :message, message }, from :: term, state ) ::
           { :reply, { :ok, response }, state } | { :reply, { :error, error }, state }
   def handle_call( { :message, message }, _from, state ) do
-    wrap_callback_in_transaction( fn ->
-      message_result =
-        apply( state.callback_module, :handle_message, [
-          message,
-          state.deserialized_state
-        ] )
+    { tag, response, new_state } =
+      apply( state.callback_module, :handle_message, [
+        message,
+        state.deserialized_state
+      ] )
 
-      case message_result do
-        { :ok, response, new_state } ->
-          persist_if_changed(
-            state.callback_module,
-            state.deserialized_state,
-            new_state
-          )
+    persist_if_changed(
+      state.callback_module,
+      state.deserialized_state,
+      new_state
+    )
 
-          { :reply, { :ok, response }, %{ state | deserialized_state: new_state } }
-
-        { :error, error, new_state } ->
-          persist_if_changed(
-            state.callback_module,
-            state.deserialized_state,
-            new_state
-          )
-
-          { :reply, { :error, error }, %{ state | deserialized_state: new_state } }
-      end
-    end)
+    { :reply, { tag, response }, %{ state | deserialized_state: new_state } }
   end
 
   @doc false
@@ -206,54 +191,45 @@ defmodule Exmud.Engine.Worker.SystemWorker do
       Process.cancel_timer( state.timer_ref )
     end
 
-    wrap_callback_in_transaction( fn ->
-      stop_result =
-        apply( state.callback_module, :stop, [ args, state.deserialized_state ] )
+    stop_result =
+      apply( state.callback_module, :stop, [ args, state.deserialized_state ] )
 
-      Process.send_after( self(), :stop, 0 )
-
+    { reply, new_state } =
       case stop_result do
         { :ok, new_state } ->
           Logger.info(
             "System `#{ state.callback_module }` successfully stopped."
           )
 
-          persist_if_changed(
-            state.callback_module,
-            state.deserialized_state,
-            new_state
-          )
-
-          { :reply, :ok, %{ state | deserialized_state: new_state } }
+          { :ok, new_state }
 
         { :error, error, new_state } ->
           Logger.error( "Error `#{ error }` encountered when stopping System #{ state.callback_module }." )
 
-          persist_if_changed(
-            state.callback_module,
-            state.deserialized_state,
-            new_state
-          )
-
-          { :reply, { :error, error}, %{ state | deserialized_state: new_state } }
+          { { :error, error }, new_state }
       end
-    end)
+
+    persist_if_changed(
+      state.callback_module,
+      state.deserialized_state,
+      new_state
+    )
+
+    { :stop, :normal, reply, %{ state | deserialized_state: new_state } }
   end
 
   @doc false
   @spec handle_cast(  { :message, message }, state ) :: { :noreply, state }
   def handle_cast( { :message, message }, state ) do
-    wrap_callback_in_transaction( fn ->
-      { _type, _response, new_state } =
-        apply(state.callback_module, :handle_message, [
-          message,
-          state.deserialized_state
-        ] )
+    { _type, _response, new_state } =
+      apply(state.callback_module, :handle_message, [
+        message,
+        state.deserialized_state
+      ] )
 
-      persist_if_changed( state.callback_module, state.deserialized_state, new_state )
+    persist_if_changed( state.callback_module, state.deserialized_state, new_state )
 
-      { :noreply, %{ state | deserialized_state: new_state } }
-    end)
+    { :noreply, %{ state | deserialized_state: new_state } }
   end
 
   @doc false
@@ -261,15 +237,7 @@ defmodule Exmud.Engine.Worker.SystemWorker do
   def handle_info( :run, state ) do
     state = %{ state | timer_ref: nil }
 
-    wrap_callback_in_transaction( fn ->
-      run( state )
-    end)
-  end
-
-  @doc false
-  @spec handle_info( :stop, state ) :: { :stop, :normal, state }
-  def handle_info( :stop, state ) do
-    { :stop, :normal, state }
+    run( state )
   end
 
   @spec run( state ) :: { :noreply, state } | { :stop, :normal, state }
@@ -299,9 +267,7 @@ defmodule Exmud.Engine.Worker.SystemWorker do
 
         { :error, error, new_state, interval } ->
           Logger.error(
-            "Error `#{ error }` encountered when running System `#{ state.callback_module }`.  Running again in #{
-              interval
-            } milliseconds."
+            "Error `#{ error }` encountered when running System `#{ state.callback_module }`.  Running again in #{ interval } milliseconds."
           )
 
           ref = Process.send_after( self(), :run, interval )

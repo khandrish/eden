@@ -8,39 +8,61 @@ defmodule Exmud.Engine.Utils do
 
   def engine_cfg( key ), do: cfg( :exmud_engine, key )
 
-  # Check to see if the gzip header is present, and if it is gunzip first.
-  def unpack_term( << 31::size( 8 ), 139::size( 8 ), 8::size( 8 ), _rest::binary >> = state ) do:
-    try do
-      state
-      |> :zlib.gunzip()
-      |> :erlang.binary_to_term()
-    rescue
-      :data_error ->
-        :erlang.binary_to_term( state )
-    end
+  @default_option_values %{
+    max_retries: :unlimited,
+    max_backoff: 100, # 100 milliseconds,
+    min_backoff: 2 # 1 millisecond
+  }
+  def wrap_callback_in_retryable_transaction( callback, options \\ [] ) do
+    options = Map.new( Keyword.merge( @default_option_values, options ) )
+
+    execute_callback( callback, options, 0 )
   end
 
-  def unpack_term( term ), do: :erlang.binary_to_term( term )
+  defp execute_callback( callback, %{ max_retries: max_retries } = options, retries )
+  when max_retries == :unlimited
+  or max_retries >= retries do
 
-  @compression_threshold_bytes cfg( :exmud_engine, :byte_size_to_compress )
-  def pack_term( term ) do
-    bin = :erlang.term_to_binary( term )
-
-    if byte_size( bin ) >= @compression_threshold_bytes do
-      :zlib.gzip( bin )
-    else
-      bin
+    # If retries is > 0 this is not the first attempt to run this callback due to a serialization error, backoff
+    if retries > 0 do
+      # See: https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
+      backoff = Enum.random( 0 .. min( options.max_backoff, 2 * trunc( :math.pow( 2, retries ) ) ) )
+      # This process should be blocked during the backoff period as this should be synchronous from outside
+      Process.sleep( backoff )
     end
-  end
 
-  def wrap_callback_in_transaction( callback ) do
-    Repo.transaction( fn ->
+    Repo.transaction(fn ->
+      # This try/rescue construct exists so that tests can work (YUCK!)
+      try do
+        # Every transaction should have an isolated view of the data
+        Repo.query("set transaction isolation level serializable;")
+      rescue
+        error in Postgrex.Error ->
+          if error.postgres.code != :active_sql_transaction do
+            raise error
+          end
+      end
+
       try do
         callback.()
       rescue
-        error -> Repo.rollback( error )
+        error in Postgrex.Error ->
+          if error.postgres.code == :serialization_failure do
+            Repo.rollback( :serialization_failure )
+          else
+            raise error
+          end
       end
     end)
-    |> elem( 1 )
+    |> case do
+      { :error, :serialization_failure } ->
+        execute_callback( callback, options, retries + 1 )
+      { _, result } ->
+        result
+    end
+  end
+
+  defp execute_callback( _, _, _ ) do
+    { :error, :retries_exceeded }
   end
 end

@@ -91,14 +91,12 @@ defmodule Exmud.Engine.Worker.ScriptWorker do
   @doc false
   @spec init( { object_id, callback_module, args } ) :: { :ok, state } | { :stop, error }
   def init( { object_id, callback_module, start_args } ) do
-    wrap_callback_in_transaction( fn ->
-      # Load the Script from the database.
-      with { :ok, state } <- load_state( object_id, callback_module ) do
-        start_script( state, start_args )
-      else
-        { :error, error } -> { :stop, error }
-      end
-    end)
+    # Load the Script from the database.
+    with { :ok, state } <- load_state( object_id, callback_module ) do
+      start_script( state, start_args )
+    else
+      { :error, error } -> { :stop, error }
+    end
   end
 
   @spec load_state( object_id, callback_module ) :: { :ok, state } | { :error, :no_such_script }
@@ -179,36 +177,34 @@ defmodule Exmud.Engine.Worker.ScriptWorker do
   @spec handle_call( { :message, message }, from :: term, state ) ::
           { :reply, { :ok, response }, state } | { :reply, { :error, error }, state }
   def handle_call( { :message, message }, _from, state ) do
-    wrap_callback_in_transaction( fn ->
-      message_result =
-        apply( state.callback_module, :handle_message, [
+    message_result =
+      apply( state.callback_module, :handle_message, [
+        state.object_id,
+        message,
+        state.deserialized_state
+      ] )
+
+    case message_result do
+      { :ok, response, new_state } ->
+        persist_if_changed(
           state.object_id,
-          message,
-          state.deserialized_state
-        ] )
+          state.callback_module,
+          state.deserialized_state,
+          new_state
+        )
 
-      case message_result do
-        { :ok, response, new_state } ->
-          persist_if_changed(
-            state.object_id,
-            state.callback_module,
-            state.deserialized_state,
-            new_state
-          )
+        { :reply, { :ok, response }, %{ state | deserialized_state: new_state } }
 
-          { :reply, { :ok, response }, %{ state | deserialized_state: new_state } }
+      { :error, error, new_state } ->
+        persist_if_changed(
+          state.object_id,
+          state.callback_module,
+          state.deserialized_state,
+          new_state
+        )
 
-        { :error, error, new_state } ->
-          persist_if_changed(
-            state.object_id,
-            state.callback_module,
-            state.deserialized_state,
-            new_state
-          )
-
-          { :reply, { :error, error }, %{ state | deserialized_state: new_state } }
-      end
-    end)
+        { :reply, { :error, error }, %{ state | deserialized_state: new_state } }
+    end
   end
 
   @doc false
@@ -231,60 +227,56 @@ defmodule Exmud.Engine.Worker.ScriptWorker do
       Process.cancel_timer(state.timer_ref)
     end
 
-    wrap_callback_in_transaction(fn ->
-      stop_result =
-        apply(state.callback_module, :stop, [state.object_id, args, state.deserialized_state])
+    stop_result =
+      apply(state.callback_module, :stop, [state.object_id, args, state.deserialized_state])
 
-      Process.send_after(self(), :stop, 0)
+    Process.send_after(self(), :stop, 0)
 
-      case stop_result do
-        { :ok, new_state } ->
-          Logger.info(
-            "Script `#{state.callback_module }` successfully stopped for Object `#{state.object_id}`."
-          )
+    case stop_result do
+      { :ok, new_state } ->
+        Logger.info(
+          "Script `#{state.callback_module }` successfully stopped for Object `#{state.object_id}`."
+        )
 
-          persist_if_changed(
-            state.object_id,
-            state.callback_module,
-            state.deserialized_state,
-            new_state
-          )
+        persist_if_changed(
+          state.object_id,
+          state.callback_module,
+          state.deserialized_state,
+          new_state
+        )
 
-          { :reply, :ok, %{state | deserialized_state: new_state } }
+        { :reply, :ok, %{state | deserialized_state: new_state } }
 
-        { :error, error, new_state } ->
-          Logger.error(
-            "Error `#{ error }` encountered when stopping Script `#{ state.callback_module }` for Object `#{
-              state.object_id }`."
-          )
+      { :error, error, new_state } ->
+        Logger.error(
+          "Error `#{ error }` encountered when stopping Script `#{ state.callback_module }` for Object `#{
+            state.object_id }`."
+        )
 
-          persist_if_changed(
-            state.object_id,
-            state.callback_module,
-            state.deserialized_state,
-            new_state
-          )
+        persist_if_changed(
+          state.object_id,
+          state.callback_module,
+          state.deserialized_state,
+          new_state
+        )
 
-          { :reply, { :error, error}, %{ state | deserialized_state: new_state } }
-      end
-    end)
+        { :reply, { :error, error}, %{ state | deserialized_state: new_state } }
+    end
   end
 
   @doc false
   @spec handle_cast(  { :message, message }, state ) :: { :noreply, state }
   def handle_cast( { :message, message }, state ) do
-    wrap_callback_in_transaction( fn ->
-      { _type, _response, new_state } =
-        apply(state.callback_module, :handle_message, [
-          state.object_id,
-          message,
-          state.deserialized_state
-        ] )
+    { _type, _response, new_state } =
+      apply(state.callback_module, :handle_message, [
+        state.object_id,
+        message,
+        state.deserialized_state
+      ] )
 
-      persist_if_changed( state.object_id, state.callback_module, state.deserialized_state, new_state )
+    persist_if_changed( state.object_id, state.callback_module, state.deserialized_state, new_state )
 
-      { :noreply, %{ state | deserialized_state: new_state } }
-    end)
+    { :noreply, %{ state | deserialized_state: new_state } }
   end
 
   @doc false
@@ -292,9 +284,7 @@ defmodule Exmud.Engine.Worker.ScriptWorker do
   def handle_info( :run, state ) do
     state = %{ state | timer_ref: nil }
 
-    wrap_callback_in_transaction( fn ->
-      run( state )
-    end)
+    run( state )
   end
 
   @doc false

@@ -9,11 +9,7 @@ defmodule Exmud.Engine.Event do
   If multiple events contain the same data, multiple message events containing the same string for example, it is better to use a single event with a list of Object id's instead. This will be more memory efficient. Please not that this assumes the default message event handler is in place, or that the replacement contains the same logic.
   """
 
-  import Exmud.Engine.Constants
-  import Exmud.Common.Utils
-  import Exmud.Engine.Utils
   require Logger
-  use GenServer
 
   defstruct [
     :type,
@@ -41,18 +37,18 @@ defmodule Exmud.Engine.Event do
     end
   end
 
-  def dispatch( %Event{ object_id: nil } = event ) do
+  def dispatch( %__MODULE__{ object_id: nil } = event ) do
     dispatch_global_event( event )
   end
 
-  def dispatch( %Event{} = event ) do
+  def dispatch( %__MODULE__{} = event ) do
     object_ids = List.wrap( event.object_id )
 
     for object_id <- object_ids do
       Registry.dispatch( Exmud.Engine.TargetedEventRegistry, object_id, fn entries ->
         for { pid, match } <- entries do
           if Regex.regex?( match ) and Regex.match?( match, event.type ) do
-            send( pid, { :event, %{ event | object_id: object_id } )
+            send( pid, { :event, %{ event | object_id: object_id } } )
           else
             if match == event.type do
               send( pid, { :event, %{ event | object_id: object_id } } )
@@ -72,7 +68,7 @@ defmodule Exmud.Engine.Event do
       Registry.dispatch( Exmud.Engine.TargetedEventRegistry, object_id, fn entries ->
         for { pid, match } <- entries do
           if Regex.regex?( match ) and Regex.match?( match, event.type ) do
-            send( pid, { :event, %{ event | object_id: object_id } )
+            send( pid, { :event, %{ event | object_id: object_id } } )
           else
             if match == event.type do
               send( pid, { :event, %{ event | object_id: object_id } } )

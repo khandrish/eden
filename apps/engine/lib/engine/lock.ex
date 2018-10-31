@@ -69,7 +69,6 @@ defmodule Exmud.Engine.Lock do
   alias Exmud.Engine.Schema.Lock
   import Ecto.Query
   import Exmud.Common.Utils
-  import Exmud.Engine.Utils
   require Logger
 
   #

@@ -12,9 +12,6 @@ defmodule Exmud.Engine.Test.ComponentTest do
   describe "components" do
     setup [:create_new_object]
 
-    @tag component: true
-    @tag engine: true
-    @tag wip: true
     test "lifecycle", %{object_id: object_id} = _context do
       assert Component.attach(object_id, "foo") == {:error, :callback_failed}
       assert Component.attach(object_id, Basic) == :ok
@@ -30,14 +27,10 @@ defmodule Exmud.Engine.Test.ComponentTest do
       assert Component.all_attached?(object_id, "foo") == false
     end
 
-    @tag component: true
-    @tag engine: true
     test "with wrong object_id" do
       assert Component.attach(0, Basic) == {:error, :no_such_object}
     end
 
-    @tag component: true
-    @tag engine: true
     test "with duplicate component", %{object_id: object_id} = _context do
       assert Component.attach(object_id, Basic) == :ok
       assert Component.attach(object_id, Basic) == {:error, :already_attached}

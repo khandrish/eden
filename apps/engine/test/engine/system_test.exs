@@ -12,12 +12,9 @@ defmodule Exmud.Engine.SystemTest do
   alias Exmud.Engine.Test.System.Purge
   alias Exmud.Engine.Test.System.Update
   alias Exmud.Engine.Test.System.UnsuccessfulUpdate
-  alias Exmud.Engine.Test.System.Unregister
 
   describe "system" do
 
-    @tag system: true
-    @tag engine: true
     test "with successful start" do
       assert System.initialize( Idle ) == :ok
       assert System.start( Idle ) == :ok
@@ -27,14 +24,10 @@ defmodule Exmud.Engine.SystemTest do
       assert System.start( Idle ) == :ok
     end
 
-    @tag system: true
-    @tag engine: true
     test "with running check on nonexisting system" do
       assert System.running?( :foo ) == false
     end
 
-    @tag system: true
-    @tag engine: true
     test "with getting state" do
       assert System.initialize( Interval ) == :ok
       assert System.start( Interval ) == :ok
@@ -43,30 +36,22 @@ defmodule Exmud.Engine.SystemTest do
       assert System.get_state( Interval ) == { :ok, nil }
     end
 
-    @tag system: true
-    @tag engine: true
     test "with successful stop" do
       assert System.initialize( Stop ) == :ok
       assert System.start( Stop ) == :ok
       assert System.stop( Stop ) == :ok
     end
 
-    @tag system: true
-    @tag engine: true
     test "with error while stopping" do
       assert System.stop( "foo" ) == { :error, :no_such_system }
     end
 
-    @tag system: true
-    @tag engine: true
     test "with successful run" do
       assert System.initialize( Run ) == :ok
       assert System.start( Run ) == :ok
       assert System.run( Run ) == :ok
     end
 
-    @tag system: true
-    @tag engine: true
     test "with successful call" do
       assert System.initialize( Call ) == :ok
       assert System.start( Call ) == :ok
@@ -74,8 +59,6 @@ defmodule Exmud.Engine.SystemTest do
       assert System.stop( Call ) == :ok
     end
 
-    @tag system: true
-    @tag engine: true
     test "with successful cast" do
       assert System.initialize( Cast ) == :ok
       assert System.start( Cast ) == :ok
@@ -83,8 +66,6 @@ defmodule Exmud.Engine.SystemTest do
       assert System.stop( Cast ) == :ok
     end
 
-    @tag system: true
-    @tag engine: true
     test "with successful purge" do
       assert System.initialize( Purge ) == :ok
       assert System.start( Purge ) == :ok
@@ -92,14 +73,10 @@ defmodule Exmud.Engine.SystemTest do
       assert System.stop( Purge ) == :ok
     end
 
-    @tag system: true
-    @tag engine: true
     test "with error while purging" do
       assert System.purge( :foo ) == { :error, :no_such_system }
     end
 
-    @tag system: true
-    @tag engine: true
     test "with successful update" do
       assert System.initialize( Update ) == :ok
       assert System.start( Update ) == :ok
@@ -108,8 +85,6 @@ defmodule Exmud.Engine.SystemTest do
       assert System.get_state( Update ) == { :ok, :bar }
     end
 
-    @tag system: true
-    @tag engine: true
     test "with unsuccessful update" do
       assert System.initialize( UnsuccessfulUpdate ) == :ok
       assert System.start( UnsuccessfulUpdate ) == :ok

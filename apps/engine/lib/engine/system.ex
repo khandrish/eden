@@ -9,10 +9,6 @@ defmodule Exmud.Engine.System do
   Under the hood, Systems are simply Scripts which are treated just a little bit differently. That said, you must not use the same callback module for a System as you do for a Script. It will cause odd and unexpected things to happen.
   """
 
-  defmodule Result do
-    defstruct [ :events, :next_iteration, :state ]
-  end
-
   @doc false
   defmacro __using__(_) do
     quote location: :keep do
@@ -20,19 +16,19 @@ defmodule Exmud.Engine.System do
       alias Exmud.Engine.System.Result
 
       @doc false
-      def handle_message( message, state ), do: { :ok, message, %Result{ state: state } }
+      def handle_message( message, state ), do: { :ok, message, state }
 
       @doc false
-      def initialize( args ), do: { :ok, %Result{ state: nil } }
+      def initialize( args ), do: { :ok, nil }
 
       @doc false
-      def run( state ), do: { :ok, %Result{ state: state } }
+      def run( state ), do: { :ok, state }
 
       @doc false
-      def start( _args, state ), do: { :ok, %Result{ do: 0, state: state } }
+      def start( _args, state ), do: { :ok, state, 0 }
 
       @doc false
-      def stop( _args, state ), do: { :ok, %Result{ state: state } }
+      def stop( _args, state ), do: { :ok, state }
 
       defoverridable handle_message: 2,
                      initialize: 1,
@@ -159,7 +155,7 @@ defmodule Exmud.Engine.System do
             { :error, :no_such_system }
 
           system ->
-            { :ok, deserialize( system.state ) }
+            { :ok, unpack_term( system.state ) }
         end
     end
   end
