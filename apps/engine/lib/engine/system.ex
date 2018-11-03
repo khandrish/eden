@@ -109,13 +109,11 @@ defmodule Exmud.Engine.System do
   # API
   #
 
-  alias Exmud.Engine.ObjectUtil
   alias Exmud.Engine.Repo
   alias Exmud.Engine.Schema.System
   alias Exmud.Engine.Worker.SystemWorker
   import Ecto.Query
   import Exmud.Common.Utils
-  import Exmud.Engine.Utils
   import Exmud.Engine.Constants
   require Logger
 

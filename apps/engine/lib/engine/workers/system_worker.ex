@@ -6,7 +6,6 @@ defmodule Exmud.Engine.Worker.SystemWorker do
   import Ecto.Query
   import Exmud.Engine.Constants
   import Exmud.Common.Utils
-  import Exmud.Engine.Utils
   require Logger
   use GenServer
 

@@ -113,7 +113,6 @@ defmodule Exmud.Engine.Script do
   require Logger
   import Ecto.Query
   import Exmud.Common.Utils
-  import Exmud.Engine.Utils
   import Exmud.Engine.Constants
 
   @script_registry script_registry()

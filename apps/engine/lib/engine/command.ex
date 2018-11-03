@@ -31,6 +31,7 @@ defmodule Exmud.Engine.Command do
   """
 
   alias Exmud.Engine.Command.ExecutionContext
+  alias Exmud.Engine.Event
   import Exmud.Engine.Utils
   require Logger
 
