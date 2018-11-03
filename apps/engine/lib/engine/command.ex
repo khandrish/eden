@@ -182,11 +182,20 @@ defmodule Exmud.Engine.Command do
   def execute( caller, raw_input, pipeline \\ @command_pipeline ) do
     context = %ExecutionContext{ caller: caller, raw_input: raw_input }
 
-    execute_steps( pipeline, context )
+    execution_context =
+      wrap_callback_in_retryable_transaction( fn ->
+        execute_steps( pipeline, context )
+      end)
+
+    for event <- execution_context.events do
+      :ok = Event.dispatch( event )
+    end
+
+    { :ok, execution_context }
   end
 
   defp execute_steps( [], execution_context ) do
-    { :ok, execution_context }
+    execution_context
   end
 
   defp execute_steps( [ pipeline_step | pipeline_steps ], execution_context ) do
