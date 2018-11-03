@@ -7,17 +7,7 @@ defmodule Exmud.Engine.Test.ScriptTest do
 
   # Alias Script modules for use in tests
   alias Exmud.Engine.Test.Script.Basic
-  alias Exmud.Engine.Test.Script.ErrorHandlingMessage
-  alias Exmud.Engine.Test.Script.ErrorInitializing
-  alias Exmud.Engine.Test.Script.ErrorStarting
-  alias Exmud.Engine.Test.Script.ErrorStopping
   alias Exmud.Engine.Test.Script.Idle
-  alias Exmud.Engine.Test.Script.RunInterval
-  alias Exmud.Engine.Test.Script.RunError
-  alias Exmud.Engine.Test.Script.RunErrorInterval
-  alias Exmud.Engine.Test.Script.RunErrorStop
-  alias Exmud.Engine.Test.Script.RunErrorStopping
-  alias Exmud.Engine.Test.Script.RunInterval
   alias Exmud.Engine.Test.Script.Run
 
   describe "scripts interface" do

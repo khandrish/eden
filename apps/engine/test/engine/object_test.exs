@@ -77,8 +77,7 @@ defmodule Exmud.Engine.Test.ObjectTest do
              ) == {:ok, [object_id1]}
     end
 
-    @tag object: true
-    @tag engine: true
+    @tag wip: true
     test "query game object tests", %{object_id: object_id} = _context do
       object_id2 = Object.new!()
 
@@ -90,8 +89,7 @@ defmodule Exmud.Engine.Test.ObjectTest do
 
       assert Component.attach(object_id, BasicComponent) == :ok
 
-      assert Attribute.put(object_id, BasicComponent, attribute_key, attribute_value) ==
-               :ok
+      assert Attribute.put(object_id, BasicComponent, attribute_key, attribute_value) == :ok
 
       assert CommandSet.attach(object_id, BasicCommandSet) == :ok
       assert Link.forge(object_id, object_id2, link_type, "foo") == :ok

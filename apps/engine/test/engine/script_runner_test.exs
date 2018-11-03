@@ -2,7 +2,6 @@ defmodule Exmud.Engine.Worker.ScriptWorkerTest do
   alias Exmud.Engine.Object
   alias Exmud.Engine.Script
   alias Exmud.Engine.Test.Script.ErrorHandlingMessage
-  alias Exmud.Engine.Test.Script.ErrorInitializing
   alias Exmud.Engine.Test.Script.ErrorStarting
   alias Exmud.Engine.Test.Script.ErrorStopping
   alias Exmud.Engine.Test.Script.Idle

@@ -15,9 +15,7 @@ defmodule Exmud.Engine.Test.CommandTest do
     test "with building a command list when CommandSet has been unregistered", %{ object_id: object_id } = _context do
       assert CommandSet.attach( object_id, Basic ) == :ok
       { :ok, executionContext } = Command.execute( object_id, "echo foobar" )
-      IO.inspect executionContext
-      assert executionContext.args == "foobar"
-      assert executionContext.matched_key == "echo"
+      assert %Exmud.Engine.Command.ExecutionContext{} = executionContext
     end
   end
 
