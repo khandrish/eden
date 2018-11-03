@@ -12,7 +12,7 @@ defmodule Exmud.Engine.Test.DBTestCase do
     quote do
       alias Ecto.Multi
       alias Exmud.Engine.Repo
-      use ExUnit.Case, async: false
+      use ExUnit.Case, async: true
     end
   end
 
