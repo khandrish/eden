@@ -70,15 +70,15 @@ defmodule Exmud.Engine.Test.ObjectTest do
                   {:component, BasicComponent},
                   {:command_set, BasicCommandSet},
                   {:link, link_type},
-                  {:link, {link_type, object_id2}},
-                  {:link, {link_type, object_id2, "foo"}},
+                  {:link, {link_type, { :to, object_id2 }}},
+                  {:link, {link_type, { :to, object_id2 }, "foo"}},
                   {:tag, {tag_category, tag}}
                 ]}
              ) == {:ok, [object_id1]}
     end
 
     @tag wip: true
-    test "query game object tests", %{object_id: object_id} = _context do
+    test "query game object tests", %{ object_id: object_id } = _context do
       object_id2 = Object.new!()
 
       attribute_key = UUID.generate()
@@ -87,45 +87,51 @@ defmodule Exmud.Engine.Test.ObjectTest do
       tag = UUID.generate()
       tag_category = UUID.generate()
 
-      assert Component.attach(object_id, BasicComponent) == :ok
+      assert Component.attach( object_id, BasicComponent ) == :ok
 
-      assert Attribute.put(object_id, BasicComponent, attribute_key, attribute_value) == :ok
+      assert Attribute.put( object_id, BasicComponent, attribute_key, attribute_value ) == :ok
 
-      assert CommandSet.attach(object_id, BasicCommandSet) == :ok
-      assert Link.forge(object_id, object_id2, link_type, "foo") == :ok
-      assert Tag.attach(object_id, tag_category, tag) == :ok
-
-      assert Object.query(
-               {:and,
-                [
-                  {:attribute, {BasicComponent, attribute_key}},
-                  {:component, BasicComponent},
-                  {:command_set, BasicCommandSet},
-                  {:or,
-                   [
-                     {:link, link_type},
-                     {:link, {link_type, object_id2}},
-                     {:link, {link_type, object_id2, "foo"}},
-                     {:tag, {tag_category, tag}}
-                   ]}
-                ]}
-             ) == {:ok, [object_id]}
+      assert CommandSet.attach( object_id, BasicCommandSet ) == :ok
+      assert Link.forge( object_id, object_id2, link_type, "foo" ) == :ok
+      assert Tag.attach( object_id, tag_category, tag ) == :ok
 
       assert Object.query(
-               {:or,
+              { :and,
                 [
-                  {:attribute, {BasicComponent, attribute_key}},
-                  {:component, BasicComponent},
-                  {:command_set, BasicCommandSet},
-                  {:or,
-                   [
-                     {:link, link_type},
-                     {:link, {link_type, object_id2}},
-                     {:link, {link_type, object_id2, "foo"}},
-                     {:tag, {tag_category, tag}}
-                   ]}
-                ]}
-             ) == {:ok, [object_id]}
+                  { :attribute, { BasicComponent, attribute_key } },
+                  { :component, BasicComponent },
+                  { :command_set, BasicCommandSet },
+                  { :or,
+                    [
+                      { :link, link_type },
+                      { :link, { link_type, { :to, object_id2 } } },
+                      { :link, { link_type, { :from, object_id }, "foo" } },
+                      { :tag, { tag_category, tag } }
+                    ]
+                  }
+                ]
+              }
+            ) == { :ok, [ object_id ] }
+
+      { :ok, object_ids } = Object.query(
+              { :or,
+                [
+                  { :attribute, { BasicComponent, attribute_key } },
+                  { :component, BasicComponent },
+                  { :command_set, BasicCommandSet },
+                  { :or,
+                    [
+                      { :link, link_type },
+                      { :link, { link_type, { :to, object_id2 } } },
+                      { :link, { link_type, { :from, object_id2 }, "foo" } },
+                      { :tag, { tag_category, tag } }
+                    ]
+                  }
+                ]
+              }
+            )
+
+      assert object_id in object_ids
     end
   end
 

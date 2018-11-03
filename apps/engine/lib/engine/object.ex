@@ -212,17 +212,31 @@ defmodule Exmud.Engine.Object do
     dynamic( [ object, command_set, component ], component.callback_module == ^pack_term( component ) )
   end
 
-  defp build_equality_check_dynamic( { :link, { link_type, to, state } } ) do
+  defp build_equality_check_dynamic( { :link, { link_type, { :to, to }, state } } ) do
     dynamic(
       [ object, command_set, component, attribute, link ],
       link.type == ^link_type and link.to_id == ^to and link.state == ^pack_term( state )
     )
   end
 
-  defp build_equality_check_dynamic( { :link, { link_type, to } } ) do
+  defp build_equality_check_dynamic( { :link, { link_type, { :from, from }, state } } ) do
+    dynamic(
+      [ object, command_set, component, attribute, link ],
+      link.type == ^link_type and link.from_id == ^from and link.state == ^pack_term( state )
+    )
+  end
+
+  defp build_equality_check_dynamic( { :link, { link_type, { :to, to } } } ) do
     dynamic(
       [ object, command_set, component, attribute, link ],
       link.type == ^link_type and link.to_id == ^to
+    )
+  end
+
+  defp build_equality_check_dynamic( { :link, { link_type, { :from, from } } } ) do
+    dynamic(
+      [ object, command_set, component, attribute, link ],
+      link.type == ^link_type and link.from_id == ^from
     )
   end
 
