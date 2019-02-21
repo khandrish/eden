@@ -20,13 +20,12 @@ defmodule Exmud.Engine.Template do
   # Behavior definition and default callback setup
   #
 
-  @callback command_sets( term() ) :: :ok | { :error, atom() }
-  @callback components( term() ) :: :ok | { :error, atom() }
-  @callback links( term() ) :: :ok | { :error, atom() }
-  @callback locks( term() ) :: :ok | { :error, atom() }
-  @callback scripts( term() ) :: :ok | { :error, atom() }
-  @callback tags( term() ) :: :ok | { :error, atom() }
-
+  @callback command_sets(term()) :: :ok | {:error, atom()}
+  @callback components(term()) :: :ok | {:error, atom()}
+  @callback links(term()) :: :ok | {:error, atom()}
+  @callback locks(term()) :: :ok | {:error, atom()}
+  @callback scripts(term()) :: :ok | {:error, atom()}
+  @callback tags(term()) :: :ok | {:error, atom()}
 
   @doc false
   defmacro __using__(_) do
@@ -41,22 +40,22 @@ defmodule Exmud.Engine.Template do
       import Exmud.Engine.Constants
 
       @doc false
-      def command_sets( _config ), do: []
+      def command_sets(_config), do: []
 
       @doc false
-      def components( _config ), do: []
+      def components(_config), do: []
 
       @doc false
-      def links( _config ), do: []
+      def links(_config), do: []
 
       @doc false
-      def locks( _config ), do: []
+      def locks(_config), do: []
 
       @doc false
-      def scripts( _config ), do: []
+      def scripts(_config), do: []
 
       @doc false
-      def tags( _config ), do: []
+      def tags(_config), do: []
 
       defoverridable command_sets: 1,
                      components: 1,
@@ -67,14 +66,14 @@ defmodule Exmud.Engine.Template do
     end
   end
 
-  def build_template( callback_module, config ) do
+  def build_template(callback_module, config) do
     %Exmud.Engine.Template{
-      command_sets: callback_module.command_sets( config ),
-      components: callback_module.components( config ),
-      links: callback_module.links( config ),
-      locks: callback_module.locks( config ),
-      scripts: callback_module.scripts( config ),
-      tags: callback_module.tags( config )
+      command_sets: callback_module.command_sets(config),
+      components: callback_module.components(config),
+      links: callback_module.links(config),
+      locks: callback_module.locks(config),
+      scripts: callback_module.scripts(config),
+      tags: callback_module.tags(config)
     }
   end
 end

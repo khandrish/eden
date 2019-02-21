@@ -5,10 +5,10 @@ defmodule Exmud.Engine.Test.Command.Echo do
   use Exmud.Engine.Command
 
   @impl true
-  def key( _context ), do: "echo"
+  def key(_context), do: "echo"
 
   @impl true
-  def execute( context ) do
-    { :ok, %{ context | events: [ { :message, context.caller, context.args } ] } }
+  def execute(context) do
+    {:ok, %{context | events: [{:message, context.caller, context.args}]}}
   end
 end

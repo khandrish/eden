@@ -11,7 +11,7 @@ defmodule Exmud.Engine.Test.ScriptTest do
   alias Exmud.Engine.Test.Script.Run
 
   describe "scripts interface" do
-    setup [ :create_new_object ]
+    setup [:create_new_object]
 
     test "by stopping and starting", %{object_id: object_id} = _context do
       assert Script.running?(object_id, Idle) == false
@@ -33,9 +33,9 @@ defmodule Exmud.Engine.Test.ScriptTest do
     end
 
     test "by calling or starting", %{object_id: object_id} = _context do
-      assert Script.call_or_start( object_id, Idle, nil ) == { :error, :no_such_script }
+      assert Script.call_or_start(object_id, Idle, nil) == {:error, :no_such_script}
       assert Script.attach(object_id, Idle) == :ok
-      assert Script.call_or_start( object_id, Idle, nil ) == :ok
+      assert Script.call_or_start(object_id, Idle, nil) == :ok
     end
 
     test "with successful stop", %{object_id: object_id} = _context do

@@ -35,13 +35,13 @@ defmodule Exmud.Engine.Lock do
   #
 
   @doc false
-  defmacro __using__( _ ) do
+  defmacro __using__(_) do
     quote location: :keep do
       @behaviour Exmud.Engine.Lock
       import Exmud.Engine.Constants
 
       @doc false
-      def check( _target_object, _accessing_object, _lock_config ), do: false
+      def check(_target_object, _accessing_object, _lock_config), do: false
 
       defoverridable check: 3
     end
@@ -50,7 +50,7 @@ defmodule Exmud.Engine.Lock do
   @doc """
   Called when a Lock is being checked to determine if an Object has permission.
   """
-  @callback check( target_object, accessing_object, lock_config ) :: boolean
+  @callback check(target_object, accessing_object, lock_config) :: boolean
 
   @typedoc "An error message."
   @type error :: term
@@ -89,31 +89,33 @@ defmodule Exmud.Engine.Lock do
   @doc """
   Attach a Lock to an Object.
   """
-  @spec attach( object_id, access_type, callback_module, lock_config ) ::
-    :ok | { :error, :no_such_object } | { :error, :already_attached }
-  def attach( object_id, access_type, callback_module, lock_config \\ %{} ) do
-    Lock.new( %{
+  @spec attach(object_id, access_type, callback_module, lock_config) ::
+          :ok | {:error, :no_such_object} | {:error, :already_attached}
+  def attach(object_id, access_type, callback_module, lock_config \\ %{}) do
+    Lock.new(%{
       object_id: object_id,
       access_type: access_type,
-      callback_module: pack_term( callback_module ),
-      config: pack_term( lock_config )
-    } )
+      callback_module: pack_term(callback_module),
+      config: pack_term(lock_config)
+    })
     |> Repo.insert()
     |> normalize_repo_result()
     |> case do
-      { :error, [ object_id: _error ] } ->
+      {:error, [object_id: _error]} ->
         Logger.error(
-          "Attempt to add Lock with access type `#{ access_type }` onto non existing object `#{ object_id }`"
+          "Attempt to add Lock with access type `#{access_type}` onto non existing object `#{
+            object_id
+          }`"
         )
 
-        { :error, :no_such_object }
+        {:error, :no_such_object}
 
-      { :error, [ access_type: _error ] } ->
+      {:error, [access_type: _error]} ->
         Logger.error(
-          "Attempt to add Lock with access type `#{ access_type }` onto Object `#{ object_id }` when it already exists."
+          "Attempt to add Lock with access type `#{access_type}` onto Object `#{object_id}` when it already exists."
         )
 
-        { :error, :already_attached }
+        {:error, :already_attached}
 
       :ok ->
         :ok
@@ -123,11 +125,11 @@ defmodule Exmud.Engine.Lock do
   @doc """
   Check to see if there is a lock for a specific access type on an Object.
   """
-  @spec attached?( object_id, access_type ) :: boolean
-  def attached?( object_id, access_type ) do
-    query = from( lock in lock_query( object_id, access_type ), select: count( "*" ))
+  @spec attached?(object_id, access_type) :: boolean
+  def attached?(object_id, access_type) do
+    query = from(lock in lock_query(object_id, access_type), select: count("*"))
 
-    Repo.one( query ) == 1
+    Repo.one(query) == 1
   end
 
   @doc """
@@ -136,22 +138,23 @@ defmodule Exmud.Engine.Lock do
   Given an Object id and an access type, the Lock is first retrieved and then the matching callback module is retrieved
   before the callbacks 'check' method is called to perform the actual check.
   """
-  @spec check( object_id, access_type, accessing_object ) :: { :ok, boolean } | { :error, :no_such_lock }
-  def check( object_id, access_type, accessing_object ) do
-    query = from( lock in lock_query( object_id, access_type ), select: { lock.callback_module, lock.config } )
+  @spec check(object_id, access_type, accessing_object) ::
+          {:ok, boolean} | {:error, :no_such_lock}
+  def check(object_id, access_type, accessing_object) do
+    query =
+      from(lock in lock_query(object_id, access_type), select: {lock.callback_module, lock.config})
 
-    case Repo.one( query ) do
+    case Repo.one(query) do
       nil ->
-        { :error, :no_such_lock }
+        {:error, :no_such_lock}
 
-      { callback_module, config } ->
-        { :ok,
-          apply( unpack_term( callback_module ), :check, [
-            object_id,
-            accessing_object,
-            unpack_term( config )
-          ] )
-        }
+      {callback_module, config} ->
+        {:ok,
+         apply(unpack_term(callback_module), :check, [
+           object_id,
+           accessing_object,
+           unpack_term(config)
+         ])}
     end
   end
 
@@ -163,10 +166,10 @@ defmodule Exmud.Engine.Lock do
 
   Raises an ArgumentError if the Lock does not exist on the provided Object.
   """
-  @spec check!( object_id, access_type, accessing_object ) :: boolean
-  def check!( object_id, access_type, accessing_object ) do
+  @spec check!(object_id, access_type, accessing_object) :: boolean
+  def check!(object_id, access_type, accessing_object) do
     try do
-      { :ok, result } = check( object_id, access_type, accessing_object )
+      {:ok, result} = check(object_id, access_type, accessing_object)
       result
     rescue
       _ ->

@@ -60,17 +60,17 @@ defmodule Exmud.Engine.ObjectUtil do
           try do
             callback_function.()
           rescue
-            _ -> { :error, :callback_failed }
+            _ -> {:error, :callback_failed}
           end
         else
           :ok
         end
 
       {:error, [object_id: _error]} ->
-        { :error, :no_such_object }
+        {:error, :no_such_object}
 
       {:error, [{_, "has already been taken"}]} = _ ->
-        { :error, :already_attached }
+        {:error, :already_attached}
     end
   end
 end

@@ -52,12 +52,11 @@ defmodule Exmud.Engine.Command do
   import Exmud.Engine.Utils
   require Logger
 
-
   #
   # Struct definition
   #
 
-  @enforce_keys [ :key, :execute, :object_id ]
+  @enforce_keys [:key, :execute, :object_id]
   defstruct key: nil,
             aliases: [],
             doc_generation: false,
@@ -65,29 +64,30 @@ defmodule Exmud.Engine.Command do
             doc: "",
             execute: nil,
             parse_args: nil,
-            locks: [ Exmud.Engine.Locks.Any ],
-            argument_regex: engine_cfg( :command_argument_regex ),
-            object_id: nil, # Object that the command is attached to
-            config: %{} # The config from a Command Set is passed down to all of its Commands
-  @type t :: %Exmud.Engine.Command{
-    key: String.t(),
-    aliases: [ String.t() ],
-    doc_generation: boolean,
-    doc_category: String.t(),
-    doc: String.t(),
-    execute: function,
-    parse_args: function,
-    locks: [ module | { module, config } ],
-    argument_regex: term,
-    object_id: integer,
-    config: Map.t()
-  }
+            locks: [Exmud.Engine.Locks.Any],
+            argument_regex: engine_cfg(:command_argument_regex),
+            # Object that the command is attached to
+            object_id: nil,
+            # The config from a Command Set is passed down to all of its Commands
+            config: %{}
 
+  @type t :: %Exmud.Engine.Command{
+          key: String.t(),
+          aliases: [String.t()],
+          doc_generation: boolean,
+          doc_category: String.t(),
+          doc: String.t(),
+          execute: function,
+          parse_args: function,
+          locks: [module | {module, config}],
+          argument_regex: term,
+          object_id: integer,
+          config: Map.t()
+        }
 
   #
   # Behavior definition and default callback setup
   #
-
 
   @doc false
   defmacro __using__(_) do
@@ -96,25 +96,25 @@ defmodule Exmud.Engine.Command do
       import Exmud.Engine.Constants
 
       @doc false
-      def aliases( _config ), do: []
+      def aliases(_config), do: []
 
       @doc false
-      def doc_generation( _config ) , do: true
+      def doc_generation(_config), do: true
 
       @doc false
-      def doc_category( _config ) , do: command_doc_category_general()
+      def doc_category(_config), do: command_doc_category_general()
 
       @doc false
-      def parse_args( context ) , do: { :ok, %{ context | args: String.trim( context.raw_args ) } }
+      def parse_args(context), do: {:ok, %{context | args: String.trim(context.raw_args)}}
 
       @doc false
-      def execute( context ), do: { :ok, context }
+      def execute(context), do: {:ok, context}
 
       @doc false
-      def locks( _config ) , do: [ Exmud.Engine.Lock.Any ]
+      def locks(_config), do: [Exmud.Engine.Lock.Any]
 
       @doc false
-      def argument_regex( _config ), do: engine_cfg( :command_argument_regex )
+      def argument_regex(_config), do: engine_cfg(:command_argument_regex)
 
       defoverridable aliases: 1,
                      doc_generation: 1,
@@ -129,7 +129,7 @@ defmodule Exmud.Engine.Command do
   @doc """
   The aliases by which the command can also be matched.
   """
-  @callback aliases( config ) :: [ String.t() ]
+  @callback aliases(config) :: [String.t()]
 
   @doc """
   Called when the Engine determines the Command should be executed. This means all the matching, parsing, and
@@ -138,7 +138,7 @@ defmodule Exmud.Engine.Command do
   An execution context is passed to the callback function, populated with several helpful bits of information to aid in
   the execution of the command. See 'Exmud.Engine.CommandContext'.
   """
-  @callback parse_args( context ) :: { :ok, context } | { :error, context }
+  @callback parse_args(context) :: {:ok, context} | {:error, context}
 
   @doc """
   Called when the Engine determines the Command should be executed. This means all the matching, parsing, and
@@ -147,32 +147,32 @@ defmodule Exmud.Engine.Command do
   An execution context is passed to the callback function, populated with several helpful bits of information to aid in
   the execution of the command. See 'Exmud.Engine.CommandContext'.
   """
-  @callback execute( context ) :: { :ok, context } | { :error, context }
+  @callback execute(context) :: {:ok, context} | {:error, context}
 
   @doc """
   The prmary string used to match the command with player input.
   """
-  @callback key( config )  :: String.t()
+  @callback key(config) :: String.t()
 
   @doc """
   The locks that must pass for the Command to be accessed.
   """
-  @callback locks( config )  :: [ module ]
+  @callback locks(config) :: [module]
 
   @doc """
   Whether or not to generate docs from the callback module. Defaults to true.
   """
-  @callback doc_generation( config ) :: boolean
+  @callback doc_generation(config) :: boolean
 
   @doc """
   The category to put the docs under if they are generated. Defaults to 'General'.
   """
-  @callback doc_category( config ) :: String.t()
+  @callback doc_category(config) :: String.t()
 
   @doc """
   The compiled regex expression that the argument string must pass before the parse callback is called.
   """
-  @callback argument_regex( config ) :: term
+  @callback argument_regex(config) :: term
 
   @typedoc "Arguments passed through to a callback module."
   @type args :: term
@@ -192,40 +192,39 @@ defmodule Exmud.Engine.Command do
   @typedoc "An execution context providing the required information to execute a command."
   @type context :: %Exmud.Engine.Command.ExecutionContext{}
 
-
   #
   # API
   #
 
-
-  @command_pipeline engine_cfg( :command_pipeline )
+  @command_pipeline engine_cfg(:command_pipeline)
 
   @doc false
-  def execute( caller, raw_input, pipeline \\ @command_pipeline ) do
-    context = %ExecutionContext{ caller: caller, raw_input: raw_input }
+  def execute(caller, raw_input, pipeline \\ @command_pipeline) do
+    context = %ExecutionContext{caller: caller, raw_input: raw_input}
 
     execution_context =
-      wrap_callback_in_retryable_transaction( fn ->
-        execute_steps( pipeline, context )
+      wrap_callback_in_retryable_transaction(fn ->
+        execute_steps(pipeline, context)
       end)
 
     for event <- execution_context.events do
-      :ok = Event.dispatch( event )
+      :ok = Event.dispatch(event)
     end
 
-    { :ok, execution_context }
+    {:ok, execution_context}
   end
 
-  defp execute_steps( [], execution_context ) do
+  defp execute_steps([], execution_context) do
     execution_context
   end
 
-  defp execute_steps( [ pipeline_step | pipeline_steps ], execution_context ) do
-    case pipeline_step.execute( execution_context ) do
-      { :ok, execution_context } ->
-        execute_steps( pipeline_steps, execution_context )
-      { :error, error } ->
-        { :error, error, pipeline_step, execution_context }
+  defp execute_steps([pipeline_step | pipeline_steps], execution_context) do
+    case pipeline_step.execute(execution_context) do
+      {:ok, execution_context} ->
+        execute_steps(pipeline_steps, execution_context)
+
+      {:error, error} ->
+        {:error, error, pipeline_step, execution_context}
     end
   end
 end

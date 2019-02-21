@@ -3,9 +3,10 @@ alias Exmud.DB.Model.ComponentModel
 alias Exmud.DB.Repo.EngineRepo
 
 for _ <- 1..10 do
-  object = EngineRepo.insert!(%ObjectModel{
-    key: Faker.Name.first_name
-  })
+  object =
+    EngineRepo.insert!(%ObjectModel{
+      key: Faker.Name.first_name()
+    })
 
   for n <- 1..10 do
     EngineRepo.insert!(%ComponentModel{

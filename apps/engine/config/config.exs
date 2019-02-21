@@ -4,7 +4,7 @@ use Mix.Config
 
 config :exmud_engine, Exmud.Engine.Repo,
   adapter: Ecto.Adapters.Postgres,
-  database: "exmud_engine_#{ Mix.env() }",
+  database: "exmud_engine_#{Mix.env()}",
   hostname: "localhost",
   pool_size: 10,
   username: "exmud_engine"
@@ -22,4 +22,4 @@ config :exmud_engine,
 # Configuration from the imported file will override the ones defined
 # here (which is why it is important to import them last).
 #
-import_config "#{ Mix.env() }.exs"
+import_config "#{Mix.env()}.exs"

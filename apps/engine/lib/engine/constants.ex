@@ -25,8 +25,6 @@ defmodule Exmud.Engine.Constants do
   def script_registry, do: :exmud_engine_script_registry
   def player_registry, do: :exmud_engine_player_registry
 
-
-
   #
   #
   # Tags
@@ -36,7 +34,6 @@ defmodule Exmud.Engine.Constants do
   def engine_tag_category, do: "__ENGINE__"
   def player_tag, do: "player"
   def character_tag, do: "character"
-
 
   #
   #

@@ -5,15 +5,15 @@ defmodule Exmud.Engine.Object do
   import Exmud.Common.Utils
   require Logger
 
-  @get_inclusion_filters [ :command_sets, :components, :locks, :links, :scripts, :tags ]
+  @get_inclusion_filters [:command_sets, :components, :locks, :links, :scripts, :tags]
 
-  defstruct command_sets: MapSet.new,
-            components: MapSet.new,
-            locks: MapSet.new,
-            links: MapSet.new,
-            scripts: MapSet.new,
-            tags: MapSet.new,
-            relationships: MapSet.new
+  defstruct command_sets: MapSet.new(),
+            components: MapSet.new(),
+            locks: MapSet.new(),
+            links: MapSet.new(),
+            scripts: MapSet.new(),
+            tags: MapSet.new(),
+            relationships: MapSet.new()
 
   #
   # Typespecs
@@ -55,23 +55,23 @@ defmodule Exmud.Engine.Object do
   """
   @spec new! :: object_id
   def new! do
-    %Object{ date_created: DateTime.utc_now() }
+    %Object{date_created: DateTime.utc_now()}
     |> Repo.insert!()
-    |> ( & &1.id ).()
+    |> (& &1.id).()
   end
 
   @doc """
   Delete an Object by its id.
   """
-  @spec delete( object_id ) :: :ok | { :error, :no_such_object }
-  def delete( object_id ) do
-    query = from( object in Object, where: object.id == ^object_id )
+  @spec delete(object_id) :: :ok | {:error, :no_such_object}
+  def delete(object_id) do
+    query = from(object in Object, where: object.id == ^object_id)
 
     query
     |> Repo.delete_all()
     |> case do
-      { 1, _ } -> :ok
-      { 0, _ } -> { :error, :no_such_object }
+      {1, _} -> :ok
+      {0, _} -> {:error, :no_such_object}
     end
   end
 
@@ -80,9 +80,9 @@ defmodule Exmud.Engine.Object do
 
   Will load all of the data associated with an Object.
   """
-  @spec get( object_id ) :: { :ok, [ object ] }
-  def get( objects ) do
-    get( objects, @get_inclusion_filters )
+  @spec get(object_id) :: {:ok, [object]}
+  def get(objects) do
+    get(objects, @get_inclusion_filters)
   end
 
   @doc """
@@ -93,26 +93,26 @@ defmodule Exmud.Engine.Object do
   Can be any of the following:
   `[:command_sets, :components, :locks, :links, :scripts, :tags]`
   """
-  @spec get( object_id, inclusion_filters ) :: { :ok, [ object ] }
-  def get( object, inclusion_filters ) when is_list( object ) == false do
-    { :ok, results } = get( List.wrap( object ), inclusion_filters )
-    { :ok, List.first( results ) }
+  @spec get(object_id, inclusion_filters) :: {:ok, [object]}
+  def get(object, inclusion_filters) when is_list(object) == false do
+    {:ok, results} = get(List.wrap(object), inclusion_filters)
+    {:ok, List.first(results)}
   end
 
-  def get( object_ids, inclusion_filters ) do
-    object_ids = List.wrap( object_ids )
+  def get(object_ids, inclusion_filters) do
+    object_ids = List.wrap(object_ids)
 
-    base_query = from( object in Object, where: object.id in ^object_ids )
+    base_query = from(object in Object, where: object.id in ^object_ids)
 
-    inclusion_filters = List.wrap( inclusion_filters )
+    inclusion_filters = List.wrap(inclusion_filters)
 
-    query = build_get_query( base_query, inclusion_filters )
+    query = build_get_query(base_query, inclusion_filters)
 
     results =
-      Repo.all( query )
-      |> normalize_get_results( inclusion_filters )
+      Repo.all(query)
+      |> normalize_get_results(inclusion_filters)
 
-    { :ok, results }
+    {:ok, results}
   end
 
   @doc """
@@ -122,14 +122,14 @@ defmodule Exmud.Engine.Object do
   equality checks are supported. This is unlikely to change without a refactoring as data is pack_termd in the database
   which makes doing relative value checks impossible.
   """
-  @spec query( object_query ) :: { :ok, [ object ] }
-  def query( object_query ) do
+  @spec query(object_query) :: {:ok, [object]}
+  def query(object_query) do
     result =
       object_query
       |> build_object_query()
       |> Repo.all()
 
-    { :ok, result }
+    {:ok, result}
   end
 
   #
@@ -138,224 +138,224 @@ defmodule Exmud.Engine.Object do
 
   # Query functions
 
-  defp build_object_query( object_query ) do
-    dynamic = build_where( object_query )
+  defp build_object_query(object_query) do
+    dynamic = build_where(object_query)
 
     from(
       object in Object,
-      left_join: command_set in assoc( object, :command_sets ),
-      left_join: component in assoc( object, :components ),
-      left_join: attribute in assoc( component, :attributes ),
-      left_join: link in assoc( object, :links ),
-      left_join: tag in assoc( object, :tags ),
+      left_join: command_set in assoc(object, :command_sets),
+      left_join: component in assoc(object, :components),
+      left_join: attribute in assoc(component, :attributes),
+      left_join: link in assoc(object, :links),
+      left_join: tag in assoc(object, :tags),
       select: object.id,
       where: ^dynamic
     )
   end
 
-  defp build_where( { mode, checks } ) do
-    actually_build_where( nil, mode, checks )
+  defp build_where({mode, checks}) do
+    actually_build_where(nil, mode, checks)
   end
 
-  defp actually_build_where( dynamic, _, [] ), do: dynamic
+  defp actually_build_where(dynamic, _, []), do: dynamic
 
-  defp actually_build_where( dynamic, mode, [ { type, nested_checks } | checks ] )
+  defp actually_build_where(dynamic, mode, [{type, nested_checks} | checks])
        when type == :and or type == :or do
-    new_dynamic = actually_build_where( nil, type, nested_checks )
+    new_dynamic = actually_build_where(nil, type, nested_checks)
 
     dynamic =
       case mode do
-        :and -> dynamic( ^dynamic and ^new_dynamic )
-        :or -> dynamic( ^dynamic or ^new_dynamic )
+        :and -> dynamic(^dynamic and ^new_dynamic)
+        :or -> dynamic(^dynamic or ^new_dynamic)
       end
 
-    actually_build_where( dynamic, mode, checks )
+    actually_build_where(dynamic, mode, checks)
   end
 
-  defp actually_build_where( dynamic, mode, [ check | checks ] ) do
-    new_dynamic = build_equality_check_dynamic( check )
+  defp actually_build_where(dynamic, mode, [check | checks]) do
+    new_dynamic = build_equality_check_dynamic(check)
 
     if dynamic != nil do
       dynamic =
         case mode do
-          :and -> dynamic( [], ^new_dynamic and ^dynamic )
-          :or -> dynamic( [], ^new_dynamic or ^dynamic )
+          :and -> dynamic([], ^new_dynamic and ^dynamic)
+          :or -> dynamic([], ^new_dynamic or ^dynamic)
         end
 
-      actually_build_where( dynamic, mode, checks )
+      actually_build_where(dynamic, mode, checks)
     else
-      actually_build_where( new_dynamic, mode, checks )
+      actually_build_where(new_dynamic, mode, checks)
     end
   end
 
-  defp build_equality_check_dynamic( { :attribute, { component, attribute_name } } ) do
+  defp build_equality_check_dynamic({:attribute, {component, attribute_name}}) do
     dynamic(
-      [ object, command_set, component, attribute ],
-      attribute.name == ^attribute_name and component.callback_module == ^pack_term( component )
+      [object, command_set, component, attribute],
+      attribute.name == ^attribute_name and component.callback_module == ^pack_term(component)
     )
   end
 
-  defp build_equality_check_dynamic( { :attribute, { component, attribute_name, attribute_value } } ) do
+  defp build_equality_check_dynamic({:attribute, {component, attribute_name, attribute_value}}) do
     dynamic(
-      [ object, command_set, component, attribute ],
-      attribute.name == ^attribute_name
-        and component.callback_module == ^pack_term( component )
-        and attribute.value == ^pack_term( attribute_value )
+      [object, command_set, component, attribute],
+      attribute.name == ^attribute_name and
+        component.callback_module == ^pack_term(component) and
+        attribute.value == ^pack_term(attribute_value)
     )
   end
 
-  defp build_equality_check_dynamic( { :command_set, command_set } ) do
-    dynamic( [ object, command_set ], command_set.callback_module == ^pack_term( command_set ) )
+  defp build_equality_check_dynamic({:command_set, command_set}) do
+    dynamic([object, command_set], command_set.callback_module == ^pack_term(command_set))
   end
 
-  defp build_equality_check_dynamic( { :component, component } ) do
-    dynamic( [ object, command_set, component ], component.callback_module == ^pack_term( component ) )
+  defp build_equality_check_dynamic({:component, component}) do
+    dynamic([object, command_set, component], component.callback_module == ^pack_term(component))
   end
 
-  defp build_equality_check_dynamic( { :link, { link_type, { :to, to }, state } } ) do
+  defp build_equality_check_dynamic({:link, {link_type, {:to, to}, state}}) do
     dynamic(
-      [ object, command_set, component, attribute, link ],
-      link.type == ^link_type and link.to_id == ^to and link.state == ^pack_term( state )
+      [object, command_set, component, attribute, link],
+      link.type == ^link_type and link.to_id == ^to and link.state == ^pack_term(state)
     )
   end
 
-  defp build_equality_check_dynamic( { :link, { link_type, { :from, from }, state } } ) do
+  defp build_equality_check_dynamic({:link, {link_type, {:from, from}, state}}) do
     dynamic(
-      [ object, command_set, component, attribute, link ],
-      link.type == ^link_type and link.from_id == ^from and link.state == ^pack_term( state )
+      [object, command_set, component, attribute, link],
+      link.type == ^link_type and link.from_id == ^from and link.state == ^pack_term(state)
     )
   end
 
-  defp build_equality_check_dynamic( { :link, { link_type, { :to, to } } } ) do
+  defp build_equality_check_dynamic({:link, {link_type, {:to, to}}}) do
     dynamic(
-      [ object, command_set, component, attribute, link ],
+      [object, command_set, component, attribute, link],
       link.type == ^link_type and link.to_id == ^to
     )
   end
 
-  defp build_equality_check_dynamic( { :link, { link_type, { :from, from } } } ) do
+  defp build_equality_check_dynamic({:link, {link_type, {:from, from}}}) do
     dynamic(
-      [ object, command_set, component, attribute, link ],
+      [object, command_set, component, attribute, link],
       link.type == ^link_type and link.from_id == ^from
     )
   end
 
-  defp build_equality_check_dynamic( { :link, link_type } ) do
-    dynamic( [ object, command_set, component, attribute, link ], link.type == ^link_type )
+  defp build_equality_check_dynamic({:link, link_type}) do
+    dynamic([object, command_set, component, attribute, link], link.type == ^link_type)
   end
 
-  defp build_equality_check_dynamic( { :tag, { category, tag } } ) do
+  defp build_equality_check_dynamic({:tag, {category, tag}}) do
     dynamic(
-      [ object, command_set, component, attribute, link, tag ],
+      [object, command_set, component, attribute, link, tag],
       tag.category == ^category and tag.tag == ^tag
     )
   end
 
   # Get Query
 
-  defp build_get_query( query, [] ), do: query
+  defp build_get_query(query, []), do: query
 
-  defp build_get_query( query, [ :command_sets | inclusion_filters ] ) do
+  defp build_get_query(query, [:command_sets | inclusion_filters]) do
     query =
       from(
         object in query,
-        left_join: command_set in assoc( object, :command_sets ),
-        preload: [ :command_sets ]
+        left_join: command_set in assoc(object, :command_sets),
+        preload: [:command_sets]
       )
 
-    build_get_query( query, inclusion_filters )
+    build_get_query(query, inclusion_filters)
   end
 
-  defp build_get_query( query, [ :components | inclusion_filters ] ) do
+  defp build_get_query(query, [:components | inclusion_filters]) do
     query =
       from(
         object in query,
-        left_join: component in assoc( object, :components ),
-        left_join: attribute in assoc( component, :attributes ),
-        preload: [ components: { component, attributes: attribute } ]
+        left_join: component in assoc(object, :components),
+        left_join: attribute in assoc(component, :attributes),
+        preload: [components: {component, attributes: attribute}]
       )
 
-    build_get_query( query, inclusion_filters )
+    build_get_query(query, inclusion_filters)
   end
 
-  defp build_get_query( query, [ :locks | inclusion_filters ] ) do
+  defp build_get_query(query, [:locks | inclusion_filters]) do
     query =
       from(
         object in query,
-        left_join: lock in assoc( object, :locks ),
-        preload: [ :locks ]
+        left_join: lock in assoc(object, :locks),
+        preload: [:locks]
       )
 
-    build_get_query( query, inclusion_filters )
+    build_get_query(query, inclusion_filters)
   end
 
-  defp build_get_query( query, [ :links | inclusion_filters ] ) do
+  defp build_get_query(query, [:links | inclusion_filters]) do
     query =
       from(
         object in query,
-        left_join: link in assoc( object, :links ),
-        preload: [ :links ]
+        left_join: link in assoc(object, :links),
+        preload: [:links]
       )
 
-    build_get_query( query, inclusion_filters )
+    build_get_query(query, inclusion_filters)
   end
 
-  defp build_get_query( query, [ :scripts | inclusion_filters ] ) do
+  defp build_get_query(query, [:scripts | inclusion_filters]) do
     query =
       from(
         object in query,
-        left_join: script in assoc( object, :scripts ),
-        preload: [ :scripts ]
+        left_join: script in assoc(object, :scripts),
+        preload: [:scripts]
       )
 
-    build_get_query( query, inclusion_filters )
+    build_get_query(query, inclusion_filters)
   end
 
-  defp build_get_query( query, [ :tags | inclusion_filters ] ) do
+  defp build_get_query(query, [:tags | inclusion_filters]) do
     query =
       from(
         object in query,
-        left_join: tag in assoc( object, :tags ),
-        preload: [ :tags ]
+        left_join: tag in assoc(object, :tags),
+        preload: [:tags]
       )
 
-    build_get_query( query, inclusion_filters )
+    build_get_query(query, inclusion_filters)
   end
 
-  defp normalize_get_results( objects, [ :components | rest ] ) do
+  defp normalize_get_results(objects, [:components | rest]) do
     objects =
-      Enum.map( objects, fn object ->
+      Enum.map(objects, fn object ->
         %{
           object
           | components:
-              Enum.map( object.components, fn component ->
+              Enum.map(object.components, fn component ->
                 %{
                   component
                   | attributes:
-                      Enum.map( component.attributes, fn attribute ->
-                        %{ attribute | value: unpack_term( attribute.value ) }
-                      end )
+                      Enum.map(component.attributes, fn attribute ->
+                        %{attribute | value: unpack_term(attribute.value)}
+                      end)
                 }
-              end )
+              end)
         }
-      end )
+      end)
 
-    normalize_get_results( objects, rest )
+    normalize_get_results(objects, rest)
   end
 
-  defp normalize_get_results( objects, [ :command_sets | rest ] ) do
+  defp normalize_get_results(objects, [:command_sets | rest]) do
     objects =
-      Enum.map( objects, fn object ->
+      Enum.map(objects, fn object ->
         command_sets =
-          Enum.map( object.command_sets, fn command_set ->
-            %{ command_set | callback_module: unpack_term( command_set.callback_module ) }
-          end )
+          Enum.map(object.command_sets, fn command_set ->
+            %{command_set | callback_module: unpack_term(command_set.callback_module)}
+          end)
 
-        %{ object | command_sets: command_sets }
-      end )
+        %{object | command_sets: command_sets}
+      end)
 
-    normalize_get_results( objects, rest )
+    normalize_get_results(objects, rest)
   end
 
-  defp normalize_get_results( objects, _ ), do: objects
+  defp normalize_get_results(objects, _), do: objects
 end

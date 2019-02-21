@@ -42,5 +42,4 @@ defmodule Exmud.Engine.Test.ComponentTest do
 
     %{object_id: object_id}
   end
-
 end

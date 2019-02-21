@@ -23,14 +23,14 @@ defmodule Exmud.Engine.Component do
   #
 
   @doc false
-  defmacro __using__( _ ) do
+  defmacro __using__(_) do
     quote location: :keep do
       @behaviour Exmud.Engine.Component
       alias Exmud.Engine.Attribute
       import Exmud.Engine.Constants
 
       @doc false
-      def populate( _object_id, _args ), do: :ok
+      def populate(_object_id, _args), do: :ok
 
       defoverridable populate: 2
     end
@@ -40,7 +40,7 @@ defmodule Exmud.Engine.Component do
   Called when a Component has been added to an Object. Is responsible for populating the Component with the necessary
   data.
   """
-  @callback populate( object_id, config ) :: :ok | { :error, error }
+  @callback populate(object_id, config) :: :ok | {:error, error}
 
   @typedoc "The Object being populated with the Component and its data."
   @type object_id :: integer
@@ -57,69 +57,67 @@ defmodule Exmud.Engine.Component do
   @typedoc "A callback module which implements the 'Exmud.Engine.Component' behavior."
   @type component :: module
 
-
   #
   # API
   #
 
-
   @doc """
   Atomically attach a Component to an Object and populate it with attributes using the provided, optional, args.
   """
-  @spec attach( object_id, component, config | nil ) ::
-          :ok | { :error, :no_such_object } | { :error, :already_attached } | { :error, error }
-  def attach( object_id, component, config \\ nil ) do
-      record = Component.new( %{ callback_module: pack_term( component ), object_id: object_id } )
-      ObjectUtil.attach( record, fn -> component.populate( object_id, config ) end )
+  @spec attach(object_id, component, config | nil) ::
+          :ok | {:error, :no_such_object} | {:error, :already_attached} | {:error, error}
+  def attach(object_id, component, config \\ nil) do
+    record = Component.new(%{callback_module: pack_term(component), object_id: object_id})
+    ObjectUtil.attach(record, fn -> component.populate(object_id, config) end)
   end
 
   @doc """
   See 'all_attached?/2'.
   """
-  @spec attached?( object_id, component ) :: boolean
-  def attached?( object_id, component ) do
-    all_attached?( object_id, component )
+  @spec attached?(object_id, component) :: boolean
+  def attached?(object_id, component) do
+    all_attached?(object_id, component)
   end
 
   @doc """
   Check to see if a given Component, or list of components, is attached to an Object. Will only return `true` if all
   provided values are matched.
   """
-  @spec all_attached?( object_id, component | [ component ] ) :: boolean
-  def all_attached?( object_id, components ) do
-    components = List.wrap( components )
-    query = get_count_query( object_id, components )
+  @spec all_attached?(object_id, component | [component]) :: boolean
+  def all_attached?(object_id, components) do
+    components = List.wrap(components)
+    query = get_count_query(object_id, components)
 
-    Repo.one( query ) == length( components )
+    Repo.one(query) == length(components)
   end
 
   @doc """
   Check to see if a given Component, or list of components, is attached to an Object. Will return `true` if any of the
   provided values are matched.
   """
-  @spec any_attached?( object_id, component | [ component ] ) :: boolean
-  def any_attached?( object_id, components ) do
-    components = List.wrap( components )
-    query = get_count_query( object_id, components )
+  @spec any_attached?(object_id, component | [component]) :: boolean
+  def any_attached?(object_id, components) do
+    components = List.wrap(components)
+    query = get_count_query(object_id, components)
 
-    Repo.one( query ) > 0
+    Repo.one(query) > 0
   end
 
-  defp get_count_query( object_id, components ) do
-    components = List.wrap( components )
-    components = Enum.map( components, fn component -> pack_term( component ) end )
-    count_query( object_id, components )
+  defp get_count_query(object_id, components) do
+    components = List.wrap(components)
+    components = Enum.map(components, fn component -> pack_term(component) end)
+    count_query(object_id, components)
   end
 
   @doc """
   Detach all Components, deleting all associated data, attached to a given Object or set of Objects.
   """
-  @spec detach( object_id | [ object_id ] ) :: :ok
-  def detach( object_ids ) do
+  @spec detach(object_id | [object_id]) :: :ok
+  def detach(object_ids) do
     delete_query =
-      from( component in Component, where: component.object_id in ^List.wrap( object_ids ) )
+      from(component in Component, where: component.object_id in ^List.wrap(object_ids))
 
-    Repo.delete_all( delete_query )
+    Repo.delete_all(delete_query)
 
     :ok
   end
@@ -127,30 +125,30 @@ defmodule Exmud.Engine.Component do
   @doc """
   Detach one or more Components, deleting all associated data, attached to a given Object.
   """
-  @spec detach( object_id, component | [ component ] ) :: :ok
-  def detach( object_id, components ) do
-    components = List.wrap( components )
-    components = Enum.map( components, fn component -> pack_term( component ) end )
-    delete_query = component_query( object_id, components )
+  @spec detach(object_id, component | [component]) :: :ok
+  def detach(object_id, components) do
+    components = List.wrap(components)
+    components = Enum.map(components, fn component -> pack_term(component) end)
+    delete_query = component_query(object_id, components)
 
-    Repo.delete_all( delete_query )
+    Repo.delete_all(delete_query)
 
     :ok
   end
 
-  @spec component_query( object_id, [ component ] ) :: term
-  defp component_query( object_id, components ) do
+  @spec component_query(object_id, [component]) :: term
+  defp component_query(object_id, components) do
     from(
       component in Component,
       where: component.callback_module in ^components and component.object_id == ^object_id
     )
   end
 
-  @spec count_query( object_id, [ component ] ) :: term
-  defp count_query( object_id, components ) do
+  @spec count_query(object_id, [component]) :: term
+  defp count_query(object_id, components) do
     from(
-      component in component_query( object_id, components ),
-      select: count( "*" )
+      component in component_query(object_id, components),
+      select: count("*")
     )
   end
 end

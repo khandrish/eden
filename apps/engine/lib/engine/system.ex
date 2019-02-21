@@ -22,19 +22,19 @@ defmodule Exmud.Engine.System do
       alias Exmud.Engine.System.Result
 
       @doc false
-      def handle_message( message, state ), do: { :ok, message, state }
+      def handle_message(message, state), do: {:ok, message, state}
 
       @doc false
-      def initialize( args ), do: { :ok, nil }
+      def initialize(args), do: {:ok, nil}
 
       @doc false
-      def run( state ), do: { :ok, state }
+      def run(state), do: {:ok, state}
 
       @doc false
-      def start( _args, state ), do: { :ok, state, 0 }
+      def start(_args, state), do: {:ok, state, 0}
 
       @doc false
-      def stop( _args, state ), do: { :ok, state }
+      def stop(_args, state), do: {:ok, state}
 
       defoverridable handle_message: 2,
                      initialize: 1,
@@ -51,38 +51,38 @@ defmodule Exmud.Engine.System do
   @doc """
   Handle a message which has been explicitly sent to the System.
   """
-  @callback handle_message( message, state ) :: { :ok, reply, state } | { :error, reason }
+  @callback handle_message(message, state) :: {:ok, reply, state} | {:error, reason}
 
   @doc """
   Called only once when a System is first initialized.
 
   The state returned from this function will be passed to the `start/2` callback.
   """
-  @callback initialize( args ) :: { :ok, state } | { :error, reason }
+  @callback initialize(args) :: {:ok, state} | {:error, reason}
 
   @doc """
   Called in response to an interval period expiring, or an explicit call to run the System again.
   """
-  @callback run( state ) ::
-              { :ok, state }
-              | { :ok, state, next_iteration }
-              | { :stop, reason, state }
-              | { :error, error, state }
-              | { :error, error, state, next_iteration }
+  @callback run(state) ::
+              {:ok, state}
+              | {:ok, state, next_iteration}
+              | {:stop, reason, state}
+              | {:error, error, state}
+              | {:error, error, state, next_iteration}
 
   @doc """
   Called when the System is being started.
 
   Must return a new state and an optional timeout, in milliseconds, until the next iteration.
   """
-  @callback start( args, state ) :: { :ok, state } | { :ok, state, next_iteration } | { :error, error }
+  @callback start(args, state) :: {:ok, state} | {:ok, state, next_iteration} | {:error, error}
 
   @doc """
   Called when the System is being stopped.
 
   Must return a new state which will be persisted.
   """
-  @callback stop( args, state ) :: { :ok, state } | { :error, error }
+  @callback stop(args, state) :: {:ok, state} | {:error, error}
 
   @typedoc "Arguments passed through to a callback module."
   @type args :: term
@@ -128,17 +128,17 @@ defmodule Exmud.Engine.System do
   @doc """
   Call a running System with a message.
   """
-  @spec call( callback_module, message ) :: { :ok, reply }
-  def call( callback_module, message ) when is_atom( callback_module ) do
-    send_message( :call, callback_module, { :message, message } )
+  @spec call(callback_module, message) :: {:ok, reply}
+  def call(callback_module, message) when is_atom(callback_module) do
+    send_message(:call, callback_module, {:message, message})
   end
 
   @doc """
   Cast a message to a running System.
   """
-  @spec cast( callback_module, message ) :: :ok
-  def cast( callback_module, message ) when is_atom( callback_module ) do
-    send_message( :cast, callback_module, { :message, message } )
+  @spec cast(callback_module, message) :: :ok
+  def cast(callback_module, message) when is_atom(callback_module) do
+    send_message(:cast, callback_module, {:message, message})
 
     :ok
   end
@@ -146,20 +146,20 @@ defmodule Exmud.Engine.System do
   @doc """
   Get the state of a System.
   """
-  @spec get_state( callback_module ) :: { :ok, term } | { :error, :no_such_system }
-  def get_state( callback_module ) when is_atom( callback_module ) do
+  @spec get_state(callback_module) :: {:ok, term} | {:error, :no_such_system}
+  def get_state(callback_module) when is_atom(callback_module) do
     try do
-      GenServer.call( via( @system_registry, callback_module ), :state, :infinity )
+      GenServer.call(via(@system_registry, callback_module), :state, :infinity)
     catch
-      :exit, { :noproc, _ } ->
-        system_query( callback_module )
+      :exit, {:noproc, _} ->
+        system_query(callback_module)
         |> Repo.one()
         |> case do
           nil ->
-            { :error, :no_such_system }
+            {:error, :no_such_system}
 
           system ->
-            { :ok, unpack_term( system.state ) }
+            {:ok, unpack_term(system.state)}
         end
     end
   end
@@ -167,16 +167,16 @@ defmodule Exmud.Engine.System do
   @doc """
   Purge System data from the database. Does not check if System is running
   """
-  @spec purge( callback_module ) :: :ok | { :error, :no_such_system }
-  def purge( callback_module ) when is_atom( callback_module ) do
-    system_query( callback_module )
+  @spec purge(callback_module) :: :ok | {:error, :no_such_system}
+  def purge(callback_module) when is_atom(callback_module) do
+    system_query(callback_module)
     |> Repo.one()
     |> case do
       nil ->
-        { :error, :no_such_system }
+        {:error, :no_such_system}
 
       system ->
-        { :ok, _ } = Repo.delete( system )
+        {:ok, _} = Repo.delete(system)
         :ok
     end
   end
@@ -188,33 +188,33 @@ defmodule Exmud.Engine.System do
   This method ensures that the System is active and that it will begin the process of running its main loop immediately,
   but offers no other guarantees.
   """
-  @spec run( callback_module ) :: :ok | { :error, :no_such_system }
-  def run( callback_module ) when is_atom( callback_module ) do
-    send_message( :call, callback_module, :run )
+  @spec run(callback_module) :: :ok | {:error, :no_such_system}
+  def run(callback_module) when is_atom(callback_module) do
+    send_message(:call, callback_module, :run)
   end
 
   @doc """
   Check to see if a system is running.
   """
-  @spec running?( callback_module ) :: boolean
-  def running?( callback_module ) when is_atom( callback_module ) do
-    send_message( :call, callback_module, :running ) == true
+  @spec running?(callback_module) :: boolean
+  def running?(callback_module) when is_atom(callback_module) do
+    send_message(:call, callback_module, :running) == true
   end
 
   @doc """
   Start a System which must already be initialized.
   """
-  @spec start( callback_module, args :: term ) :: :ok | { :error, :not_initialized }
-  def start( callback_module, start_args \\ nil ) when is_atom( callback_module ) do
+  @spec start(callback_module, args :: term) :: :ok | {:error, :not_initialized}
+  def start(callback_module, start_args \\ nil) when is_atom(callback_module) do
     gen_server_args = [
       callback_module,
       start_args
     ]
 
-    with { :ok, _ } <-
+    with {:ok, _} <-
            DynamicSupervisor.start_child(
              Exmud.Engine.CallbackSupervisor,
-             { SystemWorker, gen_server_args }
+             {SystemWorker, gen_server_args}
            ) do
       :ok
     end
@@ -223,46 +223,44 @@ defmodule Exmud.Engine.System do
   @doc """
   Initialize a System.
   """
-  @spec initialize( callback_module, args | nil ) :: :ok | { :error, :no_such_system }
-  def initialize( callback_module, config \\ nil ) do
-    initialization_result =
-      apply( callback_module, :initialize, [ config ] )
+  @spec initialize(callback_module, args | nil) :: :ok | {:error, :no_such_system}
+  def initialize(callback_module, config \\ nil) do
+    initialization_result = apply(callback_module, :initialize, [config])
 
-      case initialization_result do
-        { :ok, new_state } ->
-          Logger.info( "System `#{ callback_module }` successfully initialized." )
+    case initialization_result do
+      {:ok, new_state} ->
+        Logger.info("System `#{callback_module}` successfully initialized.")
 
+        %{callback_module: pack_term(callback_module), state: pack_term(new_state)}
+        |> Exmud.Engine.Schema.System.new()
+        |> Repo.insert!()
 
-          %{ callback_module: pack_term( callback_module ), state: pack_term( new_state ) }
-          |> Exmud.Engine.Schema.System.new()
-          |> Repo.insert!
+        :ok
 
-          :ok
+      {_, error} = error_result ->
+        Logger.error("Encountered error `#{error}` while initializing System.")
 
-        {_, error} = error_result ->
-          Logger.error( "Encountered error `#{ error }` while initializing System."   )
-
-          error_result
-      end
+        error_result
+    end
   end
 
   @doc """
   Stops a System if it is started.
   """
-  @spec stop( callback_module ) :: :ok | { :error, :no_such_system }
-  def stop( callback_module ) do
-    case Registry.lookup( @system_registry, callback_module ) do
-      [ { pid, _ } ] ->
-        ref = Process.monitor( pid )
-        GenServer.stop( pid, :normal )
+  @spec stop(callback_module) :: :ok | {:error, :no_such_system}
+  def stop(callback_module) do
+    case Registry.lookup(@system_registry, callback_module) do
+      [{pid, _}] ->
+        ref = Process.monitor(pid)
+        GenServer.stop(pid, :normal)
 
         receive do
-          { :DOWN, ^ref, :process, ^pid, :normal } ->
+          {:DOWN, ^ref, :process, ^pid, :normal} ->
             :ok
         end
 
       _ ->
-        { :error, :no_such_system }
+        {:error, :no_such_system}
     end
   end
 
@@ -271,13 +269,13 @@ defmodule Exmud.Engine.System do
 
   Primarily used by the Engine to persist the state of a running System whenever it changes.
   """
-  @spec update( callback_module, state ) :: :ok | { :error, :no_such_system }
-  def update( callback_module, state ) do
-    query = system_query( callback_module )
+  @spec update(callback_module, state) :: :ok | {:error, :no_such_system}
+  def update(callback_module, state) do
+    query = system_query(callback_module)
 
-    case Repo.update_all( query, set: [ state: pack_term( state ) ] ) do
-      { 1, _ } -> :ok
-      _ -> { :error, :no_such_system }
+    case Repo.update_all(query, set: [state: pack_term(state)]) do
+      {1, _} -> :ok
+      _ -> {:error, :no_such_system}
     end
   end
 
@@ -285,17 +283,17 @@ defmodule Exmud.Engine.System do
   # Internal Functions
   #
 
-  @spec send_message( method :: atom, callback_module, message ) ::
-          :ok | { :ok, term } | { :error, :system_not_running }
-  defp send_message( method, callback_module, message ) do
+  @spec send_message(method :: atom, callback_module, message) ::
+          :ok | {:ok, term} | {:error, :system_not_running}
+  defp send_message(method, callback_module, message) do
     try do
-      apply( GenServer, method, [ via( @system_registry, callback_module ), message ] )
+      apply(GenServer, method, [via(@system_registry, callback_module), message])
     catch
-      :exit, _ -> { :error, :no_such_system }
+      :exit, _ -> {:error, :no_such_system}
     end
   end
 
-  defp system_query( callback_module ) do
-    from( system in System, where: system.callback_module == ^pack_term( callback_module ) )
+  defp system_query(callback_module) do
+    from(system in System, where: system.callback_module == ^pack_term(callback_module))
   end
 end

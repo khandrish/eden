@@ -9,12 +9,13 @@ defmodule Exmud.Engine.Test.CommandTest do
   alias Exmud.Engine.Test.CommandSet.Basic
 
   describe "command" do
-    setup [ :create_new_object ]
+    setup [:create_new_object]
 
     @tag command: true
-    test "with building a command list when CommandSet has been unregistered", %{ object_id: object_id } = _context do
-      assert CommandSet.attach( object_id, Basic ) == :ok
-      { :ok, executionContext } = Command.execute( object_id, "echo foobar" )
+    test "with building a command list when CommandSet has been unregistered",
+         %{object_id: object_id} = _context do
+      assert CommandSet.attach(object_id, Basic) == :ok
+      {:ok, executionContext} = Command.execute(object_id, "echo foobar")
       assert %Exmud.Engine.Command.ExecutionContext{} = executionContext
     end
   end

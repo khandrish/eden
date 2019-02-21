@@ -26,57 +26,57 @@ defmodule Exmud.Engine.Event do
   # API
   #
 
-  def listen( event_types ) do
-    event_types = List.wrap( event_types )
+  def listen(event_types) do
+    event_types = List.wrap(event_types)
 
     for event_type <- event_types do
-      Registry.register( Exmud.Engine.GlobalEventRegistry, event_type, nil )
+      Registry.register(Exmud.Engine.GlobalEventRegistry, event_type, nil)
     end
   end
 
-  def listen( object_id, event_types ) do
-    event_types = List.wrap( event_types )
+  def listen(object_id, event_types) do
+    event_types = List.wrap(event_types)
 
     for event_type <- event_types do
-      Registry.register( Exmud.Engine.TargetedEventRegistry, object_id, event_type )
+      Registry.register(Exmud.Engine.TargetedEventRegistry, object_id, event_type)
     end
   end
 
-  def dispatch( %__MODULE__{ object_id: nil } = event ) do
-    dispatch_global_event( event )
+  def dispatch(%__MODULE__{object_id: nil} = event) do
+    dispatch_global_event(event)
   end
 
-  def dispatch( %__MODULE__{} = event ) do
-    object_ids = List.wrap( event.object_id )
+  def dispatch(%__MODULE__{} = event) do
+    object_ids = List.wrap(event.object_id)
 
     for object_id <- object_ids do
-      Registry.dispatch( Exmud.Engine.TargetedEventRegistry, object_id, fn entries ->
-        for { pid, match } <- entries do
-          if Regex.regex?( match ) and Regex.match?( match, event.type ) do
-            send( pid, { :event, %{ event | object_id: object_id } } )
+      Registry.dispatch(Exmud.Engine.TargetedEventRegistry, object_id, fn entries ->
+        for {pid, match} <- entries do
+          if Regex.regex?(match) and Regex.match?(match, event.type) do
+            send(pid, {:event, %{event | object_id: object_id}})
           else
             if match == event.type do
-              send( pid, { :event, %{ event | object_id: object_id } } )
+              send(pid, {:event, %{event | object_id: object_id}})
             end
           end
         end
       end)
     end
 
-    dispatch_global_event( event )
+    dispatch_global_event(event)
   end
 
-  defp dispatch_global_event( event ) do
-    object_ids = List.wrap( event.object_id )
+  defp dispatch_global_event(event) do
+    object_ids = List.wrap(event.object_id)
 
     for object_id <- object_ids do
-      Registry.dispatch( Exmud.Engine.TargetedEventRegistry, object_id, fn entries ->
-        for { pid, match } <- entries do
-          if Regex.regex?( match ) and Regex.match?( match, event.type ) do
-            send( pid, { :event, %{ event | object_id: object_id } } )
+      Registry.dispatch(Exmud.Engine.TargetedEventRegistry, object_id, fn entries ->
+        for {pid, match} <- entries do
+          if Regex.regex?(match) and Regex.match?(match, event.type) do
+            send(pid, {:event, %{event | object_id: object_id}})
           else
             if match == event.type do
-              send( pid, { :event, %{ event | object_id: object_id } } )
+              send(pid, {:event, %{event | object_id: object_id}})
             end
           end
         end
