@@ -1,31 +1,48 @@
 defmodule Exmud.Engine.Command do
   @moduledoc """
-  A Command is a piece of game logic intended to be invoked on behalf on an Object, whether this be by a player who has puppeted an Object, a Script, or by the Engine via some external trigger.
+  A Command is a piece of game logic intended to be invoked on behalf on an Object.
+
+  A Command can be invoked by a player who has puppeted an Object, a Script, or by the Engine via some external trigger.
 
   A Command has multiple attributes:
     Key:
-      The action to be taken. This can be more than one word, so 'open third window' or 'tap second case' are just as valid as 'look' or 'move'.
+      The action to be taken. This can be more than one word, so 'open third window' or 'tap second case' are just as
+      valid as 'look' or 'move'.
 
     Aliases:
-      Aliases by which the command can be known. When a command string is being processed, both the key and the aliases are used to determine a match. That also means that both keys and aliases are checked during a merge between Command Sets.
+      Aliases by which the command can be known. When a command string is being processed, both the key and the aliases
+      are used to determine a match. That also means that both keys and aliases are checked during a merge between
+      Command Sets.
 
-      One example would be the alias 'flee' for the command 'retreat'. Another primary use is the explicit whitelisting of short cuts for Commands. The 'retreat' command might allow for 'retrea', 'retre', and 'retr' to match but nothing shorter due to potential conflicts with a wider range of Commands.
+      One example would be the alias 'flee' for the command 'retreat'. Another primary use is the explicit whitelisting
+      of short cuts for Commands. The 'retreat' command might allow for 'retrea', 'retre', and 'retr' to match but
+      nothing shorter due to potential conflicts with a wider range of Commands.
 
-      Then again, given that a 'retreat' command would likely belong to a higher priority combat oriented Command Set, any conflicts would be decided in the favor of the 'retreat' command so even shorter aliases become a possibility.
+      Then again, given that a 'retreat' command would likely belong to a higher priority combat oriented Command Set,
+      any conflicts would be decided in the favor of the 'retreat' command so even shorter aliases become a possibility.
 
     Executor:
-      A do-nothing default implementation has been provided simply to make a Command work out-of-the-box, but every Command will require its own implementation of the 'execute/1' callback. This is where the actual logic execution for a Command takes place.
+      A do-nothing default implementation has been provided simply to make a Command work out-of-the-box, but every
+      Command will require its own implementation of the 'execute/1' callback. This is where the actual logic execution
+      for a Command takes place.
 
-      The callback is wrapped in a transaction, ensuring that all data can be accessed as if the Command execution function was the sole process. This also means the callback may need to be retried and as such must be side effect free, except for manipulating the database of course.
+      The callback is wrapped in a transaction, ensuring that all data can be accessed as if the Command execution
+      function was the sole process. This also means the callback may need to be retried and as such must be side effect
+      free, except for manipulating the database of course.
 
     Locks:
-      Locks help determine who/what has access to the Command itself. It's not enough for a Command to end up in the final merged Command Set, the caller must also have permissions for the Command itself. This defaults to allowing all callers.
+      Locks help determine who/what has access to the Command itself. It's not enough for a Command to end up in the
+      final merged Command Set, the caller must also have permissions for the Command itself. This defaults to allowing
+      all callers.
 
     Help Docs:
-      Docs can be automatically generated from the module documentation to be displayed within the game. Not only can the doc generation be turned off, but an optional category can be set. Defaults to 'General'.
+      Docs can be automatically generated from the module documentation to be displayed within the game. Not only can
+      the doc generation be turned off, but an optional category can be set. Defaults to 'General'.
 
     Argument Regex:
-      An optional regex string to match against the argument string. The default regex '~r/$/' allows for mistyped commands like 'runeast' to match. Overriding the value to something like '~r/^\s.+' would enforce a space to come between the command and any of its arguments.
+      An optional regex string to match against the argument string. The default regex '~r/$/' allows for mistyped
+      commands like 'runeast' to match. Overriding the value to something like '~r/^\s.+' would enforce a space to come
+      between the command and any of its arguments.
 
       If this regex does not match the parse callback will not be called.
   """
@@ -115,16 +132,20 @@ defmodule Exmud.Engine.Command do
   @callback aliases( config ) :: [ String.t() ]
 
   @doc """
-  Called when the Engine determines the Command should be executed. This means all the matching, parsing, and permissions checks have passed.
+  Called when the Engine determines the Command should be executed. This means all the matching, parsing, and
+  permissions checks have passed.
 
-  An execution context is passed to the callback function, populated with several helpful bits of information to aid in the execution of the command. See 'Exmud.Engine.CommandContext'.
+  An execution context is passed to the callback function, populated with several helpful bits of information to aid in
+  the execution of the command. See 'Exmud.Engine.CommandContext'.
   """
   @callback parse_args( context ) :: { :ok, context } | { :error, context }
 
   @doc """
-  Called when the Engine determines the Command should be executed. This means all the matching, parsing, and permissions checks have passed.
+  Called when the Engine determines the Command should be executed. This means all the matching, parsing, and
+  permissions checks have passed.
 
-  An execution context is passed to the callback function, populated with several helpful bits of information to aid in the execution of the command. See 'Exmud.Engine.CommandContext'.
+  An execution context is passed to the callback function, populated with several helpful bits of information to aid in
+  the execution of the command. See 'Exmud.Engine.CommandContext'.
   """
   @callback execute( context ) :: { :ok, context } | { :error, context }
 

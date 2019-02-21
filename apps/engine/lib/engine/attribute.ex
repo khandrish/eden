@@ -2,7 +2,8 @@ defmodule Exmud.Engine.Attribute do
   @moduledoc """
   An `Exmud.Component` can have an arbitrary number of attributes associated with it.
 
-  Attributes are where all of the actual values within the engine is stored, and all Attributes belong to a Component which has been attached to an Object.
+  Attributes are where all of the actual values within the engine is stored, and all Attributes belong to a Component
+  which has been attached to an Object.
   """
 
   alias Ecto.Multi

@@ -1,10 +1,16 @@
 defmodule Exmud.Engine.Lock do
   @moduledoc """
-  Locks perform a double duty of defining the actions that can be taken on an Object, and what Objects can perform said actions.
+  Locks perform a double duty of defining the actions that can be taken on an Object, and what Objects can perform said
+  actions.
 
-  A Lock is made up of three parts. An access type which is a simple string that identifies the action to be enabled, the data which configures the Lock, and the callback module which uses the configuration data along with both the accessing and accessed Objects to determine if the lock check passes. These last two bits of information are provided to the callback module at runtime, and must produce a boolean value.
+  A Lock is made up of three parts. An access type which is a simple string that identifies the action to be enabled,
+  the data which configures the Lock, and the callback module which uses the configuration data along with both the
+  accessing and accessed Objects to determine if the lock check passes. These last two bits of information are provided
+  to the callback module at runtime, and must produce a boolean value.
 
-  For example, a locked garden gate might only be able to be opened by the local gardener. So a Lock might be added with the access type of 'open' with a callback module name of of 'owner' and config of '%{id: 42}'. Of course for this to have any affect, the code which controls opening the gate must check the lock. Such a check might look like:
+  For example, a locked garden gate might only be able to be opened by the local gardener. So a Lock might be added with
+  the access type of 'open' with a callback module name of of 'owner' and config of '%{id: 42}'. Of course for this to
+  have any affect, the code which controls opening the gate must check the lock. Such a check might look like:
 
   '''
   if Lock.check!(24, "open", 42) do
@@ -14,9 +20,14 @@ defmodule Exmud.Engine.Lock do
   end
   '''
 
-  In the background the Object which should have the Lock on it, 24, is checked to see if anything exists for the "open" access type. Then the associated callback module for the "owner" check is retrieved and passed the two ids along with data associted with the Lock. Assuming the check passes the above code would execute the 'if' block.
+  In the background the Object which should have the Lock on it, 24, is checked to see if anything exists for the "open"
+  access type. Then the associated callback module for the "owner" check is retrieved and passed the two ids along with
+  data associted with the Lock. Assuming the check passes the above code would execute the 'if' block.
 
-  Almost everything in Exmud interacts with Locks in one way or another. The Engine applies default Locks to several different types of Objects on creation otherwise the provided default logic simply wouldn't work. For example, at Character creation a 'puppet' Lock is created on the Character Object which points to the Player Object which owns it. Without this Lock, a Player would be unable to puppet their newly created Character.
+  Almost everything in Exmud interacts with Locks in one way or another. The Engine applies default Locks to several
+  different types of Objects on creation otherwise the provided default logic simply wouldn't work. For example, at
+  Character creation a 'puppet' Lock is created on the Character Object which points to the Player Object which owns it.
+  Without this Lock, a Player would be unable to puppet their newly created Character.
   """
 
   #

@@ -1,6 +1,9 @@
 defmodule Exmud.Engine.CommandSet do
   @moduledoc """
-  Command Sets not only allow Commands to be added to/removed from Objects in bulk, but they define the rules by which multiple Command Sets can be merged to present a final unified set of Commands for further processing.
+  Command Sets represent a group of Commands.
+
+  Command Sets not only allow Commands to be added to/removed from Objects in bulk, but they define the rules by which
+  multiple Command Sets can be merged to present a final unified set of Commands for further processing.
   """
 
   defstruct [

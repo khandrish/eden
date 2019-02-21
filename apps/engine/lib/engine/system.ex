@@ -2,11 +2,17 @@ defmodule Exmud.Engine.System do
   @moduledoc """
   Systems form the backbone of the Engine, driving time and message based actions within the game world.
 
-  Examples include weather effects, triggering invasions, regular spawning of critters, the day/night cycle, and so on. Unlike Scripts, which can be added to as many different Objects as you want, only one instance of a System may run at a time.
+  Examples include weather effects, triggering invasions, regular spawning of critters, the day/night cycle, and so on.
+  Unlike Scripts, which can be added to as many different Objects as you want, only one instance of a System may run at
+  a time.
 
-  Systems can transition between a set schedule, dynamic schedule, and purely message based seamlessly at runtime simply by modifying the value returned from the `run/1` callback. Note that while it is possible to run only in response to being explicitly called, short of not implementing the `handle_message/2` callback it is not possible for the Engine to run in a schedule only mode. Only you can prevent messages by not calling the System directly in your code.
+  Systems can transition between a set schedule, dynamic schedule, and purely message based seamlessly at runtime simply
+  by modifying the value returned from the `run/1` callback. Note that while it is possible to run only in response to
+  being explicitly called, short of not implementing the `handle_message/2` callback it is not possible for the Engine
+  to run in a schedule only mode. Only you can prevent messages by not calling the System directly in your code.
 
-  Under the hood, Systems are simply Scripts which are treated just a little bit differently. That said, you must not use the same callback module for a System as you do for a Script. It will cause odd and unexpected things to happen.
+  Under the hood, Systems are simply Scripts which are treated just a little bit differently. That said, you must not
+  use the same callback module for a System as you do for a Script. It will cause odd and unexpected things to happen.
   """
 
   @doc false
@@ -176,9 +182,11 @@ defmodule Exmud.Engine.System do
   end
 
   @doc """
-  Trigger a System to run immediately. If a System is running while this call is made the System will run again as soon as it can and the result of that run is returned.
+  Trigger a System to run immediately. If a System is running while this call is made the System will run again as soon
+  as it can and the result of that run is returned.
 
-  This method ensures that the System is active and that it will begin the process of running its main loop immediately, but offers no other guarantees.
+  This method ensures that the System is active and that it will begin the process of running its main loop immediately,
+  but offers no other guarantees.
   """
   @spec run( callback_module ) :: :ok | { :error, :no_such_system }
   def run( callback_module ) when is_atom( callback_module ) do

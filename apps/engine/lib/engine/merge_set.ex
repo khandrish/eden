@@ -35,7 +35,8 @@ defmodule Exmud.Engine.MergeSet do
   @typedoc "A map holding  a set of arbitrary terms as keys and metadata describing how to merge said set."
   @type merge_set :: map()
 
-  @typedoc "A callback function allowing for the comparison of two arbirarily complex terms. Returning `true` means the terms are equal."
+  @typedoc "A callback function allowing for the comparison of two arbirarily complex terms. Returning `true` means the
+  terms are equal."
   @type comparison_function :: function()
 
   @typedoc "A list of options used to configure the MergeSet on creation"
@@ -140,7 +141,9 @@ defmodule Exmud.Engine.MergeSet do
   end
 
   @doc """
-  Merge two MergeSets according to their priority and merge type rules. An optional comparison callback function allows for the checking of two arbitrarily complex values.
+  Merge two MergeSets according to their priority and merge type rules.
+
+  An optional comparison callback function allows for the checking of two arbitrarily complex values.
   """
   @spec merge( merge_set, merge_set | nil, comparison_function ) :: merge_set
   def merge( merge_set_a, merge_set_b, comparison_function \\ nil )

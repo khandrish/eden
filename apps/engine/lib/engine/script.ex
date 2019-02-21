@@ -2,11 +2,16 @@ defmodule Exmud.Engine.Script do
   @moduledoc """
   Scripts perform repeated logic on Objects within the game world.
 
-  Examples include a character slowly drying off, a wound draining vitality, an opened door automatically closing, and so on. They can control longer running logic such as AI behaviors that are meant to remain on the Object permanently, and shorter one off tasks where the script will be removed after a single run.
+  Examples include a character slowly drying off, a wound draining vitality, an opened door automatically closing, and
+  so on. They can control longer running logic such as AI behaviors that are meant to remain on the Object permanently,
+  and shorter one off tasks where the script will be removed after a single run.
 
-  While Scripts are attached to a single Object, there is no restriction on the data a Script can modify. It is up to the implementor to play nice with the rest of the system.
+  While Scripts are attached to a single Object, there is no restriction on the data a Script can modify. It is up to
+  the implementor to play nice with the rest of the system.
 
-  While each Script instance has its own state, please note that this state is only for that data which helps the Script itself run, and should not be used to store any data expected to be used/accessed by any other entity within the system.
+  While each Script instance has its own state, please note that this state is only for that data which helps the Script
+  itself run, and should not be used to store any data expected to be used/accessed by any other entity within the
+  system.
   """
 
   @doc false
@@ -48,14 +53,18 @@ defmodule Exmud.Engine.Script do
   @callback handle_message( object_id, message, state ) :: { :ok, reply, state } | { :error, reason}
 
   @doc """
-  Called the first, and only the first, time a Script is started on an Object. Or in the case of duplicate Scripts, once per Script callback_module/Dedupe Key combination.
+  Called the first, and only the first, time a Script is started on an Object. Or in the case of duplicate Scripts, once
+  per Script callback_module/Dedupe Key combination.
 
-  If called, it will immediately precede `start/2` and the returned state will be passed to the `start/2` callback. If a Script has been previously initialized, the persisted state is loaded from the database and used in the `start/2` callback instead.
+  If called, it will immediately precede `start/2` and the returned state will be passed to the `start/2` callback. If a
+  Script has been previously initialized, the persisted state is loaded from the database and used in the `start/2`
+  callback instead.
   """
   @callback initialize( object_id, args) :: { :ok, state } | { :error, reason}
 
   @doc """
-  Called in response to an interval period expiring, or an explicit call to run the Script again. Unlike Systems, a Script is always expected to be running.
+  Called in response to an interval period expiring, or an explicit call to run the Script again. Unlike Systems, a
+  Script is always expected to be running.
   """
   @callback run( object_id, state ) ::
               { :ok, state }
@@ -67,7 +76,9 @@ defmodule Exmud.Engine.Script do
   @doc """
   Called when the Script is being started.
 
-  If this is the first time the Script has been started it will immediately follow a call to 'initialize/2' and will be called with the state returned from the previous call, otherwise the state will be loaded from the database and used instead. Must return a new state.
+  If this is the first time the Script has been started it will immediately follow a call to 'initialize/2' and will be
+  called with the state returned from the previous call, otherwise the state will be loaded from the database and used
+  instead. Must return a new state.
   """
   @callback start( object_id, args, state ) :: { :ok, state, next_iteration} | { :error, error, state }
 
@@ -188,7 +199,8 @@ defmodule Exmud.Engine.Script do
   @doc """
   Detach a Script from an Object.
 
-  This method first stops the Script if it is running before moving on to removing the Script from the database. It is also destructive, with the state of the Script being destroyed at the time of removal.
+  This method first stops the Script if it is running before moving on to removing the Script from the database. It is
+  also destructive, with the state of the Script being destroyed at the time of removal.
   """
   @spec detach( object_id, callback_module ) :: :ok | { :error, :no_such_script }
   def detach( object_id, callback_module ) do
@@ -199,7 +211,8 @@ defmodule Exmud.Engine.Script do
   @doc """
   Get the state of a Script.
 
-  First the running Script will be queried for the state, and then the database. Only if both fail to return a result is an error returned.
+  First the running Script will be queried for the state, and then the database. Only if both fail to return a result is
+  an error returned.
   """
   @spec get_state( object_id, callback_module ) :: { :ok, term } | { :error, :no_such_script }
   def get_state( object_id, callback_module ) do
@@ -232,7 +245,8 @@ defmodule Exmud.Engine.Script do
   @doc """
   Purge Script data from the database.
 
-  This method does not checking for a running Script, or in any way ensure that the data can't or won't be rewritten. It is a dumb delete.
+  This method does not check for a running Script, or in any way ensure that the data can't or won't be rewritten.
+  It is a dumb delete.
   """
   @spec purge( object_id, callback_module ) :: :ok | { :error, :no_such_script }
   def purge( object_id, callback_module ) do
@@ -245,9 +259,11 @@ defmodule Exmud.Engine.Script do
   end
 
   @doc """
-  Trigger a Script to run immediately. If a Script is running while this call is made the Script will run again as soon as it can.
+  Trigger a Script to run immediately. If a Script is running while this call is made the Script will run again as soon
+  as it can.
 
-  This method ensures that the Script is active and that it will begin the process of running its main loop immediately, but offers no other guarantees.
+  This method ensures that the Script is active and that it will begin the process of running its main loop immediately,
+  but offers no other guarantees.
   """
   @spec run( object_id, callback_module ) :: :ok | { :error, :no_such_script }
   def run( object_id, callback_module ) do
@@ -257,7 +273,10 @@ defmodule Exmud.Engine.Script do
   @doc """
   Check to see if a Script is running on an Object.
 
-  This method is not for checking if the Script is running its main loop at that moment, but to check if it is still active or if it is currently stopped. If there is no Script running matching the provided parameters, it does not check the database to validate that such a Script actively exists. To check if an Object has a Script attached to it, see the 'has?/2' method.
+  This method is not for checking if the Script is running its main loop at that moment, but to check if it is still
+  active or if it is currently stopped. If there is no Script running matching the provided parameters, it does not
+  check the database to validate that such a Script actively exists. To check if an Object has a Script attached to it,
+  see the 'has?/2' method.
   """
   @spec running?( object_id, callback_module ) :: boolean
   def running?( object_id, callback_module ) do

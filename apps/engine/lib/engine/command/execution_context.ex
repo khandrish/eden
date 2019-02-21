@@ -2,7 +2,8 @@ defmodule Exmud.Engine.Command.ExecutionContext do
   @moduledoc """
   An ExecutionContext struct contains everything required for the processing of a Command.
 
-  Much like Plug, this context is intended to be passed between multiple middlewares, some of which may need to run before others to populate required data.
+  Much like Plug, this context is intended to be passed between multiple middlewares, some of which may need to run
+  before others to populate required data.
   """
 
   @enforce_keys [ :caller, :raw_input ]

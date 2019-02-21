@@ -2,9 +2,12 @@ defmodule Exmud.Engine.Link do
   @moduledoc """
   A `Exmud.Engine.Link` is a one-way relationship between two Objects that describes their connection.
 
-  Unlike Scripts, Systems, and Components, Links are lightweight in that they don't require any callback modules to forge a link between two Objects.
+  Unlike Scripts, Systems, and Components, Links are lightweight in that they don't require any callback modules to
+  forge a link between two Objects.
 
-  While Links can have state associated with them, it is not required. A Link could represent a simple parent/child relationship which is effectively boolean and requires no additional state, or it could represent two Objects which are in combat which are a certain distance from the other which must be tracked.
+  While Links can have state associated with them, it is not required. A Link could represent a simple parent/child
+  relationship which is effectively boolean and requires no additional state, or it could represent two Objects which
+  are in combat which are a certain distance from the other which must be tracked.
   """
 
   alias Ecto.Multi
@@ -102,9 +105,13 @@ defmodule Exmud.Engine.Link do
   @doc """
   Break all Links of a specific type that matches a specific criteria between two Objects.
 
-  When called with anything other than a function as the last argument, a simple in database equality check is performed. If an anonymous function, arity of one, is passed in the Link state will be retrieved from the database to be passed into the function.
+  When called with anything other than a function as the last argument, a simple in database equality check is
+  performed. If an anonymous function, arity of one, is passed in the Link state will be retrieved from the database to
+  be passed into the function.
 
-  If a function is passed in the Link must be present and populated in the database otherwise an error will be returned. Since the comparison is done client side using the method in this way is less efficient but more powerful as there is complete control over checking an arbitrarily complex state structure.
+  If a function is passed in the Link must be present and populated in the database otherwise an error will be returned.
+  Since the comparison is done client side using the method in this way is less efficient but more powerful as there is
+  complete control over checking an arbitrarily complex state structure.
   """
   @spec break_all(object_id, object_id, type, comparison_fun | state) ::
           :ok
@@ -154,7 +161,8 @@ defmodule Exmud.Engine.Link do
   end
 
   @doc """
-  Link two Objects together, providing a type string that describes the link along with some optional state which can be used to define the link itself.
+  Link two Objects together, providing a type string that describes the link along with some optional state which can be
+  used to define the link itself.
   """
   @spec forge(from, to, type, state) :: :ok | {:error, term}
   def forge(from, to, type, state \\ nil) do
@@ -168,7 +176,8 @@ defmodule Exmud.Engine.Link do
   end
 
   @doc """
-  Link two Objects together bidirectionally, providing a type string that describes the link along with some optional state which can be used to define the link itself.
+  Link two Objects together bidirectionally, providing a type string that describes the link along with some optional
+  state which can be used to define the link itself.
 
   Two seperate links will be created with the same type and same state, each one pointing in the opposite direction.
   """
@@ -225,9 +234,12 @@ defmodule Exmud.Engine.Link do
 
   Note that the order of the object id's does not matter. Any matching link in any direction will return true.
 
-  When called with anything other than a function as the last argument, a simple in database equality check is performed. If an anonymous function, arity of one, is passed in the Link state will be retrieved from the database to be passed into the function. The function must return a boolean value that indicates whether or not the state matches.
+  When called with anything other than a function as the last argument, a simple in database equality check is
+  performed. If an anonymous function, arity of one, is passed in the Link state will be retrieved from the database to
+  be passed into the function. The function must return a boolean value that indicates whether or not the state matches.
 
-  Since the comparison is done client side using the method in this way is less efficient but more powerful as there is complete control over checking an arbitrarily complex state structure.
+  Since the comparison is done client side using the method in this way is less efficient but more powerful as there is
+  complete control over checking an arbitrarily complex state structure.
   """
   @spec any_exist?(object_id, object_id, type, comparison_fun | state) :: boolean
   def any_exist?(object_id1, object_id2, type, comparison_fun) when is_function(comparison_fun) do
@@ -270,13 +282,17 @@ defmodule Exmud.Engine.Link do
   end
 
   @doc """
-  Returns a boolean indicating whether or not the two objects are linked by a specified type of link with state to match.
+  Returns a boolean indicating whether or not the two objects are linked by a specified type of link with state to
+  match.
 
   Note that the order of the object id's does matter. Only links originating from the first Object are checked.
 
-  When called with anything other than a function as the last argument, a simple in database equality check is performed. If an anonymous function, arity of one, is passed in the Link state will be retrieved from the database to be passed into the function. The function must return a boolean value that indicates whether or not the state matches.
+  When called with anything other than a function as the last argument, a simple in database equality check is
+  performed. If an anonymous function, arity of one, is passed in the Link state will be retrieved from the database to
+  be passed into the function. The function must return a boolean value that indicates whether or not the state matches.
 
-  Since the comparison is done client side using the method in this way is less efficient but more powerful as there is complete control over checking an arbitrarily complex state structure.
+  Since the comparison is done client side using the method in this way is less efficient but more powerful as there is
+  complete control over checking an arbitrarily complex state structure.
   """
   @spec exists?(from, to, type, comparison_fun | state) :: boolean
   def exists?(from, to, type, comparison_fun) when is_function(comparison_fun) do
@@ -310,7 +326,8 @@ defmodule Exmud.Engine.Link do
   @doc """
   Update the state associated with a Link between two Objects.
 
-  Note that the order of the object id's does not matter. All links between the two Objects that match the type are updated.
+  Note that the order of the object id's does not matter. All links between the two Objects that match the type are
+  updated.
   """
   @spec update_all(object_id, object_id, type, state) :: :ok | {:error, :no_such_link}
   def update_all(object_id1, object_id2, type, state) do

@@ -2,7 +2,9 @@ defmodule Exmud.Engine.ObjectFactory do
   @moduledoc """
   The Spawner takes in a Template and constructs a Game Object.
 
-  On successful return of the function, a new Game Object will have been created and saved into the DB as an atomic action. Scripts attached to an Object are also started immediately. They don't have to remain active but that is up to the logic of the individual Script. Just know that they will be started.
+  On successful return of the function, a new Game Object will have been created and saved into the DB as an atomic
+  action. Scripts attached to an Object are also started immediately. They don't have to remain active but that is up to
+  the logic of the individual Script. Just know that they will be started.
   """
 
   alias Exmud.Engine.CommandSet
