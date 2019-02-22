@@ -7,7 +7,7 @@ defmodule Exmud.Engine.Mixfile do
       aliases: aliases(),
       app: :engine,
       deps: deps(),
-      elixir: "~> 1.7.0",
+      elixir: "~> 1.8.1",
       elixirc_paths: elixirc_paths(Mix.env()),
       version: "0.1.0",
 
