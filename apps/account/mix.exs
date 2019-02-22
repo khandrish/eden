@@ -38,17 +38,17 @@ defmodule Exmud.Player.Mixfile do
 
   defp deps do
     [
-      {:calendar, "~> 0.17.2"},
-      {:comeonin, "~> 4.1.1"},
-      {:credo, "~> 0.10.2", only: [:dev, :test]},
-      {:ecto, "~> 2.2"},
-      {:ex_doc, ">= 0.19.1", only: :dev},
-      {:excoveralls, ">= 0.10.1", only: :test},
+      {:calendar, "~> 0.17.4"},
+      {:comeonin, "~> 5.0.0"},
+      {:credo, "~> 1.0.2", only: [:dev, :test]},
+      {:ecto, "~> 3.0.7"},
+      {:ex_doc, ">= 0.19.3", only: :dev},
+      {:excoveralls, ">= 0.10.5", only: :test},
       {:common, in_umbrella: true},
-      {:faker, "~> 0.10.0", only: [:dev, :test]},
-      {:inch_ex, ">= 1.0.1", only: :docs},
-      {:postgrex, "~> 0.13.5"},
-      {:uuid, "~> 1.1"}
+      {:faker, "~> 0.12.0", only: [:dev, :test]},
+      {:inch_ex, ">= 2.0.0", only: :docs},
+      {:postgrex, "~> 0.14.1"},
+      {:uuid, "~> 1.1.8"}
     ]
   end
 

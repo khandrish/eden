@@ -14,13 +14,13 @@ defmodule Exmud.Engine.Utils do
   Retries are performed with an exponential backoff and jitter to reduce congestion with the DB while performing work
   as quickly as possible.
   """
-  @default_option_values %{
+  @default_option_values [
     max_retries: :unlimited,
     # milliseconds,
     max_backoff: 100,
     # milliseconds
     min_backoff: 2
-  }
+  ]
   def retryable_transaction(callback, options \\ []) do
     options = Map.new(Keyword.merge(@default_option_values, options))
 
@@ -47,7 +47,7 @@ defmodule Exmud.Engine.Utils do
       rescue
         error in Postgrex.Error ->
           if error.postgres.code != :active_sql_transaction do
-            reraise(error)
+            reraise(error, __STACKTRACE__)
           end
       end
 
@@ -58,7 +58,7 @@ defmodule Exmud.Engine.Utils do
           if error.postgres.code == :serialization_failure do
             Repo.rollback(:serialization_failure)
           else
-            reraise(error)
+            reraise(error, __STACKTRACE__)
           end
       end
     end)

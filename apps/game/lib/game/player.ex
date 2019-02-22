@@ -18,6 +18,11 @@ defmodule Exmud.Engine.Player do
   @type object_id :: integer
 
   @typedoc """
+  The id of a player account.
+  """
+  @type account_id :: integer
+
+  @typedoc """
   A unique identifier for a Player.
   """
   @type player_name :: String.t()
@@ -29,32 +34,37 @@ defmodule Exmud.Engine.Player do
   import Exmud.Engine.Constants
   import Exmud.Engine.Utils
 
-  @player_component engine_cfg( :player_component )
-  @player_template engine_cfg( :player_template )
+  @player_component engine_cfg(:player_component)
+  @player_template engine_cfg(:player_template)
 
-  @spec create( integer, term ) :: :ok | { :error, error }
-  def create( account_id, config \\ nil ) when is_integer( account_id ) do
+  @spec create(integer, term) :: :ok | {:error, error}
+  def create(account_id, config \\ nil) when is_integer(account_id) do
     player_object = Object.new!()
-    :ok = Component.attach( player_object, @player_component, %{ @player_component.account_id() => account_id } )
-    Spawner.spawn( player_object, @player_template, config )
+
+    :ok =
+      Component.attach(player_object, @player_component, %{
+        @player_component.account_id() => account_id
+      })
+
+    Spawner.spawn(player_object, @player_template, config)
   end
 
-  @spec lookup( account_id ) :: { :ok, object_id } | { :error, :no_such_player }
-  def lookup( account_id ) when is_integer( account_id ) do
+  @spec lookup(account_id) :: {:ok, object_id} | {:error, :no_such_player}
+  def lookup(account_id) when is_integer(account_id) do
     result =
       Object.query(
-        { :and,
-          [
-            { :attribute, @player_component, @player_component.account_id(), account_id }
-          ]
-        }
+        {:and,
+         [
+           {:attribute, @player_component, @player_component.account_id(), account_id}
+         ]}
       )
 
     case result do
-      { :ok, [ object_id ] } ->
-        { :ok, object_id }
+      {:ok, [object_id]} ->
+        {:ok, object_id}
+
       _empty_or_error_result ->
-        { :error, :no_such_player }
+        {:error, :no_such_player}
     end
   end
 end

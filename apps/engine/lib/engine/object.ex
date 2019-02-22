@@ -55,7 +55,7 @@ defmodule Exmud.Engine.Object do
   """
   @spec new! :: object_id
   def new! do
-    %Object{date_created: DateTime.utc_now()}
+    %Object{date_created: DateTime.truncate(DateTime.utc_now(), :second)}
     |> Repo.insert!()
     |> (& &1.id).()
   end

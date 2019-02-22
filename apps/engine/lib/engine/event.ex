@@ -9,9 +9,9 @@ defmodule Exmud.Engine.Event do
   transaction for the same has been committed. This way there won't be extra messages sent out due to a forced retry
   from a DB/transaction conflict.
 
-  If multiple events contain the same data, multiple message events containing the same string for example, it is better
-  to use a single event with a list of Object id's instead. This will be more memory efficient. Please not that this
-  assumes the default message event handler is in place, or that the replacement contains the same logic.
+  If multiple Events contain the same data, multiple message Events containing the same string for example, it is better
+  to use a single Event with a list of Object id's instead. This will be more memory efficient. Please note that this
+  assumes the default message Event handler is in place, or that the replacement contains the same logic.
   """
 
   require Logger

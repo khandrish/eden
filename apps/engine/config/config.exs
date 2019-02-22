@@ -3,7 +3,6 @@
 use Mix.Config
 
 config :exmud_engine, Exmud.Engine.Repo,
-  adapter: Ecto.Adapters.Postgres,
   database: "exmud_engine_#{Mix.env()}",
   hostname: "localhost",
   pool_size: 10,

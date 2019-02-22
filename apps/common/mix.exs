@@ -37,10 +37,10 @@ defmodule Exmud.Common.Mixfile do
 
   defp deps do
     [
-      {:credo, "~> 0.10.2", only: [:dev, :test]},
-      {:ecto, "~> 2.2"},
-      {:ex_doc, ">= 0.19.1", only: :dev},
-      {:excoveralls, ">= 0.10.1", only: :test},
+      {:credo, "~> 1.0.2", only: [:dev, :test]},
+      {:ecto, "~> 3.0.7"},
+      {:ex_doc, ">= 0.19.3", only: :dev},
+      {:excoveralls, ">= 0.10.5", only: :test},
       {:inch_ex, ">= 1.0.1", only: :docs}
     ]
   end
