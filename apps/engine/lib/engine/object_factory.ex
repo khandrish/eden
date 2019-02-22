@@ -31,7 +31,7 @@ defmodule Exmud.Engine.ObjectFactory do
   @spec generate(object_id :: integer(), %Template{}, term()) :: :ok
   def generate(object_id, %Template{} = template, config) when is_integer(object_id) do
     # Creating a Game Object from a template should be an atomic operation
-    wrap_callback_in_retryable_transaction(fn ->
+    retryable_transaction(fn ->
       template = Template.build_template(template, config)
 
       Enum.each(template.command_sets, fn command_set ->

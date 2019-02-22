@@ -203,7 +203,7 @@ defmodule Exmud.Engine.Command do
     context = %ExecutionContext{caller: caller, raw_input: raw_input}
 
     execution_context =
-      wrap_callback_in_retryable_transaction(fn ->
+      retryable_transaction(fn ->
         execute_steps(pipeline, context)
       end)
 
