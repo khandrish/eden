@@ -64,6 +64,8 @@ defmodule Exmud.Engine.Event do
     end
 
     dispatch_global_event(event)
+
+    :ok
   end
 
   defp dispatch_global_event(event) do
@@ -82,5 +84,7 @@ defmodule Exmud.Engine.Event do
         end
       end)
     end
+
+    :ok
   end
 end

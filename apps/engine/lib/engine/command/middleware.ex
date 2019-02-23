@@ -3,10 +3,10 @@ defmodule Exmud.Engine.Command.Middleware do
   Middleware is responsible for every stage of processing a Command.
 
   By specifying `@behaviour Exmud.Engine.Command.Middleware` the compiler will ensure that a `def execute` callback has
-  been provided. The function takes an `%Exmud.Engine.Command.Execution{}` struct as the only argument and expects an
+  been provided. The function takes an `%Exmud.Engine.Command.ExecutionContext{}` struct as the only argument and expects an
   updated struct or an error tuple in return.
 
-  See 'Exmud.Engine.Command.Execution' for further details.
+  See 'Exmud.Engine.Command.ExecutionContext' for further details.
 
   Middleware can be configured for use in a couple of ways:
 
@@ -24,7 +24,7 @@ defmodule Exmud.Engine.Command.Middleware do
   Example:
 
   ```
-  alias Exmud.Game.Command.Middleware
+  alias Exmud.Game.Contributions.Core.Command.Middleware
 
   config :engine, :command,
     pipeline: [
@@ -47,5 +47,5 @@ defmodule Exmud.Engine.Command.Middleware do
   version for further processing by additional middlewares.
   """
   @callback execute(Exmud.Engine.Command.ExecutionContext.t()) ::
-              {:ok, Exmud.Engine.Command.ExecutionContext.t()} | {:error, reason :: term}
+              {:ok, Exmud.Engine.Command.ExecutionContext.t()} | {:error, reason :: atom()}
 end

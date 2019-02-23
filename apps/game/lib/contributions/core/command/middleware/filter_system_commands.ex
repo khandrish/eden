@@ -1,4 +1,4 @@
-defmodule Exmud.Game.Contributions.Command.Middleware.FilterSystemCommands do
+defmodule Exmud.Game.Contributions.Core.Command.Middleware.FilterSystemCommands do
   @moduledoc """
   This middleware prevents system commands from being sent as input. Any system command is mapped to a no match error.
   """
@@ -8,11 +8,11 @@ defmodule Exmud.Game.Contributions.Command.Middleware.FilterSystemCommands do
   alias Exmud.Engine.Command.NoMatch
   import Exmud.Engine.Constants
 
-  def execute( execution_context ) do
-    if Regex.match?( system_command_prefix(), execution_context.raw_input ) do
-      { :ok, %{ execution_context | raw_input: NoMatch.key( nil ) } }
+  def execute(execution_context) do
+    if Regex.match?(system_command_prefix(), execution_context.raw_input) do
+      {:ok, %{execution_context | raw_input: NoMatch.key(nil)}}
     else
-      { :ok, execution_context }
+      {:ok, execution_context}
     end
   end
 end

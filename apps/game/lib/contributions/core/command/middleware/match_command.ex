@@ -1,4 +1,4 @@
-defmodule Exmud.Game.Contributions.Command.Middleware.MatchCommand do
+defmodule Exmud.Game.Contributions.Core.Command.Middleware.MatchCommand do
   @moduledoc """
   The MatchCommand middleware is responsible for taking the already generated list of Commands along with the input and
   finding a matching Command.

@@ -1,6 +1,7 @@
-defmodule Exmud.Game.Contributions.Command.Middleware.BuildActiveCommandList do
+defmodule Exmud.Game.Contributions.Core.Command.Middleware.BuildActiveCommandList do
   @moduledoc """
-  This default implementation considers the caller to be the whole context, doing nothing more than building the active list of Commands from it.
+  This default implementation considers the caller to be the whole context, doing nothing more than building the active
+  list of Commands from it.
 
   This is a placeholder that should be replaced to enable any sort of complex functionality.
   """
@@ -9,7 +10,9 @@ defmodule Exmud.Game.Contributions.Command.Middleware.BuildActiveCommandList do
 
   alias Exmud.Engine.CommandSet
 
-  def execute( execution_context ) do
+  @spec execute(%{caller: integer(), command_list: any()}) ::
+          {:ok, %{caller: integer(), command_list: [map()]}}
+  def execute(execution_context) do
     {
       :ok,
       %{
