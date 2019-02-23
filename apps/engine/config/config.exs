@@ -2,13 +2,13 @@
 # and its dependencies with the aid of the Mix.Config module.
 use Mix.Config
 
-config :exmud_engine, Exmud.Engine.Repo,
+config :engine, Exmud.Engine.Repo,
   database: "exmud_engine_#{Mix.env()}",
   hostname: "localhost",
   pool_size: 10,
   username: "exmud_engine"
 
-config :exmud_engine,
+config :engine,
   byte_size_to_compress: 1024,
   command_argument_regex: ~r/$/,
   command_pipeline: [],

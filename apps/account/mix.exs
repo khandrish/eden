@@ -42,6 +42,7 @@ defmodule Exmud.Player.Mixfile do
       {:comeonin, "~> 5.0.0"},
       {:credo, "~> 1.0.2", only: [:dev, :test]},
       {:ecto, "~> 3.0.7"},
+      {:ecto_sql, "~> 3.0"},
       {:ex_doc, ">= 0.19.3", only: :dev},
       {:excoveralls, ">= 0.10.5", only: :test},
       {:common, in_umbrella: true},

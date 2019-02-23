@@ -7,7 +7,7 @@ defmodule Exmud.Game.Application do
     import Supervisor.Spec, warn: false
 
     children = [
-      worker(Exmud.Game.MasterControlProgram, [])
+      # worker(Exmud.Game.MasterControlProgram, [])
     ]
 
     opts = [strategy: :one_for_one, name: Exmud.Game.Supervisor]

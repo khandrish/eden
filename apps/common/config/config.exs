@@ -2,9 +2,9 @@
 # and its dependencies with the aid of the Mix.Config module.
 use Mix.Config
 
-config :exmud_common, ecto_repos: []
+config :common, ecto_repos: []
 
-config :exmud_common,
+config :common,
   byte_size_to_compress: 1024
 
 # It is also possible to import configuration files, relative to this

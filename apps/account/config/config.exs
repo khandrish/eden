@@ -2,14 +2,13 @@
 # and its dependencies with the aid of the Mix.Config module.
 use Mix.Config
 
-config :exmud_player, Exmud.Player.Repo,
-  adapter: Ecto.Adapters.Postgres,
-  database: "exmud_player_#{Mix.env}",
+config :account, Exmud.Account.Repo,
+  database: "exmud_account_#{Mix.env()}",
   hostname: "localhost",
   pool_size: 10,
-  username: "exmud_player"
+  username: "exmud_account"
 
-config :exmud_player,
+config :account,
   parallel_logins: 64
 
 # It is also possible to import configuration files, relative to this
@@ -18,4 +17,4 @@ config :exmud_player,
 # Configuration from the imported file will override the ones defined
 # here (which is why it is important to import them last).
 #
-import_config "#{Mix.env}.exs"
+import_config "#{Mix.env()}.exs"

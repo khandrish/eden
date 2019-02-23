@@ -4,9 +4,9 @@ defmodule Exmud.Engine.Utils do
   alias Exmud.Engine.Repo
   import Exmud.Common.Utils
 
-  def cache, do: :exmud_engine_cache
+  def cache, do: :engine_cache
 
-  def engine_cfg(key), do: cfg(:exmud_engine, key)
+  def engine_cfg(key), do: cfg(:engine, key)
 
   @doc """
   Execute a function as part of a transaction that can be retried.

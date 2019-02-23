@@ -2,9 +2,8 @@
 # and its dependencies with the aid of the Mix.Config module.
 use Mix.Config
 
-config :exmud_session, Exmud.Session.Repo,
-  adapter: Ecto.Adapters.Postgres,
-  database: "exmud_session_#{Mix.env}",
+config :session, Exmud.Session.Repo,
+  database: "exmud_session_#{Mix.env()}",
   hostname: "localhost",
   pool_size: 10,
   username: "exmud_session"
@@ -15,4 +14,4 @@ config :exmud_session, Exmud.Session.Repo,
 # Configuration from the imported file will override the ones defined
 # here (which is why it is important to import them last).
 #
-import_config "#{Mix.env}.exs"
+import_config "#{Mix.env()}.exs"

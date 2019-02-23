@@ -4,5 +4,4 @@ use Mix.Config
 # you likely want to automate and keep it away from
 # your version control system.
 
-config :exmud_session, Exmud.Session.Repo,
-  password: ""
+config :session, Exmud.Session.Repo, password: ""

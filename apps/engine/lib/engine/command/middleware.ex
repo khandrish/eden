@@ -26,7 +26,7 @@ defmodule Exmud.Engine.Command.Middleware do
   ```
   alias Exmud.Game.Command.Middleware
 
-  config :exmud_engine, :command,
+  config :engine, :command,
     pipeline: [
       Middleware.BuildActiveCommandSet,
       Middleware.MatchCommand,

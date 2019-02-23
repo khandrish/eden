@@ -3,5 +3,5 @@ defmodule Exmud.Game.Utils do
 
   import Exmud.Common.Utils
 
-  def game_cfg(key), do: cfg(:exmud_game, key)
+  def game_cfg(key), do: cfg(:game, key)
 end

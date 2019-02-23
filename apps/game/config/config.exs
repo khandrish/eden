@@ -2,14 +2,16 @@
 # and its dependencies with the aid of the Mix.Config module.
 use Mix.Config
 
-config :exmud_game,
+config :game,
   # This Component must be present in the below Template.
   player_component: Exmud.Engine.Component.DefaultPlayerComponent,
   player_template: Exmud.Engine.Template.DefaultPlayerTemplate
 
-config :exmud_enging,
-  byte_size_to_compress: 1024, # Default value. Can be changed freely.
-  command_argument_regex: ~r/$/, # See Exmud.Engine.Command
+config :engine,
+  # Default value. Can be changed freely.
+  byte_size_to_compress: 1024,
+  # See Exmud.Engine.Command
+  command_argument_regex: ~r/$/,
   command_pipeline: [
     Exmud.Game.Contributions.Core.Command.Middleware.FilterSystemCommands,
     Exmud.Game.Contributions.Core.Command.Middleware.BuildActiveCommandList,
@@ -26,4 +28,4 @@ config :exmud_enging,
 # Configuration from the imported file will override the ones defined
 # here (which is why it is important to import them last).
 #
-import_config "#{Mix.env}.exs"
+import_config "#{Mix.env()}.exs"

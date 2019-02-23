@@ -9,7 +9,7 @@ by adding `exmud_common` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
-  [{:exmud_common, "~> 0.1.0"}]
+  [{:common, "~> 0.1.0"}]
 end
 ```
 

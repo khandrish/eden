@@ -7,7 +7,7 @@ defmodule Exmud.Player.Application do
     import Supervisor.Spec, warn: false
 
     children = [
-      worker(Exmud.Player.Repo, [])
+      worker(Exmud.Account.Repo, [])
     ]
 
     opts = [strategy: :one_for_one, name: Exmud.Player.Supervisor]

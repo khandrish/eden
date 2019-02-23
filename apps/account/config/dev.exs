@@ -4,5 +4,4 @@ use Mix.Config
 config :logger, :console, format: "[$level] $message\n"
 
 # Configure your database
-config :exmud_player, Exmud.Player.Repo,
-  password: "exmud_player"
+config :account, Exmud.Account.Repo, password: "exmud_account"

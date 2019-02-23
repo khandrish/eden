@@ -9,7 +9,7 @@ by adding `exmud_game` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
-  [{:exmud_game, "~> 0.1.0"}]
+  [{:game, "~> 0.1.0"}]
 end
 ```
 

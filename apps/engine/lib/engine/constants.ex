@@ -21,9 +21,9 @@ defmodule Exmud.Engine.Constants do
 
   def command_multi_match_key, do: "multi_match_commands"
 
-  def system_registry, do: :exmud_engine_system_registry
-  def script_registry, do: :exmud_engine_script_registry
-  def player_registry, do: :exmud_engine_player_registry
+  def system_registry, do: :engine_system_registry
+  def script_registry, do: :engine_script_registry
+  def player_registry, do: :engine_player_registry
 
   #
   #
