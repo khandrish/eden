@@ -1,11 +1,8 @@
 defmodule Exmud.Engine.Test.CommandTest do
   @moduledoc false
   alias Exmud.Engine.Command
-  alias Exmud.Engine.Repo
   require Logger
   use ExUnit.Case, async: true
-
-  alias Exmud.Engine.Test.CommandSet.Basic
 
   describe "command" do
     test "with successful execution" do
