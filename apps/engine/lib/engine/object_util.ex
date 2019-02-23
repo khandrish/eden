@@ -41,8 +41,8 @@ defmodule Exmud.Engine.ObjectUtil do
 
   Callback function must return `:ok` or `{:error, error}` where error is an atom to be used for pattern matching.
 
-  A transaction wraps both the record insert and the callback function. Should an exception be raused during the
-  callback, the transaction will rollback and the response `{:error, :callback_failed}` will be returned.
+  Should an exception be raused during the callback, the transaction will rollback and the response
+  `{:error, :callback_failed}` will be returned.
   """
   @spec attach(record, callback_function) ::
           :ok

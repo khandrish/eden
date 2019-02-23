@@ -50,7 +50,8 @@ defmodule Exmud.Engine.Script do
   @doc """
   Handle a message which has been explicitly sent to the Script.
   """
-  @callback handle_message(object_id, message, state) :: {:ok, reply, state} | {:error, reason}
+  @callback handle_message(object_id, message, state) ::
+              {:ok, reply, state} | {:error, reason, state}
 
   @doc """
   Called the first, and only the first, time a Script is started on an Object. Or in the case of duplicate Scripts, once
@@ -368,7 +369,7 @@ defmodule Exmud.Engine.Script do
   #
 
   @spec send_message(method :: atom, object_id, callback_module, message) ::
-          :ok | {:ok, term} | {:error, :script_not_running}
+          :ok | term | {:ok, term} | {:error, :script_not_running}
   defp send_message(method, object_id, callback_module, message) do
     try do
       apply(GenServer, method, [via(@script_registry, {object_id, callback_module}), message])

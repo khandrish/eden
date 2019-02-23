@@ -20,19 +20,21 @@ defmodule Exmud.Engine.ObjectFactory do
   @doc """
   Creates a new Object while spawning a Template. See `spawn/4`.
   """
-  @spec generate(%Template{}, term()) :: :ok
-  def generate(%Template{} = template, config) do
-    spawn(Object.new!(), template, config)
+  @spec generate(module(), term()) :: :ok
+  def generate(template, config) do
+    generate(Object.new!(), template, config)
   end
 
   @doc """
   Spawning an Object from a Template is an atomic operation, where everything is constructed correctly or nothing is.
   """
-  @spec generate(object_id :: integer(), %Template{}, term()) :: :ok
-  def generate(object_id, %Template{} = template, config) when is_integer(object_id) do
+  @spec generate(object_id :: integer(), module(), term()) :: :ok
+  # Here because of Component.attach/3 below
+  @dialyzer {:no_return, generate: 3}
+  def generate(object_id, template_module, config) when is_integer(object_id) do
     # Creating a Game Object from a template should be an atomic operation
     retryable_transaction(fn ->
-      template = Template.build_template(template, config)
+      template = Template.build_template(template_module, config)
 
       Enum.each(template.command_sets, fn command_set ->
         :ok = CommandSet.attach(object_id, command_set.callback_module, command_set.config)

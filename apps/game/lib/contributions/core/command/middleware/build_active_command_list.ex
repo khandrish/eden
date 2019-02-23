@@ -10,8 +10,9 @@ defmodule Exmud.Game.Contributions.Core.Command.Middleware.BuildActiveCommandLis
 
   alias Exmud.Engine.CommandSet
 
-  @spec execute(%{caller: integer(), command_list: any()}) ::
-          {:ok, %{caller: integer(), command_list: [map()]}}
+  @spec execute(Exmud.Engine.Command.ExecutionContext.t()) ::
+          {:ok, Exmud.Engine.Command.ExecutionContext.t()}
+          | {:error, atom(), Exmud.Engine.Command.ExecutionContext.t()}
   def execute(execution_context) do
     {
       :ok,

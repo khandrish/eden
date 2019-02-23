@@ -20,12 +20,18 @@ defmodule Exmud.Engine.Template do
   # Behavior definition and default callback setup
   #
 
-  @callback command_sets(term()) :: :ok | {:error, atom()}
-  @callback components(term()) :: :ok | {:error, atom()}
-  @callback links(term()) :: :ok | {:error, atom()}
-  @callback locks(term()) :: :ok | {:error, atom()}
-  @callback scripts(term()) :: :ok | {:error, atom()}
-  @callback tags(term()) :: :ok | {:error, atom()}
+  @callback command_sets(term()) ::
+              {:ok, [Exmud.Engine.Template.CommandSetEntry.t()]} | {:error, atom()}
+  @callback components(term()) ::
+              {:ok, [Exmud.Engine.Template.ComponentEntry.t()]} | {:error, atom()}
+  @callback links(term()) ::
+              {:ok, [Exmud.Engine.Template.LinkEntry.t()]} | {:error, atom()}
+  @callback locks(term()) ::
+              {:ok, [Exmud.Engine.Template.LockEntry.t()]} | {:error, atom()}
+  @callback scripts(term()) ::
+              {:ok, [Exmud.Engine.Template.ScriptEntry.t()]} | {:error, atom()}
+  @callback tags(term()) ::
+              {:ok, [Exmud.Engine.Template.TagEntry.t()]} | {:error, atom()}
 
   @doc false
   defmacro __using__(_) do
@@ -66,6 +72,7 @@ defmodule Exmud.Engine.Template do
     end
   end
 
+  @spec build_template(module(), any()) :: Exmud.Engine.Template.t()
   def build_template(callback_module, config) do
     %Exmud.Engine.Template{
       command_sets: callback_module.command_sets(config),

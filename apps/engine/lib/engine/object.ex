@@ -1,4 +1,11 @@
 defmodule Exmud.Engine.Object do
+  @moduledoc """
+  An Object is a representation of 'something' within the Engine.
+
+  It could be a Player Character, a System, an NPC, a rock, a sword, or anything really. It doesn't have to be anything
+  physical. Simply something that requires some sort of representation as a distinct 'thing' within the Engine.
+  """
+
   alias Exmud.Engine.Repo
   alias Exmud.Engine.Schema.Object
   import Ecto.Query
@@ -93,7 +100,7 @@ defmodule Exmud.Engine.Object do
   Can be any of the following:
   `[:command_sets, :components, :locks, :links, :scripts, :tags]`
   """
-  @spec get(object_id, inclusion_filters) :: {:ok, [object]}
+  @spec get(object_id | [object_id], inclusion_filters) :: {:ok, [object]}
   def get(object, inclusion_filters) when is_list(object) == false do
     {:ok, results} = get(List.wrap(object), inclusion_filters)
     {:ok, List.first(results)}

@@ -30,6 +30,7 @@ defmodule Exmud.Engine.Component do
       import Exmud.Engine.Constants
 
       @doc false
+      @impl true
       def populate(_object_id, _args), do: :ok
 
       defoverridable populate: 2
@@ -43,19 +44,19 @@ defmodule Exmud.Engine.Component do
   @callback populate(object_id, config) :: :ok | {:error, error}
 
   @typedoc "The Object being populated with the Component and its data."
-  @type object_id :: integer
+  @type object_id :: integer()
 
   @typedoc "Configuration passed through to a callback module."
-  @type config :: term
+  @type config :: term()
 
   @typedoc "An error returned when something has gone wrong."
-  @type error :: atom
+  @type error :: atom()
 
   @typedoc "The callback_module that is the implementation of the Component logic."
-  @type callback_module :: atom
+  @type callback_module :: module()
 
   @typedoc "A callback module which implements the 'Exmud.Engine.Component' behavior."
-  @type component :: module
+  @type component :: module()
 
   #
   # API
@@ -65,7 +66,14 @@ defmodule Exmud.Engine.Component do
   Atomically attach a Component to an Object and populate it with attributes using the provided, optional, args.
   """
   @spec attach(object_id, component, config | nil) ::
-          :ok | {:error, :no_such_object} | {:error, :already_attached} | {:error, error}
+          :ok
+          | {:error, :no_such_object}
+          | {:error, :already_attached}
+          | {:error, :callback_failed}
+          | {:error, error}
+  # No way for Dialyzer to determine that passed in Component module should implement 'populate/2' callback above
+  @dialyzer {:nowarn_function, attach: 3}
+  @dialyzer {:no_return, attach: 2}
   def attach(object_id, component, config \\ nil) do
     record = Component.new(%{callback_module: pack_term(component), object_id: object_id})
     ObjectUtil.attach(record, fn -> component.populate(object_id, config) end)

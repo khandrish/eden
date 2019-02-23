@@ -10,6 +10,7 @@ defmodule Exmud.Engine.Worker.ScriptWorker do
   use GenServer
 
   defmodule State do
+    @moduledoc false
     defstruct callback_module: nil,
               deserialized_state: nil,
               object_id: nil,

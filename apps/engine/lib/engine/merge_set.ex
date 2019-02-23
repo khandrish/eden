@@ -32,9 +32,6 @@ defmodule Exmud.Engine.MergeSet do
             Example: ["foo", "bar", "foobar"] + ["foobar", "barfoo"] == ["foo", "bar"]
   """
 
-  @typedoc "A map holding  a set of arbitrary terms as keys and metadata describing how to merge said set."
-  @type merge_set :: map()
-
   @typedoc "A callback function allowing for the comparison of two arbirarily complex terms. Returning `true` means the
   terms are equal."
   @type comparison_function :: function()
@@ -89,7 +86,7 @@ defmodule Exmud.Engine.MergeSet do
   @doc """
   Add a key to the MergeSet.
   """
-  @spec add_key(merge_set, key) :: merge_set
+  @spec add_key(%__MODULE__{}, key) :: %__MODULE__{}
   def add_key(merge_set, key) do
     %{merge_set | keys: List.insert_at(merge_set.keys, -1, key)}
   end
@@ -97,7 +94,7 @@ defmodule Exmud.Engine.MergeSet do
   @doc """
   Check the MergeSet to see if it already contains a key.
   """
-  @spec has_key?(merge_set, key) :: boolean
+  @spec has_key?(%__MODULE__{}, key) :: boolean
   def has_key?(merge_set, key) do
     Enum.any?(merge_set.keys, &(&1 == key))
   end
@@ -105,7 +102,7 @@ defmodule Exmud.Engine.MergeSet do
   @doc """
   Check the MergeSet to see if it already contains a key.
   """
-  @spec has_key?(merge_set, key, comparison_function) :: boolean
+  @spec has_key?(%__MODULE__{}, key, comparison_function) :: boolean
   def has_key?(merge_set, key, comparison_function) do
     Enum.any?(merge_set.keys, fn ms_key ->
       comparison_function.(key, ms_key)
@@ -115,7 +112,7 @@ defmodule Exmud.Engine.MergeSet do
   @doc """
   Remove a key from the MergeSet
   """
-  @spec remove_key(merge_set, key) :: merge_set
+  @spec remove_key(%__MODULE__{}, key) :: %__MODULE__{}
   def remove_key(merge_set, key) do
     %{merge_set | keys: Enum.reject(merge_set.keys, &(&1 == key))}
   end
@@ -123,7 +120,7 @@ defmodule Exmud.Engine.MergeSet do
   @doc """
   Add an override to the MergeSet.
   """
-  @spec add_override(merge_set, name, merge_type) :: merge_set
+  @spec add_override(%__MODULE__{}, name, merge_type) :: %__MODULE__{}
   def add_override(merge_set, name, merge_type) do
     %{merge_set | overrides: Map.put(merge_set.overrides, name, merge_type)}
   end
@@ -131,7 +128,7 @@ defmodule Exmud.Engine.MergeSet do
   @doc """
   Remove an override to the MergeSet.
   """
-  @spec remove_override(merge_set, name) :: merge_set
+  @spec remove_override(%__MODULE__{}, name) :: %__MODULE__{}
   def remove_override(merge_set, name) do
     %{merge_set | overrides: Map.delete(merge_set.overrides, name)}
   end
@@ -139,7 +136,7 @@ defmodule Exmud.Engine.MergeSet do
   @doc """
   Remove an override to the MergeSet.
   """
-  @spec has_override?(merge_set, name) :: boolean
+  @spec has_override?(%__MODULE__{}, name) :: boolean
   def has_override?(merge_set, name) do
     Map.has_key?(merge_set.overrides, name)
   end
@@ -149,7 +146,7 @@ defmodule Exmud.Engine.MergeSet do
 
   An optional comparison callback function allows for the checking of two arbitrarily complex values.
   """
-  @spec merge(merge_set, merge_set | nil, comparison_function) :: merge_set
+  @spec merge(%__MODULE__{}, %__MODULE__{} | nil, comparison_function | nil) :: %__MODULE__{}
   def merge(merge_set_a, merge_set_b, comparison_function \\ nil)
 
   def merge(merge_set_a, nil, _comparison_function) do
@@ -189,7 +186,7 @@ defmodule Exmud.Engine.MergeSet do
 
   Order, from first-to-last, is union, intersect, replace, and remove
   """
-  @spec sort_by_merge_type([struct()], [struct()]) :: boolean
+  @spec sort_by_merge_type(%__MODULE__{}, %__MODULE__{}) :: boolean
   def sort_by_merge_type(merge_set_1, merge_set_2) do
     case {merge_set_1, merge_set_2} do
       {%{merge_type: :union}, _} -> true
@@ -208,7 +205,13 @@ defmodule Exmud.Engine.MergeSet do
   defp sort(_priority_a, nil), do: true
   defp sort(priority_a, priority_b), do: priority_a >= priority_b
 
-  @spec merge_keys(key, merge_set, merge_set, comparison_function, allow_duplicates :: boolean) ::
+  @spec merge_keys(
+          merge_type,
+          %__MODULE__{},
+          %__MODULE__{},
+          comparison_function,
+          allow_duplicates :: boolean
+        ) ::
           [term]
   defp merge_keys(:union, higher_priority_keys, lower_priority_keys, _comparison_function, true) do
     higher_priority_keys ++ lower_priority_keys

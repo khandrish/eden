@@ -275,16 +275,18 @@ defmodule Exmud.Engine.CommandSet do
           )
         end)
         |> (& &1.keys).()
-        |> Enum.filter(fn command ->
-          Enum.all?(command.locks, fn
-            {lock, config} ->
-              lock.check(:command, command.object_id, config)
-
-            lock ->
-              lock.check(:command, command.object_id, nil)
-          end)
-        end)
+        |> Enum.filter(fn command -> locks_pass?(command) end)
     end
+  end
+
+  defp locks_pass?(command) do
+    Enum.all?(command.locks, fn
+      {lock, config} ->
+        lock.check(:command, command.object_id, config)
+
+      lock ->
+        lock.check(:command, command.object_id, nil)
+    end)
   end
 
   # Used within MergeSet when merging. In the case of a Command Set, the keys are callback modules which implement the Exmud.Engine.Command behaviour. When comparing Commands, both the key and the aliases need to be checked for conflict.

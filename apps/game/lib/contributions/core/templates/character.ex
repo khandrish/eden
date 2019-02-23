@@ -15,50 +15,54 @@ defmodule Exmud.Game.Contributions.Core.Template.Character do
 
   @doc false
   @impl true
-  @spec command_sets( Map.t() ) :: [ CommandSetEntry.t() ]
-  def command_sets( config ) do
-    [
-      %CommandSetEntry{
-        callback_module: Exmud.Engine.Component.CharacterCommandSet,
-        config: config
-      }
-    ]
+  @spec command_sets(Map.t()) :: {:ok, [CommandSetEntry.t()]}
+  def command_sets(config) do
+    {:ok,
+     [
+       %CommandSetEntry{
+         callback_module: Exmud.Engine.Component.CharacterCommandSet,
+         config: config
+       }
+     ]}
   end
 
   @doc false
   @impl true
-  @spec components( Map.t() ) :: [ ComponentEntry.t() ]
-  def components( config ) do
-    [
-      %ComponentEntry{
-        callback_module: Exmud.Engine.Component.CharacterComponent,
-        config: config
-      }
-    ]
+  @spec components(Map.t()) :: {:ok, [ComponentEntry.t()]}
+  def components(config) do
+    {:ok,
+     [
+       %ComponentEntry{
+         callback_module: Exmud.Engine.Component.CharacterComponent,
+         config: config
+       }
+     ]}
   end
 
   @doc false
   @impl true
-  @spec locks( Map.t() ) :: [ LockEntry.t() ]
-  def locks( config ) do
-    [
-      %Exmud.Engine.Template.LockEntry{
-        callback_module: Exmud.Engine.Lock.CharacterPuppetLock,
-        config: %{ "player_id" => config["player_id"] },
-        access_type: "puppet"
-      }
-    ]
+  @spec locks(Map.t()) :: {:ok, [LockEntry.t()]}
+  def locks(config) do
+    {:ok,
+     [
+       %Exmud.Engine.Template.LockEntry{
+         callback_module: Exmud.Engine.Lock.CharacterPuppetLock,
+         config: %{"player_id" => config["player_id"]},
+         access_type: "puppet"
+       }
+     ]}
   end
 
   @doc false
   @impl true
-  @spec tags( Map.t() ) :: [ TagEntry.t() ]
-  def tags( _config ) do
-    [
-      %Exmud.Engine.Template.TagEntry{
-        category: engine_tag_category(),
-        tag: character_tag()
-      }
-    ]
+  @spec tags(Map.t()) :: {:ok, [TagEntry.t()]}
+  def tags(_config) do
+    {:ok,
+     [
+       %Exmud.Engine.Template.TagEntry{
+         category: engine_tag_category(),
+         tag: character_tag()
+       }
+     ]}
   end
 end

@@ -1,4 +1,5 @@
 defmodule Exmud.Engine.Test.CommandSet.Basic do
+  @moduledoc false
   use Exmud.Engine.CommandSet
 
   @impl true

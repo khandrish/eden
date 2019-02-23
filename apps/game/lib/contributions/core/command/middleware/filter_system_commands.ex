@@ -5,7 +5,7 @@ defmodule Exmud.Game.Contributions.Core.Command.Middleware.FilterSystemCommands 
 
   @behaviour Exmud.Engine.Command.Middleware
 
-  alias Exmud.Engine.Command.NoMatch
+  alias Exmud.Game.Contributions.Core.Command.NoMatch
   import Exmud.Engine.Constants
 
   def execute(execution_context) do

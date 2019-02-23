@@ -284,7 +284,7 @@ defmodule Exmud.Engine.System do
   #
 
   @spec send_message(method :: atom, callback_module, message) ::
-          :ok | {:ok, term} | {:error, :system_not_running}
+          :ok | term | {:ok, term} | {:error, :system_not_running}
   defp send_message(method, callback_module, message) do
     try do
       apply(GenServer, method, [via(@system_registry, callback_module), message])

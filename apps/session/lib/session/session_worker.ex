@@ -11,49 +11,46 @@ defmodule Exmud.Session.SessionWorker do
   """
 
   defmodule State do
-    defstruct active_input: nil, # Input being processed.
-              active_task: nil, # Task processing input.
-              event_manager: nil, # Event manager for output stream.
-              input_queue: EQueue.new(), # Holds all input waiting to be processed.
-              key: nil, # The unique key identifying the player that the session represents.
-              message_queue: EQueue.new(), # Holds all output waiting to be sent, only populated if no listeners.
-              object: nil, # The id of the object that represents the player in the system.
-              start_time: nil # The time the session was started.
+    @moduledoc false
+
+    # Input being processed.
+    defstruct active_input: nil,
+              # Task processing input.
+              active_task: nil,
+              # Event manager for output stream.
+              event_manager: nil,
+              # Holds all input waiting to be processed.
+              input_queue: EQueue.new(),
+              # The unique key identifying the player that the session represents.
+              key: nil,
+              # Holds all output waiting to be sent, only populated if no listeners.
+              message_queue: EQueue.new(),
+              # The id of the object that represents the player in the system.
+              object: nil,
+              # The time the session was started.
+              start_time: nil
   end
 
-  alias Ecto.Multi
-  # alias Exmud.Engine.CommandProcessor
-  # alias Exmud.Engine.CommandSet
-  # alias Exmud.Engine.Object
-  # alias Exmud.Engine.Player
-  alias Exmud.Session.SessionSup
   alias Exmud.Session.SessionOutputHandler
-  # alias Exmud.Repo
   import Exmud.Common.Utils
-  # import IO, only: [inspect: 2]
   require Logger
   use GenServer
 
-  @player_category "player"
   @registry :player_session_registry
-
 
   #
   # Type definitions
   #
 
-
   @typedoc "The string, such as `move north`, that is to be processed."
-  @type command_string :: String.t
+  @type command_string :: String.t()
 
   @typedoc "The unique string that identifies the player."
-  @type key :: String.t
-
+  @type key :: String.t()
 
   #
   # API
   #
-
 
   @doc """
   Check to see if a player has a session currently active.
@@ -77,7 +74,8 @@ defmodule Exmud.Session.SessionWorker do
 
       Exmud.PlayerSession.process_command_string(:louis_pasteur, "Pasteurization")
   """
-  @spec process_command_string(key, command_string) :: {:ok, :success} | {:error, :no_session_active}
+  @spec process_command_string(key, command_string) ::
+          {:ok, :success} | {:error, :no_session_active}
   def process_command_string(key, command_string) do
     forward(key, {:process_command_string, command_string})
   end
@@ -120,7 +118,6 @@ defmodule Exmud.Session.SessionWorker do
   #   end
   # end
 
-
   @doc """
   Stop an active player session.
 
@@ -132,7 +129,6 @@ defmodule Exmud.Session.SessionWorker do
   def stop(key) do
     forward(key, :stop)
   end
-
 
   @doc """
   Stream all output sent through an active player session through the provided
@@ -151,27 +147,26 @@ defmodule Exmud.Session.SessionWorker do
     forward(key, {:stream_output, handler_fun})
   end
 
-
   #
   # Worker callback
   #
 
-
   @doc false
   @spec start_link(any, any) :: {:ok, pid}
-  def start_link(key, oid), do: GenServer.start_link(__MODULE__, {key, oid}, name: via(@registry, key))
-
+  def start_link(key, oid),
+    do: GenServer.start_link(__MODULE__, {key, oid}, name: via(@registry, key))
 
   #
   # GenServer Callbacks
   #
 
-
   @doc false
   @spec init({key :: any, oid :: any}) :: {:ok, %State{}}
   def init({key, oid}) do
     {:ok, pid} = GenEvent.start_link([])
-    {:ok, %State{event_manager: pid, key: key, object: oid, start_time: Calendar.DateTime.now_utc()}}
+
+    {:ok,
+     %State{event_manager: pid, key: key, object: oid, start_time: Calendar.DateTime.now_utc()}}
   end
 
   @doc false
@@ -181,26 +176,27 @@ defmodule Exmud.Session.SessionWorker do
   end
 
   @doc false
-  @spec handle_call({:process_command_string, command_string :: String.t}, any, %State{}) :: {:reply, :ok, %State{}}
+  @spec handle_call({:process_command_string, command_string :: String.t()}, any, %State{}) ::
+          {:reply, :ok, %State{}}
   def handle_call({:process_command_string, command_string}, _from, state) do
     if taskActive?(state) do
       {:reply, :ok, %{state | input_queue: EQueue.push(state.input_queue, command_string)}}
     else
       task =
         Task.async(fn ->
-            # CommandProcessor.process(command_string, state.object)
+          # CommandProcessor.process(command_string, state.object)
 
-            # If no command sets match, trigger the no match behaviour/error via callback
-            # = merge_command_sets(command_set_templates)
-            #
-            #
-            #
-            #
-            #
-            # match against command set
-            # multi error? no match error?
-            # execute command
-            :ok
+          # If no command sets match, trigger the no match behaviour/error via callback
+          # = merge_command_sets(command_set_templates)
+          #
+          #
+          #
+          #
+          #
+          # match against command set
+          # multi error? no match error?
+          # execute command
+          :ok
         end)
 
       # state = case Task.yield(task, 10) do
@@ -215,7 +211,8 @@ defmodule Exmud.Session.SessionWorker do
   end
 
   @doc false
-  @spec handle_call({:send_message, message :: String.t}, any, %State{}) :: {:reply, :ok, %State{}}
+  @spec handle_call({:send_message, message :: String.t()}, any, %State{}) ::
+          {:reply, :ok, %State{}}
   def handle_call({:send_message, message}, _from, state) do
     if GenEvent.which_handlers(state.event_manager) != [] do
       :ok = GenEvent.notify(state.event_manager, message)
@@ -239,16 +236,17 @@ defmodule Exmud.Session.SessionWorker do
     {:reply, :ok, %{state | message_queue: EQueue.new()}}
   end
 
-
   #
   # Private Functions
   #
 
-
-  @spec forward(key :: any, message :: String.t) :: {:ok, :success} | {:error, :no_session_active}
+  @spec forward(key :: any, message :: String.t()) ::
+          {:ok, :success} | {:error, :no_session_active}
   defp forward(key, message) do
     case active(key) do
-      {:ok, false} -> {:error, :no_session_active}
+      {:ok, false} ->
+        {:error, :no_session_active}
+
       {:ok, true} ->
         via = via(@registry, key)
         :ok = GenServer.call(via, message)

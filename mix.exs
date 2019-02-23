@@ -1,4 +1,5 @@
 defmodule Exmud.Umbrella.Mixfile do
+  @moduledoc false
   use Mix.Project
 
   def project do
@@ -19,7 +20,9 @@ defmodule Exmud.Umbrella.Mixfile do
   end
 
   defp deps do
-    []
+    [
+      {:dialyxir, "~> 1.0.0-rc.4", only: [:dev], runtime: false}
+    ]
   end
 
   defp aliases do

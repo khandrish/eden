@@ -47,5 +47,6 @@ defmodule Exmud.Engine.Command.Middleware do
   version for further processing by additional middlewares.
   """
   @callback execute(Exmud.Engine.Command.ExecutionContext.t()) ::
-              {:ok, Exmud.Engine.Command.ExecutionContext.t()} | {:error, reason :: atom()}
+              {:ok, Exmud.Engine.Command.ExecutionContext.t()}
+              | {:error, reason :: atom(), Exmud.Engine.Command.ExecutionContext.t()}
 end
