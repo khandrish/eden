@@ -5,11 +5,11 @@ defmodule Exmud.Engine.Command do
   A Command can be invoked by a player who has puppeted an Object, a Script, or by the Engine via some external trigger.
 
   A Command has multiple attributes:
-    Key:
+    Key: Required
       The action to be taken. This can be more than one word, so 'open third window' or 'tap second case' are just as
       valid as 'look' or 'move'.
 
-    Aliases:
+    Aliases: Optional
       Aliases by which the command can be known. When a command string is being processed, both the key and the aliases
       are used to determine a match. That also means that both keys and aliases are checked during a merge between
       Command Sets.
@@ -21,30 +21,34 @@ defmodule Exmud.Engine.Command do
       Then again, given that a 'retreat' command would likely belong to a higher priority combat oriented Command Set,
       any conflicts would be decided in the favor of the 'retreat' command so even shorter aliases become a possibility.
 
-    Executor:
-      A do-nothing default implementation has been provided simply to make a Command work out-of-the-box, but every
-      Command will require its own implementation of the 'execute/1' callback. This is where the actual logic execution
-      for a Command takes place.
+    Execute: Required
+      Every Command will require its own implementation of the 'execute/1' callback. This is where the actual logic
+      execution for a Command takes place.
 
       The callback is wrapped in a transaction, ensuring that all data can be accessed as if the Command execution
       function was the sole process. This also means the callback may need to be retried and as such must be side effect
       free, except for manipulating the database of course.
 
-    Locks:
+      Any Events generated as part of a Command execution must be added to the returned context for processing after
+      the transaction has been committed.
+
+    Locks: Optional
       Locks help determine who/what has access to the Command itself. It's not enough for a Command to end up in the
       final merged Command Set, the caller must also have permissions for the Command itself. This defaults to allowing
       all callers.
 
-    Help Docs:
+    Help Docs: Optional
       Docs can be automatically generated from the module documentation to be displayed within the game. Not only can
-      the doc generation be turned off, but an optional category can be set. Defaults to 'General'.
+      the doc generation be turned off, but an optional category can be set. Defaults to generating documentation with
+      the category set to 'General'.
 
-    Argument Regex:
+    Argument Regex: Optional
       An optional regex string to match against the argument string. The default regex '~r/$/' allows for mistyped
       commands like 'runeast' to match. Overriding the value to something like '~r/^\s.+' would enforce a space to come
-      between the command and any of its arguments.
+      between the command and any of its arguments. If not specified in the Command module itself, the regex is taken
+      from the config.
 
-      If this regex does not match the parse callback will not be called.
+      If this regex does not match the 'parse_args/1' callback will not be called.
   """
 
   alias Exmud.Engine.Command.ExecutionContext
@@ -108,9 +112,6 @@ defmodule Exmud.Engine.Command do
       def parse_args(context), do: {:ok, %{context | args: String.trim(context.raw_args)}}
 
       @doc false
-      def execute(context), do: {:ok, context}
-
-      @doc false
       def locks(_config), do: [Exmud.Engine.Lock.Any]
 
       @doc false
@@ -119,7 +120,6 @@ defmodule Exmud.Engine.Command do
       defoverridable aliases: 1,
                      doc_generation: 1,
                      doc_category: 1,
-                     execute: 1,
                      parse_args: 1,
                      locks: 1,
                      argument_regex: 1
@@ -136,18 +136,18 @@ defmodule Exmud.Engine.Command do
   permissions checks have passed.
 
   An execution context is passed to the callback function, populated with several helpful bits of information to aid in
-  the execution of the command. See 'Exmud.Engine.CommandContext'.
+  the execution of the command. See 'Exmud.Engine.Command.ExecutionContext'.
   """
   @callback parse_args(context) :: {:ok, context} | {:error, context}
 
   @doc """
   Called when the Engine determines the Command should be executed. This means all the matching, parsing, and
-  permissions checks have passed.
+  permissions checks have passed. This is called after 'parse_args/1', assuming there was no error.
 
   An execution context is passed to the callback function, populated with several helpful bits of information to aid in
-  the execution of the command. See 'Exmud.Engine.CommandContext'.
+  the execution of the command. See 'Exmud.Engine.Command.ExecutionContext'.
   """
-  @callback execute(context) :: {:ok, context} | {:error, context}
+  @callback execute(context) :: {:ok, context} | {:error, error, context}
 
   @doc """
   The prmary string used to match the command with player input.
@@ -199,32 +199,47 @@ defmodule Exmud.Engine.Command do
   @command_pipeline engine_cfg(:command_pipeline)
 
   @doc false
+  @spec execute(integer(), String.t(), [module()]) ::
+          {:ok, context} | {:error, error, module(), context}
   def execute(caller, raw_input, pipeline \\ @command_pipeline) do
     context = %ExecutionContext{caller: caller, raw_input: raw_input}
 
-    execution_context =
+    result =
       retryable_transaction(fn ->
         execute_steps(pipeline, context)
       end)
 
-    for event <- execution_context.events do
-      :ok = Event.dispatch(event)
+    case result do
+      %ExecutionContext{} = context ->
+        for event <- context.events do
+          :ok = Event.dispatch(event)
+        end
+
+        {:ok, context}
+
+      {:error, error, pipeline_step, context} = err ->
+        Logger.error(
+          "Command execution failed. Error: #{error}, Step: #{pipeline_step}, Caller: #{
+            context.caller
+          }, Raw Input: #{context.raw_input}"
+        )
+
+        err
     end
-
-    {:ok, execution_context}
   end
 
-  defp execute_steps([], execution_context) do
-    execution_context
+  @spec execute_steps([], context) :: context
+  defp execute_steps([], context) do
+    context
   end
 
-  defp execute_steps([pipeline_step | pipeline_steps], execution_context) do
-    case pipeline_step.execute(execution_context) do
-      {:ok, execution_context} ->
-        execute_steps(pipeline_steps, execution_context)
+  defp execute_steps([pipeline_step | pipeline_steps], context) do
+    case pipeline_step.execute(context) do
+      {:ok, context} ->
+        execute_steps(pipeline_steps, context)
 
-      {:error, error} ->
-        {:error, error, pipeline_step, execution_context}
+      {:error, error, context} ->
+        {:error, error, pipeline_step, context}
     end
   end
 end

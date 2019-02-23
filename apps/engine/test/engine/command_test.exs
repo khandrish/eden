@@ -1,27 +1,25 @@
 defmodule Exmud.Engine.Test.CommandTest do
+  @moduledoc false
   alias Exmud.Engine.Command
-  alias Exmud.Engine.CommandSet
-  alias Exmud.Engine.Object
   alias Exmud.Engine.Repo
   require Logger
-  use Exmud.Engine.Test.DBTestCase
+  use ExUnit.Case, async: true
 
   alias Exmud.Engine.Test.CommandSet.Basic
 
   describe "command" do
-    setup [:create_new_object]
+    test "with successful execution" do
+      {:ok, context} = Command.execute(1, "echo foobar", [Exmud.Engine.Test.Middleware.Echo])
 
-    test "with building a command list when CommandSet has been unregistered",
-         %{object_id: object_id} = _context do
-      assert CommandSet.attach(object_id, Basic) == :ok
-      {:ok, executionContext} = Command.execute(object_id, "echo foobar")
-      assert %Exmud.Engine.Command.ExecutionContext{} = executionContext
+      assert Exmud.Engine.Command.ExecutionContext.get(context, :echo) == "foobar"
     end
-  end
 
-  defp create_new_object(_context) do
-    object_id = Object.new!()
+    test "with error" do
+      {:error, error, pipeline_step, _context} =
+        Command.execute(1, "blah", [Exmud.Engine.Test.Middleware.Error])
 
-    %{object_id: object_id}
+      assert error == :bad
+      assert pipeline_step == Exmud.Engine.Test.Middleware.Error
+    end
   end
 end
