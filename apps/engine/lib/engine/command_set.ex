@@ -154,9 +154,12 @@ defmodule Exmud.Engine.CommandSet do
   end
 
   @doc """
-  Given either an '%Ecto.Query{}' struct that returns a list of Object ids, or a list of Object ids explicitly, build the list of Commands that the caller has access to.
+  Given either an '%Ecto.Query{}' struct that returns a list of Object ids, or a list of Object ids explicitly, build
+  the list of Commands that the caller has access to.
 
-  Given that every Command is executed in the context of a calling Object, and that Command Sets can have differing visibilities such as internal to an Object as is the case for many default Commands, a failure to include the calling Object in the context query could break an unknown number of things. Don't do it.
+  Given that every Command is executed in the context of a calling Object, and that Command Sets can have differing
+  visibilities such as internal to an Object as is the case for many default Commands, a failure to include the calling
+  Object in the context query could break an unknown number of things. Don't do it.
 
   ## Ecto query
 
@@ -194,11 +197,12 @@ defmodule Exmud.Engine.CommandSet do
   build_active_command_list(object, context)
   '''
 
-  The active Command list is the result of merging all Command Sets attached to a set of Objects in a determanistic order.
+  The active Command list is the result of merging all Command Sets attached to a set of Objects in a determanistic
+  order.
 
-  All Command Sets within the context are retrieved and then sorted from oldest to newest, and then grouped by priority, and then further still within each priority group by type of merge to be performed...which is then further prioritized
-
-  Once the Command Sets have been properly grouped and sorted and flattened they are then merged in order until a single Command Set remains.
+  All Command Sets within the context are retrieved and then sorted from oldest to newest, then grouped by priority,then
+  further grouped within each priority group by type of merge to be performed, These merge type groups are then
+  prioritized by their types before the whole thing is reduced down to a final Command Set.
 
   The list of Commands is the extracted and returned from this Command Set.
   """
@@ -289,7 +293,9 @@ defmodule Exmud.Engine.CommandSet do
     end)
   end
 
-  # Used within MergeSet when merging. In the case of a Command Set, the keys are callback modules which implement the Exmud.Engine.Command behaviour. When comparing Commands, both the key and the aliases need to be checked for conflict.
+  # Used within MergeSet when merging. In the case of a Command Set, the keys are callback modules which implement the
+  # Exmud.Engine.Command behaviour. When comparing Commands, both the key and the aliases need to be checked for
+  # conflict.
   @spec comparison_function(%Command{}, %Command{}) :: boolean
   defp comparison_function(command_a, command_b) do
     key_and_aliases_a = [command_a.key | command_a.aliases]

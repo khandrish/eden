@@ -126,8 +126,9 @@ defmodule Exmud.Engine.Object do
   Query the Engine for Objects based on the passed in query.
 
   The query is a custom syntax which allows for an arbitary combination and nesting of equality checks. Currently, only
-  equality checks are supported. This is unlikely to change without a refactoring as data is pack_termd in the database
-  which makes doing relative value checks impossible.
+  equality checks are supported. This is unlikely to change without a refactoring as data is serialized, because SQL
+  databases are unable to handle arbitrary Elixir terms, in the database which makes doing relative value checks
+  impossible.
   """
   @spec query(object_query) :: {:ok, [object]}
   def query(object_query) do

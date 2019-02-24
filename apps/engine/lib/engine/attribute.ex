@@ -166,7 +166,8 @@ defmodule Exmud.Engine.Attribute do
   Put an Attribute value into a Component.
 
   This is a destructive write that does not check for the presence of existing Attribute values. Will return an error
-  if the Object/Component does not exist, however.
+  if the Object/Component does not exist. The error will be ':no_such_component' in either case as a seperate check to
+  determine if it's the Object or just the Component that is missing is not performed.
   """
   @spec put(object_id, component, attribute_name, value) :: :ok | {:error, :no_such_component}
   def put(object_id, component, attribute_name, value) do

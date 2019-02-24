@@ -13,6 +13,10 @@ defmodule Exmud.Engine.Utils do
 
   Retries are performed with an exponential backoff and jitter to reduce congestion with the DB while performing work
   as quickly as possible.
+
+  NOTE: Nested transactions are not a thing. This should only be used at the outermost layer of logic otherwise the
+  behaviour is undefined and will likely cause problems as an explicit Rollback is performed and only the submitted
+  function will be run again. Data will be lost.
   """
   @default_option_values [
     max_retries: :unlimited,

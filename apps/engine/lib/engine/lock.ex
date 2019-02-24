@@ -9,7 +9,7 @@ defmodule Exmud.Engine.Lock do
   to the callback module at runtime, and must produce a boolean value.
 
   For example, a locked garden gate might only be able to be opened by the local gardener. So a Lock might be added with
-  the access type of 'open' with a callback module name of of 'owner' and config of '%{id: 42}'. Of course for this to
+  the access type of 'open' with a callback module Exmud...Owner and config of '%{id: 42}'. Of course for this to
   have any affect, the code which controls opening the gate must check the lock. Such a check might look like:
 
   '''
@@ -21,8 +21,8 @@ defmodule Exmud.Engine.Lock do
   '''
 
   In the background the Object which should have the Lock on it, 24, is checked to see if anything exists for the "open"
-  access type. Then the associated callback module for the "owner" check is retrieved and passed the two ids along with
-  data associted with the Lock. Assuming the check passes the above code would execute the 'if' block.
+  access type. Then the callback module specified when creating the Lock is passed the two ids along with data associted
+  with the Lock. Assuming the check passes the above code would execute the 'if' block.
 
   Almost everything in Exmud interacts with Locks in one way or another. The Engine applies default Locks to several
   different types of Objects on creation otherwise the provided default logic simply wouldn't work. For example, at
@@ -89,9 +89,9 @@ defmodule Exmud.Engine.Lock do
   @doc """
   Attach a Lock to an Object.
   """
-  @spec attach(object_id, access_type, callback_module, lock_config) ::
+  @spec lock(object_id, access_type, callback_module, lock_config) ::
           :ok | {:error, :no_such_object} | {:error, :already_attached}
-  def attach(object_id, access_type, callback_module, lock_config \\ %{}) do
+  def lock(object_id, access_type, callback_module, lock_config \\ %{}) do
     Lock.new(%{
       object_id: object_id,
       access_type: access_type,
@@ -125,8 +125,8 @@ defmodule Exmud.Engine.Lock do
   @doc """
   Check to see if there is a lock for a specific access type on an Object.
   """
-  @spec attached?(object_id, access_type) :: boolean
-  def attached?(object_id, access_type) do
+  @spec locked?(object_id, access_type) :: boolean
+  def locked?(object_id, access_type) do
     query = from(lock in lock_query(object_id, access_type), select: count("*"))
 
     Repo.one(query) == 1
@@ -182,8 +182,8 @@ defmodule Exmud.Engine.Lock do
 
   Does not check for presence of specified lock, simply deletes any that match the given parameters.
   """
-  @spec detach(object_id, access_type) :: :ok
-  def detach(object_id, access_type) do
+  @spec unlock(object_id, access_type) :: :ok
+  def unlock(object_id, access_type) do
     lock_query(object_id, access_type)
     |> Repo.delete_all()
 
