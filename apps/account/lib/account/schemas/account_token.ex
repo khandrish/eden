@@ -10,4 +10,10 @@ defmodule Exmud.Account.Schema.AccountToken do
     field(:expiry, :utc_datetime)
     belongs_to(:account, Exmud.Account.Schema.AccountModel, foreign_key: :account_id)
   end
+
+  def new(params \\ %{}) do
+    %__MODULE__{}
+    |> cast(params, [:expiry, :token, :type, :account_id])
+    |> validate_required([:token, :type, :account_id])
+  end
 end

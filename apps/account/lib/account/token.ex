@@ -52,12 +52,12 @@ defmodule Exmud.Account.Token do
         DateTime.truncate(expiry, :second)
       end
 
-    %AccountToken{
+    AccountToken.new(%{
       account_id: account_id,
       token: UUID.uuid4(),
       type: type,
       expiry: expiry
-    }
+    })
     |> Repo.insert()
     |> case do
       {:ok, record} ->
@@ -142,12 +142,12 @@ defmodule Exmud.Account.Token do
         DateTime.truncate(expiry, :second)
       end
 
-    %AccountToken{
+    AccountToken.new(%{
       account_id: account_id,
       token: token,
       type: type,
       expiry: expiry
-    }
+    })
     |> Repo.insert()
     |> case do
       {:ok, record} ->
