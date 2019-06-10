@@ -2,14 +2,13 @@
 # and its dependencies with the aid of the Mix.Config module.
 use Mix.Config
 
-config :account, Exmud.Account.Repo,
+config :exmud_account, ecto_repos: [Exmud.Account.Repo]
+
+config :exmud_account, Exmud.Account.Repo,
   database: "exmud_account_#{Mix.env()}",
   hostname: "localhost",
   pool_size: 10,
   username: "exmud_account"
-
-config :account,
-  parallel_logins: 64
 
 # It is also possible to import configuration files, relative to this
 # directory. For example, you can emulate configuration per environment

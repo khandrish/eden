@@ -4,7 +4,7 @@ defmodule Exmud.Player.Mixfile do
   def project do
     [
       # Standard arguments
-      app: :account,
+      app: :exmud_account,
       deps: deps(),
       elixir: "~> 1.8.1",
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -32,23 +32,26 @@ defmodule Exmud.Player.Mixfile do
   def application do
     [
       extra_applications: [:logger],
-      mod: {Exmud.Player.Application, []}
+      mod: {Exmud.Account.Application, []}
     ]
   end
 
   defp deps do
     [
+      {:argon2_elixir, "~> 2.0"},
       {:calendar, "~> 0.17.4"},
       {:comeonin, "~> 5.0.0"},
+      {:common, in_umbrella: true},
       {:credo, "~> 1.0.2", only: [:dev, :test]},
       {:ecto, "~> 3.0.7"},
       {:ecto_sql, "~> 3.0"},
       {:ex_doc, ">= 0.19.3", only: :dev},
-      {:excoveralls, ">= 0.10.5", only: :test},
-      {:common, in_umbrella: true},
+      {:ex_pwned, "~> 0.1.4"},
+      {:excoveralls, ">= 0.11.1", only: :test},
       {:faker, "~> 0.12.0", only: [:dev, :test]},
       {:inch_ex, ">= 2.0.0", only: :docs},
       {:postgrex, "~> 0.14.1"},
+      {:timex, "~> 3.1"},
       {:uuid, "~> 1.1.8"}
     ]
   end

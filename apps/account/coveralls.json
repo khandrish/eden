@@ -1,0 +1,5 @@
+{
+    "skip_files": [
+        "lib/account/token_janitor.ex"
+    ]
+}
