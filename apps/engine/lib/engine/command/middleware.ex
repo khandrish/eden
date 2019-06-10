@@ -18,9 +18,6 @@ defmodule Exmud.Engine.Command.Middleware do
   Overriding the pipeline via config changes how every command is processed. Check the existing config before overriding
   to ensure critical steps in the pipeline are not missed.
 
-  Note: The override should be done in the Game application and not the Engine application. Unless contributing there
-  should be no need to modify anything in the Engine.
-
   Example:
 
   ```

@@ -10,7 +10,8 @@ defmodule Exmud.Engine.Command.ExecutionContext do
   defstruct [
     # Parsed arguments for the command.
     :args,
-    # Object that is doing the calling. All Commands are executed by Objects, even if triggered by a Player.
+    # Object that is doing the calling. All Commands are executed by Objects, even if triggered by a Player. In the case
+    # of the Player, the Object that performs the action is the Object/Character that they are puppeting.
     :caller,
     # Arbitrary data that can be set and used from any of the middlewares.
     {:data, %{}},
@@ -71,8 +72,8 @@ end
 
 defimpl String.Chars, for: Exmud.Engine.Command.ExecutionContext do
   @spec to_string(%Exmud.Engine.Command.ExecutionContext{}) :: String.t()
-  def to_string(execution) do
-    "%{caller: '#{execution.caller}', matched_key:'#{execution.matched_key}'," <>
-      " owner: '#{execution.owner}', raw_input: '#{execution.raw_input}'}"
+  def to_string(context) do
+    "%{caller: '#{context.caller}', matched_key:'#{context.matched_key}'," <>
+      " owner: '#{context.owner}', raw_input: '#{context.raw_input}'}"
   end
 end

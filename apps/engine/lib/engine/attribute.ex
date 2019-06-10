@@ -71,8 +71,9 @@ defmodule Exmud.Engine.Attribute do
   Returns whether or not the specified Attribute is present on the Component and equal to the provided value.
 
   When called with anything other than a function as the last argument, a simple in database equality check is
-  performed. If an anonymous function, arity of one, is passed in the Attribute valuewill be retrieved from the database
-  and passed into the function. The function must return a boolean value that indicates whether or not the data matches.
+  performed. If an anonymous function, arity of one, is passed in the Attribute value will be retrieved from the
+  database and passed into the function. The function must return a boolean value that indicates whether or not the data
+  matches.
 
   Since the comparison is done client side using the method in this way is less efficient but more powerful as there is
   complete control over checking an arbitrarily complex data structure.
