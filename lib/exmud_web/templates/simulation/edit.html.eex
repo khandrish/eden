@@ -1,0 +1,5 @@
+<h1>Edit Simulation</h1>
+
+<%= render "form.html", Map.put(assigns, :action, Routes.simulation_path(@conn, :update, @simulation)) %>
+
+<span><%= link "Back", to: Routes.simulation_path(@conn, :index) %></span>

@@ -1,0 +1,23 @@
+<h1>Show Callbacks</h1>
+
+<ul>
+
+  <li>
+    <strong>Module:</strong>
+    <%= @callbacks.module %>
+  </li>
+
+  <li>
+    <strong>Type:</strong>
+    <%= @callbacks.type %>
+  </li>
+
+  <li>
+    <strong>Default args:</strong>
+    <%= @callbacks.default_args %>
+  </li>
+
+</ul>
+
+<span><%= link "Edit", to: Routes.callback_path(@conn, :edit, @callbacks) %></span>
+<span><%= link "Back", to: Routes.callback_path(@conn, :index) %></span>

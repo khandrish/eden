@@ -1,0 +1,28 @@
+<h1>Listing Simulations</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Status</th>
+
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+<%= for simulation <- @simulations do %>
+    <tr>
+      <td><%= simulation.name %></td>
+      <td><%= simulation.status %></td>
+
+      <td>
+        <%= link "Show", to: Routes.simulation_path(@conn, :show, simulation) %>
+        <%= link "Edit", to: Routes.simulation_path(@conn, :edit, simulation) %>
+        <%= link "Delete", to: Routes.simulation_path(@conn, :delete, simulation), method: :delete, data: [confirm: "Are you sure?"] %>
+      </td>
+    </tr>
+<% end %>
+  </tbody>
+</table>
+
+<span><%= link "New Simulation", to: Routes.simulation_path(@conn, :new) %></span>

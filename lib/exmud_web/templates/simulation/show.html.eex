@@ -1,0 +1,18 @@
+<h1>Show Simulation</h1>
+
+<ul>
+
+  <li>
+    <strong>Name:</strong>
+    <%= @simulation.name %>
+  </li>
+
+  <li>
+    <strong>Status:</strong>
+    <%= @simulation.status %>
+  </li>
+
+</ul>
+
+<span><%= link "Edit", to: Routes.simulation_path(@conn, :edit, @simulation) %></span>
+<span><%= link "Back", to: Routes.simulation_path(@conn, :index) %></span>

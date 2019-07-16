@@ -1,0 +1,9 @@
+<%= form_for @changeset, Routes.auth_path(@conn, :send_login_token), [{:as, "login_form"}], fn f -> %>
+  <label>Email
+    <%= email_input f, :email, [{:"aria-describedby", "email_help_text"}] %>
+  </label>
+  <p class="help-text" id="password_help_text">A login link will be sent to the provided email address.</p>
+
+  <%= submit("Submit", class: "button") %>
+  <%= link("Sign Up", class: "button", to: "/signup") %>
+<% end %>

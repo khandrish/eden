@@ -1,0 +1,34 @@
+<h1>Listing Profiles</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Email</th>
+      <th>Email verified</th>
+      <th>Tos accepted</th>
+      <th>Tos history</th>
+
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+<%= for profile <- @profiles do %>
+    <tr>
+      <td><%= profile.name %></td>
+      <td><%= profile.email %></td>
+      <td><%= profile.email_verified %></td>
+      <td><%= profile.tos_accepted %></td>
+      <td><%= profile.tos_history %></td>
+
+      <td>
+        <%= link "Show", to: Routes.profile_path(@conn, :show, profile) %>
+        <%= link "Edit", to: Routes.profile_path(@conn, :edit, profile) %>
+        <%= link "Delete", to: Routes.profile_path(@conn, :delete, profile), method: :delete, data: [confirm: "Are you sure?"] %>
+      </td>
+    </tr>
+<% end %>
+  </tbody>
+</table>
+
+<span><%= link "New Profile", to: Routes.profile_path(@conn, :new) %></span>

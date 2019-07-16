@@ -1,0 +1,40 @@
+/* This file is for your main application css. */
+
+// Phoenix
+@import "../../deps/phoenix_live_view/assets/css/live_view.css";
+
+// Navigation bar
+
+div.top-bar {
+    width: 100%;
+}
+
+input {
+    &.error {
+        background-color: rgba(255, 0, 0, 0.1) !important;
+    };
+    &.success {
+        background-color: rgba(0, 255, 0, 0.1) !important;
+    }
+}
+
+.help-text.error-text {
+  color: red;
+}
+
+.closeable-flash {
+    padding-right: 48px;
+    border-radius: 10px;
+}
+
+.flash.close-button {
+    padding-top: 3px;
+}
+
+.top-bar {
+    padding: 0px !important;
+}
+
+body {
+    background-image: url("/static/images/forest_background.jpg") !important
+}

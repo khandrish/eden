@@ -1,31 +1,69 @@
-defmodule Exmud.Umbrella.Mixfile do
-  @moduledoc false
+defmodule Exmud.MixProject do
   use Mix.Project
 
   def project do
     [
-      apps_path: "apps",
-      build_embedded: Mix.env() == :prod,
-      deps: deps(),
-      preferred_cli_env: [
-        coveralls: :test,
-        "coveralls.detail": :test,
-        "coveralls.post": :test,
-        "coveralls.html": :test
-      ],
+      app: :exmud,
+      version: "0.1.0",
+      elixir: "~> 1.5",
+      elixirc_paths: elixirc_paths(Mix.env()),
+      compilers: [:phoenix, :gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
-      test_coverage: [tool: ExCoveralls]
+      aliases: aliases(),
+      deps: deps()
     ]
   end
 
-  # Dependencies listed here are available only for this
-  # project and cannot be accessed from applications inside
-  # the apps folder.
+  # Configuration for the OTP application.
   #
-  # Run "mix help deps" for examples and options.
+  # Type `mix help compile.app` for more information.
+  def application do
+    [
+      mod: {Exmud.Application, []},
+      extra_applications: [:logger, :runtime_tools]
+    ]
+  end
+
+  # Specifies which paths to compile per environment.
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_), do: ["lib"]
+
+  # Specifies your project dependencies.
+  #
+  # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:dialyxir, "~> 1.0.0-rc.4", only: [:dev], runtime: false}
+      {:bamboo, "~> 1.2"},
+      {:defused, "~> 0.6.0"},
+      {:ecto_sql, "~> 3.0"},
+      {:exconstructor, "~> 1.1"},
+      {:gettext, "~> 0.11"},
+      {:hammer, "~> 6.0"},
+      {:hammer_plug, "~> 2.0"},
+      {:jason, "~> 1.0"},
+      {:maybe, "~> 1.0"},
+      {:ok, "~> 2.3"},
+      {:openid_connect, "~> 0.2.2"},
+      {:phoenix, "~> 1.4.6"},
+      {:phoenix_ecto, "~> 4.0"},
+      {:phoenix_html, "~> 2.11"},
+      {:phoenix_live_reload, "~> 1.2", only: :dev},
+      {:phoenix_live_view, github: "phoenixframework/phoenix_live_view"},
+      {:phoenix_pubsub, "~> 1.1"},
+      {:plug_cowboy, "~> 2.0"},
+      {:postgrex, ">= 0.0.0"},
+      {:redbird, "~> 0.4.0"},
+      {:redix, "~> 0.10.2"},
+      {:scribe, "~> 0.10.0"},
+      {:typed_struct, "~> 0.1.4"},
+      {:uuid, "~> 1.1.8"}
+    ]
+  end
+
+  defp aliases do
+    [
+      "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
+      "ecto.reset": ["ecto.drop", "ecto.setup"]
     ]
   end
 end

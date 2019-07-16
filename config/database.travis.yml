@@ -1,4 +1,0 @@
-test:
-  adapter: postgresql
-  username: exmud
-  password: exmud

@@ -1,36 +1,124 @@
 # Exmud
 
-**Build status**
+A framework for the development and management of onlime multiplayer text-based (MUDs) games. 
 
-master:
-[![Build Status](https://travis-ci.org/mononym/exmud.svg?branch=master)](https://travis-ci.org/mononym/exmud)
-develop:
-[![Build Status](https://travis-ci.org/mononym/exmud.svg?branch=develop)](https://travis-ci.org/mononym/exmud)
+Initially created as a port of [Evennia](http://www.evennia.com/), it has since taken on a life of its own. That said,
+several core concepts borrowed from Evennia are still present.
 
-**Coverage status**
+## Installation
 
-master:
-[![Coverage Status](https://coveralls.io/repos/github/mononym/exmud/badge.svg?branch=master)](https://coveralls.io/github/mononym/exmud?branch=master)
-develop:
-[![Coverage Status](https://coveralls.io/repos/github/mononym/exmud/badge.svg?branch=develop)](https://coveralls.io/github/mononym/exmud?branch=develop)
+The package can be installed by adding `exmud` to your list of dependencies in `mix.exs`:
 
-**Documentation status**
+```elixir
+def deps do
+  [{:exmud, git: "https://github.com/mononym/exmud.git"}]
+end
+```
 
-master:
-[![Inline docs](http://inch-ci.org/github/mononym/exmud.svg?branch=master)](http://inch-ci.org/github/mononym/exmud?branch=master)
-develop:
-[![Inline docs](http://inch-ci.org/github/mononym/exmud.svg?branch=develop)](http://inch-ci.org/github/mononym/exmud?branch=develop)
+## Setup
 
-## Overview
+Exmud is designed to be configured/run from within the consuming application's supervision tree.
 
-Exmud is a toolkit for building, running, and managing multiplayer online text based games. The web interface is provided by Phoenix, and will be where everything other than building the code for the game takes place, from adding/removing/banning players to building up the content of the world.
+### Configure ExRedis
 
-**WARNING:** Exmud is in the prototyping stage and is likely to change rapidly and dramatically without warning. It is not ready to be used. Documentation is sparse and possibly outdated.
+ExRedis is used by `Plug.Session`. For all configuration options, please see the [ExRedis GitHub page]
 
-## Using Exmud
-There is no guidance on this yet. The rough image in mind is for the repo to be forked/cloned, with game development happening in one of the Elixir apps designated for that. The reason for this is that it will provide full access to both the Phoenix web app as well as the engine itself. In this way anyone can make any modifications they need to make Exmud theirs and work for them, while maintaining a link to the original repo will allow for updates and bug fixes to the engine to make their way into the customized code base.
+```elixir
+config :exredis, url: System.get_env("REDIS_URL")
+```
 
-## Inspiration
-Many of the concepts present in Exmud are inspired by or directly copied from Evennia. I wanted to do a fun project in Elixir, and as part of the preperation for that I looked at what others had done. Evennia stood out as an interesting project with a lot of solid ideas that could be adapated to fit my needs. While there has been a lot of adaptation, and there will undoubtedly be more, Evennia was definitely the go-to starting-point for several pieces of core logic.
+  [ExRedis GitHub page]: https://github.com/artemeff/exredis
 
-If you're interested in something that you can get up and running now, are just curious in seeing what's cooking over in Python land, or just want to see what inspired some of the design of Exmud, I highly recommend you head on over to the [Evennia website](http://www.evennia.com/).
+### Configure Plug
+
+`Plug.Session` is what manages player/browser sessions on the server side.
+
+```elixir
+plug Plug.Session,
+  expiration_in_seconds: 3000, # Default is 30 days
+  key: "session_id",
+  store: :redis
+```
+
+### Configure Endpoint
+
+Phoenix is the web server used by `Exmud`. For all configuration options, please see the [Phoenix Homepage]
+
+```elixir
+config :exmud, ExmudWeb.Endpoint,
+  url: [host: "localhost"],
+  secret_key_base: "9W/QZ3iU5+9TFpwlAPVG1zwlO94sfqDaSn+J0l4rwMLwKfq+L7CgVAs18kOQIZ7d",
+  live_view: [
+    signing_salt: "eq1EMSpEwuOqxyc2o5ehOrSEg1fMGEm3"
+  ]
+```
+
+  [Phoenix Homepage]: https://phoenixframework.org/
+
+### Configuring Identity Providers
+
+Creating and authenticating an account via email will always be available. In addition, OAuth and OpenID Connect
+providers can be configured as well. The login/sign up forms will automatically accomidate the configured providers
+with icons and text.
+
+Icons for the following providers are availabile:
+* bitbucket
+* deviantart
+* dropbox
+* facebook
+* foursquare
+* github
+* google
+* instagram
+* linkedin
+* reddit
+
+## Feature Roadmap
+
+### 1.0
+
+High level view:
+- [x] Single server.
+- [x] Redis used for sessions.
+- [x] Postgresql used as database.
+- [] Web based player, admin, and developer UI built with LiveView as much as possible (and makes sense).
+- [] Develop/manage/run multiple MUD's at the same time.
+
+Authentication/Authorization:
+- [] Authentication/Registration via email.
+- [] Authentication/Registration via Google.
+- [] Link multiple identities to a single player account.
+- [] Role based account level permissions.
+
+MUD Engine:
+- [x] Everything is an Object. Even each MUD instance is treated as an Object.
+- [] Composable Command Sets for dynamic behaviours.
+- [] Permissions for Object access in the form of Locks.
+- [] Objects can be arbitrarily linked together.
+- [] Tags, which act as a truth check. Either the tag is there or it isn't.
+- [] Scripts are pieces of logic which can be "attached" to Objects and executed in their own process.
+- [] Systems are like Scripts, but aren't attached to any specific Object and work instead on a MUD instance level.
+- [] Components encapsulate key/value pairs and are attached to each object.
+- [] Object templating system, complete with Object factory.
+- [] Area/Region system built ontop of Objects/Components to make building worlds easier.
+- [] Character system built ontop of Objects/Components to make certain things easier.
+
+
+
+
+- [] Telemetry of as much of the system as possible
+- [] Players can connect to one character on one MUD, one each on multiple MUDs, or multiple characters based on config
+- [] Events emitted for almost everything, account creation/deletion or player login/logout for example
+
+### 2.0
+
+- [] Forums
+- [] Wiki
+- [] Store
+- [] Subscriptions
+- [] Scripting engine/system
+- [] Stream game events to browser
+
+## License
+
+Exmud is released under the MIT License - see the [LICENSE](LICENSE) file.

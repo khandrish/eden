@@ -1,0 +1,31 @@
+<%= form_for @changeset, @action, fn f -> %>
+  <%= if @changeset.action do %>
+    <div class="alert alert-danger">
+      <p>Oops, something went wrong! Please check the errors below.</p>
+    </div>
+  <% end %>
+
+  <%= label f, :name %>
+  <%= text_input f, :name %>
+  <%= error_tag f, :name %>
+
+  <%= label f, :email %>
+  <%= text_input f, :email %>
+  <%= error_tag f, :email %>
+
+  <%= label f, :email_verified %>
+  <%= checkbox f, :email_verified %>
+  <%= error_tag f, :email_verified %>
+
+  <%= label f, :tos_accepted %>
+  <%= checkbox f, :tos_accepted %>
+  <%= error_tag f, :tos_accepted %>
+
+  <%= label f, :tos_history %>
+  <%= multiple_select f, :tos_history, ["Option 1": "option1", "Option 2": "option2"] %>
+  <%= error_tag f, :tos_history %>
+
+  <div>
+    <%= submit "Save" %>
+  </div>
+<% end %>

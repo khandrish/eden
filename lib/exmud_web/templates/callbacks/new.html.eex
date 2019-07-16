@@ -1,0 +1,5 @@
+<h1>New Callbacks</h1>
+
+<%= render "form.html", Map.put(assigns, :action, Routes.callback_path(@conn, :create)) %>
+
+<span><%= link "Back", to: Routes.callback_path(@conn, :index) %></span>

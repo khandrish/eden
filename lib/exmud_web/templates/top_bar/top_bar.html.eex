@@ -1,0 +1,27 @@
+
+<div class="top-bar">
+  <div class="top-bar-left">
+    <ul class="dropdown menu" data-dropdown-menu>
+      <li class="menu-text">Exmud</li>
+      <li>
+        <a href="#">One</a>
+        <ul class="menu vertical">
+          <li><a href="#">One</a></li>
+          <li><a href="#">Two</a></li>
+          <li><a href="#">Three</a></li>
+        </ul>
+      </li>
+      <li><a href="#">Two</a></li>
+      <li><a href="#">Three</a></li>
+    </ul>
+  </div>
+  <div class="top-bar-right">
+    <ul class="menu">
+      <%= if @player_authenticated? do %>
+        <li><a class="button" href="<%= Routes.auth_path(ExmudWeb.Endpoint, :logout) %>">Log out</a></li>
+      <% else %>
+        <li><a class="button" href="<%= Routes.auth_path(ExmudWeb.Endpoint, :show_login_form) %>">Log in</a></li>
+      <% end %>
+    </ul>
+  </div>
+</div>

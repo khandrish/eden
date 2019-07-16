@@ -1,0 +1,26 @@
+<h1>Listing Simulation callbacks</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Default args</th>
+
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+<%= for simulation_callback <- @simulation_callbacks do %>
+    <tr>
+      <td><%= simulation_callback.default_args %></td>
+
+      <td>
+        <%= link "Show", to: Routes.simulation_callback_path(@conn, :show, simulation_callback) %>
+        <%= link "Edit", to: Routes.simulation_callback_path(@conn, :edit, simulation_callback) %>
+        <%= link "Delete", to: Routes.simulation_callback_path(@conn, :delete, simulation_callback), method: :delete, data: [confirm: "Are you sure?"] %>
+      </td>
+    </tr>
+<% end %>
+  </tbody>
+</table>
+
+<span><%= link "New Simulation callback", to: Routes.simulation_callback_path(@conn, :new) %></span>
