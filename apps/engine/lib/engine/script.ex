@@ -118,7 +118,7 @@ defmodule Exmud.Engine.Script do
   @type callback_module :: atom
 
   alias Exmud.Engine.CallbackSupervisor
-  alias Exmud.Engine.ObjectUtil
+  alias Exmud.Engine.Object
   alias Exmud.Engine.Repo
   alias Exmud.Engine.Schema.Script
   alias Exmud.Engine.Worker.ScriptWorker
@@ -150,14 +150,12 @@ defmodule Exmud.Engine.Script do
         script =
           %{
             object_id: object_id,
-            callback_module: pack_term(callback_module),
-            state: pack_term(new_state)
+            callback_module: callback_module,
+            state: new_state
           }
           |> Exmud.Engine.Schema.Script.new()
 
-        ObjectUtil.attach(script)
-
-        :ok
+        :ok = Object.attach(script)
 
       {_, error} = error_result ->
         Logger.error(
@@ -232,7 +230,7 @@ defmodule Exmud.Engine.Script do
             {:error, :no_such_script}
 
           script ->
-            {:ok, unpack_term(script.state)}
+            {:ok, script.state}
         end
     end
   end
@@ -323,7 +321,7 @@ defmodule Exmud.Engine.Script do
 
       scripts ->
         Enum.reduce(scripts, %{}, fn script, map ->
-          callback_module = unpack_term(script.callback_module)
+          callback_module = String.to_existing_atom(script.callback_module)
           Map.put(map, callback_module, start(object_id, callback_module, start_args))
         end)
     end
@@ -358,7 +356,7 @@ defmodule Exmud.Engine.Script do
   def update(object_id, callback_module, state) do
     query = script_query(object_id, callback_module)
 
-    case Repo.update_all(query, set: [state: pack_term(state)]) do
+    case Repo.update_all(query, set: [state: state]) do
       {1, _} -> :ok
       {0, _} -> {:error, :no_such_script}
     end
@@ -382,7 +380,7 @@ defmodule Exmud.Engine.Script do
   defp script_query(object_id, callback_module) do
     from(
       script in Script,
-      where: script.callback_module == ^pack_term(callback_module),
+      where: script.callback_module == ^callback_module,
       where: script.object_id == ^object_id
     )
   end

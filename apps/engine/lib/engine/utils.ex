@@ -78,4 +78,7 @@ defmodule Exmud.Engine.Utils do
   defp execute_callback(_, _, _) do
     {:error, :retries_exceeded}
   end
+
+  def get_prefix(), do: Process.get(:prefix)
+  def set_prefix(prefix), do: Process.put(:prefix, prefix)
 end

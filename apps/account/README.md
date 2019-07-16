@@ -15,10 +15,9 @@ details.
     - ~~Lookup account username via Email~~
     - ~~Token functionality to allow for things like password reset via token sent over email~~
   - Roles
-    - Hierarchical roles that provide an Account with domain defined permissions
+    - Roles provide an Account with domain defined permissions
     - Add/Remove from account
-    - Edit Description and parent for a role
-    - Check for existence of role or parent role on an account
+    - Check for existence of role on an account
     - Temporary revocation of a role
 
 ### 2.0

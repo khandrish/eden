@@ -3,9 +3,11 @@ defmodule Exmud.Engine.Schema.Link do
 
   schema "link" do
     field(:type, :string)
-    field(:state, :binary, default: nil)
+    field(:state, :map, default: %{})
     belongs_to(:to, Exmud.Engine.Schema.Object, foreign_key: :to_id)
     belongs_to(:from, Exmud.Engine.Schema.Object, foreign_key: :from_id)
+
+    timestamps()
   end
 
   def new(link, params \\ %{}) do

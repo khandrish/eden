@@ -4,8 +4,10 @@ defmodule Exmud.Engine.Schema.Lock do
   schema "lock" do
     field(:access_type, :string)
     field(:callback_module, :string)
-    field(:config, :binary)
+    field(:config, :map, default: %{})
     belongs_to(:object, Exmud.Engine.Schema.Object, foreign_key: :object_id)
+
+    timestamps()
   end
 
   def new(params) do

@@ -6,7 +6,7 @@ defmodule Exmud.Engine.Tag do
   Tags complement Components, which should be used when anything other than a single boolean value is needed.
   """
 
-  alias Exmud.Engine.ObjectUtil
+  alias Exmud.Engine.Object
   alias Exmud.Engine.Repo
   alias Exmud.Engine.Schema.Tag
   import Ecto.Query
@@ -32,7 +32,7 @@ defmodule Exmud.Engine.Tag do
   def attach(object_id, category, tag) do
     args = %{category: category, object_id: object_id, tag: tag}
     record = Tag.new(args)
-    ObjectUtil.attach(record)
+    Object.attach(record)
   end
 
   @doc """

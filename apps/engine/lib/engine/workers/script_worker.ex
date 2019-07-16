@@ -12,7 +12,7 @@ defmodule Exmud.Engine.Worker.ScriptWorker do
   defmodule State do
     @moduledoc false
     defstruct callback_module: nil,
-              deserialized_state: nil,
+              state: nil,
               object_id: nil,
               timer_ref: nil
   end
@@ -116,7 +116,7 @@ defmodule Exmud.Engine.Worker.ScriptWorker do
          %State{
            object_id: script.object_id,
            callback_module: callback_module,
-           deserialized_state: unpack_term(script.state)
+           state: script.state
          }}
     end
   end
@@ -124,7 +124,7 @@ defmodule Exmud.Engine.Worker.ScriptWorker do
   @spec start_script(state, args) :: {:ok, state} | {:stop, error}
   defp start_script(state, start_args) do
     start_result =
-      apply(state.callback_module, :start, [state.object_id, start_args, state.deserialized_state])
+      apply(state.callback_module, :start, [state.object_id, start_args, state.state])
 
     case start_result do
       {:ok, new_state, send_after} ->
@@ -135,14 +135,14 @@ defmodule Exmud.Engine.Worker.ScriptWorker do
         persist_if_changed(
           state.object_id,
           state.callback_module,
-          state.deserialized_state,
+          state.state,
           new_state
         )
 
         # Trigger run after interval
         ref = Process.send_after(self(), :run, send_after)
 
-        {:ok, %{state | deserialized_state: new_state, timer_ref: ref}}
+        {:ok, %{state | state: new_state, timer_ref: ref}}
 
       {:error, error, new_state} ->
         Logger.error(
@@ -154,7 +154,7 @@ defmodule Exmud.Engine.Worker.ScriptWorker do
         persist_if_changed(
           state.object_id,
           state.callback_module,
-          state.deserialized_state,
+          state.state,
           new_state
         )
 
@@ -182,7 +182,7 @@ defmodule Exmud.Engine.Worker.ScriptWorker do
       apply(state.callback_module, :handle_message, [
         state.object_id,
         message,
-        state.deserialized_state
+        state.state
       ])
 
     case message_result do
@@ -190,28 +190,28 @@ defmodule Exmud.Engine.Worker.ScriptWorker do
         persist_if_changed(
           state.object_id,
           state.callback_module,
-          state.deserialized_state,
+          state.state,
           new_state
         )
 
-        {:reply, {:ok, response}, %{state | deserialized_state: new_state}}
+        {:reply, {:ok, response}, %{state | state: new_state}}
 
       {:error, error, new_state} ->
         persist_if_changed(
           state.object_id,
           state.callback_module,
-          state.deserialized_state,
+          state.state,
           new_state
         )
 
-        {:reply, {:error, error}, %{state | deserialized_state: new_state}}
+        {:reply, {:error, error}, %{state | state: new_state}}
     end
   end
 
   @doc false
   @spec handle_call(:state, from :: term, state) :: {:reply, {:ok, response}, state}
   def handle_call(:state, _from, state) do
-    {:reply, {:ok, state.deserialized_state}, state}
+    {:reply, {:ok, state.state}, state}
   end
 
   @doc false
@@ -228,8 +228,7 @@ defmodule Exmud.Engine.Worker.ScriptWorker do
       Process.cancel_timer(state.timer_ref)
     end
 
-    stop_result =
-      apply(state.callback_module, :stop, [state.object_id, args, state.deserialized_state])
+    stop_result = apply(state.callback_module, :stop, [state.object_id, args, state.state])
 
     Process.send_after(self(), :stop, 0)
 
@@ -242,11 +241,11 @@ defmodule Exmud.Engine.Worker.ScriptWorker do
         persist_if_changed(
           state.object_id,
           state.callback_module,
-          state.deserialized_state,
+          state.state,
           new_state
         )
 
-        {:reply, :ok, %{state | deserialized_state: new_state}}
+        {:reply, :ok, %{state | state: new_state}}
 
       {:error, error, new_state} ->
         Logger.error(
@@ -258,11 +257,11 @@ defmodule Exmud.Engine.Worker.ScriptWorker do
         persist_if_changed(
           state.object_id,
           state.callback_module,
-          state.deserialized_state,
+          state.state,
           new_state
         )
 
-        {:reply, {:error, error}, %{state | deserialized_state: new_state}}
+        {:reply, {:error, error}, %{state | state: new_state}}
     end
   end
 
@@ -273,17 +272,17 @@ defmodule Exmud.Engine.Worker.ScriptWorker do
       apply(state.callback_module, :handle_message, [
         state.object_id,
         message,
-        state.deserialized_state
+        state.state
       ])
 
     persist_if_changed(
       state.object_id,
       state.callback_module,
-      state.deserialized_state,
+      state.state,
       new_state
     )
 
-    {:noreply, %{state | deserialized_state: new_state}}
+    {:noreply, %{state | state: new_state}}
   end
 
   @doc false
@@ -302,7 +301,7 @@ defmodule Exmud.Engine.Worker.ScriptWorker do
 
   @spec run(state) :: {:noreply, state} | {:stop, :normal, state}
   defp run(state) do
-    run_result = apply(state.callback_module, :run, [state.object_id, state.deserialized_state])
+    run_result = apply(state.callback_module, :run, [state.object_id, state.state])
 
     case run_result do
       {:ok, new_state} ->
@@ -311,11 +310,11 @@ defmodule Exmud.Engine.Worker.ScriptWorker do
         persist_if_changed(
           state.object_id,
           state.callback_module,
-          state.deserialized_state,
+          state.state,
           new_state
         )
 
-        {:noreply, %{state | deserialized_state: new_state}}
+        {:noreply, %{state | state: new_state}}
 
       {:ok, new_state, interval} ->
         Logger.info(
@@ -327,11 +326,11 @@ defmodule Exmud.Engine.Worker.ScriptWorker do
         persist_if_changed(
           state.object_id,
           state.callback_module,
-          state.deserialized_state,
+          state.state,
           new_state
         )
 
-        {:noreply, %{state | deserialized_state: new_state, timer_ref: ref}}
+        {:noreply, %{state | state: new_state, timer_ref: ref}}
 
       {:error, error, new_state} ->
         Logger.error(
@@ -341,11 +340,11 @@ defmodule Exmud.Engine.Worker.ScriptWorker do
         persist_if_changed(
           state.object_id,
           state.callback_module,
-          state.deserialized_state,
+          state.state,
           new_state
         )
 
-        {:noreply, %{state | deserialized_state: new_state}}
+        {:noreply, %{state | state: new_state}}
 
       {:error, error, new_state, interval} ->
         Logger.error(
@@ -359,11 +358,11 @@ defmodule Exmud.Engine.Worker.ScriptWorker do
         persist_if_changed(
           state.object_id,
           state.callback_module,
-          state.deserialized_state,
+          state.state,
           new_state
         )
 
-        {:noreply, %{state | deserialized_state: new_state, timer_ref: ref}}
+        {:noreply, %{state | state: new_state, timer_ref: ref}}
 
       {:stop, reason, new_state} ->
         Logger.info("Script `#{state.callback_module}` stopping after run.")
@@ -387,11 +386,11 @@ defmodule Exmud.Engine.Worker.ScriptWorker do
         persist_if_changed(
           state.object_id,
           state.callback_module,
-          state.deserialized_state,
+          state.state,
           script_state
         )
 
-        {:stop, :normal, %{state | deserialized_state: script_state}}
+        {:stop, :normal, %{state | state: script_state}}
     end
   end
 
@@ -410,8 +409,7 @@ defmodule Exmud.Engine.Worker.ScriptWorker do
   defp script_query(object_id, callback_module) do
     from(
       script in Exmud.Engine.Schema.Script,
-      where:
-        script.object_id == ^object_id and script.callback_module == ^pack_term(callback_module)
+      where: script.object_id == ^object_id and script.callback_module == ^callback_module
     )
   end
 end

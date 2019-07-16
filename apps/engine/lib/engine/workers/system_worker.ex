@@ -10,8 +10,9 @@ defmodule Exmud.Engine.Worker.SystemWorker do
   use GenServer
 
   defmodule State do
+    @moduledoc false
     defstruct callback_module: nil,
-              deserialized_state: nil,
+              state: nil,
               timer_ref: nil
   end
 
@@ -100,14 +101,14 @@ defmodule Exmud.Engine.Worker.SystemWorker do
         {:ok,
          %State{
            callback_module: callback_module,
-           deserialized_state: unpack_term(system.state)
+           state: system.state
          }}
     end
   end
 
   @spec start_system(state, args) :: {:ok, state} | {:stop, error}
   defp start_system(state, start_args) do
-    start_result = apply(state.callback_module, :start, [start_args, state.deserialized_state])
+    start_result = apply(state.callback_module, :start, [start_args, state.state])
 
     case start_result do
       {:ok, new_state, send_after} ->
@@ -115,14 +116,14 @@ defmodule Exmud.Engine.Worker.SystemWorker do
 
         persist_if_changed(
           state.callback_module,
-          state.deserialized_state,
+          state.state,
           new_state
         )
 
         # Trigger run after interval
         ref = Process.send_after(self(), :run, send_after)
 
-        {:ok, %{state | deserialized_state: new_state, timer_ref: ref}}
+        {:ok, %{state | state: new_state, timer_ref: ref}}
 
       {:error, error, new_state} ->
         Logger.error(
@@ -131,7 +132,7 @@ defmodule Exmud.Engine.Worker.SystemWorker do
 
         persist_if_changed(
           state.callback_module,
-          state.deserialized_state,
+          state.state,
           new_state
         )
 
@@ -158,22 +159,22 @@ defmodule Exmud.Engine.Worker.SystemWorker do
     {tag, response, new_state} =
       apply(state.callback_module, :handle_message, [
         message,
-        state.deserialized_state
+        state.state
       ])
 
     persist_if_changed(
       state.callback_module,
-      state.deserialized_state,
+      state.state,
       new_state
     )
 
-    {:reply, {tag, response}, %{state | deserialized_state: new_state}}
+    {:reply, {tag, response}, %{state | state: new_state}}
   end
 
   @doc false
   @spec handle_call(:state, from :: term, state) :: {:reply, {:ok, response}, state}
   def handle_call(:state, _from, state) do
-    {:reply, {:ok, state.deserialized_state}, state}
+    {:reply, {:ok, state.state}, state}
   end
 
   @doc false
@@ -190,7 +191,7 @@ defmodule Exmud.Engine.Worker.SystemWorker do
       Process.cancel_timer(state.timer_ref)
     end
 
-    stop_result = apply(state.callback_module, :stop, [args, state.deserialized_state])
+    stop_result = apply(state.callback_module, :stop, [args, state.state])
 
     {reply, new_state} =
       case stop_result do
@@ -209,11 +210,11 @@ defmodule Exmud.Engine.Worker.SystemWorker do
 
     persist_if_changed(
       state.callback_module,
-      state.deserialized_state,
+      state.state,
       new_state
     )
 
-    {:stop, :normal, reply, %{state | deserialized_state: new_state}}
+    {:stop, :normal, reply, %{state | state: new_state}}
   end
 
   @doc false
@@ -222,12 +223,12 @@ defmodule Exmud.Engine.Worker.SystemWorker do
     {_type, _response, new_state} =
       apply(state.callback_module, :handle_message, [
         message,
-        state.deserialized_state
+        state.state
       ])
 
-    persist_if_changed(state.callback_module, state.deserialized_state, new_state)
+    persist_if_changed(state.callback_module, state.state, new_state)
 
-    {:noreply, %{state | deserialized_state: new_state}}
+    {:noreply, %{state | state: new_state}}
   end
 
   @doc false
@@ -240,14 +241,14 @@ defmodule Exmud.Engine.Worker.SystemWorker do
 
   @spec run(state) :: {:noreply, state} | {:stop, :normal, state}
   defp run(state) do
-    run_result = apply(state.callback_module, :run, [state.deserialized_state])
+    run_result = apply(state.callback_module, :run, [state.state])
 
     {result, new_state} =
       case run_result do
         {:ok, new_state} ->
           Logger.info("System `#{state.callback_module}` successfully ran.")
 
-          {{:noreply, %{state | deserialized_state: new_state}}, new_state}
+          {{:noreply, %{state | state: new_state}}, new_state}
 
         {:ok, new_state, interval} ->
           Logger.info(
@@ -256,14 +257,14 @@ defmodule Exmud.Engine.Worker.SystemWorker do
 
           ref = Process.send_after(self(), :run, interval)
 
-          {{:noreply, %{state | deserialized_state: new_state, timer_ref: ref}}, new_state}
+          {{:noreply, %{state | state: new_state, timer_ref: ref}}, new_state}
 
         {:error, error, new_state} ->
           Logger.error(
             "Error `#{error}` encountered when running System `#{state.callback_module}`."
           )
 
-          {{:noreply, %{state | deserialized_state: new_state}}, new_state}
+          {{:noreply, %{state | state: new_state}}, new_state}
 
         {:error, error, new_state, interval} ->
           Logger.error(
@@ -274,7 +275,7 @@ defmodule Exmud.Engine.Worker.SystemWorker do
 
           ref = Process.send_after(self(), :run, interval)
 
-          {{:noreply, %{state | deserialized_state: new_state, timer_ref: ref}}, new_state}
+          {{:noreply, %{state | state: new_state, timer_ref: ref}}, new_state}
 
         {:stop, reason, new_state} ->
           Logger.info("System `#{state.callback_module}` stopping after run.")
@@ -296,12 +297,12 @@ defmodule Exmud.Engine.Worker.SystemWorker do
                 system_state
             end
 
-          {{:stop, :normal, %{state | deserialized_state: system_state}}, system_state}
+          {{:stop, :normal, %{state | state: system_state}}, system_state}
       end
 
     persist_if_changed(
       state.callback_module,
-      state.deserialized_state,
+      state.state,
       new_state
     )
 
@@ -323,7 +324,7 @@ defmodule Exmud.Engine.Worker.SystemWorker do
   defp system_query(callback_module) do
     from(
       system in Exmud.Engine.Schema.System,
-      where: system.callback_module == ^pack_term(callback_module)
+      where: system.callback_module == ^callback_module
     )
   end
 end

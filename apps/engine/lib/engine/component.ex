@@ -11,37 +11,15 @@ defmodule Exmud.Engine.Component do
   appropriate.
   """
 
-  alias Exmud.Engine.ObjectUtil
+  alias Exmud.Engine.Object
   alias Exmud.Engine.Repo
   alias Exmud.Engine.Schema.Component
   import Ecto.Query
-  import Exmud.Common.Utils
   require Logger
 
   #
-  # Behavior definition and default callback setup
+  # Types and default callbacks
   #
-
-  @doc false
-  defmacro __using__(_) do
-    quote location: :keep do
-      @behaviour Exmud.Engine.Component
-      alias Exmud.Engine.Attribute
-      import Exmud.Engine.Constants
-
-      @doc false
-      @impl true
-      def populate(_object_id, _args), do: :ok
-
-      defoverridable populate: 2
-    end
-  end
-
-  @doc """
-  Called when a Component has been added to an Object. Is responsible for populating the Component with the necessary
-  data.
-  """
-  @callback populate(object_id, config) :: :ok | {:error, error}
 
   @typedoc "The Object being populated with the Component and its data."
   @type object_id :: integer()
@@ -57,6 +35,12 @@ defmodule Exmud.Engine.Component do
 
   @typedoc "A callback module which implements the 'Exmud.Engine.Component' behavior."
   @type component :: module()
+
+  @doc """
+  Called when a Component has been added to an Object. Is responsible for populating the Component with the necessary
+  data.
+  """
+  @callback init(config) :: :ok : {:error, error}
 
   #
   # API
@@ -75,8 +59,14 @@ defmodule Exmud.Engine.Component do
   @dialyzer {:nowarn_function, attach: 3}
   @dialyzer {:no_return, attach: 2}
   def attach(object_id, component, config \\ nil) do
-    record = Component.new(%{callback_module: pack_term(component), object_id: object_id})
-    ObjectUtil.attach(record, fn -> component.populate(object_id, config) end)
+    record =
+      Component.new(%{
+        callback_module: component,
+        data: component.init(config),
+        object_id: object_id
+      })
+
+    Object.attach(record)
   end
 
   @doc """
@@ -113,7 +103,6 @@ defmodule Exmud.Engine.Component do
 
   defp get_count_query(object_id, components) do
     components = List.wrap(components)
-    components = Enum.map(components, fn component -> pack_term(component) end)
     count_query(object_id, components)
   end
 
@@ -133,22 +122,22 @@ defmodule Exmud.Engine.Component do
   @doc """
   Detach one or more Components, deleting all associated data, attached to a given Object.
   """
-  @spec detach(object_id, component | [component]) :: :ok
-  def detach(object_id, components) do
+  @spec detach(object_id | [object_id], component | [component]) :: :ok
+  def detach(object_ids, components) do
     components = List.wrap(components)
-    components = Enum.map(components, fn component -> pack_term(component) end)
-    delete_query = component_query(object_id, components)
+    object_ids = List.wrap(object_ids)
+    delete_query = component_query(object_ids, components)
 
     Repo.delete_all(delete_query)
 
     :ok
   end
 
-  @spec component_query(object_id, [component]) :: term
-  defp component_query(object_id, components) do
+  @spec component_query([object_id], [component]) :: term
+  defp component_query(object_ids, components) do
     from(
       component in Component,
-      where: component.callback_module in ^components and component.object_id == ^object_id
+      where: component.callback_module in ^components and component.object_id in ^object_ids
     )
   end
 

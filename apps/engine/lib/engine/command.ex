@@ -2,53 +2,13 @@ defmodule Exmud.Engine.Command do
   @moduledoc """
   A Command is a piece of game logic intended to be invoked on behalf on an Object.
 
-  A Command can be invoked by a player who has puppeted an Object, a Script, or by the Engine via some external trigger.
+  The Command struct is intended to be used as part of a Command Set struct when building an active Command Set. It
+  contains the callback module which implements this behaviour, the app provided config, and the id of the Object to
+  which the Command is attached.
 
-  A Command has multiple attributes:
-    Key: Required
-      The action to be taken. This can be more than one word, so 'open third window' or 'tap second case' are just as
-      valid as 'look' or 'move'.
-
-    Aliases: Optional
-      Aliases by which the command can be known. When a command string is being processed, both the key and the aliases
-      are used to determine a match. That also means that both keys and aliases are checked during a merge between
-      Command Sets.
-
-      One example would be the alias 'flee' for the command 'retreat'. Another primary use is the explicit whitelisting
-      of short cuts for Commands. The 'retreat' command might allow for 'retrea', 'retre', and 'retr' to match but
-      nothing shorter due to potential conflicts with a wider range of Commands.
-
-      Then again, given that a 'retreat' command would likely belong to a higher priority combat oriented Command Set,
-      any conflicts would be decided in the favor of the 'retreat' command so even shorter aliases become a possibility.
-
-    Execute: Required
-      Every Command will require its own implementation of the 'execute/1' callback. This is where the actual logic
-      execution for a Command takes place.
-
-      The callback is wrapped in a transaction, ensuring that all data can be accessed as if the Command execution
-      function was the sole process. This also means the callback may need to be retried and as such must be side effect
-      free, except for manipulating the database of course.
-
-      Any Events generated as part of a Command execution must be added to the returned context for processing after
-      the transaction has been committed.
-
-    Locks: Optional
-      Locks help determine who/what has access to the Command itself. It's not enough for a Command to end up in the
-      final merged Command Set, the caller must also have permissions for the Command itself. This defaults to allowing
-      all callers.
-
-    Help Docs: Optional
-      Docs can be automatically generated from the module documentation to be displayed within the game. Not only can
-      the doc generation be turned off, but an optional category can be set. Defaults to generating documentation with
-      the category set to 'General'.
-
-    Argument Regex: Optional
-      An optional regex string to match against the argument string. The default regex '~r/$/' allows for mistyped
-      commands like 'runeast' to match. Overriding the value to something like '~r/^\s.+' would enforce a space to come
-      between the command and any of its arguments. If not specified in the Command module itself, the regex is taken
-      from the config.
-
-      If this regex does not match the 'parse_args/1' callback will not be called.
+  The callbacks define the api required for the module to be compatable with the intended usage of said module. Putting
+  'use Exmud.Engine.Command' at the top of a Command module will not only have the Command behaviour applied, but will
+  be provided with a number of default implementations of various callbacks. See the callback docs.
   """
 
   alias Exmud.Engine.Command.ExecutionContext
@@ -60,33 +20,15 @@ defmodule Exmud.Engine.Command do
   # Struct definition
   #
 
-  @enforce_keys [:key, :execute, :object_id]
-  defstruct key: nil,
-            aliases: [],
-            doc_generation: false,
-            doc_category: "General",
-            doc: "",
-            execute: nil,
-            parse_args: nil,
-            locks: [Exmud.Engine.Locks.Any],
-            argument_regex: engine_cfg(:command_argument_regex),
-            # Object that the command is attached to
-            object_id: nil,
-            # The config from a Command Set is passed down to all of its Commands
-            config: %{}
+  @enforce_keys [:callback_module, :config, :object_id]
+  defstruct callback_module: nil,
+            config: %{},
+            object_id: nil
 
   @type t :: %Exmud.Engine.Command{
-          key: String.t(),
-          aliases: [String.t()],
-          doc_generation: boolean,
-          doc_category: String.t(),
-          doc: String.t(),
-          execute: function,
-          parse_args: function,
-          locks: [module | {module, config}],
-          argument_regex: term,
-          object_id: integer,
-          config: Map.t()
+          callback_module: module,
+          config: Map.t(),
+          object_id: integer
         }
 
   #
@@ -109,7 +51,7 @@ defmodule Exmud.Engine.Command do
       def doc_category(_config), do: command_doc_category_general()
 
       @doc false
-      def parse_args(context), do: {:ok, %{context | args: String.trim(context.raw_args)}}
+      def parse_args(context), do: {:ok, %{context | args: context.raw_args}}
 
       @doc false
       def locks(_config), do: [Exmud.Engine.Lock.Any]
@@ -128,15 +70,34 @@ defmodule Exmud.Engine.Command do
 
   @doc """
   The aliases by which the command can also be matched.
+
+  When a command string is being processed, both the key and the aliases are used to determine a match. That also means
+  that both keys and aliases are checked during a merge between Command Sets.
+
+  One example would be the alias 'flee' for the command 'retreat'. Another primary use is the explicit whitelisting of
+  short cuts for Commands. The 'retreat' command might allow for 'retrea', 'retre', and 'retr' to match but nothing
+  shorter due to potential conflicts with a wider range of Commands.
+
+  Then again, given that a 'retreat' command would likely belong to a higher priority combat oriented Command Set, any
+  conflicts would be decided in the favor of the 'retreat' command so even shorter aliases become a possibility.
+
+  These and the key are checked first during the execution of input.
+
+  This is optional. Will return an empty list by default.
   """
   @callback aliases(config) :: [String.t()]
 
   @doc """
-  Called when the Engine determines the Command should be executed. This means all the matching, parsing, and
-  permissions checks have passed.
+  This is called both to determine if the Command is a match for the input, and to prepare that input for execution.
+
+  By default it is executed after the locks have been checked. If an error is returned, the Command is not considered a
+  match for the input and it is dropped from consideration. If multiple commands, from the final active Command Set,
+  return '{:ok, context}' then a multiple match error has occurred.
 
   An execution context is passed to the callback function, populated with several helpful bits of information to aid in
   the execution of the command. See 'Exmud.Engine.Command.ExecutionContext'.
+
+  This is optional. A default which simply passes along the input stream is provided.
   """
   @callback parse_args(context) :: {:ok, context} | {:error, context}
 
@@ -144,35 +105,59 @@ defmodule Exmud.Engine.Command do
   Called when the Engine determines the Command should be executed. This means all the matching, parsing, and
   permissions checks have passed. This is called after 'parse_args/1', assuming there was no error.
 
-  An execution context is passed to the callback function, populated with several helpful bits of information to aid in
-  the execution of the command. See 'Exmud.Engine.Command.ExecutionContext'.
+  This is where the actual logic execution for a Command takes place.. An execution context is passed to the callback
+  function, populated with several helpful bits of information to aid in the execution of the command. See
+  'Exmud.Engine.Command.ExecutionContext'.
+
+  The callback is wrapped in a transaction, ensuring that all data can be accessed as if the Command execution function
+  was the sole process. This also means the callback may need to be retried and as such must be side effect free, except
+  for manipulating the database of course.
+
+  Any Events generated as part of a Command execution must be added to the returned context for processing after the
+  transaction has been committed.
+
+  This is required, and no default is provided.
   """
   @callback execute(context) :: {:ok, context} | {:error, error, context}
 
   @doc """
-  The prmary string used to match the command with player input.
+  The primary string used to match the command with player input.
+
+  This, along with aliases, is where the commands are defined. A command might be simple, like '"climb up"',
+  "move west", or "throw spear at goblin". It might also be more complex, such as `"press tiny button on the left of the
+  crevice behind the fifth book from the left on the top shelf of the third bookcase from the left"
+
+  This is required, and no default is provided.
   """
   @callback key(config) :: String.t()
 
   @doc """
-  The locks that must pass for the Command to be accessed.
+  Locks help determine who/what has access to the Command itself.
+
+  It's not enough for a Command to end up in the final merged Command Set, the caller must also have permissions for the
+  Command itself. By default this is called after the key and aliases are checked, and before the args are parsed.
+
+  This is optional. A default which allows all callers is provided.
   """
   @callback locks(config) :: [module]
 
   @doc """
-  Whether or not to generate docs from the callback module. Defaults to true.
+  Whether or not to generate docs from the callback module.
+
+  Docs can be automatically generated from the module documentation to be displayed within the game. Not only can the
+  doc generation be turned off, but an optional category can be set. Defaults to generating documentation with
+      the category set to 'General'.
+
+  This is optional. A default which replies true is provided.
   """
   @callback doc_generation(config) :: boolean
 
   @doc """
-  The category to put the docs under if they are generated. Defaults to 'General'.
+  What category to use when generating docs.
+
+  This is optional. Defaults to 'General'.
   """
   @callback doc_category(config) :: String.t()
-
-  @doc """
-  The compiled regex expression that the argument string must pass before the parse callback is called.
-  """
-  @callback argument_regex(config) :: term
 
   @typedoc "Arguments passed through to a callback module."
   @type args :: term

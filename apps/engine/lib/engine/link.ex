@@ -1,6 +1,6 @@
 defmodule Exmud.Engine.Link do
   @moduledoc """
-  A `Exmud.Engine.Link` is a one-way relationship between two Objects that describes their connection.
+  A `Exmud.Engine.LinkModel` is a one-way relationship between two Objects that describes their connection.
 
   Unlike Scripts, Systems, and Components, Links are lightweight in that they don't require any callback modules to
   forge a link between two Objects.
@@ -11,8 +11,10 @@ defmodule Exmud.Engine.Link do
   """
 
   alias Ecto.Multi
+  alias Exmud.DB
+  alias Exmud.DB.Link
+  alias Exmud.DB.LinkModel
   alias Exmud.Engine.Repo
-  alias Exmud.Engine.Schema.Link
   import Exmud.Common.Utils
   import Ecto.Query
 
@@ -64,10 +66,10 @@ defmodule Exmud.Engine.Link do
   """
   @spec break_all(object_id) :: :ok | {:error, :no_such_link}
   def break_all(object_id) do
-    query = from(link in Link, where: link.from_id == ^object_id or link.to_id == ^object_id)
+    query = from(link in LinkModel, where: link.from_id == ^object_id or link.to_id == ^object_id)
 
     query
-    |> Repo.delete_all()
+    |> DB.()
     |> validate_break_result()
   end
 
@@ -78,7 +80,7 @@ defmodule Exmud.Engine.Link do
   def break_all(object_id1, object_id2) do
     query =
       from(
-        link in Link,
+        link in LinkModel,
         where: link.from_id == ^object_id1 and link.to_id == ^object_id2,
         or_where: link.from_id == ^object_id2 and link.to_id == ^object_id1
       )
@@ -124,12 +126,12 @@ defmodule Exmud.Engine.Link do
     links_to_break =
       query
       |> Repo.all()
-      |> Stream.map(&{&1.id, unpack_term(&1.state)})
+      |> Stream.map(&{&1.id, &1.state})
       |> Enum.filter(&comparison_fun.(elem(&1, 1)))
 
     if length(links_to_break) > 0 do
       links_to_break
-      |> Enum.reduce(Multi.new(), &Multi.delete(&2, UUID.uuid4(), %Link{id: elem(&1, 0)}))
+      |> Enum.reduce(Multi.new(), &Multi.delete(&2, UUID.uuid4(), %LinkModel{id: elem(&1, 0)}))
       |> Repo.transaction()
       |> case do
         {:ok, _} -> :ok
@@ -166,8 +168,7 @@ defmodule Exmud.Engine.Link do
   """
   @spec forge(from, to, type, state) :: :ok | {:error, term}
   def forge(from, to, type, state \\ nil) do
-    %Link{}
-    |> Link.new(%{from_id: from, to_id: to, type: type, state: pack_term(state)})
+    Link.new(%{from_id: from, to_id: to, type: type, state: state})
     |> Repo.insert()
     |> case do
       {:ok, _} -> :ok
@@ -183,7 +184,7 @@ defmodule Exmud.Engine.Link do
   """
   @spec forge_both(object_id, object_id, type, state) :: :ok
   def forge_both(object_id1, object_id2, type, state \\ nil) do
-    paked_data = pack_term(state)
+    paked_data = state
 
     links = [
       [
@@ -200,7 +201,7 @@ defmodule Exmud.Engine.Link do
       ]
     ]
 
-    {2, _} = Repo.insert_all(Link, links)
+    {2, _} = Repo.insert_all(LinkModel, links)
 
     :ok
   end
@@ -246,7 +247,7 @@ defmodule Exmud.Engine.Link do
     query = link_omnidirectional_query(object_id1, object_id2, type)
 
     Repo.all(query)
-    |> Stream.map(&unpack_term(&1.state))
+    |> Stream.map(& &1.state)
     |> Enum.filter(comparison_fun)
     |> length() > 0
   end
@@ -298,7 +299,7 @@ defmodule Exmud.Engine.Link do
   def exists?(from, to, type, comparison_fun) when is_function(comparison_fun) do
     case Repo.one(link_directional_query(from, to, type)) do
       nil -> false
-      link -> comparison_fun.(unpack_term(link.state))
+      link -> comparison_fun.(link.state)
     end
   end
 
@@ -316,7 +317,7 @@ defmodule Exmud.Engine.Link do
   @spec update(from, to, type, state) :: :ok | {:error, :no_such_link}
   def update(from, to, type, state) do
     link_directional_query(from, to, type)
-    |> Repo.update_all(set: [state: pack_term(state)])
+    |> Repo.update_all(set: [state: state])
     |> case do
       {0, _} -> {:error, :no_such_link}
       _ -> :ok
@@ -332,7 +333,7 @@ defmodule Exmud.Engine.Link do
   @spec update_all(object_id, object_id, type, state) :: :ok | {:error, :no_such_link}
   def update_all(object_id1, object_id2, type, state) do
     link_omnidirectional_query(object_id1, object_id2, type)
-    |> Repo.update_all(set: [state: pack_term(state)])
+    |> Repo.update_all(set: [state: state])
     |> case do
       {0, _} -> {:error, :no_such_link}
       _ -> :ok
@@ -345,13 +346,13 @@ defmodule Exmud.Engine.Link do
 
   @spec link_directional_query(from, to) :: term
   defp link_directional_query(object_id1, object_id2) do
-    from(link in Link, where: link.from_id == ^object_id1 and link.to_id == ^object_id2)
+    from(link in LinkModel, where: link.from_id == ^object_id1 and link.to_id == ^object_id2)
   end
 
   @spec link_directional_query(from, to, type) :: term
   defp link_directional_query(object_id1, object_id2, type) do
     from(
-      link in Link,
+      link in LinkModel,
       where: link.from_id == ^object_id1 and link.to_id == ^object_id2 and link.type == ^type
     )
   end
@@ -359,17 +360,17 @@ defmodule Exmud.Engine.Link do
   @spec link_directional_query(from, to, type, state) :: term
   defp link_directional_query(object_id1, object_id2, type, state) do
     from(
-      link in Link,
+      link in LinkModel,
       where:
         link.from_id == ^object_id1 and link.to_id == ^object_id2 and link.type == ^type and
-          link.state == ^pack_term(state)
+          link.state == ^state
     )
   end
 
   @spec link_omnidirectional_query(object_id, object_id) :: term
   defp link_omnidirectional_query(object_id1, object_id2) do
     from(
-      link in Link,
+      link in LinkModel,
       where: link.from_id == ^object_id1 and link.to_id == ^object_id2,
       or_where: link.from_id == ^object_id2 and link.to_id == ^object_id1
     )
@@ -378,7 +379,7 @@ defmodule Exmud.Engine.Link do
   @spec link_omnidirectional_query(object_id, object_id, type) :: term
   defp link_omnidirectional_query(object_id1, object_id2, type) do
     from(
-      link in Link,
+      link in LinkModel,
       where: link.from_id == ^object_id1 and link.to_id == ^object_id2 and link.type == ^type,
       or_where: link.from_id == ^object_id2 and link.to_id == ^object_id1 and link.type == ^type
     )
@@ -387,13 +388,13 @@ defmodule Exmud.Engine.Link do
   @spec link_omnidirectional_query(object_id, object_id, type, state) :: term
   defp link_omnidirectional_query(object_id1, object_id2, type, state) do
     from(
-      link in Link,
+      link in LinkModel,
       where:
         link.from_id == ^object_id1 and link.to_id == ^object_id2 and link.type == ^type and
-          link.state == ^pack_term(state),
+          link.state == ^state,
       or_where:
         link.from_id == ^object_id2 and link.to_id == ^object_id1 and link.type == ^type and
-          link.state == ^pack_term(state)
+          link.state == ^state
     )
   end
 

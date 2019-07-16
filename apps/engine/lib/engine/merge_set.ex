@@ -60,6 +60,9 @@ defmodule Exmud.Engine.MergeSet do
   @typedoc "The name of the MergeSet. Primarily used to check for overrides."
   @type name :: String.t()
 
+  @typedoc "A module that implements the desired behaviour."
+  @type callback_module :: module
+
   #
   #
   # Merge Set struct
@@ -120,25 +123,25 @@ defmodule Exmud.Engine.MergeSet do
   @doc """
   Add an override to the MergeSet.
   """
-  @spec add_override(%__MODULE__{}, name, merge_type) :: %__MODULE__{}
-  def add_override(merge_set, name, merge_type) do
-    %{merge_set | overrides: Map.put(merge_set.overrides, name, merge_type)}
+  @spec add_override(%__MODULE__{}, callback_module, merge_type) :: %__MODULE__{}
+  def add_override(merge_set, callback_module, merge_type) do
+    %{merge_set | overrides: Map.put(merge_set.overrides, callback_module, merge_type)}
   end
 
   @doc """
   Remove an override to the MergeSet.
   """
-  @spec remove_override(%__MODULE__{}, name) :: %__MODULE__{}
-  def remove_override(merge_set, name) do
-    %{merge_set | overrides: Map.delete(merge_set.overrides, name)}
+  @spec remove_override(%__MODULE__{}, callback_module) :: %__MODULE__{}
+  def remove_override(merge_set, callback_module) do
+    %{merge_set | overrides: Map.delete(merge_set.overrides, callback_module)}
   end
 
   @doc """
   Remove an override to the MergeSet.
   """
-  @spec has_override?(%__MODULE__{}, name) :: boolean
-  def has_override?(merge_set, name) do
-    Map.has_key?(merge_set.overrides, name)
+  @spec has_override?(%__MODULE__{}, callback_module) :: boolean
+  def has_override?(merge_set, callback_module) do
+    Map.has_key?(merge_set.overrides, callback_module)
   end
 
   @doc """

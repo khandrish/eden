@@ -2,8 +2,10 @@ defmodule Exmud.Engine.Schema.System do
   use Exmud.Common.Schema
 
   schema "system" do
-    field(:callback_module, :binary)
-    field(:state, :binary)
+    field(:callback_module, :string)
+    field(:state, :map, default: %{})
+
+    timestamps()
   end
 
   def new(params) do

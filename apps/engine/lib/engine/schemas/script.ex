@@ -2,9 +2,11 @@ defmodule Exmud.Engine.Schema.Script do
   use Exmud.Common.Schema
 
   schema "script" do
-    field(:callback_module, :binary)
-    field(:state, :binary)
+    field(:callback_module, :string)
+    field(:state, :map, default: %{})
     belongs_to(:object, Exmud.Engine.Schema.Object, foreign_key: :object_id)
+
+    timestamps()
   end
 
   def new(params) do

@@ -4,7 +4,6 @@ defmodule Exmud.Umbrella.Mixfile do
 
   def project do
     [
-      aliases: aliases(),
       apps_path: "apps",
       build_embedded: Mix.env() == :prod,
       deps: deps(),
@@ -19,20 +18,14 @@ defmodule Exmud.Umbrella.Mixfile do
     ]
   end
 
+  # Dependencies listed here are available only for this
+  # project and cannot be accessed from applications inside
+  # the apps folder.
+  #
+  # Run "mix help deps" for examples and options.
   defp deps do
     [
       {:dialyxir, "~> 1.0.0-rc.4", only: [:dev], runtime: false}
-    ]
-  end
-
-  defp aliases do
-    [
-      test: [
-        "ecto.drop --quiet MIX_ENV=test",
-        "ecto.create --quiet MIX_ENV=test",
-        "ecto.migrate --quiet MIX_ENV=test",
-        "test"
-      ]
     ]
   end
 end

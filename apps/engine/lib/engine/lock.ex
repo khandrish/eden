@@ -76,8 +76,10 @@ defmodule Exmud.Engine.Lock do
   @typedoc "The name that a callback module is registered under with the Engine."
   @type lock_name :: String.t()
 
+  alias Exmud.DB
+  alias Exmud.DB.Lock
+  alias Exmud.DB.LockModel
   alias Exmud.Engine.Repo
-  alias Exmud.Engine.Schema.Lock
   import Ecto.Query
   import Exmud.Common.Utils
   require Logger
@@ -95,10 +97,10 @@ defmodule Exmud.Engine.Lock do
     Lock.new(%{
       object_id: object_id,
       access_type: access_type,
-      callback_module: pack_term(callback_module),
-      config: pack_term(lock_config)
+      callback_module: callback_module,
+      config: lock_config
     })
-    |> Repo.insert()
+    |> DB.insert(Repo, get_prefix())
     |> normalize_repo_result()
     |> case do
       {:error, [object_id: _error]} ->
@@ -127,9 +129,8 @@ defmodule Exmud.Engine.Lock do
   """
   @spec locked?(object_id, access_type) :: boolean
   def locked?(object_id, access_type) do
-    query = from(lock in lock_query(object_id, access_type), select: count("*"))
-
-    Repo.one(query) == 1
+    from(lock in lock_query(object_id, access_type), select: count(lock.id))
+    |> DB.count(Repo, get_prefix()) == 1
   end
 
   @doc """
@@ -144,17 +145,17 @@ defmodule Exmud.Engine.Lock do
     query =
       from(lock in lock_query(object_id, access_type), select: {lock.callback_module, lock.config})
 
-    case Repo.one(query) do
-      nil ->
-        {:error, :no_such_lock}
-
+    case DB.get(query, Repo, get_prefix()) do
       {callback_module, config} ->
         {:ok,
-         apply(unpack_term(callback_module), :check, [
+         apply(callback_module, :check, [
            object_id,
            accessing_object,
-           unpack_term(config)
+           config
          ])}
+
+      nil ->
+        {:error, :no_such_lock}
     end
   end
 
@@ -173,7 +174,7 @@ defmodule Exmud.Engine.Lock do
       result
     rescue
       _ ->
-        raise ArgumentError, message: "no such lock"
+        reraise ArgumentError, message: "no such lock"
     end
   end
 
@@ -185,7 +186,7 @@ defmodule Exmud.Engine.Lock do
   @spec unlock(object_id, access_type) :: :ok
   def unlock(object_id, access_type) do
     lock_query(object_id, access_type)
-    |> Repo.delete_all()
+    |> DB.delete()
 
     :ok
   end
@@ -196,6 +197,6 @@ defmodule Exmud.Engine.Lock do
 
   @spec lock_query(object_id, access_type) :: term
   defp lock_query(object_id, access_type) do
-    from(lock in Lock, where: lock.object_id == ^object_id and lock.access_type == ^access_type)
+    from(lock in LockModel, where: lock.object_id == ^object_id and lock.access_type == ^access_type)
   end
 end

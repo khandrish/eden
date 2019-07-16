@@ -7,8 +7,9 @@ defmodule Exmud.DB.Repo.EngineRepo.Migrations.InitializeEngineRepo do
     end
 
     create table(:object) do
-      add(:date_created, :timestamptz)
       add(:key, :string)
+
+      timestamps()
     end
 
     create(index(:object, [:key]))
@@ -17,6 +18,8 @@ defmodule Exmud.DB.Repo.EngineRepo.Migrations.InitializeEngineRepo do
     create table(:system) do
       add(:callback_module, :binary)
       add(:state, :binary)
+
+      timestamps()
     end
 
     create(unique_index(:system, [:callback_module]))
@@ -24,26 +27,20 @@ defmodule Exmud.DB.Repo.EngineRepo.Migrations.InitializeEngineRepo do
     create table(:component) do
       add(:object_id, references(:object, on_delete: :delete_all))
       add(:callback_module, :binary)
+      add(:data, :jsonb)
+
+      timestamps()
     end
 
     create(index(:component, [:callback_module]))
     create(index(:component, [:object_id]))
+    create(index(:component, [:data], using: :GIN))
 
     create(
       unique_index(:component, [:object_id, :callback_module],
         name: :component_object_id_callback_module_index
       )
     )
-
-    create table(:attribute) do
-      add(:name, :string)
-      add(:component_id, references(:component, on_delete: :delete_all))
-      add(:value, :binary)
-    end
-
-    create(index(:attribute, [:name]))
-    create(index(:attribute, [:component_id]))
-    create(unique_index(:attribute, [:name, :component_id]))
 
     create table(:command_set) do
       add(:object_id, references(:object, on_delete: :delete_all))
@@ -68,6 +65,8 @@ defmodule Exmud.DB.Repo.EngineRepo.Migrations.InitializeEngineRepo do
       add(:access_type, :string)
       add(:callback_module, :binary)
       add(:config, :binary)
+
+      timestamps()
     end
 
     create(index(:lock, [:object_id]))
@@ -82,6 +81,8 @@ defmodule Exmud.DB.Repo.EngineRepo.Migrations.InitializeEngineRepo do
       add(:type, :string)
       add(:state, :binary)
       add(:to_id, references(:object, on_delete: :delete_all))
+
+      timestamps()
     end
 
     create(index(:link, [:from_id]))
@@ -93,6 +94,8 @@ defmodule Exmud.DB.Repo.EngineRepo.Migrations.InitializeEngineRepo do
       add(:callback_module, :binary)
       add(:object_id, references(:object, on_delete: :delete_all))
       add(:state, :binary)
+
+      timestamps()
     end
 
     create(index(:script, [:callback_module]))
@@ -103,6 +106,8 @@ defmodule Exmud.DB.Repo.EngineRepo.Migrations.InitializeEngineRepo do
       add(:category, :string)
       add(:object_id, references(:object, on_delete: :delete_all))
       add(:tag, :string)
+
+      timestamps()
     end
 
     create(index(:tag, [:category]))

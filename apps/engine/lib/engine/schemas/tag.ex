@@ -5,6 +5,8 @@ defmodule Exmud.Engine.Schema.Tag do
     field(:tag, :string)
     field(:category, :string)
     belongs_to(:object, Exmud.Engine.Schema.Object, foreign_key: :object_id)
+
+    timestamps()
   end
 
   def new(params) do

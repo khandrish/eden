@@ -6,21 +6,18 @@ defmodule Exmud.Engine.Object do
   physical. Simply something that requires some sort of representation as a distinct 'thing' within the Engine.
   """
 
+  alias Exmud.DB
+  alias Exmud.DB.Object
   alias Exmud.Engine.Repo
-  alias Exmud.Engine.Schema.Object
   import Ecto.Query
-  import Exmud.Common.Utils
   require Logger
-
-  @get_inclusion_filters [:command_sets, :components, :locks, :links, :scripts, :tags]
 
   defstruct command_sets: MapSet.new(),
             components: MapSet.new(),
             locks: MapSet.new(),
             links: MapSet.new(),
             scripts: MapSet.new(),
-            tags: MapSet.new(),
-            relationships: MapSet.new()
+            tags: MapSet.new()
 
   #
   # Typespecs
@@ -58,312 +55,148 @@ defmodule Exmud.Engine.Object do
   #
 
   @doc """
-  Create a new Object.
-  """
-  @spec new! :: object_id
-  def new! do
-    %Object{date_created: DateTime.truncate(DateTime.utc_now(), :second)}
-    |> Repo.insert!()
-    |> (& &1.id).()
-  end
+  Atomically attach a record to an Object and optionally call a callback function on success.
 
-  @doc """
-  Delete an Object by its id.
-  """
-  @spec delete(object_id) :: :ok | {:error, :no_such_object}
-  def delete(object_id) do
-    query = from(object in Object, where: object.id == ^object_id)
+  Callback function must return `:ok` or `{:error, error}` where error is an atom to be used for pattern matching.
 
-    query
-    |> Repo.delete_all()
+  Should an exception be raused during the callback, the transaction will rollback and the response
+  `{:error, :callback_failed}` will be returned.
+  """
+  @spec attach(record, callback_function) ::
+          :ok
+          | {:error, :no_such_object | :already_attached | :callback_failed}
+  def attach(record, callback_function \\ nil) do
+    record
+    |> Repo.insert()
+    |> normalize_repo_result()
     |> case do
-      {1, _} -> :ok
-      {0, _} -> {:error, :no_such_object}
+      :ok ->
+        if is_function(callback_function) do
+          try do
+            :ok = callback_function.()
+          rescue
+            _ -> {:error, :callback_failed}
+          end
+        else
+          :ok
+        end
+
+      {:error, [object_id: _error]} ->
+        {:error, :no_such_object}
+
+      {:error, [{_, "has already been taken"}]} = _ ->
+        {:error, :already_attached}
     end
   end
 
   @doc """
-  Get an Object, or multiple objects, by its id.
-
-  Will load all of the data associated with an Object.
+  Create a new Object.
   """
-  @spec get(object_id) :: {:ok, [object]}
-  def get(objects) do
-    get(objects, @get_inclusion_filters)
+  @spec new! :: object_id
+  def new! do
+    DB.insert!(Exmud.DB.Object.new())
   end
 
   @doc """
-  Get an Object, or multiple objects, by its id while specifying the inclusion filters.
-
-  Inclusion filters allow specifying which data will be preloaded on the Object being returned.
-
-  Can be any of the following:
-  `[:command_sets, :components, :locks, :links, :scripts, :tags]`
+  Delete an Object.
   """
-  @spec get(object_id | [object_id], inclusion_filters) :: {:ok, [object]}
-  def get(object, inclusion_filters) when is_list(object) == false do
-    {:ok, results} = get(List.wrap(object), inclusion_filters)
-    {:ok, List.first(results)}
+  @spec delete(object_id | Object.t()) ::
+          :ok | {:error, :no_such_object} | {:error, Ecto.Changeset.t()}
+  def delete(object = %Object{}) do
+    case Repo.delete(object) do
+      {:ok, _} -> :ok
+      error -> error
+    end
   end
 
-  def get(object_ids, inclusion_filters) do
-    object_ids = List.wrap(object_ids)
-
-    base_query = from(object in Object, where: object.id in ^object_ids)
-
-    inclusion_filters = List.wrap(inclusion_filters)
-
-    query = build_get_query(base_query, inclusion_filters)
-
-    results =
-      Repo.all(query)
-      |> normalize_get_results(inclusion_filters)
-
-    {:ok, results}
+  def delete(object_id) do
+    case Repo.delete(%Object{id: object_id}) do
+      {:ok, _} -> :ok
+      error -> error
+    end
   end
 
   @doc """
-  Query the Engine for Objects based on the passed in query.
+  Get an Object by its id.
 
-  The query is a custom syntax which allows for an arbitary combination and nesting of equality checks. Currently, only
-  equality checks are supported. This is unlikely to change without a refactoring as data is serialized, because SQL
-  databases are unable to handle arbitrary Elixir terms, in the database which makes doing relative value checks
-  impossible.
+  Returns an Object preloaded with all data.
   """
-  @spec query(object_query) :: {:ok, [object]}
-  def query(object_query) do
-    result =
-      object_query
-      |> build_object_query()
-      |> Repo.all()
+  @spec get(object_id) :: {:ok, object} | {:error, :invalid_object_id}
+  def get(object_id) do
+    query =
+      from(
+        object in Object,
+        where: object.id == ^object_id,
+        preload: [:command_sets, :components, :links, :locks, :scripts, :tags]
+      )
 
-    {:ok, result}
+    case Repo.one(query) do
+      nil ->
+        {:error, :invalid_object_id}
+
+      object ->
+        object = normalize_objects(object) |> List.first()
+        {:ok, object}
+    end
+  end
+
+  @doc """
+  Query the Engine for Objects based on the passed in where clause.
+
+  Using Ecto's dynamic/2 method, a where clause should be created that will return the desired Objects. The returned
+  Objects will have all their data preloaded.
+
+  All relations are bound in alphabetical order: [:command_sets, :components, :links, :locks, :scripts, :tags]
+  """
+  @spec query(object_query) :: [object]
+  def query(where_clause) do
+    query =
+      from(
+        object in Object,
+        left_join: command_set in assoc(object, :command_sets),
+        left_join: component in assoc(object, :components),
+        left_join: link in assoc(object, :links),
+        left_join: lock in assoc(object, :locks),
+        left_join: script in assoc(object, :scripts),
+        left_join: tag in assoc(object, :tags),
+        where: ^where_clause,
+        preload: [:command_sets, :components, :links, :locks, :scripts, :tags]
+      )
+
+    Repo.all(query)
+    |> normalize_objects()
   end
 
   #
   # Private functions
   #
 
-  # Query functions
-
-  defp build_object_query(object_query) do
-    dynamic = build_where(object_query)
-
-    from(
-      object in Object,
-      left_join: command_set in assoc(object, :command_sets),
-      left_join: component in assoc(object, :components),
-      left_join: attribute in assoc(component, :attributes),
-      left_join: link in assoc(object, :links),
-      left_join: tag in assoc(object, :tags),
-      select: object.id,
-      where: ^dynamic
-    )
+  defp normalize_objects(objects) do
+    objects
+    |> List.wrap()
+    |> Enum.map(fn object ->
+      %{
+        object
+        | command_sets:
+            Enum.map(object.command_sets, fn command_set ->
+              %{
+                command_set
+                | callback_module: String.to_existing_atom(command_set.callback_module)
+              }
+            end),
+          components:
+            Enum.map(object.components, fn component ->
+              %{component | callback_module: String.to_existing_atom(component.callback_module)}
+            end),
+          locks:
+            Enum.map(object.locks, fn lock ->
+              %{lock | callback_module: String.to_existing_atom(lock.callback_module)}
+            end),
+          scripts:
+            Enum.map(object.scripts, fn script ->
+              %{script | callback_module: String.to_existing_atom(script.callback_module)}
+            end)
+      }
+    end)
   end
-
-  defp build_where({mode, checks}) do
-    actually_build_where(nil, mode, checks)
-  end
-
-  defp actually_build_where(dynamic, _, []), do: dynamic
-
-  defp actually_build_where(dynamic, mode, [{type, nested_checks} | checks])
-       when type == :and or type == :or do
-    new_dynamic = actually_build_where(nil, type, nested_checks)
-
-    dynamic =
-      case mode do
-        :and -> dynamic(^dynamic and ^new_dynamic)
-        :or -> dynamic(^dynamic or ^new_dynamic)
-      end
-
-    actually_build_where(dynamic, mode, checks)
-  end
-
-  defp actually_build_where(dynamic, mode, [check | checks]) do
-    new_dynamic = build_equality_check_dynamic(check)
-
-    if dynamic != nil do
-      dynamic =
-        case mode do
-          :and -> dynamic([], ^new_dynamic and ^dynamic)
-          :or -> dynamic([], ^new_dynamic or ^dynamic)
-        end
-
-      actually_build_where(dynamic, mode, checks)
-    else
-      actually_build_where(new_dynamic, mode, checks)
-    end
-  end
-
-  defp build_equality_check_dynamic({:attribute, {component, attribute_name}}) do
-    dynamic(
-      [object, command_set, component, attribute],
-      attribute.name == ^attribute_name and component.callback_module == ^pack_term(component)
-    )
-  end
-
-  defp build_equality_check_dynamic({:attribute, {component, attribute_name, attribute_value}}) do
-    dynamic(
-      [object, command_set, component, attribute],
-      attribute.name == ^attribute_name and
-        component.callback_module == ^pack_term(component) and
-        attribute.value == ^pack_term(attribute_value)
-    )
-  end
-
-  defp build_equality_check_dynamic({:command_set, command_set}) do
-    dynamic([object, command_set], command_set.callback_module == ^pack_term(command_set))
-  end
-
-  defp build_equality_check_dynamic({:component, component}) do
-    dynamic([object, command_set, component], component.callback_module == ^pack_term(component))
-  end
-
-  defp build_equality_check_dynamic({:link, {link_type, {:to, to}, state}}) do
-    dynamic(
-      [object, command_set, component, attribute, link],
-      link.type == ^link_type and link.to_id == ^to and link.state == ^pack_term(state)
-    )
-  end
-
-  defp build_equality_check_dynamic({:link, {link_type, {:from, from}, state}}) do
-    dynamic(
-      [object, command_set, component, attribute, link],
-      link.type == ^link_type and link.from_id == ^from and link.state == ^pack_term(state)
-    )
-  end
-
-  defp build_equality_check_dynamic({:link, {link_type, {:to, to}}}) do
-    dynamic(
-      [object, command_set, component, attribute, link],
-      link.type == ^link_type and link.to_id == ^to
-    )
-  end
-
-  defp build_equality_check_dynamic({:link, {link_type, {:from, from}}}) do
-    dynamic(
-      [object, command_set, component, attribute, link],
-      link.type == ^link_type and link.from_id == ^from
-    )
-  end
-
-  defp build_equality_check_dynamic({:link, link_type}) do
-    dynamic([object, command_set, component, attribute, link], link.type == ^link_type)
-  end
-
-  defp build_equality_check_dynamic({:tag, {category, tag}}) do
-    dynamic(
-      [object, command_set, component, attribute, link, tag],
-      tag.category == ^category and tag.tag == ^tag
-    )
-  end
-
-  # Get Query
-
-  defp build_get_query(query, []), do: query
-
-  defp build_get_query(query, [:command_sets | inclusion_filters]) do
-    query =
-      from(
-        object in query,
-        left_join: command_set in assoc(object, :command_sets),
-        preload: [:command_sets]
-      )
-
-    build_get_query(query, inclusion_filters)
-  end
-
-  defp build_get_query(query, [:components | inclusion_filters]) do
-    query =
-      from(
-        object in query,
-        left_join: component in assoc(object, :components),
-        left_join: attribute in assoc(component, :attributes),
-        preload: [components: {component, attributes: attribute}]
-      )
-
-    build_get_query(query, inclusion_filters)
-  end
-
-  defp build_get_query(query, [:locks | inclusion_filters]) do
-    query =
-      from(
-        object in query,
-        left_join: lock in assoc(object, :locks),
-        preload: [:locks]
-      )
-
-    build_get_query(query, inclusion_filters)
-  end
-
-  defp build_get_query(query, [:links | inclusion_filters]) do
-    query =
-      from(
-        object in query,
-        left_join: link in assoc(object, :links),
-        preload: [:links]
-      )
-
-    build_get_query(query, inclusion_filters)
-  end
-
-  defp build_get_query(query, [:scripts | inclusion_filters]) do
-    query =
-      from(
-        object in query,
-        left_join: script in assoc(object, :scripts),
-        preload: [:scripts]
-      )
-
-    build_get_query(query, inclusion_filters)
-  end
-
-  defp build_get_query(query, [:tags | inclusion_filters]) do
-    query =
-      from(
-        object in query,
-        left_join: tag in assoc(object, :tags),
-        preload: [:tags]
-      )
-
-    build_get_query(query, inclusion_filters)
-  end
-
-  defp normalize_get_results(objects, [:components | rest]) do
-    objects =
-      Enum.map(objects, fn object ->
-        %{
-          object
-          | components:
-              Enum.map(object.components, fn component ->
-                %{
-                  component
-                  | attributes:
-                      Enum.map(component.attributes, fn attribute ->
-                        %{attribute | value: unpack_term(attribute.value)}
-                      end)
-                }
-              end)
-        }
-      end)
-
-    normalize_get_results(objects, rest)
-  end
-
-  defp normalize_get_results(objects, [:command_sets | rest]) do
-    objects =
-      Enum.map(objects, fn object ->
-        command_sets =
-          Enum.map(object.command_sets, fn command_set ->
-            %{command_set | callback_module: unpack_term(command_set.callback_module)}
-          end)
-
-        %{object | command_sets: command_sets}
-      end)
-
-    normalize_get_results(objects, rest)
-  end
-
-  defp normalize_get_results(objects, _), do: objects
 end

@@ -159,7 +159,7 @@ defmodule Exmud.Engine.System do
             {:error, :no_such_system}
 
           system ->
-            {:ok, unpack_term(system.state)}
+            {:ok, system.state}
         end
     end
   end
@@ -231,7 +231,7 @@ defmodule Exmud.Engine.System do
       {:ok, new_state} ->
         Logger.info("System `#{callback_module}` successfully initialized.")
 
-        %{callback_module: pack_term(callback_module), state: pack_term(new_state)}
+        %{callback_module: callback_module, state: new_state}
         |> Exmud.Engine.Schema.System.new()
         |> Repo.insert!()
 
@@ -273,7 +273,7 @@ defmodule Exmud.Engine.System do
   def update(callback_module, state) do
     query = system_query(callback_module)
 
-    case Repo.update_all(query, set: [state: pack_term(state)]) do
+    case Repo.update_all(query, set: [state: state]) do
       {1, _} -> :ok
       _ -> {:error, :no_such_system}
     end
@@ -294,6 +294,6 @@ defmodule Exmud.Engine.System do
   end
 
   defp system_query(callback_module) do
-    from(system in System, where: system.callback_module == ^pack_term(callback_module))
+    from(system in System, where: system.callback_module == ^callback_module)
   end
 end

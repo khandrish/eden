@@ -3,8 +3,8 @@ defmodule Exmud.Engine.Schema.CommandSet do
 
   schema "command_set" do
     field(:callback_module, :string)
-    field(:config, :binary)
-    field(:visibility, :binary)
+    field(:config, :map, default: %{})
+    field(:visibility, :string)
     belongs_to(:object, Exmud.Engine.Schema.Object, foreign_key: :object_id)
 
     timestamps()
