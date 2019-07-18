@@ -17,3 +17,5 @@ liveSocket.connect()
 // Font Awesome
 
 import '@fortawesome/fontawesome-free/js/all'
+
+import 'jsoneditor'

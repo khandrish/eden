@@ -2,8 +2,10 @@ defmodule Exmud.Engine.SimulationCallback do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @timestamps_opts [type: :utc_datetime_usec]
+
   schema "simulation_callbacks" do
-    field :default_args, :binary
+    field :default_args, :map
     field :simulation_id, :id
     field :callback_id, :id
 

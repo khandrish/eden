@@ -24,4 +24,11 @@ defmodule Exmud.Util do
     end)
     |> Enum.join("; ")
   end
+
+  def get_module_docs(module) do
+    module
+    |> Code.fetch_docs()
+    |> elem(4)
+    |> Map.get("en")
+  end
 end

@@ -5,7 +5,7 @@ defmodule Exmud.MixProject do
     [
       app: :exmud,
       version: "0.1.0",
-      elixir: "~> 1.5",
+      elixir: "~> 1.9",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
@@ -20,7 +20,8 @@ defmodule Exmud.MixProject do
   def application do
     [
       mod: {Exmud.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: [:logger, :runtime_tools],
+      start_phases: [init: []]
     ]
   end
 
@@ -43,7 +44,6 @@ defmodule Exmud.MixProject do
       {:jason, "~> 1.0"},
       {:maybe, "~> 1.0"},
       {:ok, "~> 2.3"},
-      {:openid_connect, "~> 0.2.2"},
       {:phoenix, "~> 1.4.6"},
       {:phoenix_ecto, "~> 4.0"},
       {:phoenix_html, "~> 2.11"},

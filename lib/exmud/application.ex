@@ -2,7 +2,9 @@ defmodule Exmud.Application do
   @moduledoc false
 
   use Application
+  import Ecto.Query
 
+  @spec start(any, any) :: {:error, {:already_started, pid}} | {:ok, pid}
   def start(_type, _args) do
     # List all child processes to be supervised
     children = [
@@ -16,21 +18,52 @@ defmodule Exmud.Application do
     ]
 
     opts = [strategy: :one_for_one, name: Exmud.Supervisor]
-    {:ok, pid} = Supervisor.start_link(children, opts)
+    Supervisor.start_link(children, opts)
+  end
 
-    openid_connect_providers =
-      Enum.map(Application.get_env(:exmud, :openid_connect_providers, []), fn {provider, config} ->
-        {provider,
-         Keyword.put(
-           config,
-           :redirect_uri,
-           ExmudWeb.Endpoint.url() <> "/auth/#{provider}/callback"
-         )}
+  @spec start_phase(:init, any, any) :: :ok
+  def start_phase(:init, _type, _) do
+    now = DateTime.utc_now()
+
+    callbacks =
+      Elixir.Application.get_env(:exmud, :callback_modules, [])
+      |> Enum.map(fn callback_args ->
+        callback_args
+        |> Keyword.put(:inserted_at, now)
+        |> Keyword.put(:updated_at, now)
       end)
 
-    Supervisor.start_child(Exmud.Supervisor, {OpenIDConnect.Worker, openid_connect_providers})
+    callback_names =
+      Enum.map(callbacks, fn callback -> Keyword.get(callback, :module) |> Atom.to_string() end)
 
-    {:ok, pid}
+    Exmud.Repo.delete_all(
+      from(
+        callback in Exmud.Engine.Callback,
+        where: callback.module not in ^callback_names
+      )
+    )
+
+    remaining_callbacks =
+      Exmud.Repo.all(
+        from(
+          callback in Exmud.Engine.Callback,
+          select: callback.module
+        )
+      )
+      |> Enum.map(&Atom.to_string/1)
+
+    filtered_callbacks =
+      Enum.flat_map(callbacks, fn callback_args ->
+        if Atom.to_string(Keyword.get(callback_args, :module)) in remaining_callbacks do
+          []
+        else
+          [callback_args]
+        end
+      end)
+
+    Exmud.Repo.insert_all(Exmud.Engine.Callback, filtered_callbacks)
+
+    :ok
   end
 
   # Tell Phoenix to update the endpoint configuration

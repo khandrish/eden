@@ -44,12 +44,22 @@ module.exports = (env, options) => ({
             }
           }
         ]
+      },
+      {
+        test: /\.(png|jpe?g|gif|svg)$/,
+        use: [
+          {
+            loader: 'file-loader',
+            options: {},
+          },
+        ],
       }
     ]
   },
   plugins: [
     new MiniCssExtractPlugin({ filename: '../css/app.css' }),
     new CopyWebpackPlugin([
+      { from: 'node_modules/jsoneditor/dist/img/jsoneditor-icons.svg', to: '../images' },
       { from: 'static/', to: '../' }
     ])
   ]

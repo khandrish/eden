@@ -50,7 +50,7 @@ config :exmud,
   nickname_min_length: 2,
   nickname_max_length: 30,
   nickname_format: ~r/[a-zA-Z0-9 ]/,
-  nickname_format: 
+  callback_modules: []
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

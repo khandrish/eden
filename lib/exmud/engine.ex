@@ -35,7 +35,14 @@ defmodule Exmud.Engine do
       ** (Ecto.NoResultsError)
 
   """
-  def get_simulation!(id), do: Repo.get!(Simulation, id)
+  def get_simulation!(id) do
+    Exmud.Repo.one!(
+      from sim in Simulation,
+        where: sim.id == ^id,
+        left_join: callbacks in assoc(sim, :callbacks),
+        preload: [:callbacks]
+    )
+  end
 
   @doc """
   Creates a simulation.
@@ -102,7 +109,7 @@ defmodule Exmud.Engine do
     Simulation.changeset(simulation, %{})
   end
 
-  alias Exmud.Engine.Callbacks
+  alias Exmud.Engine.Callback
 
   @doc """
   Returns the list of callbacks.
@@ -110,92 +117,92 @@ defmodule Exmud.Engine do
   ## Examples
 
       iex> list_callbacks()
-      [%Callbacks{}, ...]
+      [%Callback{}, ...]
 
   """
   def list_callbacks do
-    Repo.all(Callbacks)
+    Repo.all(Callback)
   end
 
   @doc """
-  Gets a single callbacks.
+  Gets a single callback.
 
-  Raises `Ecto.NoResultsError` if the Callbacks does not exist.
+  Raises `Ecto.NoResultsError` if the Callback does not exist.
 
   ## Examples
 
-      iex> get_callbacks!(123)
-      %Callbacks{}
+      iex> get_callback!(123)
+      %Callback{}
 
-      iex> get_callbacks!(456)
+      iex> get_callback!(456)
       ** (Ecto.NoResultsError)
 
   """
-  def get_callbacks!(id), do: Repo.get!(Callbacks, id)
+  def get_callback!(id), do: Repo.get!(Callback, id)
 
   @doc """
-  Creates a callbacks.
+  Creates a callback.
 
   ## Examples
 
-      iex> create_callbacks(%{field: value})
-      {:ok, %Callbacks{}}
+      iex> create_callback(%{field: value})
+      {:ok, %Callback{}}
 
-      iex> create_callbacks(%{field: bad_value})
+      iex> create_callback(%{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_callbacks(attrs \\ %{}) do
-    %Callbacks{}
-    |> Callbacks.changeset(attrs)
+  def create_callback(attrs \\ %{}) do
+    %Callback{}
+    |> Callback.changeset(attrs)
     |> Repo.insert()
   end
 
   @doc """
-  Updates a callbacks.
+  Updates a callback.
 
   ## Examples
 
-      iex> update_callbacks(callbacks, %{field: new_value})
-      {:ok, %Callbacks{}}
+      iex> update_callback(callback, %{field: new_value})
+      {:ok, %Callback{}}
 
-      iex> update_callbacks(callbacks, %{field: bad_value})
+      iex> update_callback(callback, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_callbacks(%Callbacks{} = callbacks, attrs) do
-    callbacks
-    |> Callbacks.changeset(attrs)
+  def update_callback(%Callback{} = callback, attrs) do
+    callback
+    |> Callback.changeset(attrs)
     |> Repo.update()
   end
 
   @doc """
-  Deletes a Callbacks.
+  Deletes a Callback.
 
   ## Examples
 
-      iex> delete_callbacks(callbacks)
-      {:ok, %Callbacks{}}
+      iex> delete_callback(callback)
+      {:ok, %Callback{}}
 
-      iex> delete_callbacks(callbacks)
+      iex> delete_callback(callback)
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_callbacks(%Callbacks{} = callbacks) do
-    Repo.delete(callbacks)
+  def delete_callback(%Callback{} = callback) do
+    Repo.delete(callback)
   end
 
   @doc """
-  Returns an `%Ecto.Changeset{}` for tracking callbacks changes.
+  Returns an `%Ecto.Changeset{}` for tracking callback changes.
 
   ## Examples
 
-      iex> change_callbacks(callbacks)
-      %Ecto.Changeset{source: %Callbacks{}}
+      iex> change_callback(callback)
+      %Ecto.Changeset{source: %Callback{}}
 
   """
-  def change_callbacks(%Callbacks{} = callbacks) do
-    Callbacks.changeset(callbacks, %{})
+  def change_callback(%Callback{} = callback) do
+    Callback.changeset(callback, %{})
   end
 
   alias Exmud.Engine.SimulationCallback

@@ -9,7 +9,7 @@
     </tr>
   </thead>
   <tbody>
-<%= for simulation_callback <- @simulation_callbacks do %>
+<%= for simulation_callback <- @simulation.callbacks || [] do %>
     <tr>
       <td><%= simulation_callback.default_args %></td>
 

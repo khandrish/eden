@@ -1,0 +1,29 @@
+<h1>Listing Callbacks</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Module</th>
+      <th>Type</th>
+      <th>Default args</th>
+      <th>Docs</th>
+
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+<%= for callback <- @callbacks do %>
+    <tr>
+      <td><%= callback.module %></td>
+      <td><%= callback.type %></td>
+      <td><%=  inspect(callback.default_args) %></td>
+      <td><%= callback.docs %></td>
+
+      <td>
+        <%= link "Show", to: Routes.callback_path(@conn, :show, callback) %>
+        <%= link "Edit", to: Routes.callback_path(@conn, :edit, callback) %>
+      </td>
+    </tr>
+<% end %>
+  </tbody>
+</table>

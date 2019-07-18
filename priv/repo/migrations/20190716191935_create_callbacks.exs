@@ -5,7 +5,7 @@ defmodule Exmud.Repo.Migrations.CreateCallbacks do
     create table(:callbacks) do
       add :module, :string
       add :type, :string
-      add :default_args, :jsonb
+      add :default_args, :map
 
       timestamps()
     end

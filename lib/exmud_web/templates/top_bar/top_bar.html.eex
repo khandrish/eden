@@ -3,16 +3,8 @@
   <div class="top-bar-left">
     <ul class="dropdown menu" data-dropdown-menu>
       <li class="menu-text">Exmud</li>
-      <li>
-        <a href="#">One</a>
-        <ul class="menu vertical">
-          <li><a href="#">One</a></li>
-          <li><a href="#">Two</a></li>
-          <li><a href="#">Three</a></li>
-        </ul>
-      </li>
-      <li><a href="#">Two</a></li>
-      <li><a href="#">Three</a></li>
+      <li><a href="<%= Routes.callback_path(ExmudWeb.Endpoint, :index) %>">Callbacks</a></li>
+      <li><a href="<%= Routes.simulation_path(ExmudWeb.Endpoint, :index) %>">Simulations</a></li>
     </ul>
   </div>
   <div class="top-bar-right">

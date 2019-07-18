@@ -12,6 +12,11 @@
     <%= @simulation.status %>
   </li>
 
+  <li>
+    <strong>Callbacks:</strong>
+    <%= render ExmudWeb.SimulationCallbackView, "index.html", assigns %>
+  </li>
+
 </ul>
 
 <span><%= link "Edit", to: Routes.simulation_path(@conn, :edit, @simulation) %></span>

@@ -2,9 +2,12 @@ defmodule Exmud.Engine.Simulation do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @timestamps_opts [type: :utc_datetime_usec]
+
   schema "simulations" do
     field :name, :string
-    field :status, :string
+    field :status, :string, default: "stopped"
+    has_many(:callbacks, Exmud.Engine.SimulationCallback)
 
     timestamps()
   end
