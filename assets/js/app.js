@@ -18,4 +18,6 @@ liveSocket.connect()
 
 import '@fortawesome/fontawesome-free/js/all'
 
-import 'jsoneditor'
+import JSONEditor from 'jsoneditor'
+
+window.JSONEditor = JSONEditor;

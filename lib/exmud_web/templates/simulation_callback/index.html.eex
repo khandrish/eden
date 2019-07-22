@@ -11,7 +11,7 @@
   <tbody>
 <%= for simulation_callback <- @simulation.callbacks || [] do %>
     <tr>
-      <td><%= simulation_callback.default_args %></td>
+      <td><%= simulation_callback.default_config %></td>
 
       <td>
         <%= link "Show", to: Routes.simulation_callback_path(@conn, :show, simulation_callback) %>

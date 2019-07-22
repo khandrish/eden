@@ -5,7 +5,7 @@ defmodule Exmud.Engine.SimulationCallback do
   @timestamps_opts [type: :utc_datetime_usec]
 
   schema "simulation_callbacks" do
-    field :default_args, :map
+    field :default_config, :map
     field :simulation_id, :id
     field :callback_id, :id
 
@@ -15,7 +15,7 @@ defmodule Exmud.Engine.SimulationCallback do
   @doc false
   def changeset(simulation_callback, attrs) do
     simulation_callback
-    |> cast(attrs, [:default_args])
-    |> validate_required([:default_args])
+    |> cast(attrs, [:default_config])
+    |> validate_required([:default_config])
   end
 end

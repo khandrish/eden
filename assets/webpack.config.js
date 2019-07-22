@@ -46,7 +46,11 @@ module.exports = (env, options) => ({
         ]
       },
       {
-        test: /\.(png|jpe?g|gif|svg)$/,
+        test: /\.svg(\?v=\d+\.\d+\.\d+)?$/,
+        loader: 'url-loader?limit=10000&mimetype=image/svg+xml&name=/images/[name].[ext]'
+      },
+      {
+        test: /\.(png|jpe?g|gif)$/,
         use: [
           {
             loader: 'file-loader',
@@ -59,6 +63,8 @@ module.exports = (env, options) => ({
   plugins: [
     new MiniCssExtractPlugin({ filename: '../css/app.css' }),
     new CopyWebpackPlugin([
+      { from: 'node_modules/jsoneditor/dist/jsoneditor.min.js', to: '.' },
+      { from: 'node_modules/jsoneditor/dist/jsoneditor.map', to: '.' },
       { from: 'node_modules/jsoneditor/dist/img/jsoneditor-icons.svg', to: '../images' },
       { from: 'static/', to: '../' }
     ])

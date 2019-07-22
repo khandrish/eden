@@ -5,7 +5,7 @@
     <tr>
       <th>Module</th>
       <th>Type</th>
-      <th>Default args</th>
+      <th>Default Config</th>
       <th>Docs</th>
 
       <th></th>
@@ -16,8 +16,8 @@
     <tr>
       <td><%= callback.module %></td>
       <td><%= callback.type %></td>
-      <td><%=  inspect(callback.default_args) %></td>
-      <td><%= callback.docs %></td>
+      <td><%= Poison.encode!(callback.default_config) %></td>
+      <td><pre><%= callback.docs %></pre></td>
 
       <td>
         <%= link "Show", to: Routes.callback_path(@conn, :show, callback) %>

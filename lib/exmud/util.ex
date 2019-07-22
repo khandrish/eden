@@ -3,6 +3,9 @@ defmodule Exmud.Util do
   Helper functions.
   """
 
+  import Ecto.Changeset
+  import OK, only: [success: 1, failure: 1]
+
   def changeset_has_error?(changeset = %Ecto.Changeset{}, field) when is_atom(field) do
     Keyword.has_key?(changeset.errors, field)
   end
@@ -30,5 +33,20 @@ defmodule Exmud.Util do
     |> Code.fetch_docs()
     |> elem(4)
     |> Map.get("en")
+  end
+
+  def validate_json(changeset, field, options \\ []) do
+    validate_change(changeset, field, fn _field, json_string ->
+      case Poison.decode(json_string) do
+        success(_) -> []
+        failure(_) -> [{field, options[:message] || "invalid JSON string"}]
+      end
+    end)
+  end
+
+  def exjson_validator_errors_to_changeset_errors(field, errors) do
+    Enum.map(errors, fn {error, path} ->
+      {field, {"#{path}: #{error}", []}}
+    end)
   end
 end

@@ -4,7 +4,7 @@
 
   <li>
     <strong>Default args:</strong>
-    <%= @simulation_callback.default_args %>
+    <%= @simulation_callback.default_config %>
   </li>
 
 </ul>

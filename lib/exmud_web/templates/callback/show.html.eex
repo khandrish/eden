@@ -13,8 +13,13 @@
   </li>
 
   <li>
-    <strong>Default args:</strong>
-    <%= inspect(@callback.default_args) %>
+    <strong>Docs:</strong>
+    <pre><%= @docs %></pre>
+  </li>
+
+  <li>
+    <strong>Default config:</strong>
+    <%= Poison.encode!(@callback.default_config) %>
   </li>
 
 </ul>

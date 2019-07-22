@@ -3,13 +3,13 @@ defmodule ExmudWeb.CallbacksControllerTest do
 
   alias Exmud.Engine
 
-  @create_attrs %{default_args: "some default_args", module: "some module", type: "some type"}
+  @create_attrs %{default_config: "some default_config", module: "some module", type: "some type"}
   @update_attrs %{
-    default_args: "some updated default_args",
+    default_config: "some updated default_config",
     module: "some updated module",
     type: "some updated type"
   }
-  @invalid_attrs %{default_args: nil, module: nil, type: nil}
+  @invalid_attrs %{default_config: nil, module: nil, type: nil}
 
   def fixture(:callbacks) do
     {:ok, callbacks} = Engine.create_callbacks(@create_attrs)

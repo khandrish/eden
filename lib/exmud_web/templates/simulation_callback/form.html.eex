@@ -5,9 +5,9 @@
     </div>
   <% end %>
 
-  <%= label f, :default_args %>
-  <%= text_input f, :default_args %>
-  <%= error_tag f, :default_args %>
+  <%= label f, :default_config %>
+  <%= text_input f, :default_config %>
+  <%= error_tag f, :default_config %>
 
   <div>
     <%= submit "Save" %>

@@ -5,7 +5,7 @@ defmodule Exmud.Engine.Callback do
   @timestamps_opts [type: :utc_datetime_usec]
 
   schema "callbacks" do
-    field :default_args, :map
+    field :default_config, :map
     field :module, Exmud.Type.CallbackModule
     field :type, :string
     field :docs, :string, virtual: true
@@ -16,8 +16,9 @@ defmodule Exmud.Engine.Callback do
   @doc false
   def changeset(callback, attrs) do
     callback
-    |> cast(attrs, [:module, :type, :default_args])
-    |> validate_required([:module, :type, :default_args])
+    |> cast(attrs, [:module, :type, :default_config])
+    |> validate_required([:module, :type, :default_config])
     |> unique_constraint(:module)
+    |> Exmud.Util.validate_json(:default_config)
   end
 end

@@ -1,0 +1,20 @@
+<script>
+  function fireOnReady() {
+    console.log("foo");
+    // create the editor
+    var container = document.getElementById("jsoneditor");
+    var options = {
+      onChangeText: function (jsonText) {
+        document.getElementById("callback_updated_default_config").value = jsonText
+      },
+      schema: <%= raw @json_schema %>
+    };
+    var json = <%= raw @default_config %>;
+    new JSONEditor(container, options, json);
+  }
+  if (document.readyState === 'complete') {
+      fireOnReady();
+  } else {
+      document.addEventListener("DOMContentLoaded", fireOnReady);
+  }
+</script>

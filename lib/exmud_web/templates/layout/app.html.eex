@@ -20,6 +20,8 @@
       src="https://cdn.jsdelivr.net/npm/foundation-sites@6.5.3/dist/js/foundation.min.js"
       integrity="sha256-/PFxCnsMh+nTuM0k3VJCRch1gwnCfKjaP8rJNq5SoBg="
       crossorigin="anonymous"></script>
+    <%= render_existing @view_module, "head_scripts." <> @view_template, assigns %>
+    <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/jsoneditor.min.js") %>"></script>
   </head>
   <body>
     <div class="grid-container">
@@ -44,9 +46,9 @@
         </div>
       </main>
     </div>
-    <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
   </body>
-  <%= render_existing view_module(@conn), "scripts.html", assigns %>
+  <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
+  <%= render_existing @view_module, "foot_scripts." <> @view_template, assigns %>
   <script>
     $(document).foundation();
   </script>

@@ -88,5 +88,5 @@ config :exmud, Exmud.Mailer, adapter: Bamboo.LocalAdapter
 
 config :exmud,
   callback_modules: [
-    [module: Exmud.Contributions.Core.Lock.Any, type: "lock", default_args: %{}]
+    [module: Exmud.Contributions.Core.Lock.Any, type: "lock", default_config: %{}]
   ]

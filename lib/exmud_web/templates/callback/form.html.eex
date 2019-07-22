@@ -1,42 +1,24 @@
-<%= form_for @changeset, @action, fn f -> %>
-  <%= if @changeset.action do %>
-    <div class="alert alert-danger">
-      <p>Oops, something went wrong! Please check the errors below.</p>
-    </div>
-  <% end %>
+<%= form_for @changeset, @action, fn form -> %>
 
-  <%= label f, :module %>
-  <%= text_input f, :module %>
-  <%= error_tag f, :module %>
+  <%= label form, :module %>
+  <%= text_input form, :module, readonly: true %>
 
-  <%= label f, :type %>
-  <%= text_input f, :type %>
-  <%= error_tag f, :type %>
+  <%= label form, :type %>
+  <%= text_input form, :type, readonly: true %>
 
-  <div id="jsoneditor" style="width: 400px; height: 400px;"></div>
+  <%= label form, :documentation %>
+  <textarea id="callback_documentation" readonly><%= @docs %></textarea>
 
-    <script>
-        // create the editor
-        var container = document.getElementById("jsoneditor");
-        var options = {};
-        var editor = new JSONEditor(container, options);
-
-        // set json
-        var json = {
-            "Array": [1, 2, 3],
-            "Boolean": true,
-            "Null": null,
-            "Number": 123,
-            "Object": {"a": "b", "c": "d"},
-            "String": "Hello World"
-        };
-        editor.set(json);
-
-        // get json
-        var json = editor.get();
-    </script>
-
+  <%= label form, :default_config %>
+  <div id="jsoneditor"></div>
+  <%= text_input form, :updated_default_config, [{:type, "hidden"}, {:value, @default_config}, {:"aria-describedby", "default_config_help_text"}] %>
+  <%= if @has_default_config_error? do %>
+    <%= help_text_error_tag form, :default_config, "default_config_help_text" %>
+  <%= else %>
+    <p class="help-text" id="default_config_help_text"></p>
+  <%= end %>
   <div>
     <%= submit "Save" %>
   </div>
 <% end %>
+

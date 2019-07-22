@@ -41,7 +41,10 @@ defmodule Exmud.EngineTest do
 
     test "update_simulation/2 with valid data updates the simulation" do
       simulation = simulation_fixture()
-      assert {:ok, %Simulation{} = simulation} = Engine.update_simulation(simulation, @update_attrs)
+
+      assert {:ok, %Simulation{} = simulation} =
+               Engine.update_simulation(simulation, @update_attrs)
+
       assert simulation.name == "some updated name"
       assert simulation.status == "some updated status"
     end
@@ -67,9 +70,17 @@ defmodule Exmud.EngineTest do
   describe "callbacks" do
     alias Exmud.Engine.Callbacks
 
-    @valid_attrs %{default_args: "some default_args", module: "some module", type: "some type"}
-    @update_attrs %{default_args: "some updated default_args", module: "some updated module", type: "some updated type"}
-    @invalid_attrs %{default_args: nil, module: nil, type: nil}
+    @valid_attrs %{
+      default_config: "some default_config",
+      module: "some module",
+      type: "some type"
+    }
+    @update_attrs %{
+      default_config: "some updated default_config",
+      module: "some updated module",
+      type: "some updated type"
+    }
+    @invalid_attrs %{default_config: nil, module: nil, type: nil}
 
     def callbacks_fixture(attrs \\ %{}) do
       {:ok, callbacks} =
@@ -92,7 +103,7 @@ defmodule Exmud.EngineTest do
 
     test "create_callbacks/1 with valid data creates a callbacks" do
       assert {:ok, %Callbacks{} = callbacks} = Engine.create_callbacks(@valid_attrs)
-      assert callbacks.default_args == "some default_args"
+      assert callbacks.default_config == "some default_config"
       assert callbacks.module == "some module"
       assert callbacks.type == "some type"
     end
@@ -104,7 +115,7 @@ defmodule Exmud.EngineTest do
     test "update_callbacks/2 with valid data updates the callbacks" do
       callbacks = callbacks_fixture()
       assert {:ok, %Callbacks{} = callbacks} = Engine.update_callbacks(callbacks, @update_attrs)
-      assert callbacks.default_args == "some updated default_args"
+      assert callbacks.default_config == "some updated default_config"
       assert callbacks.module == "some updated module"
       assert callbacks.type == "some updated type"
     end
@@ -130,9 +141,9 @@ defmodule Exmud.EngineTest do
   describe "simulation_callbacks" do
     alias Exmud.Engine.SimulationCallback
 
-    @valid_attrs %{default_args: "some default_args"}
-    @update_attrs %{default_args: "some updated default_args"}
-    @invalid_attrs %{default_args: nil}
+    @valid_attrs %{default_config: "some default_config"}
+    @update_attrs %{default_config: "some updated default_config"}
+    @invalid_attrs %{default_config: nil}
 
     def simulation_callback_fixture(attrs \\ %{}) do
       {:ok, simulation_callback} =
@@ -154,8 +165,10 @@ defmodule Exmud.EngineTest do
     end
 
     test "create_simulation_callback/1 with valid data creates a simulation_callback" do
-      assert {:ok, %SimulationCallback{} = simulation_callback} = Engine.create_simulation_callback(@valid_attrs)
-      assert simulation_callback.default_args == "some default_args"
+      assert {:ok, %SimulationCallback{} = simulation_callback} =
+               Engine.create_simulation_callback(@valid_attrs)
+
+      assert simulation_callback.default_config == "some default_config"
     end
 
     test "create_simulation_callback/1 with invalid data returns error changeset" do
@@ -164,20 +177,29 @@ defmodule Exmud.EngineTest do
 
     test "update_simulation_callback/2 with valid data updates the simulation_callback" do
       simulation_callback = simulation_callback_fixture()
-      assert {:ok, %SimulationCallback{} = simulation_callback} = Engine.update_simulation_callback(simulation_callback, @update_attrs)
-      assert simulation_callback.default_args == "some updated default_args"
+
+      assert {:ok, %SimulationCallback{} = simulation_callback} =
+               Engine.update_simulation_callback(simulation_callback, @update_attrs)
+
+      assert simulation_callback.default_config == "some updated default_config"
     end
 
     test "update_simulation_callback/2 with invalid data returns error changeset" do
       simulation_callback = simulation_callback_fixture()
-      assert {:error, %Ecto.Changeset{}} = Engine.update_simulation_callback(simulation_callback, @invalid_attrs)
+
+      assert {:error, %Ecto.Changeset{}} =
+               Engine.update_simulation_callback(simulation_callback, @invalid_attrs)
+
       assert simulation_callback == Engine.get_simulation_callback!(simulation_callback.id)
     end
 
     test "delete_simulation_callback/1 deletes the simulation_callback" do
       simulation_callback = simulation_callback_fixture()
       assert {:ok, %SimulationCallback{}} = Engine.delete_simulation_callback(simulation_callback)
-      assert_raise Ecto.NoResultsError, fn -> Engine.get_simulation_callback!(simulation_callback.id) end
+
+      assert_raise Ecto.NoResultsError, fn ->
+        Engine.get_simulation_callback!(simulation_callback.id)
+      end
     end
 
     test "change_simulation_callback/1 returns a simulation_callback changeset" do
