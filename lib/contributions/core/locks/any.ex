@@ -10,7 +10,7 @@ defmodule Exmud.Contributions.Core.Lock.Any do
   # @impl true
   def check(_target_object, _accessing_object, _lock_config), do: true
 
-  def json_schema, do: %{"type" => "object", "properties" => %{}, "additionalProperties" => false}
+  def config_schema, do: %{"type" => "object", "properties" => %{}, "additionalProperties" => false}
 
   def default_config, do: %{}
 end

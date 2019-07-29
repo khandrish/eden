@@ -1,7 +1,0 @@
-<h1>Edit Simulation</h1>
-
-<%= render "form.html", Map.put(assigns, :action, Routes.simulation_path(@conn, :update, @simulation)) %>
-
-<%= render ExmudWeb.SimulationCallbackView, "index.html", assigns %>
-
-<span><%= link "Back", to: Routes.simulation_path(@conn, :index) %></span>

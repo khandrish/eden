@@ -21,3 +21,13 @@ import '@fortawesome/fontawesome-free/js/all'
 import JSONEditor from 'jsoneditor'
 
 window.JSONEditor = JSONEditor;
+
+function initialize_jsoneditor() {
+  var containers = $("div[name='jsoneditor']");
+
+  containers.forEach(construct_editor);
+}
+
+function construct_editor(container) {
+  new JSONEditor(container, container.attr("options"), container.attr("json"));
+}

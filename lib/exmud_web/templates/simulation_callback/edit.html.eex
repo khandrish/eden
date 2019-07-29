@@ -1,5 +1,0 @@
-<h1>Edit Simulation callback</h1>
-
-<%= render "form.html", Map.put(assigns, :action, Routes.simulation_callback_path(@conn, :update, @simulation_callback)) %>
-
-<span><%= link "Back", to: Routes.simulation_callback_path(@conn, :index) %></span>

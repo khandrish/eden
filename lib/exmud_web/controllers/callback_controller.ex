@@ -45,7 +45,7 @@ defmodule ExmudWeb.CallbackController do
       changeset: changeset,
       docs: Exmud.Util.get_module_docs(callback.module),
       default_config: Poison.encode!(callback.default_config),
-      json_schema: Poison.encode!(callback.module.json_schema()),
+      config_schema: Poison.encode!(callback.module.config_schema()),
       has_default_config_error?: false
     )
   end
@@ -55,7 +55,7 @@ defmodule ExmudWeb.CallbackController do
 
     with {:ok, config} <- extract_config(callback_params),
          :ok <-
-           callback.module.json_schema()
+           callback.module.config_schema()
            |> ExJsonSchema.Schema.resolve()
            |> ExJsonSchema.Validator.validate(config),
          callback_params <- Map.put(callback_params, "default_config", config),
@@ -70,7 +70,7 @@ defmodule ExmudWeb.CallbackController do
           changeset: changeset,
           docs: Exmud.Util.get_module_docs(callback.module),
           default_config: Poison.encode!(callback.default_config),
-          json_schema: Poison.encode!(callback.module.json_schema()),
+          config_schema: Poison.encode!(callback.module.config_schema()),
           has_default_config_error?: true
         )
 
@@ -82,8 +82,8 @@ defmodule ExmudWeb.CallbackController do
           changeset: Engine.change_callback(callback),
           docs: Exmud.Util.get_module_docs(callback.module),
           default_config: Poison.encode!(callback.default_config),
-          json_schema: Poison.encode!(callback.module.json_schema()),
-          has_default_config_error?: false
+          config_schema: Poison.encode!(callback.module.config_schema()),
+          has_default_config_error?: true
         )
 
       {:error, errors} ->
@@ -97,7 +97,7 @@ defmodule ExmudWeb.CallbackController do
           changeset: changeset,
           docs: Exmud.Util.get_module_docs(callback.module),
           default_config: Poison.encode!(config),
-          json_schema: Poison.encode!(callback.module.json_schema()),
+          config_schema: Poison.encode!(callback.module.config_schema()),
           has_default_config_error?: true
         )
     end

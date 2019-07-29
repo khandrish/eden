@@ -4,7 +4,7 @@
     var container = document.getElementById("jsoneditor");
     var options = {
       onChangeText: function (jsonText) {
-        document.getElementById("callback_updated_default_config").value = jsonText
+        document.getElementById("simulation_callback_updated_default_config").value = jsonText
       },
       schema: <%= raw @config_schema %>
     };

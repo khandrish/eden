@@ -19,7 +19,12 @@
 
   <li>
     <strong>Default config:</strong>
-    <%= Poison.encode!(@callback.default_config) %>
+    <pre><%= Poison.encode!(@callback.default_config, pretty: true) %></pre>
+  </li>
+
+  <li>
+    <strong>Config schema:</strong>
+    <pre><%= Poison.encode!(@callback.module.config_schema(), pretty: true) %></pre>
   </li>
 
 </ul>

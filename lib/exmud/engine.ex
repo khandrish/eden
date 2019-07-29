@@ -208,16 +208,22 @@ defmodule Exmud.Engine do
   alias Exmud.Engine.SimulationCallback
 
   @doc """
-  Returns the list of simulation_callbacks.
+  Returns the list of simulation_callbacks for a specific simulation.
 
   ## Examples
 
-      iex> list_simulation_callbacks()
+      iex> list_simulation_callbacks(42)
       [%SimulationCallback{}, ...]
 
   """
-  def list_simulation_callbacks do
-    Repo.all(SimulationCallback)
+  def list_simulation_callbacks(simulation_id) do
+    Repo.all(
+      from(
+        sim_callback in SimulationCallback,
+        where: sim_callback.simulation_id == ^simulation_id,
+        preload: [:simulation, :callback]
+      )
+    )
   end
 
   @doc """
@@ -234,7 +240,14 @@ defmodule Exmud.Engine do
       ** (Ecto.NoResultsError)
 
   """
-  def get_simulation_callback!(id), do: Repo.get!(SimulationCallback, id)
+  def get_simulation_callback!(id) do
+    Repo.one!(
+      from(sc in SimulationCallback,
+        where: sc.id == ^id,
+        preload: [:callback]
+      )
+    )
+  end
 
   @doc """
   Creates a simulation_callback.
@@ -252,6 +265,47 @@ defmodule Exmud.Engine do
     %SimulationCallback{}
     |> SimulationCallback.changeset(attrs)
     |> Repo.insert()
+  end
+
+  @doc """
+  Creates a simulation_callback, throwing an exception on failure.
+
+  ## Examples
+
+      iex> create_simulation_callback!(%{field: value})
+      %SimulationCallback{}
+
+  """
+  def create_simulation_callback!(attrs \\ %{}) do
+    %SimulationCallback{}
+    |> SimulationCallback.changeset(attrs)
+    |> Repo.insert!()
+  end
+
+  @doc """
+  Delete a simulation <-> callback association.
+  """
+  def delete_simulation_callback!(callback_id, simulation_id) do
+    IO.inspect(callback_id)
+    IO.inspect(simulation_id)
+
+    result =
+      Repo.delete_all(
+        from(
+          cb in SimulationCallback,
+          where: cb.callback_id == ^callback_id and cb.simulation_id == ^simulation_id
+        )
+      )
+
+    case result do
+      {1, _} ->
+        :ok
+
+      _ ->
+        raise ArgumentError
+    end
+
+    :ok
   end
 
   @doc """

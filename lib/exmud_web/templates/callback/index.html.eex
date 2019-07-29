@@ -16,7 +16,7 @@
     <tr>
       <td><%= callback.module %></td>
       <td><%= callback.type %></td>
-      <td><%= Poison.encode!(callback.default_config) %></td>
+      <td><pre><%= Poison.encode!(callback.default_config, pretty: true) %></pre></td>
       <td><pre><%= callback.docs %></pre></td>
 
       <td>

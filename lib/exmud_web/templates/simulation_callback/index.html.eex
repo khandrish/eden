@@ -1,26 +1,28 @@
-<h1>Listing Simulation callbacks</h1>
-
 <table>
   <thead>
     <tr>
-      <th>Default args</th>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Default config</th>
+      <th>Config schema</th>
+      <th>Action(s)</th>
 
       <th></th>
     </tr>
   </thead>
   <tbody>
-<%= for simulation_callback <- @simulation.callbacks || [] do %>
+<%= for simulation_callback <- @callbacks || [] do %>
     <tr>
-      <td><%= simulation_callback.default_config %></td>
-
+      <td><%= simulation_callback.callback.module %></td>
+      <td><%= simulation_callback.callback.type %></td>
       <td>
-        <%= link "Show", to: Routes.simulation_callback_path(@conn, :show, simulation_callback) %>
-        <%= link "Edit", to: Routes.simulation_callback_path(@conn, :edit, simulation_callback) %>
-        <%= link "Delete", to: Routes.simulation_callback_path(@conn, :delete, simulation_callback), method: :delete, data: [confirm: "Are you sure?"] %>
+        <div name="jsoneditor"></div>
+      </td>
+      <td><pre><%= Poison.encode!(simulation_callback.callback.module.config_schema(), pretty: true) %></pre></td>
+      <td>
+        <%= link "Edit", class: "button primary", to: Routes.simulation_callback_path(@conn, :edit, simulation_callback.id) %>
       </td>
     </tr>
 <% end %>
   </tbody>
 </table>
-
-<span><%= link "New Simulation callback", to: Routes.simulation_callback_path(@conn, :new) %></span>

@@ -12,10 +12,10 @@ div.top-bar {
 }
 
 input {
-    &.error {
+    &.invalid {
         background-color: rgba(255, 0, 0, 0.1) !important;
     };
-    &.success {
+    &.valid {
         background-color: rgba(0, 255, 0, 0.1) !important;
     }
 }

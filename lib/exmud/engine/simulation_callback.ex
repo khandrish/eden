@@ -6,8 +6,8 @@ defmodule Exmud.Engine.SimulationCallback do
 
   schema "simulation_callbacks" do
     field :default_config, :map
-    field :simulation_id, :id
-    field :callback_id, :id
+    belongs_to :simulation, Exmud.Engine.Simulation
+    belongs_to :callback, Exmud.Engine.Callback
 
     timestamps()
   end
@@ -15,7 +15,7 @@ defmodule Exmud.Engine.SimulationCallback do
   @doc false
   def changeset(simulation_callback, attrs) do
     simulation_callback
-    |> cast(attrs, [:default_config])
+    |> cast(attrs, [:default_config, :simulation_id, :callback_id])
     |> validate_required([:default_config])
   end
 end

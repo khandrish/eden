@@ -44,6 +44,7 @@ defmodule Exmud.MixProject do
       {:hammer_plug, "~> 2.0"},
       {:jason, "~> 1.0"},
       {:maybe, "~> 1.0"},
+      {:navigation_history, "~> 0.2.2"},
       {:ok, "~> 2.3"},
       {:phoenix, "~> 1.4.6"},
       {:phoenix_ecto, "~> 4.0"},
