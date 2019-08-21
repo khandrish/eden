@@ -18,6 +18,6 @@
   <%= error_tag f, :email_verified %>
 
   <div>
-    <%= submit "Save" %>
+    <%= submit "Save", class: "button primary" %>
   </div>
 <% end %>

@@ -32,18 +32,11 @@ config :logger, :console,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
-# Set the environment so code can safely check in production
-config :exmud, env: Mix.env()
+# Enable LiveView templates
+config :phoenix, template_engines: [leex: Phoenix.LiveView.Engine]
 
-config :exmud, :openid_connect_providers,
-  google: [
-    discovery_document_uri: "https://accounts.google.com/.well-known/openid-configuration",
-    client_id: System.get_env("GOOGLE_OAUTH_CLIENT_ID"),
-    client_secret: System.get_env("GOOGLE_OAUTH_CLIENT_SECRET"),
-    redirect_uri: "Doesn't matter as this will be replaced with appropriate value",
-    response_type: "code",
-    scope: "openid email profile"
-  ]
+# Set the environment so code can safely check environment in production
+config :exmud, env: Mix.env()
 
 config :exmud,
   no_reply_email_address: "no-reply@exmud",

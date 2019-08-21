@@ -9,6 +9,7 @@ defmodule Exmud.Engine.Callback do
     field :module, Exmud.Type.CallbackModule
     field :type, :string
     field :docs, :string, virtual: true
+    field :config_schema, :map, virtual: true
 
     timestamps()
   end

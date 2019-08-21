@@ -1,0 +1,23 @@
+<table>
+  <thead>
+    <tr>
+      <th>Module</th>
+      <th>Docs</th>
+      <th>Default Config</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+  <%= for callback <- @callbacks do %>
+      <tr>
+        <td><%= callback.callback.module %></td>
+        <td><pre><%= callback.callback.docs %></pre></td>
+        <td><pre><%= Poison.encode!(callback.default_config, pretty: true) %></pre></td>
+        <td>
+            <%= link "Show", class: "button primary", to: Routes.mud_callback_path(@conn, :show, callback) %>
+            <%= link "Edit", class: "button primary", to: Routes.mud_callback_path(@conn, :edit, callback) %>
+        </td>
+      </tr>
+  <% end %>
+  </tbody>
+</table>

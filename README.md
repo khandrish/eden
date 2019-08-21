@@ -55,43 +55,23 @@ config :exmud, ExmudWeb.Endpoint,
 
   [Phoenix Homepage]: https://phoenixframework.org/
 
-### Configuring Identity Providers
-
-Creating and authenticating an account via email will always be available. In addition, OAuth and OpenID Connect
-providers can be configured as well. The login/sign up forms will automatically accomidate the configured providers
-with icons and text.
-
-Icons for the following providers are availabile:
-* bitbucket
-* deviantart
-* dropbox
-* facebook
-* foursquare
-* github
-* google
-* instagram
-* linkedin
-* reddit
-
 ## Feature Roadmap
 
 ### 1.0
 
 High level view:
-- [x] Single server.
-- [x] Redis used for sessions.
-- [x] Postgresql used as database.
-- [] Web based player, admin, and developer UI built with LiveView as much as possible (and makes sense).
-- [] Develop/manage/run multiple MUD's at the same time.
+- Single server.
+- Redis used for sessions.
+- Postgresql used as database.
+- Web based player, admin, and developer UI built with LiveView as much as possible (and makes sense).
+- Develop/manage/run multiple MUD's at the same time.
 
 Authentication/Authorization:
-- [] Authentication/Registration via email.
-- [] Authentication/Registration via Google.
-- [] Link multiple identities to a single player account.
+- [x] Authentication/Registration via email.
 - [] Role based account level permissions.
 
 MUD Engine:
-- [x] Everything is an Object. Even each MUD instance is treated as an Object.
+- [x] Everything is an Object.
 - [] Composable Command Sets for dynamic behaviours.
 - [] Permissions for Object access in the form of Locks.
 - [] Objects can be arbitrarily linked together.
@@ -99,13 +79,9 @@ MUD Engine:
 - [] Scripts are pieces of logic which can be "attached" to Objects and executed in their own process.
 - [] Systems are like Scripts, but aren't attached to any specific Object and work instead on a MUD instance level.
 - [] Components encapsulate key/value pairs and are attached to each object.
-- [] Object templating system, complete with Object factory.
+- [] Object templating system, complete with Object factory and.
 - [] Area/Region system built ontop of Objects/Components to make building worlds easier.
 - [] Character system built ontop of Objects/Components to make certain things easier.
-
-
-
-
 - [] Telemetry of as much of the system as possible
 - [] Players can connect to one character on one MUD, one each on multiple MUDs, or multiple characters based on config
 - [] Events emitted for almost everything, account creation/deletion or player login/logout for example

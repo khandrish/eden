@@ -34,7 +34,7 @@ defmodule Exmud.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:bamboo, "~> 1.2"},
+      {:bamboo, "~> 1.3"},
       {:defused, "~> 0.6.0"},
       {:ecto_sql, "~> 3.0"},
       {:ex_json_schema, "~> 0.6.1"},

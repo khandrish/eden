@@ -1,3 +1,3 @@
-defmodule ExmudWeb.SimulationCallbackView do
+defmodule ExmudWeb.MudCallbackView do
   use ExmudWeb, :view
 end

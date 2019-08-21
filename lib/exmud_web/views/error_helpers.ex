@@ -18,6 +18,8 @@ defmodule ExmudWeb.ErrorHelpers do
   Generates tag for form input errors using help text.
   """
   def help_text_error_tag(form, field, id) do
+    IO.inspect(form)
+
     error_string =
       Stream.map(Keyword.get_values(form.errors, field), fn error ->
         translate_error(error)

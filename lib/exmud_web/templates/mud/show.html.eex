@@ -1,0 +1,89 @@
+<div class="cell">
+  <h1>Show Mud</h1>
+</div>
+<div class="cell">
+  <ul>
+
+    <li>
+      <strong>Name:</strong>
+      <%= @mud.name %>
+    </li>
+
+    <li>
+      <strong>Status:</strong>
+      <%= @mud.status %>
+    </li>
+  </ul>
+</div>
+<div class="cell">
+  <ul class="accordion" data-accordion data-allow-all-closed="true">
+    <li class="accordion-item" data-accordion-item>
+      <a href="#" class="accordion-title">Callbacks</a>
+
+      <div class="accordion-content" data-tab-content>
+        <ul class="accordion" data-accordion data-allow-all-closed="true">
+          <li class="accordion-item" data-accordion-item>
+            <a href="#" class="accordion-title"><%= length(@grouped_callbacks.commands) %> | Commands</a>
+            
+            <div class="accordion-content" data-tab-content>
+              <%= render "callbacks.html", %{callbacks: @grouped_callbacks.commands, conn: @conn} %>
+            </div>
+          </li>
+          <li class="accordion-item" data-accordion-item>
+            <a href="#" class="accordion-title"><%= length(@grouped_callbacks.command_sets) %> | Command Sets</a>
+            
+            <div class="accordion-content" data-tab-content>
+              <%= render "callbacks.html", %{callbacks: @grouped_callbacks.command_sets, conn: @conn} %>
+            </div>
+          </li>
+          <li class="accordion-item" data-accordion-item>
+            <a href="#" class="accordion-title"><%= length(@grouped_callbacks.components) %> | Components</a>
+            
+            <div class="accordion-content" data-tab-content>
+              <%= render "callbacks.html", %{callbacks: @grouped_callbacks.components, conn: @conn} %>
+            </div>
+          </li>
+          <li class="accordion-item" data-accordion-item>
+            <a href="#" class="accordion-title"><%= length(@grouped_callbacks.links) %> | Links</a>
+            
+            <div class="accordion-content" data-tab-content>
+              <%= render "callbacks.html", %{callbacks: @grouped_callbacks.links, conn: @conn} %>
+            </div>
+          </li>
+          <li class="accordion-item" data-accordion-item>
+            <a href="#" class="accordion-title"><%= length(@grouped_callbacks.locks) %> | Locks</a>
+
+            <div class="accordion-content" data-tab-content>
+              <%= render "callbacks.html", %{callbacks: @grouped_callbacks.locks, conn: @conn} %>
+            </div>
+          </li>
+          <li class="accordion-item" data-accordion-item>
+            <a href="#" class="accordion-title"><%= length(@grouped_callbacks.scripts) %> | Scripts</a>
+
+            <div class="accordion-content" data-tab-content>
+              <%= render "callbacks.html", %{callbacks: @grouped_callbacks.scripts, conn: @conn} %>
+            </div>
+          </li>
+          <li class="accordion-item" data-accordion-item>
+            <a href="#" class="accordion-title"><%= length(@grouped_callbacks.systems) %> | Systems</a>
+
+            <div class="accordion-content" data-tab-content>
+              <%= render "callbacks.html", %{callbacks: @grouped_callbacks.systems, conn: @conn} %>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </li>
+    <li class="accordion-item" data-accordion-item>
+      <a href="#" class="accordion-title">Templates</a>
+
+      <div class="accordion-content" data-tab-content>
+        <%= render ExmudWeb.TemplateView, "index.html", assigns %>
+      </div>
+    </li>
+  </ul>
+</div>
+<div class="cell">
+  <span><%= link "Edit", class: "button primary", to: Routes.mud_path(@conn, :edit, @mud) %></span>
+  <span><%= link "Back", class: "button primary", to: Routes.mud_path(@conn, :index) %></span>
+</div>

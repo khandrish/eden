@@ -1,0 +1,28 @@
+<table>
+  <thead>
+    <tr>
+      <th>Module</th>
+      <th>Type</th>
+      <th>Default config</th>
+      <th>Config schema</th>
+      <th>Action</th>
+
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+<%= for cb <- @callbacks || [] do %>
+    <tr>
+      <td><%= cb.callback.module %></td>
+      <td><%= cb.callback.type %></td>
+      <td><pre><%= Poison.encode!(cb.callback.default_config, pretty: true) %></pre></td>
+      <td><pre><%= Poison.encode!(cb.callback.module.config_schema(), pretty: true) %></pre></td>
+<%= if cb.present do %>
+      <td><div class="button error" phx-click="remove" phx-value=<%= cb.callback.id %>>Remove</div></td>
+<% else %>
+      <td><div class="button primary" phx-click="add" phx-value=<%= cb.callback.id %>>Add</div></td>
+<% end %>
+    </tr>
+<% end %>
+  </tbody>
+</table>

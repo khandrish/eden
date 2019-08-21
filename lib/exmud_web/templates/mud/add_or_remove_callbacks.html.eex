@@ -1,0 +1,24 @@
+<table class="hover">
+  <thead>
+    <tr>
+      <th>Module</th>
+      <th>Docs</th>
+      <th>Default config</th>
+      <th>Config schema</th>
+      <th>Action</th>
+
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+<%= for cb <- @callbacks || [] do %>
+    <tr>
+      <td><%= cb.callback.module %></td>
+      <td><pre><%= cb.callback.docs %></pre></td>
+      <td><div id="<%= "jsoneditor_default_config_#{cb.callback.id}" %>"></div></td>
+      <td><div id="<%= "jsoneditor_schema_#{cb.callback.id}" %>"></div></td>
+      <td><%= Phoenix.LiveView.live_render(@conn, ExmudWeb.MudCallbackToggleLive, session: %{present: cb.present, mud_id: @mud_id, callback_id: cb.callback.id}) %></td>
+    </tr>
+<% end %>
+  </tbody>
+</table>

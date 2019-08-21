@@ -1,0 +1,31 @@
+<div class="cell">
+  <h1>Listing Muds</h1>
+</div>
+<div class="cell">
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+  <%= for mud <- @muds do %>
+      <tr>
+        <td><%= mud.name %></td>
+        <td><%= mud.status %></td>
+
+        <td>
+          <%= link "Show", class: "button primary", to: Routes.mud_path(@conn, :show, mud) %>
+          <%= link "Edit", class: "button primary", to: Routes.mud_path(@conn, :edit, mud) %>
+          <%= link "Delete", class: "button primary", to: Routes.mud_path(@conn, :delete, mud), method: :delete, data: [confirm: "Are you sure?"] %>
+        </td>
+      </tr>
+  <% end %>
+    </tbody>
+  </table>
+</div>
+<div class="cell">
+  <span><%= link "New Mud", class: "button primary", to: Routes.mud_path(@conn, :new) %></span>
+</div>

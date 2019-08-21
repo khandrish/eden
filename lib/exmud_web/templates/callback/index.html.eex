@@ -1,29 +1,32 @@
-<h1>Listing Callbacks</h1>
+<div class="cell">
+  <h1>Listing Callbacks</h1>
+</div>
 
-<table>
-  <thead>
-    <tr>
-      <th>Module</th>
-      <th>Type</th>
-      <th>Default Config</th>
-      <th>Docs</th>
+<div class="cell">
+  <table>
+    <thead>
+      <tr>
+        <th>Module</th>
+        <th>Type</th>
+        <th>Default Config</th>
+        <th>Docs</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+  <%= for callback <- @callbacks do %>
+      <tr>
+        <td><%= callback.module %></td>
+        <td><%= callback.type %></td>
+        <td><pre><%= Poison.encode!(callback.default_config, pretty: true) %></pre></td>
+        <td><pre><%= callback.docs %></pre></td>
 
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-<%= for callback <- @callbacks do %>
-    <tr>
-      <td><%= callback.module %></td>
-      <td><%= callback.type %></td>
-      <td><pre><%= Poison.encode!(callback.default_config, pretty: true) %></pre></td>
-      <td><pre><%= callback.docs %></pre></td>
-
-      <td>
-        <%= link "Show", to: Routes.callback_path(@conn, :show, callback) %>
-        <%= link "Edit", to: Routes.callback_path(@conn, :edit, callback) %>
-      </td>
-    </tr>
-<% end %>
-  </tbody>
-</table>
+        <td>
+          <%= link "Show", class: "button primary", to: Routes.callback_path(@conn, :show, callback) %>
+          <%= link "Edit", class: "button primary", to: Routes.callback_path(@conn, :edit, callback) %>
+        </td>
+      </tr>
+  <% end %>
+    </tbody>
+  </table>
+</div>

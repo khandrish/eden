@@ -29,5 +29,5 @@
 
 </ul>
 
-<span><%= link "Edit", to: Routes.profile_path(@conn, :edit, @profile) %></span>
-<span><%= link "Back", to: Routes.profile_path(@conn, :index) %></span>
+<span><%= link "Edit", class: "button primary", to: Routes.profile_path(@conn, :edit, @profile) %></span>
+<span><%= link "Back", class: "button primary", to: Routes.profile_path(@conn, :index) %></span>

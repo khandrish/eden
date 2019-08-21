@@ -1,0 +1,29 @@
+<script>
+  function fireOnReady() {
+    // create the editor
+    var container = document.getElementById("jsoneditor");
+    var options = {
+      onChangeText: function (jsonText) {
+        document.getElementById("mud_callback_updated_default_config").value = jsonText
+      },
+      schema: <%= raw @config_schema %>,
+      search: false
+    };
+    var json = <%= raw @default_config %>;
+    new JSONEditor(container, options, json);
+
+    // Schema
+      var schema_container = document.getElementById("jsoneditor_schema");
+      var schema_options = {
+        mode: 'view',
+        search: false
+      };
+      var schema_json = <%= raw @config_schema %>;
+      new JSONEditor(schema_container, schema_options, schema_json);
+  }
+  if (document.readyState === 'complete') {
+      fireOnReady();
+  } else {
+      document.addEventListener("DOMContentLoaded", fireOnReady);
+  }
+</script>

@@ -26,6 +26,6 @@
   <%= error_tag f, :tos_history %>
 
   <div>
-    <%= submit "Save" %>
+    <%= submit "Save", class: "button primary" %>
   </div>
 <% end %>

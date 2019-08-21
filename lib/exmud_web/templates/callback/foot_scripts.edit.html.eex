@@ -6,7 +6,8 @@
       onChangeText: function (jsonText) {
         document.getElementById("callback_updated_default_config").value = jsonText
       },
-      schema: <%= raw @config_schema %>
+      schema: <%= raw @config_schema %>,
+      search: false
     };
     var json = <%= raw @default_config %>;
     new JSONEditor(container, options, json);

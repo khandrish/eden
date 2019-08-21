@@ -1,0 +1,25 @@
+
+  <div class="cell medium-6">
+    <%= form_for @changeset, Routes.mud_callback_path(@conn, :update, @mud_callback.id), fn form -> %>
+      <%= label form, :default_config %>
+      <div id="jsoneditor"></div>
+      <%= text_input form, :updated_default_config, [{:type, "hidden"}, {:value, @default_config}, {:"aria-describedby", "default_config_help_text"}] %>
+      <%= if @has_default_config_error? do %>
+        <%= help_text_error_tag form, :default_config, "default_config_help_text" %>
+      <% else %>
+        <p class="help-text" id="default_config_help_text"></p>
+      <% end %>
+      <div>
+        <%= submit "Save", class: "button primary" %>
+      </div>
+    <% end %>
+  </div>
+  <div class="cell medium-6">
+    <label>Config Schema</label>
+    <div id="jsoneditor_schema"></div>
+  </div>
+
+
+  <div class="cell">
+    <span><%= link "Back", class: "button primary", to: Routes.mud_path(@conn, :show, @mud_callback.mud.id) %></span>
+  </div>

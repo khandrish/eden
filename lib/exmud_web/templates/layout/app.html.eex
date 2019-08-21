@@ -24,7 +24,7 @@
     <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/jsoneditor.min.js") %>"></script>
   </head>
   <body>
-    <div class="grid-container">
+    <div class="grid-container full">
       <nav>
         <%= render ExmudWeb.TopBarView, "top_bar.html", player_authenticated?: @player_authenticated? %>
       </nav>
@@ -41,7 +41,7 @@
             </div>
           <% end) %>
         </div>
-        <div class="container">
+        <div class="grid-x grid-padding-x">
           <%= render @view_module, @view_template, assigns %>
         </div>
       </main>

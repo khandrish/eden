@@ -1,0 +1,18 @@
+<h1>Show Template</h1>
+
+<ul>
+
+  <li>
+    <strong>Name:</strong>
+    <%= @template.name %>
+  </li>
+
+  <li>
+    <strong>Callbacks:</strong>
+    <%= render ExmudWeb.TemplateCallbackView, "index.html", assigns %>
+  </li>
+
+</ul>
+
+<span><%= link "Edit", class: "button primary", to: Routes.template_path(@conn, :edit, @template) %></span>
+<span><%= link "Back", class: "button primary", to: Routes.template_path(@conn, :index) %></span>

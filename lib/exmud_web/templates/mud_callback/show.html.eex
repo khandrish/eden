@@ -1,0 +1,16 @@
+<div class="cell">
+  <h1>Show Mud callback</h1>
+</div>
+<div class="cell">
+  <ul>
+
+    <li>
+      <strong>Default args:</strong>
+      <pre><%= Poison.encode!(@mud_callback.default_config, pretty: true) %></pre>
+    </li>
+
+  </ul>
+</div>
+<div class="cell">
+  <span><%= link "Edit", class: "button primary", to: Routes.mud_callback_path(@conn, :edit, @mud_callback) %></span>
+</div>

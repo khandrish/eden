@@ -13,6 +13,10 @@ config :exmud, ExmudWeb.Endpoint,
   url: [host: "example.com", port: 80],
   cache_static_manifest: "priv/static/cache_manifest.json"
 
+config :exmud, Exmud.Repo,
+  username: "exmud",
+  database: "exmud_prod",
+
 # Do not print debug messages in production
 config :logger, level: :info
 

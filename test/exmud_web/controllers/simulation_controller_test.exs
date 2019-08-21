@@ -1,4 +1,4 @@
-defmodule ExmudWeb.SimulationControllerTest do
+defmodule ExmudWeb.MudControllerTest do
   use ExmudWeb.ConnCase
 
   alias Exmud.Engine
@@ -7,82 +7,83 @@ defmodule ExmudWeb.SimulationControllerTest do
   @update_attrs %{name: "some updated name", status: "some updated status"}
   @invalid_attrs %{name: nil, status: nil}
 
-  def fixture(:simulation) do
-    {:ok, simulation} = Engine.create_simulation(@create_attrs)
-    simulation
+  def fixture(:mud) do
+    {:ok, mud} = Engine.create_mud(@create_attrs)
+    mud
   end
 
   describe "index" do
-    test "lists all simulations", %{conn: conn} do
-      conn = get(conn, Routes.simulation_path(conn, :index))
-      assert html_response(conn, 200) =~ "Listing Simulations"
+    test "lists all muds", %{conn: conn} do
+      conn = get(conn, Routes.mud_path(conn, :index))
+      assert html_response(conn, 200) =~ "Listing Muds"
     end
   end
 
-  describe "new simulation" do
+  describe "new mud" do
     test "renders form", %{conn: conn} do
-      conn = get(conn, Routes.simulation_path(conn, :new))
-      assert html_response(conn, 200) =~ "New Simulation"
+      conn = get(conn, Routes.mud_path(conn, :new))
+      assert html_response(conn, 200) =~ "New Mud"
     end
   end
 
-  describe "create simulation" do
+  describe "create mud" do
     test "redirects to show when data is valid", %{conn: conn} do
-      conn = post(conn, Routes.simulation_path(conn, :create), simulation: @create_attrs)
+      conn = post(conn, Routes.mud_path(conn, :create), mud: @create_attrs)
 
       assert %{id: id} = redirected_params(conn)
-      assert redirected_to(conn) == Routes.simulation_path(conn, :show, id)
+      assert redirected_to(conn) == Routes.mud_path(conn, :show, id)
 
-      conn = get(conn, Routes.simulation_path(conn, :show, id))
-      assert html_response(conn, 200) =~ "Show Simulation"
+      conn = get(conn, Routes.mud_path(conn, :show, id))
+      assert html_response(conn, 200) =~ "Show Mud"
     end
 
     test "renders errors when data is invalid", %{conn: conn} do
-      conn = post(conn, Routes.simulation_path(conn, :create), simulation: @invalid_attrs)
-      assert html_response(conn, 200) =~ "New Simulation"
+      conn = post(conn, Routes.mud_path(conn, :create), mud: @invalid_attrs)
+      assert html_response(conn, 200) =~ "New Mud"
     end
   end
 
-  describe "edit simulation" do
-    setup [:create_simulation]
+  describe "edit mud" do
+    setup [:create_mud]
 
-    test "renders form for editing chosen simulation", %{conn: conn, simulation: simulation} do
-      conn = get(conn, Routes.simulation_path(conn, :edit, simulation))
-      assert html_response(conn, 200) =~ "Edit Simulation"
+    test "renders form for editing chosen mud", %{conn: conn, mud: mud} do
+      conn = get(conn, Routes.mud_path(conn, :edit, mud))
+      assert html_response(conn, 200) =~ "Edit Mud"
     end
   end
 
-  describe "update simulation" do
-    setup [:create_simulation]
+  describe "update mud" do
+    setup [:create_mud]
 
-    test "redirects when data is valid", %{conn: conn, simulation: simulation} do
-      conn = put(conn, Routes.simulation_path(conn, :update, simulation), simulation: @update_attrs)
-      assert redirected_to(conn) == Routes.simulation_path(conn, :show, simulation)
+    test "redirects when data is valid", %{conn: conn, mud: mud} do
+      conn = put(conn, Routes.mud_path(conn, :update, mud), mud: @update_attrs)
+      assert redirected_to(conn) == Routes.mud_path(conn, :show, mud)
 
-      conn = get(conn, Routes.simulation_path(conn, :show, simulation))
+      conn = get(conn, Routes.mud_path(conn, :show, mud))
       assert html_response(conn, 200) =~ "some updated name"
     end
 
-    test "renders errors when data is invalid", %{conn: conn, simulation: simulation} do
-      conn = put(conn, Routes.simulation_path(conn, :update, simulation), simulation: @invalid_attrs)
-      assert html_response(conn, 200) =~ "Edit Simulation"
+    test "renders errors when data is invalid", %{conn: conn, mud: mud} do
+      conn = put(conn, Routes.mud_path(conn, :update, mud), mud: @invalid_attrs)
+      assert html_response(conn, 200) =~ "Edit Mud"
     end
   end
 
-  describe "delete simulation" do
-    setup [:create_simulation]
+  describe "delete mud" do
+    setup [:create_mud]
 
-    test "deletes chosen simulation", %{conn: conn, simulation: simulation} do
-      conn = delete(conn, Routes.simulation_path(conn, :delete, simulation))
-      assert redirected_to(conn) == Routes.simulation_path(conn, :index)
+    test "deletes chosen mud", %{conn: conn, mud: mud} do
+      conn = delete(conn, Routes.mud_path(conn, :delete, mud))
+      assert redirected_to(conn) == Routes.mud_path(conn, :index)
+
       assert_error_sent 404, fn ->
-        get(conn, Routes.simulation_path(conn, :show, simulation))
+        get(conn, Routes.mud_path(conn, :show, mud))
       end
     end
   end
 
-  defp create_simulation(_) do
-    simulation = fixture(:simulation)
-    {:ok, simulation: simulation}
+  defp create_mud(_) do
+    mud = fixture(:mud)
+    {:ok, mud: mud}
   end
 end
