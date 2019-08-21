@@ -20,8 +20,8 @@
       <td><pre><%= callback.docs %></pre></td>
 
       <td>
-        <%= link "Show", to: Routes.callback_path(@conn, :show, callback) %>
-        <%= link "Edit", to: Routes.callback_path(@conn, :edit, callback) %>
+        <%= link "Show", class: "button primary", to: Routes.callback_path(@conn, :show, callback) %>
+        <%= link "Edit", class: "button primary", to: Routes.callback_path(@conn, :edit, callback) %>
       </td>
     </tr>
 <% end %>

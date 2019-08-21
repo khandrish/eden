@@ -4,11 +4,12 @@
   <%= text_input form, :updated_default_config, [{:type, "hidden"}, {:value, @default_config}, {:"aria-describedby", "default_config_help_text"}] %>
   <%= if @has_default_config_error? do %>
     <%= help_text_error_tag form, :default_config, "default_config_help_text" %>
-  <%= else %>
+  <% else %>
     <p class="help-text" id="default_config_help_text"></p>
-  <%= end %>
+  <% end %>
   <div>
-    <%= submit "Save" %>
+    <%= submit "Save", class: "button primary" %>
   </div>
 <% end %>
 
+<span><%= link "Back", class: "button primary", to: Routes.simulation_path(@conn, :show, @simulation_callback.simulation.id) %></span>

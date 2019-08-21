@@ -8,6 +8,7 @@ defmodule Exmud.Engine.Simulation do
     field :name, :string
     field :status, :string, default: "stopped"
     has_many(:callbacks, Exmud.Engine.SimulationCallback)
+    has_many(:templates, Exmud.Engine.Template)
 
     timestamps()
   end

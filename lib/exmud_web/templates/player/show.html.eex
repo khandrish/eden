@@ -19,5 +19,5 @@
 
 </ul>
 
-<span><%= link "Edit", to: Routes.player_path(@conn, :edit, @user) %></span>
-<span><%= link "Back", to: Routes.player_path(@conn, :index) %></span>
+<span><%= link "Edit", class: "button primary", to: Routes.player_path(@conn, :edit, @user) %></span>
+<span><%= link "Back", class: "button primary", to: Routes.player_path(@conn, :index) %></span>

@@ -5,6 +5,7 @@
       <li class="menu-text">Exmud</li>
       <li><a href="<%= Routes.callback_path(ExmudWeb.Endpoint, :index) %>">Callbacks</a></li>
       <li><a href="<%= Routes.simulation_path(ExmudWeb.Endpoint, :index) %>">Simulations</a></li>
+      <li><a href="<%= Routes.template_path(ExmudWeb.Endpoint, :index) %>">Templates</a></li>
     </ul>
   </div>
   <div class="top-bar-right">

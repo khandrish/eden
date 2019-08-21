@@ -1,0 +1,17 @@
+<h1>Edit Template callback</h1>
+
+<%= form_for @changeset, Routes.template_callback_path(@conn, :update, @template_callback), fn f -> %>
+  <%= if @changeset.action do %>
+    <div class="alert alert-danger">
+      <p>Oops, something went wrong! Please check the errors below.</p>
+    </div>
+  <% end %>
+
+  <%= label f, :default_args %>
+  <%= text_input f, :default_args %>
+  <%= error_tag f, :default_args %>
+
+  <div>
+    <%= submit "Save", class: "button primary" %>
+  </div>
+<% end %>

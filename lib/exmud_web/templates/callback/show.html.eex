@@ -29,5 +29,5 @@
 
 </ul>
 
-<span><%= link "Edit", to: Routes.callback_path(@conn, :edit, @callback) %></span>
-<span><%= link "Back", to: Routes.callback_path(@conn, :index) %></span>
+<span><%= link "Edit", class: "button primary", to: Routes.callback_path(@conn, :edit, @callback) %></span>
+<span><%= link "Back", class: "button primary", to: Routes.callback_path(@conn, :index) %></span>

@@ -10,6 +10,6 @@
   <%= error_tag f, :name %>
 
   <div>
-    <%= submit "Save" %>
+    <%= submit "Save", class: "button primary" %>
   </div>
 <% end %>

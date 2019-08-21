@@ -18,7 +18,7 @@
     <p class="help-text" id="default_config_help_text"></p>
   <%= end %>
   <div>
-    <%= submit "Save" %>
+    <%= submit "Save", class: "button primary" %>
   </div>
 <% end %>
 

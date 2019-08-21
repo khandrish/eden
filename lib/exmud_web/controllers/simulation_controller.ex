@@ -29,7 +29,8 @@ defmodule ExmudWeb.SimulationController do
   def show(conn, %{"id" => id}) do
     simulation = Engine.get_simulation!(id)
     callbacks = Engine.list_simulation_callbacks(id)
-    render(conn, "show.html", simulation: simulation, callbacks: callbacks)
+    templates = Engine.list_templates(id)
+    render(conn, "show.html", simulation: simulation, callbacks: callbacks, templates: templates)
   end
 
   def edit(conn, %{"id" => id}) do

@@ -12,8 +12,8 @@
   <%= error_tag f, :name %>
 
   <div>
-    <%= submit "Save" %>
+    <%= submit "Save", class: "button primary" %>
   </div>
 <% end %>
 
-<span><%= link "Back", to: Routes.simulation_path(@conn, :index) %></span>
+<span><%= link "Back", class: "button primary", to: Routes.simulation_path(@conn, :index) %></span>

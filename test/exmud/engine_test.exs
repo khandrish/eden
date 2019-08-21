@@ -207,4 +207,122 @@ defmodule Exmud.EngineTest do
       assert %Ecto.Changeset{} = Engine.change_simulation_callback(simulation_callback)
     end
   end
+
+  describe "templates" do
+    alias Exmud.Engine.Template
+
+    @valid_attrs %{name: "some name"}
+    @update_attrs %{name: "some updated name"}
+    @invalid_attrs %{name: nil}
+
+    def template_fixture(attrs \\ %{}) do
+      {:ok, template} =
+        attrs
+        |> Enum.into(@valid_attrs)
+        |> Engine.create_template()
+
+      template
+    end
+
+    test "list_templates/0 returns all templates" do
+      template = template_fixture()
+      assert Engine.list_templates() == [template]
+    end
+
+    test "get_template!/1 returns the template with given id" do
+      template = template_fixture()
+      assert Engine.get_template!(template.id) == template
+    end
+
+    test "create_template/1 with valid data creates a template" do
+      assert {:ok, %Template{} = template} = Engine.create_template(@valid_attrs)
+      assert template.name == "some name"
+    end
+
+    test "create_template/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Engine.create_template(@invalid_attrs)
+    end
+
+    test "update_template/2 with valid data updates the template" do
+      template = template_fixture()
+      assert {:ok, %Template{} = template} = Engine.update_template(template, @update_attrs)
+      assert template.name == "some updated name"
+    end
+
+    test "update_template/2 with invalid data returns error changeset" do
+      template = template_fixture()
+      assert {:error, %Ecto.Changeset{}} = Engine.update_template(template, @invalid_attrs)
+      assert template == Engine.get_template!(template.id)
+    end
+
+    test "delete_template/1 deletes the template" do
+      template = template_fixture()
+      assert {:ok, %Template{}} = Engine.delete_template(template)
+      assert_raise Ecto.NoResultsError, fn -> Engine.get_template!(template.id) end
+    end
+
+    test "change_template/1 returns a template changeset" do
+      template = template_fixture()
+      assert %Ecto.Changeset{} = Engine.change_template(template)
+    end
+  end
+
+  describe "template_callbacks" do
+    alias Exmud.Engine.TemplateCallback
+
+    @valid_attrs %{default_args: "some default_args"}
+    @update_attrs %{default_args: "some updated default_args"}
+    @invalid_attrs %{default_args: nil}
+
+    def template_callback_fixture(attrs \\ %{}) do
+      {:ok, template_callback} =
+        attrs
+        |> Enum.into(@valid_attrs)
+        |> Engine.create_template_callback()
+
+      template_callback
+    end
+
+    test "list_template_callbacks/0 returns all template_callbacks" do
+      template_callback = template_callback_fixture()
+      assert Engine.list_template_callbacks() == [template_callback]
+    end
+
+    test "get_template_callback!/1 returns the template_callback with given id" do
+      template_callback = template_callback_fixture()
+      assert Engine.get_template_callback!(template_callback.id) == template_callback
+    end
+
+    test "create_template_callback/1 with valid data creates a template_callback" do
+      assert {:ok, %TemplateCallback{} = template_callback} = Engine.create_template_callback(@valid_attrs)
+      assert template_callback.default_args == "some default_args"
+    end
+
+    test "create_template_callback/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Engine.create_template_callback(@invalid_attrs)
+    end
+
+    test "update_template_callback/2 with valid data updates the template_callback" do
+      template_callback = template_callback_fixture()
+      assert {:ok, %TemplateCallback{} = template_callback} = Engine.update_template_callback(template_callback, @update_attrs)
+      assert template_callback.default_args == "some updated default_args"
+    end
+
+    test "update_template_callback/2 with invalid data returns error changeset" do
+      template_callback = template_callback_fixture()
+      assert {:error, %Ecto.Changeset{}} = Engine.update_template_callback(template_callback, @invalid_attrs)
+      assert template_callback == Engine.get_template_callback!(template_callback.id)
+    end
+
+    test "delete_template_callback/1 deletes the template_callback" do
+      template_callback = template_callback_fixture()
+      assert {:ok, %TemplateCallback{}} = Engine.delete_template_callback(template_callback)
+      assert_raise Ecto.NoResultsError, fn -> Engine.get_template_callback!(template_callback.id) end
+    end
+
+    test "change_template_callback/1 returns a template_callback changeset" do
+      template_callback = template_callback_fixture()
+      assert %Ecto.Changeset{} = Engine.change_template_callback(template_callback)
+    end
+  end
 end

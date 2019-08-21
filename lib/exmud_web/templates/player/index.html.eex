@@ -18,13 +18,13 @@
       <td><%= player.email_verified %></td>
 
       <td>
-        <%= link "Show", to: Routes.player_path(@conn, :show, player) %>
-        <%= link "Edit", to: Routes.player_path(@conn, :edit, player) %>
-        <%= link "Delete", to: Routes.player_path(@conn, :delete, player), method: :delete, data: [confirm: "Are you sure?"] %>
+        <%= link "Show", class: "button primary", to: Routes.player_path(@conn, :show, player) %>
+        <%= link "Edit", class: "button primary", to: Routes.player_path(@conn, :edit, player) %>
+        <%= link "Delete", class: "button primary", to: Routes.player_path(@conn, :delete, player), method: :delete, data: [confirm: "Are you sure?"] %>
       </td>
     </tr>
 <% end %>
   </tbody>
 </table>
 
-<span><%= link "New Player", to: Routes.player_path(@conn, :new) %></span>
+<span><%= link "New Player", class: "button primary", to: Routes.player_path(@conn, :new) %></span>

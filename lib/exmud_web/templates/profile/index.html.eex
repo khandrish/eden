@@ -22,13 +22,13 @@
       <td><%= profile.tos_history %></td>
 
       <td>
-        <%= link "Show", to: Routes.profile_path(@conn, :show, profile) %>
-        <%= link "Edit", to: Routes.profile_path(@conn, :edit, profile) %>
-        <%= link "Delete", to: Routes.profile_path(@conn, :delete, profile), method: :delete, data: [confirm: "Are you sure?"] %>
+        <%= link "Show", class: "button primary", to: Routes.profile_path(@conn, :show, profile) %>
+        <%= link "Edit", class: "button primary", to: Routes.profile_path(@conn, :edit, profile) %>
+        <%= link "Delete", class: "button primary", to: Routes.profile_path(@conn, :delete, profile), method: :delete, data: [confirm: "Are you sure?"] %>
       </td>
     </tr>
 <% end %>
   </tbody>
 </table>
 
-<span><%= link "New Profile", to: Routes.profile_path(@conn, :new) %></span>
+<span><%= link "New Profile", class: "button primary", to: Routes.profile_path(@conn, :new) %></span>

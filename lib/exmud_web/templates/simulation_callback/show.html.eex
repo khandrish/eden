@@ -9,5 +9,4 @@
 
 </ul>
 
-<span><%= link "Edit", to: Routes.simulation_callback_path(@conn, :edit, @simulation_callback) %></span>
-<span><%= link "Back", to: Routes.simulation_callback_path(@conn, :index) %></span>
+<span><%= link "Edit", class: "button primary", to: Routes.simulation_callback_path(@conn, :edit, @simulation_callback) %></span>

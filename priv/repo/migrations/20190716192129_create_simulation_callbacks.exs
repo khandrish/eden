@@ -3,7 +3,7 @@ defmodule Exmud.Repo.Migrations.CreateSimulationCallbacks do
 
   def change do
     create table(:simulation_callbacks) do
-      add :default_config, :jsonb
+      add :default_config, :map
       add :simulation_id, references(:simulations, on_delete: :delete_all)
       add :callback_id, references(:callbacks, on_delete: :delete_all)
 

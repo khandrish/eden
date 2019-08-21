@@ -2,19 +2,6 @@ defmodule ExmudWeb.SimulationCallbackController do
   use ExmudWeb, :controller
 
   alias Exmud.Engine
-  alias Exmud.Engine.SimulationCallback
-
-  def create(conn, %{"simulation_callback" => simulation_callback_params}) do
-    case Engine.create_simulation_callback(simulation_callback_params) do
-      {:ok, simulation_callback} ->
-        conn
-        |> put_flash(:info, "Simulation callback created successfully.")
-        |> redirect(to: Routes.simulation_callback_path(conn, :show, simulation_callback))
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        render(conn, "new.html", changeset: changeset)
-    end
-  end
 
   def show(conn, %{"id" => id}) do
     simulation_callback = Engine.get_simulation_callback!(id)
@@ -37,8 +24,6 @@ defmodule ExmudWeb.SimulationCallbackController do
 
   def update(conn, %{"id" => id, "simulation_callback" => simulation_callback_params}) do
     simulation_callback = Engine.get_simulation_callback!(id)
-    IO.inspect(simulation_callback.callback.module.config_schema())
-    IO.inspect(simulation_callback_params)
 
     with {:ok, config} <- extract_config(simulation_callback_params),
          :ok <-
@@ -96,15 +81,6 @@ defmodule ExmudWeb.SimulationCallbackController do
           has_default_config_error?: true
         )
     end
-  end
-
-  def delete(conn, %{"id" => id}) do
-    simulation_callback = Engine.get_simulation_callback!(id)
-    {:ok, _simulation_callback} = Engine.delete_simulation_callback(simulation_callback)
-
-    conn
-    |> put_flash(:info, "Simulation callback deleted successfully.")
-    |> redirect(to: Routes.simulation_callback_path(conn, :index))
   end
 
   defp extract_config(params) do

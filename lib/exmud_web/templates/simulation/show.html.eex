@@ -11,13 +11,24 @@
     <strong>Status:</strong>
     <%= @simulation.status %>
   </li>
-
-  <li>
-    <strong>Callbacks:</strong>
-    <%= render ExmudWeb.SimulationCallbackView, "index.html", assigns %>
-  </li>
-
 </ul>
 
-<span><%= link "Edit", to: Routes.simulation_path(@conn, :edit, @simulation) %></span>
-<span><%= link "Back", to: Routes.simulation_path(@conn, :index) %></span>
+<ul class="accordion" data-accordion>
+  <li class="accordion-item" data-accordion-item>
+    <a href="#" class="accordion-title">Callbacks</a>
+
+    <div class="accordion-content" data-tab-content>
+      <%= Phoenix.LiveView.live_render(@conn, ExmudWeb.DatatableLive, session: %{name: "Simulations", module: ExmudWeb.DatatableSimulationProvider, args: %{foo: "bar", bar: "foo"}}) %>
+    </div>
+  </li>
+  <li class="accordion-item" data-accordion-item>
+    <a href="#" class="accordion-title">Templates</a>
+
+    <div class="accordion-content" data-tab-content>
+      <%= render ExmudWeb.TemplateView, "index.html", assigns %>
+    </div>
+  </li>
+</ul>
+
+<span><%= link "Edit", class: "button primary", to: Routes.simulation_path(@conn, :edit, @simulation) %></span>
+<span><%= link "Back", class: "button primary", to: Routes.simulation_path(@conn, :index) %></span>

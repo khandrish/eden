@@ -1,0 +1,22 @@
+<script>
+  function fireOnReady() {
+    $('#simulation_callbacks').DataTable( {
+        order: [[1, 'asc']],
+        responsive: true,
+        rowGroup: {
+            dataSrc: 1
+        }
+    } );
+
+    $('#templates').DataTable( {
+        order: [[0, 'asc']],
+        responsive: true
+    } );
+
+  }
+  if (document.readyState === 'complete') {
+      fireOnReady();
+  } else {
+      document.addEventListener("DOMContentLoaded", fireOnReady);
+  }
+</script>

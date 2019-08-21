@@ -17,5 +17,8 @@ defmodule Exmud.Engine.SimulationCallback do
     simulation_callback
     |> cast(attrs, [:default_config, :simulation_id, :callback_id])
     |> validate_required([:default_config])
+    |> foreign_key_constraint(:simulation_id)
+    |> foreign_key_constraint(:callback_id)
+    |> unique_constraint(:simulation_id, name: "simulation_callback_index")
   end
 end

@@ -1,0 +1,22 @@
+<table>
+  <thead>
+    <tr>
+      <th>Module</th>
+      <th>Type</th>
+      <th>Default Config</th>
+      <th>Docs</th>
+
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+<%= for row <- @state.rows do %>
+    <tr>
+      <td><%= row.bar %></td>
+      <td><%= row.foo %></td>
+      <td><%= row.foobar %></td>
+      <td><%= row.barfoo %></td>
+    </tr>
+<% end %>
+  </tbody>
+</table>

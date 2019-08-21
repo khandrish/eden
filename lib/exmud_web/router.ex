@@ -31,10 +31,22 @@ defmodule ExmudWeb.Router do
     get "/login/:token", AuthController, :validate_login_token
     get "/logout", AuthController, :logout
     live "/signup", SignupLive
+    live "/datatable", DatatableLive
     resources "/profiles", ProfileController
     resources "/players", PlayerController
     resources "/simulations", SimulationController
-    resources "/callbacks", CallbackController
-    resources "/simulation_callbacks", SimulationCallbackController
+    resources "/callbacks", CallbackController, except: [:create, :delete, :new]
+
+    resources "/simulation_callbacks", SimulationCallbackController, only: [:edit, :show, :update]
+
+    resources "/templates", TemplateController, except: [:new]
+
+    resources "/template_callbacks", TemplateCallbackController, only: [:edit, :show, :update]
+  end
+
+  scope "/simulations/:simulation_id", ExmudWeb do
+    pipe_through :browser
+
+    resources "/templates", TemplateController, only: [:new]
   end
 end

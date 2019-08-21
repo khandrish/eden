@@ -1,0 +1,12 @@
+<h1>Show Template callback</h1>
+
+<ul>
+
+  <li>
+    <strong>Default args:</strong>
+    <%= @template_callback.default_args %>
+  </li>
+
+</ul>
+
+<span><%= link "Edit", class: "button primary", to: Routes.template_callback_path(@conn, :edit, @template_callback) %></span>

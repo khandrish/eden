@@ -32,6 +32,9 @@ config :logger, :console,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
+# Enable LiveView templates
+config :phoenix, template_engines: [leex: Phoenix.LiveView.Engine]
+
 # Set the environment so code can safely check in production
 config :exmud, env: Mix.env()
 
