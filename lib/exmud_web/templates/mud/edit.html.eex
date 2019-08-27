@@ -1,80 +1,33 @@
-<div class="cell">
-  <h1>Edit Mud</h1>
-</div>
+<div class="grid-x grid-padding-x">
+  <div class="cell shrink medium-cell-block-y">
+    <h3><%= String.capitalize(@mud.status) %></h3>
+    <p><span><%= link "General", class: "button primary", to: Routes.mud_path(@conn, :edit, @mud) %></span></p>
+    <p><span><%= link "Templates", class: "button primary", to: Routes.mud_path(@conn, :edit, @mud, "show": "templates") %></span></p>
+    <p><span><%= link "Callbacks", class: "button primary", to: Routes.mud_path(@conn, :edit, @mud, "show": "callbacks") %></span></p>
 
-<div class="cell">
-  <%= Phoenix.LiveView.live_render(@conn, ExmudWeb.MudEditLive, session: %{id: @id}) %>
-</div>
-
-<div class="cell">
-  <ul class="accordion" data-accordion data-allow-all-closed="true">
-    <li class="accordion-item" data-accordion-item>
-      <a href="#" class="accordion-title">Callbacks</a>
-
-      <div class="accordion-content" data-tab-content>
-        <ul class="accordion" data-accordion data-allow-all-closed="true">
-          <li class="accordion-item" data-accordion-item>
-            <a href="#" class="accordion-title">Commands</a>
-            
-            <div class="accordion-content" data-tab-content>
-              <%= render "add_or_remove_callbacks.html", %{callbacks: @grouped_callbacks.commands, conn: @conn, mud_id: @id} %>
-            </div>
-          </li>
-          <li class="accordion-item" data-accordion-item>
-            <a href="#" class="accordion-title">Command Sets</a>
-            
-            <div class="accordion-content" data-tab-content>
-              <%= render "add_or_remove_callbacks.html", %{callbacks: @grouped_callbacks.command_sets, conn: @conn, mud_id: @id} %>
-            </div>
-          </li>
-          <li class="accordion-item" data-accordion-item>
-            <a href="#" class="accordion-title">Components</a>
-            
-            <div class="accordion-content" data-tab-content>
-              <%= render "add_or_remove_callbacks.html", %{callbacks: @grouped_callbacks.components, conn: @conn, mud_id: @id} %>
-            </div>
-          </li>
-          <li class="accordion-item" data-accordion-item>
-            <a href="#" class="accordion-title">Links</a>
-            
-            <div class="accordion-content" data-tab-content>
-              <%= render "add_or_remove_callbacks.html", %{callbacks: @grouped_callbacks.links, conn: @conn, mud_id: @id} %>
-            </div>
-          </li>
-          <li class="accordion-item" data-accordion-item>
-            <a href="#" class="accordion-title">Locks</a>
-
-            <div class="accordion-content" data-tab-content>
-              <%= render "add_or_remove_callbacks.html", %{callbacks: @grouped_callbacks.locks, conn: @conn, mud_id: @id} %>
-            </div>
-          </li>
-          <li class="accordion-item" data-accordion-item>
-            <a href="#" class="accordion-title">Scripts</a>
-
-            <div class="accordion-content" data-tab-content>
-              <%= render "add_or_remove_callbacks.html", %{callbacks: @grouped_callbacks.scripts, conn: @conn, mud_id: @id} %>
-            </div>
-          </li>
-          <li class="accordion-item" data-accordion-item>
-            <a href="#" class="accordion-title">Systems</a>
-
-            <div class="accordion-content" data-tab-content>
-              <%= render "add_or_remove_callbacks.html", %{callbacks: @grouped_callbacks.systems, conn: @conn, mud_id: @id} %>
-            </div>
-          </li>
-        </ul>
+  </div>
+  <div class="cell auto medium-cell-block-y">
+    <div class="grid-y grid-padding-y">
+      <div class="cell">
+        <h2><%= @mud.name %></h2>
       </div>
-    </li>
-    <li class="accordion-item" data-accordion-item>
-      <a href="#" class="accordion-title">Templates</a>
-
-      <div class="accordion-content" data-tab-content>
-        
+      <div class="cell">
+        <%= case @show do %>
+          <% "templates" -> %>
+            <%= render "edit_templates.html", assigns %>
+          <% "callbacks" -> %>
+            <%= render "edit_callbacks.html", assigns %>
+          <% _ -> %>
+            <%= render "edit_general.html", assigns %>
+        <% end %>
       </div>
-    </li>
-  </ul>
-</div>
-
-<div class="cell">
-  <span><%= link "Back", class: "button primary", to: Routes.mud_path(@conn, :show, @id) %></span>
+      <div class="cell">
+        <div class="grid-x grid-padding-x">
+          <div class="cell">
+            <span><%= link "Back", class: "button primary", to: Routes.mud_path(@conn, :show, @mud) %></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>

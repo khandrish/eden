@@ -43,14 +43,19 @@ defmodule ExmudWeb.MudController do
     grouped_callbacks = populate_callback_groups(callbacks)
     templates = Engine.list_templates(id)
 
+    show = Map.get(conn.query_params, "show")
+
     render(conn, "show.html",
       mud: mud,
       grouped_callbacks: grouped_callbacks,
+      show: show,
       templates: templates
     )
   end
 
   def edit(conn, %{"id" => id}) do
+    mud = Engine.get_mud!(id)
+
     mud_callback_set =
       Engine.list_mud_callbacks(id)
       |> Enum.reduce(MapSet.new(), fn sc, ms -> MapSet.put(ms, sc.callback_id) end)
@@ -63,9 +68,13 @@ defmodule ExmudWeb.MudController do
 
     grouped_callbacks = populate_callback_groups(callbacks)
 
+    show = Map.get(conn.query_params, "show")
+
     render(conn, "edit.html",
       grouped_callbacks: grouped_callbacks,
-      id: String.to_integer(id)
+      id: String.to_integer(id),
+      mud: mud,
+      show: show
     )
   end
 

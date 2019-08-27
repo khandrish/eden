@@ -3,9 +3,26 @@ defmodule ExmudWeb.MudCallbackController do
 
   alias Exmud.Engine
 
+  defmodule CallbackGroups do
+    @moduledoc false
+    defstruct commands: [],
+              command_sets: [],
+              components: [],
+              links: [],
+              locks: [],
+              scripts: [],
+              systems: []
+  end
+
   def show(conn, %{"id" => id}) do
     mud_callback = Engine.get_mud_callback!(id)
     render(conn, "show.html", mud_callback: mud_callback)
+  end
+
+  def list(conn, %{"id" => id}) do
+    mud_callbacks = Engine.list_mud_callbacks(id)
+    grouped_callbacks = populate_callback_groups(mud_callbacks)
+    render(conn, "show.html", grouped_callbacks: grouped_callbacks)
   end
 
   def edit(conn, %{"id" => id}) do
@@ -34,9 +51,18 @@ defmodule ExmudWeb.MudCallbackController do
            Map.put(mud_callback_params, "default_config", config),
          {:ok, _mud_callback} <-
            Engine.update_mud_callback(mud_callback, mud_callback_params) do
+      last_path = NavigationHistory.last_path(conn, 1)
+
+      path =
+        if String.contains?(last_path, "show") do
+          "#{last_path}##{mud_callback.callback.type}s"
+        else
+          last_path
+        end
+
       conn
       |> put_flash(:info, "Mud callback updated successfully.")
-      |> redirect(to: NavigationHistory.last_path(conn, 1))
+      |> redirect(to: path)
     else
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "edit.html",
@@ -91,5 +117,12 @@ defmodule ExmudWeb.MudCallbackController do
       {:error, _} ->
         {:error, :invalid_json}
     end
+  end
+
+  defp populate_callback_groups(callbacks) do
+    Enum.reduce(callbacks, %CallbackGroups{}, fn callback, groups ->
+      key = String.to_existing_atom("#{callback.callback.type}s")
+      Map.update!(groups, key, fn existing_callbacks -> existing_callbacks ++ [callback] end)
+    end)
   end
 end

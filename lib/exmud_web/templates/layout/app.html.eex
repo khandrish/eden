@@ -24,11 +24,11 @@
     <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/jsoneditor.min.js") %>"></script>
   </head>
   <body>
-    <div class="grid-container full">
-      <nav>
-        <%= render ExmudWeb.TopBarView, "top_bar.html", player_authenticated?: @player_authenticated? %>
-      </nav>
-      <main role="main" class="container">
+    <div class="grid-y medium-grid-frame">
+      <div class="cell shrink header medium-cell-block-container">
+        <nav>
+          <%= render ExmudWeb.TopBarView, "top_bar.html", player_authenticated?: @player_authenticated? %>
+        </nav>
         <div class="grid-x grid-margin-x align-center">
           <%= Enum.map(get_flash(@conn), fn {flash_key, flash_message} -> %>
             <div class="cell shrink" data-closable>
@@ -41,10 +41,12 @@
             </div>
           <% end) %>
         </div>
-        <div class="grid-x grid-padding-x">
-          <%= render @view_module, @view_template, assigns %>
-        </div>
-      </main>
+      </div>
+      <div class="cell medium-auto medium-cell-block-container">
+        <%= render @view_module, @view_template, assigns %>
+      </div>
+      <div class="cell shrink footer">
+      </div>
     </div>
   </body>
   <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>

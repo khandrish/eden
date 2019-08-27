@@ -1,0 +1,29 @@
+<script>
+  function fireOnReady() {
+    <%= for cb <- (Map.values(@grouped_callbacks) |> Enum.drop(1) |> List.flatten()) do %>
+      // Default Config
+      var config_container = document.getElementById("<%= "jsoneditor_default_config_#{cb.callback.id}" %>");
+      var config_options = {
+        mode: 'view',
+        schema: <%= raw Poison.encode!(cb.callback.config_schema) %>,
+        search: false
+      };
+      var config_json = <%= raw Poison.encode!(cb.callback.default_config) %>;
+      new JSONEditor(config_container, config_options, config_json);
+
+      // Schema
+      var schema_container = document.getElementById("<%= "jsoneditor_schema_#{cb.callback.id}" %>");
+      var schema_options = {
+        mode: 'view',
+        search: false
+      };
+      var schema_json = <%= raw Poison.encode!(cb.callback.config_schema) %>;
+      new JSONEditor(schema_container, schema_options, schema_json);
+    <% end %>
+  }
+  if (document.readyState === 'complete') {
+      fireOnReady();
+  } else {
+      document.addEventListener("DOMContentLoaded", fireOnReady);
+  }
+</script>
