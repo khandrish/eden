@@ -39,7 +39,7 @@ defmodule ExmudWeb.TemplateEditLive do
 
     Engine.create_template_callback!(%{
       template_id: template_id,
-      mud_callback_id: mud_callback_id,
+      callback_id: mud_callback.callback.id,
       default_config: mud_callback.default_config
     })
 
