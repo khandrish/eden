@@ -205,4 +205,100 @@ defmodule Exmud.Decorator do
   def change_decorator_type(%DecoratorType{} = decorator_type) do
     DecoratorType.changeset(decorator_type, %{})
   end
+
+  alias Exmud.Decorator.Decorator
+
+  @doc """
+  Returns the list of decorators.
+
+  ## Examples
+
+      iex> list_decorators()
+      [%Decorator{}, ...]
+
+  """
+  def list_decorators do
+    Repo.all(Decorator)
+  end
+
+  @doc """
+  Gets a single decorator.
+
+  Raises `Ecto.NoResultsError` if the Decorator does not exist.
+
+  ## Examples
+
+      iex> get_decorator!(123)
+      %Decorator{}
+
+      iex> get_decorator!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_decorator!(id), do: Repo.get!(Decorator, id)
+
+  @doc """
+  Creates a decorator.
+
+  ## Examples
+
+      iex> create_decorator(%{field: value})
+      {:ok, %Decorator{}}
+
+      iex> create_decorator(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_decorator(attrs \\ %{}) do
+    %Decorator{}
+    |> Decorator.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates a decorator.
+
+  ## Examples
+
+      iex> update_decorator(decorator, %{field: new_value})
+      {:ok, %Decorator{}}
+
+      iex> update_decorator(decorator, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_decorator(%Decorator{} = decorator, attrs) do
+    decorator
+    |> Decorator.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a Decorator.
+
+  ## Examples
+
+      iex> delete_decorator(decorator)
+      {:ok, %Decorator{}}
+
+      iex> delete_decorator(decorator)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_decorator(%Decorator{} = decorator) do
+    Repo.delete(decorator)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking decorator changes.
+
+  ## Examples
+
+      iex> change_decorator(decorator)
+      %Ecto.Changeset{source: %Decorator{}}
+
+  """
+  def change_decorator(%Decorator{} = decorator) do
+    Decorator.changeset(decorator, %{})
+  end
 end

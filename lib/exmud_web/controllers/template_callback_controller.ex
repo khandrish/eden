@@ -1,16 +1,16 @@
 defmodule ExmudWeb.TemplateCallbackController do
   use ExmudWeb, :controller
 
-  alias Exmud.Engine
+  alias Exmud.Template
 
   def show(conn, %{"id" => id}) do
-    template_callback = Engine.get_template_callback!(id)
+    template_callback = Template.get_template_callback!(id)
     render(conn, "show.html", template_callback: template_callback)
   end
 
   def edit(conn, %{"id" => id}) do
-    template_callback = Engine.get_template_callback!(id)
-    changeset = Engine.change_template_callback(template_callback)
+    template_callback = Template.get_template_callback!(id)
+    changeset = Template.change_template_callback(template_callback)
 
     render(conn, "edit.html",
       template_callback: template_callback,
@@ -23,7 +23,7 @@ defmodule ExmudWeb.TemplateCallbackController do
   end
 
   def update(conn, %{"id" => id, "template_callback" => template_callback_params}) do
-    template_callback = Engine.get_template_callback!(id)
+    template_callback = Template.get_template_callback!(id)
 
     with {:ok, config} <- extract_config(template_callback_params),
          :ok <-
@@ -33,7 +33,7 @@ defmodule ExmudWeb.TemplateCallbackController do
          template_callback_params <-
            Map.put(template_callback_params, "default_config", config),
          {:ok, _template_callback} <-
-           Engine.update_template_callback(template_callback, template_callback_params) do
+           Template.update_template_callback(template_callback, template_callback_params) do
       conn
       |> put_flash(:info, "Template callback updated successfully.")
       |> redirect(to: NavigationHistory.last_path(conn, 1))
@@ -53,7 +53,7 @@ defmodule ExmudWeb.TemplateCallbackController do
         |> put_flash(:error, "Invalid JSON submitted.")
         |> render("edit.html",
           template_callback: template_callback,
-          changeset: Engine.change_template_callback(template_callback),
+          changeset: Template.change_template_callback(template_callback),
           docs: Exmud.Util.get_module_docs(template_callback.callback.module),
           default_config: Poison.encode!(template_callback.default_config),
           config_schema: Poison.encode!(template_callback.callback.module.config_schema()),
@@ -63,7 +63,7 @@ defmodule ExmudWeb.TemplateCallbackController do
       {:error, errors} ->
         {:ok, config} = extract_config(template_callback_params)
         errors = Exmud.Util.exjson_validator_errors_to_changeset_errors(:default_config, errors)
-        changeset = Engine.change_template_callback(template_callback)
+        changeset = Template.change_template_callback(template_callback)
 
         changeset = %{
           changeset

@@ -1,21 +1,20 @@
 defmodule ExmudWeb.TemplateController do
   use ExmudWeb, :controller
 
-  alias Exmud.Engine
-  alias Exmud.Engine.Template
+  alias Exmud.Template
 
   def index(conn, _params) do
-    templates = Engine.list_templates()
+    templates = Template.list_templates()
     render(conn, "index.html", templates: templates)
   end
 
   def new(conn, _params) do
-    changeset = Engine.change_template(%Template{})
+    changeset = Template.change_template(%Template.Template{})
     render(conn, "new.html", changeset: changeset)
   end
 
   def create(conn, %{"template" => template_params}) do
-    case Engine.create_template(template_params) do
+    case Template.create_template(template_params) do
       {:ok, template} ->
         conn
         |> put_flash(:info, "Template created successfully.")
@@ -27,8 +26,8 @@ defmodule ExmudWeb.TemplateController do
   end
 
   def show(conn, %{"id" => id}) do
-    template = Engine.get_template!(id)
-    callbacks = Engine.list_template_callbacks(id)
+    template = Template.get_template!(id)
+    callbacks = Template.list_template_callbacks(id)
     render(conn, "show.html", template: template, callbacks: callbacks)
   end
 
@@ -37,9 +36,9 @@ defmodule ExmudWeb.TemplateController do
   end
 
   def update(conn, %{"id" => id, "template" => template_params}) do
-    template = Engine.get_template!(id)
+    template = Template.get_template!(id)
 
-    case Engine.update_template(template, template_params) do
+    case Template.update_template(template, template_params) do
       {:ok, template} ->
         conn
         |> put_flash(:info, "Template updated successfully.")
@@ -51,8 +50,8 @@ defmodule ExmudWeb.TemplateController do
   end
 
   def delete(conn, %{"id" => id}) do
-    template = Engine.get_template!(id)
-    {:ok, _template} = Engine.delete_template(template)
+    template = Template.get_template!(id)
+    {:ok, _template} = Template.delete_template(template)
 
     conn
     |> put_flash(:info, "Template deleted successfully.")

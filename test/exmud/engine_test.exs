@@ -207,7 +207,7 @@ defmodule Exmud.EngineTest do
   end
 
   describe "templates" do
-    alias Exmud.Engine.Template
+    alias Exmud.Template.Template
 
     @valid_attrs %{name: "some name"}
     @update_attrs %{name: "some updated name"}
@@ -266,7 +266,7 @@ defmodule Exmud.EngineTest do
   end
 
   describe "template_callbacks" do
-    alias Exmud.Engine.TemplateCallback
+    alias Exmud.Template.TemplateCallback
 
     @valid_attrs %{default_args: "some default_args"}
     @update_attrs %{default_args: "some updated default_args"}
@@ -332,6 +332,69 @@ defmodule Exmud.EngineTest do
     test "change_template_callback/1 returns a template_callback changeset" do
       template_callback = template_callback_fixture()
       assert %Ecto.Changeset{} = Engine.change_template_callback(template_callback)
+    end
+  end
+
+  describe "decorators" do
+    alias Exmud.Engine.Decorator
+
+    @valid_attrs %{category: "some category", name: "some name", type: "some type"}
+    @update_attrs %{category: "some updated category", name: "some updated name", type: "some updated type"}
+    @invalid_attrs %{category: nil, name: nil, type: nil}
+
+    def decorator_fixture(attrs \\ %{}) do
+      {:ok, decorator} =
+        attrs
+        |> Enum.into(@valid_attrs)
+        |> Engine.create_decorator()
+
+      decorator
+    end
+
+    test "list_decorators/0 returns all decorators" do
+      decorator = decorator_fixture()
+      assert Engine.list_decorators() == [decorator]
+    end
+
+    test "get_decorator!/1 returns the decorator with given id" do
+      decorator = decorator_fixture()
+      assert Engine.get_decorator!(decorator.id) == decorator
+    end
+
+    test "create_decorator/1 with valid data creates a decorator" do
+      assert {:ok, %Decorator{} = decorator} = Engine.create_decorator(@valid_attrs)
+      assert decorator.category == "some category"
+      assert decorator.name == "some name"
+      assert decorator.type == "some type"
+    end
+
+    test "create_decorator/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Engine.create_decorator(@invalid_attrs)
+    end
+
+    test "update_decorator/2 with valid data updates the decorator" do
+      decorator = decorator_fixture()
+      assert {:ok, %Decorator{} = decorator} = Engine.update_decorator(decorator, @update_attrs)
+      assert decorator.category == "some updated category"
+      assert decorator.name == "some updated name"
+      assert decorator.type == "some updated type"
+    end
+
+    test "update_decorator/2 with invalid data returns error changeset" do
+      decorator = decorator_fixture()
+      assert {:error, %Ecto.Changeset{}} = Engine.update_decorator(decorator, @invalid_attrs)
+      assert decorator == Engine.get_decorator!(decorator.id)
+    end
+
+    test "delete_decorator/1 deletes the decorator" do
+      decorator = decorator_fixture()
+      assert {:ok, %Decorator{}} = Engine.delete_decorator(decorator)
+      assert_raise Ecto.NoResultsError, fn -> Engine.get_decorator!(decorator.id) end
+    end
+
+    test "change_decorator/1 returns a decorator changeset" do
+      decorator = decorator_fixture()
+      assert %Ecto.Changeset{} = Engine.change_decorator(decorator)
     end
   end
 end

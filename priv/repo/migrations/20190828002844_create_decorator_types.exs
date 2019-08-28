@@ -4,11 +4,12 @@ defmodule Exmud.Repo.Migrations.CreateDecoratorTypes do
   def change do
     create table(:decorator_types) do
       add :name, :string
-      add :mud_id, references(:muds, on_delete: :nothing)
+      add :mud_id, references(:muds, on_delete: :delete_all)
 
       timestamps()
     end
 
+    create index(:decorator_types, [:name])
     create unique_index(:decorator_types, [:mud_id, :name], name: "decorator_types_mud_index")
   end
 end

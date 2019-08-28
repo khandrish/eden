@@ -1,9 +1,9 @@
-defmodule Exmud.Decorator.DecoratorType do
+defmodule Exmud.Prototype.PrototypeType do
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query, warn: false
 
-  schema "decorator_types" do
+  schema "prototype_types" do
     field :name, :string
     belongs_to :mud, Exmud.Engine.Mud
 
@@ -22,16 +22,16 @@ defmodule Exmud.Decorator.DecoratorType do
   end
 
   @spec changeset({map, any} | %{__struct__: atom | %{__changeset__: any}}) :: Ecto.Changeset.t()
-  def changeset(decorator_type), do: change(decorator_type)
+  def changeset(prototype_type), do: change(prototype_type)
 
   @doc false
-  def changeset(decorator_type, attrs) do
-    decorator_type
+  def changeset(prototype_type, attrs) do
+    prototype_type
     |> cast(attrs, [:name])
     |> validate_required([:name])
   end
 
-  @spec new :: Exmud.Decorator.DecoratorType.t()
+  @spec new :: Exmud.Prototype.PrototypeType.t()
   def new do
     %__MODULE__{}
   end

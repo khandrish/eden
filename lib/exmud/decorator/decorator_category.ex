@@ -5,7 +5,7 @@ defmodule Exmud.Decorator.DecoratorCategory do
 
   schema "decorator_categories" do
     field :name, :string
-    field :mud_id, :id
+    belongs_to :mud, Exmud.Engine.Mud
 
     timestamps()
   end

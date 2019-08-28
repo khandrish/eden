@@ -9,6 +9,7 @@ defmodule Exmud.Repo.Migrations.CreateTemplateCategories do
       timestamps()
     end
 
+    create index(:template_categories, [:name])
     create unique_index(:template_categories, [:mud_id, :name],
              name: "template_categories_mud_index"
            )

@@ -7,8 +7,9 @@ defmodule Exmud.Engine.Mud do
   schema "muds" do
     field :name, :string
     field :status, :string, default: "stopped"
-    has_many(:callbacks, Exmud.Engine.MudCallback)
-    has_many(:templates, Exmud.Engine.Template)
+    has_many :mud_callbacks, Exmud.Engine.MudCallback
+    has_many :callbacks, through: [:mud_callbacks, :callback]
+    has_many :templates, Exmud.Template.Template
 
     timestamps()
   end

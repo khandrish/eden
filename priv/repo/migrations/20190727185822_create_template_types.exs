@@ -9,6 +9,7 @@ defmodule Exmud.Repo.Migrations.CreateTemplateTypes do
       timestamps()
     end
 
+    create index(:template_types, [:name])
     create unique_index(:template_types, [:mud_id, :name], name: "template_types_mud_index")
   end
 end

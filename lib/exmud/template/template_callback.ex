@@ -1,10 +1,10 @@
-defmodule Exmud.Engine.TemplateCallback do
+defmodule Exmud.Template.TemplateCallback do
   use Ecto.Schema
   import Ecto.Changeset
 
   schema "template_callbacks" do
     field :default_config, :map
-    belongs_to :template, Exmud.Engine.Template
+    belongs_to :template, Exmud.Template.Template
     belongs_to :callback, Exmud.Engine.Callback
 
     timestamps()

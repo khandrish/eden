@@ -1,0 +1,5 @@
+<h1>Edit Prototype</h1>
+
+<%= render "form.html", Map.put(assigns, :action, Routes.prototype_path(@conn, :update, @prototype)) %>
+
+<span><%= link "Back", to: Routes.prototype_path(@conn, :index) %></span>

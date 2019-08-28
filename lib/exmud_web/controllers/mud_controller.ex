@@ -3,6 +3,7 @@ defmodule ExmudWeb.MudController do
 
   alias Exmud.Engine
   alias Exmud.Engine.Mud
+  alias Exmud.Template
 
   defmodule CallbackGroups do
     @moduledoc false
@@ -42,7 +43,7 @@ defmodule ExmudWeb.MudController do
     mud = Engine.get_mud!(id)
     callbacks = Engine.list_mud_callbacks(id)
     grouped_callbacks = populate_callback_groups(callbacks)
-    templates = Engine.list_templates(id)
+    templates = Template.list_templates(id)
 
     show = Map.get(conn.query_params, "show")
 

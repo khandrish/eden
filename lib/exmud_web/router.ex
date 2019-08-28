@@ -39,6 +39,7 @@ defmodule ExmudWeb.Router do
     # Decorator related stuff
     resources "/decorator_categories", DecoratorCategoryController
     resources "/decorator_types", DecoratorTypeController
+    resources "/decorators", DecoratorController
 
     # Mud related stuff
     resources "/mud_callbacks", MudCallbackController, only: [:edit, :show, :update]
@@ -48,6 +49,9 @@ defmodule ExmudWeb.Router do
     resources "/players", PlayerController
     resources "/profiles", ProfileController
     live "/signup", SignupLive
+
+    # Prototype related stuff
+    resources "/prototypes", PrototypeController
 
     # Template related stuff
     resources "/templates", TemplateController, except: [:new]
