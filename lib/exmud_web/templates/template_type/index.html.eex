@@ -1,0 +1,26 @@
+<h1>Listing Template types</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+<%= for template_type <- @template_types do %>
+    <tr>
+      <td><%= template_type.name %></td>
+
+      <td>
+        <%= link "Show", to: Routes.template_type_path(@conn, :show, template_type) %>
+        <%= link "Edit", to: Routes.template_type_path(@conn, :edit, template_type) %>
+        <%= link "Delete", to: Routes.template_type_path(@conn, :delete, template_type), method: :delete, data: [confirm: "Are you sure?"] %>
+      </td>
+    </tr>
+<% end %>
+  </tbody>
+</table>
+
+<span><%= link "New Template type", to: Routes.template_type_path(@conn, :new) %></span>

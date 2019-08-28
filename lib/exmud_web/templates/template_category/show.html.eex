@@ -1,0 +1,13 @@
+<h1>Show Template category</h1>
+
+<ul>
+
+  <li>
+    <strong>Name:</strong>
+    <%= @template_category.name %>
+  </li>
+
+</ul>
+
+<span><%= link "Edit", to: Routes.template_category_path(@conn, :edit, @template_category) %></span>
+<span><%= link "Back", to: Routes.template_category_path(@conn, :index) %></span>

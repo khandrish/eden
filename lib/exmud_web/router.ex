@@ -24,24 +24,36 @@ defmodule ExmudWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :index
+
+    # Auth related stuff
     get "/login", AuthController, :show_login_form
     post "/login", AuthController, :send_login_token
     get "/login/token", AuthController, :show_login_token_form
     post "/login/token", AuthController, :validate_login_token
     get "/login/:token", AuthController, :validate_login_token
     get "/logout", AuthController, :logout
-    live "/signup", SignupLive
-    live "/datatable", DatatableLive
-    resources "/profiles", ProfileController
-    resources "/players", PlayerController
-    resources "/muds", MudController
+
+    # Callback related stuff
     resources "/callbacks", CallbackController, except: [:create, :delete, :new]
 
+    # Decorator related stuff
+    resources "/decorator_categories", DecoratorCategoryController
+    resources "/decorator_types", DecoratorTypeController
+
+    # Mud related stuff
     resources "/mud_callbacks", MudCallbackController, only: [:edit, :show, :update]
+    resources "/muds", MudController
 
+    # Player related stuff
+    resources "/players", PlayerController
+    resources "/profiles", ProfileController
+    live "/signup", SignupLive
+
+    # Template related stuff
     resources "/templates", TemplateController, except: [:new]
-
     resources "/template_callbacks", TemplateCallbackController, only: [:edit, :show, :update]
+    resources "/template_categories", TemplateCategoryController
+    resources "/template_types", TemplateTypeController
   end
 
   scope "/muds/:mud_id", ExmudWeb do

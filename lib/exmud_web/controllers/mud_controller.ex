@@ -38,6 +38,7 @@ defmodule ExmudWeb.MudController do
   end
 
   def show(conn, %{"id" => id}) do
+    id = String.to_integer(id)
     mud = Engine.get_mud!(id)
     callbacks = Engine.list_mud_callbacks(id)
     grouped_callbacks = populate_callback_groups(callbacks)
@@ -54,6 +55,7 @@ defmodule ExmudWeb.MudController do
   end
 
   def edit(conn, %{"id" => id}) do
+    id = String.to_integer(id)
     mud = Engine.get_mud!(id)
 
     mud_callback_set =
@@ -70,15 +72,29 @@ defmodule ExmudWeb.MudController do
 
     show = Map.get(conn.query_params, "show")
 
+    template_category_names = Exmud.Template.list_template_categories(id) |> Enum.map(& &1.name)
+
+    template_type_names = Exmud.Template.list_template_types(id) |> Enum.map(& &1.name)
+
+    decorator_category_names =
+      Exmud.Decorator.list_decorator_categories(id) |> Enum.map(& &1.name)
+
+    decorator_type_names = Exmud.Decorator.list_decorator_types(id) |> Enum.map(& &1.name)
+
     render(conn, "edit.html",
+      decorator_category_names: decorator_category_names,
+      decorator_type_names: decorator_type_names,
       grouped_callbacks: grouped_callbacks,
-      id: String.to_integer(id),
+      id: id,
       mud: mud,
-      show: show
+      show: show,
+      template_category_names: template_category_names,
+      template_type_names: template_type_names
     )
   end
 
   def update(conn, %{"id" => id, "mud" => mud_params}) do
+    id = String.to_integer(id)
     mud = Engine.get_mud!(id)
 
     case Engine.update_mud(mud, mud_params) do
@@ -93,6 +109,7 @@ defmodule ExmudWeb.MudController do
   end
 
   def delete(conn, %{"id" => id}) do
+    id = String.to_integer(id)
     mud = Engine.get_mud!(id)
     {:ok, _mud} = Engine.delete_mud(mud)
 

@@ -1,0 +1,13 @@
+<h1>Show Decorator type</h1>
+
+<ul>
+
+  <li>
+    <strong>Name:</strong>
+    <%= @decorator_type.name %>
+  </li>
+
+</ul>
+
+<span><%= link "Edit", to: Routes.decorator_type_path(@conn, :edit, @decorator_type) %></span>
+<span><%= link "Back", to: Routes.decorator_type_path(@conn, :index) %></span>

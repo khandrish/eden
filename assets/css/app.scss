@@ -44,3 +44,9 @@ input {
 body {
     overflow-x: hidden;
 }
+
+.input-group {
+    input {
+        margin: 0px !important;
+    }
+}

@@ -1,0 +1,26 @@
+<h1>Listing Template categories</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+<%= for category <- @template_categories do %>
+    <tr>
+      <td><%= category.name %></td>
+
+      <td>
+        <%= link "Show", to: Routes.category_path(@conn, :show, category) %>
+        <%= link "Edit", to: Routes.category_path(@conn, :edit, category) %>
+        <%= link "Delete", to: Routes.category_path(@conn, :delete, category), method: :delete, data: [confirm: "Are you sure?"] %>
+      </td>
+    </tr>
+<% end %>
+  </tbody>
+</table>
+
+<span><%= link "New Category", to: Routes.category_path(@conn, :new) %></span>

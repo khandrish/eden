@@ -4,6 +4,7 @@
     <p><span><%= link "Dashboard", class: "button primary", to: Routes.mud_path(@conn, :show, @mud) %></span></p>
     <p><span><%= link "Templates", class: "button primary", to: Routes.mud_path(@conn, :show, @mud, "show": "templates") %></span></p>
     <p><span><%= link "Callbacks", class: "button primary", to: Routes.mud_path(@conn, :show, @mud, "show": "callbacks") %></span></p>
+    <p><span><%= link "Config", class: "button primary", to: Routes.mud_path(@conn, :show, @mud, "show": "config") %></span></p>
 
   </div>
   <div class="cell auto medium-cell-block-y">
@@ -14,9 +15,11 @@
       <div class="cell">
         <%= case @show do %>
           <% "templates" -> %>
-            <p>Template stuff here.</p>
+            <%= render "show_templates.html", assigns %>
           <% "callbacks" -> %>
             <%= render "show_callbacks.html", assigns %>
+          <% "config" -> %>
+            <%= render "show_config.html", assigns %>
           <% _ -> %>
             <p>Dashboard type stuff here. Metrics. Graphs. Alerts. Quick Links. The good stuff.</p>
         <% end %>

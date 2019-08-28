@@ -1,0 +1,26 @@
+<h1>Listing Decorator categories</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+<%= for decorator_category <- @decorator_categories do %>
+    <tr>
+      <td><%= decorator_category.name %></td>
+
+      <td>
+        <%= link "Show", to: Routes.decorator_category_path(@conn, :show, decorator_category) %>
+        <%= link "Edit", to: Routes.decorator_category_path(@conn, :edit, decorator_category) %>
+        <%= link "Delete", to: Routes.decorator_category_path(@conn, :delete, decorator_category), method: :delete, data: [confirm: "Are you sure?"] %>
+      </td>
+    </tr>
+<% end %>
+  </tbody>
+</table>
+
+<span><%= link "New Decorator category", to: Routes.decorator_category_path(@conn, :new) %></span>
