@@ -36,33 +36,16 @@ defmodule ExmudWeb.Router do
     # Callback related stuff
     resources "/callbacks", CallbackController, except: [:create, :delete, :new]
 
-    # Decorator related stuff
-    resources "/decorator_categories", DecoratorCategoryController
-    resources "/decorator_types", DecoratorTypeController
-    resources "/decorators", DecoratorController
-
     # Mud related stuff
     resources "/mud_callbacks", MudCallbackController, only: [:edit, :show, :update]
-    resources "/muds", MudController
+
+    resources "/muds", MudController do
+      get "/settings", MudController, :settings
+    end
 
     # Player related stuff
     resources "/players", PlayerController
     resources "/profiles", ProfileController
     live "/signup", SignupLive
-
-    # Prototype related stuff
-    resources "/prototypes", PrototypeController
-
-    # Template related stuff
-    resources "/templates", TemplateController, except: [:new]
-    resources "/template_callbacks", TemplateCallbackController, only: [:edit, :show, :update]
-    resources "/template_categories", TemplateCategoryController
-    resources "/template_types", TemplateTypeController
-  end
-
-  scope "/muds/:mud_id", ExmudWeb do
-    pipe_through :browser
-
-    resources "/templates", TemplateController, only: [:new]
   end
 end

@@ -1,5 +1,0 @@
-<h1>Edit Template category</h1>
-
-<%= render "form.html", Map.put(assigns, :action, Routes.template_category_path(@conn, :update, @template_category)) %>
-
-<span><%= link "Back", to: Routes.template_category_path(@conn, :index) %></span>

@@ -1,5 +1,0 @@
-<h1>Edit Decorator category</h1>
-
-<%= render "form.html", Map.put(assigns, :action, Routes.decorator_category_path(@conn, :update, @decorator_category)) %>
-
-<span><%= link "Back", to: Routes.decorator_category_path(@conn, :index) %></span>

@@ -5,6 +5,8 @@ defmodule ExmudWeb.MudController do
   alias Exmud.Engine.Mud
   alias Exmud.Template
 
+  plug :put_layout, "mud.html"
+
   defmodule CallbackGroups do
     @moduledoc false
     defstruct commands: [],
@@ -18,12 +20,12 @@ defmodule ExmudWeb.MudController do
 
   def index(conn, _params) do
     muds = Engine.list_muds()
-    render(conn, "index.html", muds: muds)
+    render(conn, "index.html", layout: {ExmudWeb.LayoutView, "app.html"}, muds: muds)
   end
 
   def new(conn, _params) do
     changeset = Engine.change_mud(%Mud{})
-    render(conn, "new.html", changeset: changeset)
+    render(conn, "new.html", changeset: changeset, layout: {ExmudWeb.LayoutView, "app.html"})
   end
 
   def create(conn, %{"mud" => mud_params}) do
@@ -43,15 +45,29 @@ defmodule ExmudWeb.MudController do
     mud = Engine.get_mud!(id)
     callbacks = Engine.list_mud_callbacks(id)
     grouped_callbacks = populate_callback_groups(callbacks)
-    templates = Template.list_templates(id)
 
     show = Map.get(conn.query_params, "show")
+
+    side_nav_links = [
+      %{
+        disabled: false,
+        # path: Routes.mud_prototype_path(conn, :index, mud),
+        path: "/foo",
+        text: "Prototypes"
+      },
+      %{
+        disabled: false,
+        # path: Routes.mud_prototype_path(conn, :index, mud),
+        path: "/foo",
+        text: "Settings"
+      }
+    ]
 
     render(conn, "show.html",
       mud: mud,
       grouped_callbacks: grouped_callbacks,
       show: show,
-      templates: templates
+      side_nav_links: side_nav_links
     )
   end
 
@@ -73,24 +89,11 @@ defmodule ExmudWeb.MudController do
 
     show = Map.get(conn.query_params, "show")
 
-    template_category_names = Exmud.Template.list_template_categories(id) |> Enum.map(& &1.name)
-
-    template_type_names = Exmud.Template.list_template_types(id) |> Enum.map(& &1.name)
-
-    decorator_category_names =
-      Exmud.Decorator.list_decorator_categories(id) |> Enum.map(& &1.name)
-
-    decorator_type_names = Exmud.Decorator.list_decorator_types(id) |> Enum.map(& &1.name)
-
     render(conn, "edit.html",
-      decorator_category_names: decorator_category_names,
-      decorator_type_names: decorator_type_names,
       grouped_callbacks: grouped_callbacks,
       id: id,
       mud: mud,
-      show: show,
-      template_category_names: template_category_names,
-      template_type_names: template_type_names
+      show: show
     )
   end
 

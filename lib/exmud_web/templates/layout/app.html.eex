@@ -1,46 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8"/>
-    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Exmud</title>
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/foundation-sites@6.5.3/dist/css/foundation.min.css"
-      integrity="sha256-xpOKVlYXzQ3P03j397+jWFZLMBXLES3IiryeClgU5og="
-      crossorigin="anonymous">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/motion-ui@1.2.3/dist/motion-ui.min.css" />
-    <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/app.css") %>"/>
-    <script
-			src="https://code.jquery.com/jquery-3.4.1.min.js"
-			integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
-			crossorigin="anonymous"></script>
-    <script
-      src="https://cdn.jsdelivr.net/npm/foundation-sites@6.5.3/dist/js/foundation.min.js"
-      integrity="sha256-/PFxCnsMh+nTuM0k3VJCRch1gwnCfKjaP8rJNq5SoBg="
-      crossorigin="anonymous"></script>
-    <%= render_existing @view_module, "head_scripts." <> @view_template, assigns %>
-    <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/jsoneditor.min.js") %>"></script>
-  </head>
+  <%= render "head.html", assigns %>
   <body>
     <div class="grid-y medium-grid-frame">
       <div class="cell shrink header medium-cell-block-container">
-        <nav>
-          <%= render ExmudWeb.TopBarView, "top_bar.html", player_authenticated?: @player_authenticated? %>
-        </nav>
-        <div class="grid-x grid-margin-x align-center">
-          <%= Enum.map(get_flash(@conn), fn {flash_key, flash_message} -> %>
-            <div class="cell shrink" data-closable>
-              <div class="callout <%= map_flash_key_to_callout_class(flash_key) %> closeable-flash">
-                <%= flash_message %>
-                <button class="close-button flash" aria-label="Dismiss alert" type="button" data-close>
-                  <span>&times;</span>
-                </button>
-              </div>
-            </div>
-          <% end) %>
-        </div>
+        <%= render "nav_and_flash.html", assigns %>
       </div>
       <div class="cell medium-auto medium-cell-block-container">
         <%= render @view_module, @view_template, assigns %>
@@ -49,9 +13,5 @@
       </div>
     </div>
   </body>
-  <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
-  <%= render_existing @view_module, "foot_scripts." <> @view_template, assigns %>
-  <script>
-    $(document).foundation();
-  </script>
+  <%= render "post_body.html", assigns %>
 </html>

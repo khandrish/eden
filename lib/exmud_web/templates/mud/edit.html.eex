@@ -2,8 +2,8 @@
   <div class="cell shrink medium-cell-block-y">
     <h3><%= String.capitalize(@mud.status) %></h3>
     <p><span><%= link "Callbacks", class: "button primary", to: Routes.mud_path(@conn, :edit, @mud, "show": "callbacks") %></span></p>
-    <p><span><%= link "Config", class: "button primary", to: Routes.mud_path(@conn, :edit, @mud, "show": "config") %></span></p>
-    <p><span><%= link "Templates", class: "button primary", to: Routes.mud_path(@conn, :edit, @mud, "show": "templates") %></span></p>
+    <p><span><%= link "Prototypes", class: "button primary", to: Routes.mud_path(@conn, :edit, @mud, "show": "prototypes") %></span></p>
+    <p><span><%= link "Settings", class: "button primary", to: Routes.mud_path(@conn, :edit, @mud, "show": "settings") %></span></p>
 
   </div>
   <div class="cell auto medium-cell-block-y">
@@ -26,7 +26,7 @@
       <div class="cell">
         <div class="grid-x grid-padding-x">
           <div class="cell">
-            <span><%= link "Back", class: "button primary", to: Routes.mud_path(@conn, :show, @mud) %></span>
+            <span><%= link "Done", class: "button primary", to: Routes.mud_path(@conn, :show, @mud) %></span>
           </div>
         </div>
       </div>

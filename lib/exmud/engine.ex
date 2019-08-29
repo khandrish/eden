@@ -28,10 +28,10 @@ defmodule Exmud.Engine do
 
   ## Examples
 
-      iex> get_mud!(123)
+      iex> get_mud!(42)
       %Mud{}
 
-      iex> get_mud!(456)
+      iex> get_mud!(24)
       ** (Ecto.NoResultsError)
 
   """
