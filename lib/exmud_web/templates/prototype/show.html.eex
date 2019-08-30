@@ -1,0 +1,12 @@
+<h1>Show Prototype</h1>
+
+<ul>
+
+  <li>
+    <strong>Name:</strong>
+    <%= @prototype.name %>
+  </li>
+
+</ul>
+
+<span><%= link "Edit", to: Routes.mud_prototype_path(@conn, :edit, @mud_slug, @prototype) %></span>

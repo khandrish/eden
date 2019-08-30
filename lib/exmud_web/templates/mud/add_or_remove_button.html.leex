@@ -1,0 +1,5 @@
+<%= if @present do %>
+      <div class="button error" phx-click="remove">Remove</div>
+<% else %>
+      <div class="button primary" phx-click="add">Add</div>
+<% end %>

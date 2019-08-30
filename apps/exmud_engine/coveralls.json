@@ -1,8 +1,0 @@
-{
-  "skip_files": [
-    "lib/engine/repo.ex",
-    "lib/engine/schemas",
-    "lib/engine/graphql/schema.ex",
-    "lib/engine/graphql/types.ex"
-  ]
-}

@@ -1,0 +1,30 @@
+<table>
+  <thead>
+  <tr>
+      <th><%= @header %></th>
+      <th>Action</th>
+  </tr>
+  </thead>
+  <tbody>
+  <%= for name <- @names do %>
+  <tr>
+      <td><p><%= name %><p></td>
+      <td><button class="button primary" phx-click="delete" phoenix-disable-with="Deleting..." phx-value="<%= name %>">Delete</button></td>
+  </tr>
+  <% end %>
+  </tbody>
+</table>
+<%= f = form_for @changeset, "#", [as: "form", phx_change: :validate, phx_submit: :save] %>
+
+  <div class="input-group">
+    <%= text_input f, :name %>
+    <div class="input-group-button">
+        <input type="submit" class="button" value="Add", phx-disable-with="Saving...">
+    </div>
+  </div>
+<%= if @has_name_error? do %>
+    <%= help_text_error_tag f, :name, "name_help_text" %>
+<% else %>
+    <p class="help-text" id="name_help_text">A simple identifier.</p>
+<% end %>
+</form>

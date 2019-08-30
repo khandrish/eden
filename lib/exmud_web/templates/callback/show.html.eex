@@ -1,0 +1,38 @@
+<div class="cell">
+  <h1>Show Callback</h1>
+</div>
+
+<div class="cell">
+  <ul>
+
+    <li>
+      <strong>Module:</strong>
+      <%= @callback.module %>
+    </li>
+
+    <li>
+      <strong>Type:</strong>
+      <%= @callback.type %>
+    </li>
+
+    <li>
+      <strong>Docs:</strong>
+      <pre><%= @docs %></pre>
+    </li>
+
+    <li>
+      <strong>Config:</strong>
+      <pre><%= Poison.encode!(@callback.config, pretty: true) %></pre>
+    </li>
+
+    <li>
+      <strong>Config schema:</strong>
+      <pre><%= Poison.encode!(@callback.module.config_schema(), pretty: true) %></pre>
+    </li>
+
+  </ul>
+</div>
+<div class="cell">
+  <span><%= link "Edit", class: "button primary", to: Routes.callback_path(@conn, :edit, @callback) %></span>
+  <span><%= link "Back", class: "button primary", to: Routes.callback_path(@conn, :index) %></span>
+</div>

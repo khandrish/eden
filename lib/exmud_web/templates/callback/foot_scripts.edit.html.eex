@@ -1,0 +1,20 @@
+<script>
+  function fireOnReady() {
+    // create the editor
+    var container = document.getElementById("jsoneditor");
+    var options = {
+      onChangeText: function (jsonText) {
+        document.getElementById("callback_updated_config").value = jsonText
+      },
+      schema: <%= raw @config_schema %>,
+      search: false
+    };
+    var json = <%= raw @config %>;
+    new JSONEditor(container, options, json);
+  }
+  if (document.readyState === 'complete') {
+      fireOnReady();
+  } else {
+      document.addEventListener("DOMContentLoaded", fireOnReady);
+  }
+</script>

@@ -1,0 +1,11 @@
+<div class="cell">
+    <%= form_for @changeset, Routes.auth_path(@conn, :validate_login_token), [{:as, "token_form"}], fn f -> %>
+        <label>Login Token
+            <%= text_input f, :token, [{:"aria-describedby", "token_help_text"}] %>
+        </label>
+        <p class="help-text" id="token_help_text">Enter token from login email here, or follow the link in the email.</p>
+
+        <%= submit("Submit", class: "button") %>
+        <%= link("Log In", class: "button", to: Routes.auth_path(@conn, :show_login_form)) %>
+    <% end %>
+</div>

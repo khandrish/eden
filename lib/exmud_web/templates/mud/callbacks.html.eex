@@ -1,0 +1,25 @@
+<table>
+  <thead>
+    <tr>
+      <th>Module</th>
+      <th>Docs</th>
+      <th>Config</th>
+      <th>Config schema</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+  <%= for callback <- @callbacks do %>
+      <tr>
+        <td><%= callback.callback.module %></td>
+        <td><pre><%= callback.callback.docs %></pre></td>
+        <td><div id="<%= "jsoneditor_config_#{callback.callback.id}" %>"></div></td>
+        <td><div id="<%= "jsoneditor_schema_#{callback.callback.id}" %>"></div></td>
+        <td>
+            <%= link "Show", class: "button primary", to: Routes.mud_callback_path(@conn, :show, @mud_slug, callback) %>
+            <%= link "Edit", class: "button primary", to: Routes.mud_callback_path(@conn, :edit, @mud_slug, callback) %>
+        </td>
+      </tr>
+  <% end %>
+  </tbody>
+</table>

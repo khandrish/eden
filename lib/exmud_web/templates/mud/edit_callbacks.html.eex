@@ -1,0 +1,53 @@
+<ul class="accordion" data-accordion data-allow-all-closed="true">
+    <li class="accordion-item" data-accordion-item>
+    <a href="#" class="accordion-title">Commands</a>
+    
+    <div class="accordion-content" data-tab-content>
+        <%= render "add_or_remove_callbacks.html", %{callbacks: @grouped_callbacks.commands, conn: @conn, mud_id: @id} %>
+    </div>
+    </li>
+    <li class="accordion-item" data-accordion-item>
+    <a href="#" class="accordion-title">Command Sets</a>
+    
+    <div class="accordion-content" data-tab-content>
+        <%= render "add_or_remove_callbacks.html", %{callbacks: @grouped_callbacks.command_sets, conn: @conn, mud_id: @id} %>
+    </div>
+    </li>
+    <li class="accordion-item" data-accordion-item>
+    <a href="#" class="accordion-title">Components</a>
+    
+    <div class="accordion-content" data-tab-content>
+        <%= render "add_or_remove_callbacks.html", %{callbacks: @grouped_callbacks.components, conn: @conn, mud_id: @id} %>
+    </div>
+    </li>
+    <li class="accordion-item" data-accordion-item>
+    <a href="#" class="accordion-title">Links</a>
+    
+    <div class="accordion-content" data-tab-content>
+        <%= render "add_or_remove_callbacks.html", %{callbacks: @grouped_callbacks.links, conn: @conn, mud_id: @id} %>
+    </div>
+    </li>
+    <li class="accordion-item" data-accordion-item>
+    <a href="#" class="accordion-title">Locks</a>
+
+    <div class="accordion-content" data-tab-content>
+        <%= render "add_or_remove_callbacks.html", %{callbacks: @grouped_callbacks.locks, conn: @conn, mud_id: @id} %>
+    </div>
+    </li>
+    <li class="accordion-item" data-accordion-item>
+    <a href="#" class="accordion-title">Scripts</a>
+
+    <div class="accordion-content" data-tab-content>
+        <%= render "add_or_remove_callbacks.html", %{callbacks: @grouped_callbacks.scripts, conn: @conn, mud_id: @id} %>
+    </div>
+    </li>
+    <li class="accordion-item" data-accordion-item>
+    <a href="#" class="accordion-title">Systems</a>
+
+    <div class="accordion-content" data-tab-content>
+        <%= render "add_or_remove_callbacks.html", %{callbacks: @grouped_callbacks.systems, conn: @conn, mud_id: @id} %>
+    </div>
+    </li>
+</ul>
+
+

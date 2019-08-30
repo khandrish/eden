@@ -1,0 +1,30 @@
+<%= f = form_for @changeset, "#", [phx_change: :validate, phx_submit: :save] %>
+  <%= label f, :name %>
+  <%= text_input f, :name %>
+  <%= if @has_name_error? do %>
+    <%= help_text_error_tag f, :name, "name_help_text" %>
+  <% else %>
+    <p class="help-text" id="name_help_text">The name of the MUD as appears to all players in the UI.</p>
+  <% end %>
+
+  <%= label f, :tagline %>
+  <%= text_input f, :tagline %>
+  <%= if @has_tagline_error? do %>
+    <%= help_text_error_tag f, :tagline, "tagline_help_text" %>
+  <% else %>
+    <p class="help-text" id="tagline_help_text">A short phrase that</p>
+  <% end %>
+
+  <%= label f, :description %>
+  <%= text_input f, :description %>
+  <%= if @has_description_error? do %>
+    <%= help_text_error_tag f, :description, "description_help_text" %>
+  <% else %>
+    <p class="help-text" id="description_help_text">The longer form description of the MUD. Should be used to give a brief but thorough overview to draw players in.</p>
+  <% end %>
+
+  <div>
+    <%= submit "Save", class: "button primary", phx_disable_with: "Saving..." %>
+    <%= link "Back", class: "button primary", to: NavigationHistory.last_path(@conn, 1) %>
+  </div>
+</form>

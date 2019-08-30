@@ -1,0 +1,12 @@
+<div class="grid-x grid-margin-x align-center">
+  <%= Enum.map(get_flash(@conn), fn {flash_key, flash_message} -> %>
+    <div class="cell shrink" data-closable>
+      <div class="callout <%= map_flash_key_to_callout_class(flash_key) %> closeable-flash">
+        <%= flash_message %>
+        <button class="close-button flash" aria-label="Dismiss alert" type="button" data-close>
+          <span>&times;</span>
+        </button>
+      </div>
+    </div>
+  <% end) %>
+</div>

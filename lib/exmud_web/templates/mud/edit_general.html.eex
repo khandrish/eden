@@ -1,0 +1,1 @@
+<%= Phoenix.LiveView.live_render(@conn, ExmudWeb.EngineEditLive, session: %{id: @id}) %>

@@ -1,0 +1,21 @@
+<div class="cell shrink medium-cell-block-y">
+  <div class="grid-x grid-padding-x">
+    <div class="cell">
+      <h1>Show Engine callback</h1>
+    </div>
+    <div class="cell">
+      <ul>
+
+        <li>
+          <strong>Default args:</strong>
+          <pre><%= Poison.encode!(@mud_callback.config, pretty: true) %></pre>
+        </li>
+
+      </ul>
+    </div>
+    <div class="cell">
+      <span><%= link "Edit", class: "button primary", to: Routes.mud_callback_path(@conn, :edit, @mud_slug, @mud_callback) %></span>
+      <span><%= link "Back", class: "button primary", to: "#{Routes.mud_path(@conn, :show, @mud_callback.callback, "show": "callbacks")}##{@mud_callback.callback.type}s" %></span>
+    </div>
+  </div>
+</div>

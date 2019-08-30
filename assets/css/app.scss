@@ -1,0 +1,111 @@
+/* This file is for your main application css. */
+
+// Phoenix
+@import "../../deps/phoenix_live_view/assets/css/live_view.css";
+
+@import "../node_modules/jsoneditor/dist/jsoneditor.min.css";
+
+@import "../node_modules/@fortawesome/fontawesome-free/scss/fontawesome.scss";
+
+
+// Navigation bar
+
+div.top-bar {
+    width: 100% !important;
+}
+
+input {
+    &.invalid {
+        background-color: rgba(255, 0, 0, 0.1) !important;
+    };
+    &.valid {
+        background-color: rgba(0, 255, 0, 0.1) !important;
+    }
+}
+
+.help-text.error-text {
+  color: red !important;
+}
+
+.closeable-flash {
+    padding-right: 48px !important;
+    border-radius: 10px !important;
+}
+
+.flash.close-button {
+    padding-top: 3px !important;
+}
+
+.top-bar {
+    padding: 0px !important;
+}
+
+.datatable {
+    width: 100% !important;
+}
+
+body {
+    overflow-x: hidden !important;
+}
+
+.input-group {
+    input {
+        margin: 0px !important;
+    }
+}
+
+.left-side-nav-layout-form {
+    height: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    border: 0 !important;
+    padding: 0 !important;
+}
+
+.left-side-nav-layout-container {
+    padding: 0 !important;
+    min-height: 100vh !important;
+}
+
+.left-side-nav-layout-button {
+    height: 100% !important;
+    width: 100% !important;
+}
+
+a.side-nav-link {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    height: 100% !important;
+    width: 100% !important;
+}
+
+div.content-container {
+    height: 100% !important;
+}
+
+.instance-flash-cell {
+    position: absolute !important;
+}
+
+.instance-content-cell {
+    width: 100% !important;
+}
+
+.instance-content-container {
+    align-items: center !important;
+}
+
+.top-bar {
+    .menu {
+        .cell {
+            a {
+                display: flex !important;
+                justify-content: center !important;
+                align-items: center !important;
+                height: 100% !important;
+                padding: 0px !important;
+            }
+        }
+    }
+}

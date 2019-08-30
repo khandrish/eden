@@ -1,0 +1,26 @@
+<h1>Listing Categories</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+<%= for category <- @categories do %>
+    <tr>
+      <td><%= category.name %></td>
+
+      <td>
+        <%= link "Show", to: Routes.mud_category_path(@conn, :show, @mud_slug, category) %>
+        <%= link "Edit", to: Routes.mud_category_path(@conn, :edit, @mud_slug, category) %>
+        <%= link "Delete", to: Routes.mud_category_path(@conn, :delete, @mud_slug, category), method: :delete, data: [confirm: "Are you sure?"] %>
+      </td>
+    </tr>
+<% end %>
+  </tbody>
+</table>
+
+<span><%= link "New Category", to: Routes.mud_category_path(@conn, :new, @mud_slug) %></span>

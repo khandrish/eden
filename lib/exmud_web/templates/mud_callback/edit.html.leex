@@ -1,0 +1,28 @@
+<div class="cell shrink medium-cell-block-y">
+  <div class="grid-x grid-padding-x">
+    <div class="cell medium-6">
+      <%= form_for @changeset, Routes.mud_callback_path(@conn, :update, @mud_callback.id), fn form -> %>
+        <%= label form, :config %>
+        <div id="jsoneditor"></div>
+        <%= text_input form, :updated_config, [{:type, "hidden"}, {:value, @config}, {:"aria-describedby", "config_help_text"}] %>
+        <%= if @has_config_error? do %>
+          <%= help_text_error_tag form, :config, "config_help_text" %>
+        <% else %>
+          <p class="help-text" id="config_help_text"></p>
+        <% end %>
+        <div>
+          <%= submit "Save", class: "button primary" %>
+          <%= if String.contains?(NavigationHistory.last_path(@conn, 1), "show") do %>
+            <%= link "Back", class: "button primary", to: "#{NavigationHistory.last_path(@conn, 1)}##{@mud_callback.callback.type}s" %>
+          <% else %>
+            <%= link "Back", class: "button primary", to: NavigationHistory.last_path(@conn, 1) %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+    <div class="cell medium-6">
+      <label>Config Schema</label>
+      <div id="jsoneditor_schema"></div>
+    </div>
+  </div>
+</div>

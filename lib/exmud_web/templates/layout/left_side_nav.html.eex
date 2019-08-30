@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+  <%= render "head.html", assigns %>
+  <body>
+    <div class="grid-y grid-frame">
+      <div class="cell shrink header">
+        <%= render "nav.html", assigns %>
+      </div>
+      <div class="cell auto cell-block-container">
+        <div class="grid-x grid-padding-x content-container">
+          <div class="cell shrink left-side-nav-layout-container cell-block-y" style="min-height:100vh">
+            <div class="grid-y grid-frame">
+              <%= for side_link <- @side_nav_links do %>
+                <div class="cell auto">
+                  <%= if side_link.disabled? do %>
+                      <a class="button side-nav-link btn-grad" href="<%= side_link.path %>" disabled><%= side_link.text %></a>
+                    <% else %>
+                      <a class="button side-nav-link btn-grad" href="<%= side_link.path %>"><%= side_link.text %></a>
+                    <% end %>
+                </div>
+              <% end %>
+            </div>
+          </div>
+          <div class="cell auto medium-cell-block-y">
+            <div class="grid-y grid-padding-y mud-content-container">
+              <div class="cell mud-flash-cell">
+                <%= render "flash.html", assigns %>
+              </div>
+              <div class="cell mud-content-cell">
+                <%= render @view_module, @view_template, assigns %>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+  <%= render "post_body.html", assigns %>
+</html>
