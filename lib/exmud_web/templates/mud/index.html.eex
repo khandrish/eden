@@ -41,7 +41,7 @@
               <%= link "Edit", class: "button primary", to: Routes.mud_path(@conn, :edit, mud.slug) %>
             </div>
             <div class="cell shrink">
-              <%= link "Build", class: "button primary", to: Routes.mud_build_path(@conn, :index, mud.slug) %>
+              <%= link "Build", class: "button primary", to: Routes.mud_build_path(@conn, :show, mud.slug) %>
             </div>
           </div>
         </div>

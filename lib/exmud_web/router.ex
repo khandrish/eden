@@ -40,8 +40,10 @@ defmodule ExmudWeb.Router do
     # Engine related stuff
     resources "/mud_callbacks", MudCallbackController, only: [:edit, :show, :update]
 
+    get "/muds/build", BuildController, :index
+
     resources "/muds", MudController, param: "slug" do
-      resources "/build", BuildController, only: [:index, :show]
+      get "/build", BuildController, :show
       resources "/build/prototypes", PrototypeController, param: "slug"
       resources "/build/templates", TemplateController, param: "slug"
       resources "/build/categories", CategoryController, param: "slug"

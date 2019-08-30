@@ -11,31 +11,31 @@ defmodule ExmudWeb.BuildController do
   end
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def show(conn, %{"slug" => slug}) do
-    mud = Engine.get_mud_by_slug!(slug)
+  def show(conn, %{"mud_slug" => mud_slug}) do
+    mud = Engine.get_mud_by_slug!(mud_slug)
 
     render(conn, "show.html",
       mud: mud,
       layout: {ExmudWeb.LayoutView, "left_side_nav.html"},
-      side_nav_links: side_nav_links(conn, slug)
+      side_nav_links: side_nav_links(conn, mud_slug)
     )
   end
 
-  defp side_nav_links(conn, slug) do
+  defp side_nav_links(conn, mud_slug) do
     [
       %{
         disabled?: false,
-        path: Routes.mud_prototype_path(conn, :index, slug),
+        path: Routes.mud_prototype_path(conn, :index, mud_slug),
         text: "Prototypes"
       },
       %{
         disabled?: false,
-        path: Routes.mud_template_path(conn, :index, slug),
+        path: Routes.mud_template_path(conn, :index, mud_slug),
         text: "Templates"
       },
       %{
         disabled?: false,
-        path: Routes.mud_category_path(conn, :index, slug),
+        path: Routes.mud_category_path(conn, :index, mud_slug),
         text: "Categories"
       }
     ]
