@@ -1,6 +1,6 @@
 # Exmud
 
-A framework for the development and management of onlime multiplayer text-based (MUDs) games. 
+A framework for the development and management of onlime multiplayer text-based (muds) games. 
 
 Initially created as a port of [Evennia](http://www.evennia.com/), it has since taken on a life of its own. That said,
 several core concepts borrowed from Evennia are still present.
@@ -77,13 +77,13 @@ MUD Engine:
 - [] Objects can be arbitrarily linked together.
 - [] Tags, which act as a truth check. Either the tag is there or it isn't.
 - [] Scripts are pieces of logic which can be "attached" to Objects and executed in their own process.
-- [] Systems are like Scripts, but aren't attached to any specific Object and work instead on a MUD instance level.
+- [] Systems are like Scripts, but aren't attached to any specific Object and work instead on a MUD mud level.
 - [] Components encapsulate key/value pairs and are attached to each object.
 - [] Object templating system, complete with Object factory and.
 - [] Area/Region system built ontop of Objects/Components to make building worlds easier.
 - [] Character system built ontop of Objects/Components to make certain things easier.
 - [] Telemetry of as much of the system as possible
-- [] Players can connect to one character on one MUD, one each on multiple MUDs, or multiple characters based on config
+- [] Players can connect to one character on one MUD, one each on multiple muds, or multiple characters based on config
 - [] Events emitted for almost everything, account creation/deletion or player login/logout for example
 
 ### 2.0

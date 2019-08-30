@@ -1,4 +1,4 @@
-defmodule ExmudWeb.MudControllerTest do
+defmodule ExmudWeb.EngineControllerTest do
   use ExmudWeb.ConnCase
 
   alias Exmud.Engine
@@ -15,14 +15,14 @@ defmodule ExmudWeb.MudControllerTest do
   describe "index" do
     test "lists all muds", %{conn: conn} do
       conn = get(conn, Routes.mud_path(conn, :index))
-      assert html_response(conn, 200) =~ "Listing Muds"
+      assert html_response(conn, 200) =~ "Listing Engines"
     end
   end
 
   describe "new mud" do
     test "renders form", %{conn: conn} do
       conn = get(conn, Routes.mud_path(conn, :new))
-      assert html_response(conn, 200) =~ "New Mud"
+      assert html_response(conn, 200) =~ "New Engine"
     end
   end
 
@@ -34,12 +34,12 @@ defmodule ExmudWeb.MudControllerTest do
       assert redirected_to(conn) == Routes.mud_path(conn, :show, id)
 
       conn = get(conn, Routes.mud_path(conn, :show, id))
-      assert html_response(conn, 200) =~ "Show Mud"
+      assert html_response(conn, 200) =~ "Show Engine"
     end
 
     test "renders errors when data is invalid", %{conn: conn} do
       conn = post(conn, Routes.mud_path(conn, :create), mud: @invalid_attrs)
-      assert html_response(conn, 200) =~ "New Mud"
+      assert html_response(conn, 200) =~ "New Engine"
     end
   end
 
@@ -48,7 +48,7 @@ defmodule ExmudWeb.MudControllerTest do
 
     test "renders form for editing chosen mud", %{conn: conn, mud: mud} do
       conn = get(conn, Routes.mud_path(conn, :edit, mud))
-      assert html_response(conn, 200) =~ "Edit Mud"
+      assert html_response(conn, 200) =~ "Edit Engine"
     end
   end
 
@@ -65,7 +65,7 @@ defmodule ExmudWeb.MudControllerTest do
 
     test "renders errors when data is invalid", %{conn: conn, mud: mud} do
       conn = put(conn, Routes.mud_path(conn, :update, mud), mud: @invalid_attrs)
-      assert html_response(conn, 200) =~ "Edit Mud"
+      assert html_response(conn, 200) =~ "Edit Engine"
     end
   end
 

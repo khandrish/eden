@@ -1,6 +1,3 @@
-<nav>
-  <%= render ExmudWeb.TopBarView, "top_bar.html", player_authenticated?: @player_authenticated? %>
-</nav>
 <div class="grid-x grid-margin-x align-center">
   <%= Enum.map(get_flash(@conn), fn {flash_key, flash_message} -> %>
     <div class="cell shrink" data-closable>

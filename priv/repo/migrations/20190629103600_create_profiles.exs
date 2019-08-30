@@ -4,6 +4,7 @@ defmodule Exmud.Repo.Migrations.CreateProfiles do
   def change do
     create table(:profiles) do
       add :nickname, :string
+      add :slug, :string
       add :email, :string
       add :email_verified, :boolean, default: false, null: false
       add :tos_accepted, :boolean, default: false, null: false

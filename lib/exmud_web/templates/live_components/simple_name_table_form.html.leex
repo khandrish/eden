@@ -24,7 +24,7 @@
   </div>
 <%= if @has_name_error? do %>
     <%= help_text_error_tag f, :name, "name_help_text" %>
-<%= else %>
+<% else %>
     <p class="help-text" id="name_help_text">A simple identifier.</p>
-<%= end %>
+<% end %>
 </form>

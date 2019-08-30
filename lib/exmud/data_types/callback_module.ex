@@ -1,4 +1,4 @@
-defmodule Exmud.Type.CallbackModule do
+defmodule Exmud.DataType.CallbackModule do
   @moduledoc false
 
   @behaviour Ecto.Type

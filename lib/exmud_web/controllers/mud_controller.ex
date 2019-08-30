@@ -3,20 +3,8 @@ defmodule ExmudWeb.MudController do
 
   alias Exmud.Engine
   alias Exmud.Engine.Mud
-  alias Exmud.Template
 
-  plug :put_layout, "mud.html"
-
-  defmodule CallbackGroups do
-    @moduledoc false
-    defstruct commands: [],
-              command_sets: [],
-              components: [],
-              links: [],
-              locks: [],
-              scripts: [],
-              systems: []
-  end
+  plug :put_layout, "left_side_nav.html"
 
   def index(conn, _params) do
     muds = Engine.list_muds()
@@ -25,86 +13,60 @@ defmodule ExmudWeb.MudController do
 
   def new(conn, _params) do
     changeset = Engine.change_mud(%Mud{})
-    render(conn, "new.html", changeset: changeset, layout: {ExmudWeb.LayoutView, "app.html"})
+    render(conn, "new.html", changeset: changeset, layout: {ExmudWeb.LayoutView, "form.html"})
   end
 
   def create(conn, %{"mud" => mud_params}) do
     case Engine.create_mud(mud_params) do
       {:ok, mud} ->
         conn
-        |> put_flash(:info, "Mud created successfully.")
-        |> redirect(to: Routes.mud_path(conn, :show, mud))
+        |> put_flash(:info, "Engine created successfully.")
+        |> redirect(to: Routes.mud_path(conn, :show, mud.slug))
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "new.html", changeset: changeset)
     end
   end
 
-  def show(conn, %{"id" => id}) do
-    id = String.to_integer(id)
-    mud = Engine.get_mud!(id)
-    callbacks = Engine.list_mud_callbacks(id)
-    grouped_callbacks = populate_callback_groups(callbacks)
+  @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def show(conn, %{"slug" => slug}) do
+    mud = Engine.get_mud_by_slug!(slug)
 
-    show = Map.get(conn.query_params, "show")
-
-    side_nav_links = [
-      %{
-        disabled: false,
-        # path: Routes.mud_prototype_path(conn, :index, mud),
-        path: "/foo",
-        text: "Prototypes"
-      },
-      %{
-        disabled: false,
-        # path: Routes.mud_prototype_path(conn, :index, mud),
-        path: "/foo",
-        text: "Settings"
-      }
-    ]
-
-    render(conn, "show.html",
-      mud: mud,
-      grouped_callbacks: grouped_callbacks,
-      show: show,
-      side_nav_links: side_nav_links
-    )
+    render(conn, "show.html", mud: mud, layout: {ExmudWeb.LayoutView, "app.html"})
   end
 
-  def edit(conn, %{"id" => id}) do
-    id = String.to_integer(id)
-    mud = Engine.get_mud!(id)
-
-    mud_callback_set =
-      Engine.list_mud_callbacks(id)
-      |> Enum.reduce(MapSet.new(), fn sc, ms -> MapSet.put(ms, sc.callback_id) end)
-
-    callbacks =
-      Engine.list_callbacks()
-      |> Enum.map(fn cb ->
-        %{callback: cb, present: MapSet.member?(mud_callback_set, cb.id)}
-      end)
-
-    grouped_callbacks = populate_callback_groups(callbacks)
-
-    show = Map.get(conn.query_params, "show")
+  @spec build(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def build(conn, %{"slug" => slug}) do
+    mud = Engine.get_mud_by_slug!(slug)
+    changeset = Engine.change_mud(mud)
 
     render(conn, "edit.html",
-      grouped_callbacks: grouped_callbacks,
-      id: id,
-      mud: mud,
-      show: show
+      changeset: changeset,
+      has_name_error?: false,
+      layout: {ExmudWeb.LayoutView, "form.html"}
     )
   end
 
-  def update(conn, %{"id" => id, "mud" => mud_params}) do
-    id = String.to_integer(id)
-    mud = Engine.get_mud!(id)
+  @spec edit(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def edit(conn, %{"slug" => slug}) do
+    mud = Engine.get_mud_by_slug!(slug)
+    changeset = Engine.change_mud(mud)
+
+    render(conn, "edit.html",
+      changeset: changeset,
+      has_name_error?: false,
+      layout: {ExmudWeb.LayoutView, "form.html"}
+    )
+  end
+
+  @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def update(conn, %{"slug" => slug, "mud" => mud_params}) do
+    mud = Engine.get_mud_by_slug!(slug)
 
     case Engine.update_mud(mud, mud_params) do
       {:ok, mud} ->
         conn
-        |> put_flash(:info, "Mud updated successfully.")
+        |> put_flash(:info, "Engine updated successfully.")
         |> redirect(to: Routes.mud_path(conn, :show, mud))
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -112,20 +74,12 @@ defmodule ExmudWeb.MudController do
     end
   end
 
-  def delete(conn, %{"id" => id}) do
-    id = String.to_integer(id)
-    mud = Engine.get_mud!(id)
+  def delete(conn, %{"slug" => slug}) do
+    mud = Engine.get_mud_by_slug!(slug)
     {:ok, _mud} = Engine.delete_mud(mud)
 
     conn
-    |> put_flash(:info, "Mud deleted successfully.")
+    |> put_flash(:info, "Engine deleted successfully.")
     |> redirect(to: Routes.mud_path(conn, :index))
-  end
-
-  defp populate_callback_groups(callbacks) do
-    Enum.reduce(callbacks, %CallbackGroups{}, fn callback, groups ->
-      key = String.to_existing_atom("#{callback.callback.type}s")
-      Map.update!(groups, key, fn existing_callbacks -> existing_callbacks ++ [callback] end)
-    end)
   end
 end

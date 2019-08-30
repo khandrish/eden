@@ -38,7 +38,7 @@ defmodule Exmud.Application do
 
     Exmud.Repo.delete_all(
       from(
-        callback in Exmud.Engine.Callback,
+        callback in Exmud.Builder.Callback,
         where: callback.module not in ^callback_names
       )
     )
@@ -46,7 +46,7 @@ defmodule Exmud.Application do
     remaining_callbacks =
       Exmud.Repo.all(
         from(
-          callback in Exmud.Engine.Callback,
+          callback in Exmud.Builder.Callback,
           select: callback.module
         )
       )
@@ -61,7 +61,7 @@ defmodule Exmud.Application do
         end
       end)
 
-    Exmud.Repo.insert_all(Exmud.Engine.Callback, filtered_callbacks)
+    Exmud.Repo.insert_all(Exmud.Builder.Callback, filtered_callbacks)
 
     :ok
   end

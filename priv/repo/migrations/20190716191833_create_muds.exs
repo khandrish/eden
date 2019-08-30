@@ -1,9 +1,11 @@
-defmodule Exmud.Repo.Migrations.CreateMuds do
+defmodule Exmud.Repo.Migrations.CreateEngines do
   use Ecto.Migration
 
   def change do
     create table(:muds) do
       add :name, :string
+      add :description, :string
+      add :slug, :string
       add :status, :string
 
       timestamps()

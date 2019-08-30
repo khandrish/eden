@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+  <%= render "head.html", assigns %>
+  <body>
+    <div class="grid-y medium-grid-frame">
+      <div class="cell shrink header medium-cell-block-container">
+        <%= render "nav.html", assigns %>
+        <%= render "flash.html", assigns %>
+      </div>
+      <div class="cell medium-auto medium-cell-block-container">
+        <div class="grid-x grid-padding-x">
+            <div class="cell expand">
+              <%= render @view_module, @view_template, assigns %>
+            </div>
+        </div>
+      </div>
+    </div>
+  </body>
+  <%= render "post_body.html", assigns %>
+</html>

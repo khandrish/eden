@@ -1,11 +1,11 @@
-defmodule ExmudWeb.MudCallbackControllerTest do
+defmodule ExmudWeb.EngineCallbackControllerTest do
   use ExmudWeb.ConnCase
 
   alias Exmud.Engine
 
-  @create_attrs %{default_config: "some default_config"}
-  @update_attrs %{default_config: "some updated default_config"}
-  @invalid_attrs %{default_config: nil}
+  @create_attrs %{config: "some config"}
+  @update_attrs %{config: "some updated config"}
+  @invalid_attrs %{config: nil}
 
   def fixture(:mud_callback) do
     {:ok, mud_callback} = Engine.create_mud_callback(@create_attrs)
@@ -15,14 +15,14 @@ defmodule ExmudWeb.MudCallbackControllerTest do
   describe "index" do
     test "lists all mud_callbacks", %{conn: conn} do
       conn = get(conn, Routes.mud_callback_path(conn, :index))
-      assert html_response(conn, 200) =~ "Listing Mud callbacks"
+      assert html_response(conn, 200) =~ "Listing Engine callbacks"
     end
   end
 
   describe "new mud_callback" do
     test "renders form", %{conn: conn} do
       conn = get(conn, Routes.mud_callback_path(conn, :new))
-      assert html_response(conn, 200) =~ "New Mud callback"
+      assert html_response(conn, 200) =~ "New Engine callback"
     end
   end
 
@@ -34,13 +34,13 @@ defmodule ExmudWeb.MudCallbackControllerTest do
       assert redirected_to(conn) == Routes.mud_callback_path(conn, :show, id)
 
       conn = get(conn, Routes.mud_callback_path(conn, :show, id))
-      assert html_response(conn, 200) =~ "Show Mud callback"
+      assert html_response(conn, 200) =~ "Show Engine callback"
     end
 
     test "renders errors when data is invalid", %{conn: conn} do
       conn = post(conn, Routes.mud_callback_path(conn, :create), mud_callback: @invalid_attrs)
 
-      assert html_response(conn, 200) =~ "New Mud callback"
+      assert html_response(conn, 200) =~ "New Engine callback"
     end
   end
 
@@ -52,7 +52,7 @@ defmodule ExmudWeb.MudCallbackControllerTest do
       mud_callback: mud_callback
     } do
       conn = get(conn, Routes.mud_callback_path(conn, :edit, mud_callback))
-      assert html_response(conn, 200) =~ "Edit Mud callback"
+      assert html_response(conn, 200) =~ "Edit Engine callback"
     end
   end
 
@@ -81,7 +81,7 @@ defmodule ExmudWeb.MudCallbackControllerTest do
           mud_callback: @invalid_attrs
         )
 
-      assert html_response(conn, 200) =~ "Edit Mud callback"
+      assert html_response(conn, 200) =~ "Edit Engine callback"
     end
   end
 

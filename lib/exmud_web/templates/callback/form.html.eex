@@ -9,14 +9,14 @@
   <%= label form, :documentation %>
   <textarea id="callback_documentation" readonly><%= @docs %></textarea>
 
-  <%= label form, :default_config %>
+  <%= label form, :config %>
   <div id="jsoneditor"></div>
-  <%= text_input form, :updated_default_config, [{:type, "hidden"}, {:value, @default_config}, {:"aria-describedby", "default_config_help_text"}] %>
-  <%= if @has_default_config_error? do %>
-    <%= help_text_error_tag form, :default_config, "default_config_help_text" %>
-  <%= else %>
-    <p class="help-text" id="default_config_help_text"></p>
-  <%= end %>
+  <%= text_input form, :updated_config, [{:type, "hidden"}, {:value, @config}, {:"aria-describedby", "config_help_text"}] %>
+  <%= if @has_config_error? do %>
+    <%= help_text_error_tag form, :config, "config_help_text" %>
+  <% else %>
+    <p class="help-text" id="config_help_text"></p>
+  <% end %>
   <div>
     <%= submit "Save", class: "button primary" %>
   </div>

@@ -1,6 +1,7 @@
 defmodule ExmudWeb.MudCallbackController do
   use ExmudWeb, :controller
 
+  alias Exmud.Builder
   alias Exmud.Engine
 
   defmodule CallbackGroups do
@@ -15,32 +16,32 @@ defmodule ExmudWeb.MudCallbackController do
   end
 
   def show(conn, %{"id" => id}) do
-    mud_callback = Engine.get_mud_callback!(id)
+    mud_callback = Builder.get_mud_callback!(id)
     render(conn, "show.html", mud_callback: mud_callback)
   end
 
   def list(conn, %{"id" => id}) do
-    mud_callbacks = Engine.list_mud_callbacks(id)
+    mud_callbacks = Builder.list_mud_callbacks(id)
     grouped_callbacks = populate_callback_groups(mud_callbacks)
     render(conn, "show.html", grouped_callbacks: grouped_callbacks)
   end
 
   def edit(conn, %{"id" => id}) do
-    mud_callback = Engine.get_mud_callback!(id)
-    changeset = Engine.change_mud_callback(mud_callback)
+    mud_callback = Builder.get_mud_callback!(id)
+    changeset = Builder.change_mud_callback(mud_callback)
 
     render(conn, "edit.html",
       mud_callback: mud_callback,
       changeset: changeset,
       docs: Exmud.Util.get_module_docs(mud_callback.callback.module),
-      default_config: Poison.encode!(mud_callback.default_config),
+      config: Poison.encode!(mud_callback.config),
       config_schema: Poison.encode!(mud_callback.callback.module.config_schema()),
-      has_default_config_error?: false
+      has_config_error?: false
     )
   end
 
   def update(conn, %{"id" => id, "mud_callback" => mud_callback_params}) do
-    mud_callback = Engine.get_mud_callback!(id)
+    mud_callback = Builder.get_mud_callback!(id)
 
     with {:ok, config} <- extract_config(mud_callback_params),
          :ok <-
@@ -48,9 +49,9 @@ defmodule ExmudWeb.MudCallbackController do
            |> ExJsonSchema.Schema.resolve()
            |> ExJsonSchema.Validator.validate(config),
          mud_callback_params <-
-           Map.put(mud_callback_params, "default_config", config),
+           Map.put(mud_callback_params, "config", config),
          {:ok, _mud_callback} <-
-           Engine.update_mud_callback(mud_callback, mud_callback_params) do
+           Builder.update_mud_callback(mud_callback, mud_callback_params) do
       last_path = NavigationHistory.last_path(conn, 1)
 
       path =
@@ -61,7 +62,7 @@ defmodule ExmudWeb.MudCallbackController do
         end
 
       conn
-      |> put_flash(:info, "Mud callback updated successfully.")
+      |> put_flash(:info, "Engine callback updated successfully.")
       |> redirect(to: path)
     else
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -69,9 +70,9 @@ defmodule ExmudWeb.MudCallbackController do
           mud_callback: mud_callback,
           changeset: changeset,
           docs: Exmud.Util.get_module_docs(mud_callback.callback.module),
-          default_config: Poison.encode!(mud_callback.default_config),
+          config: Poison.encode!(mud_callback.config),
           config_schema: Poison.encode!(mud_callback.module.config_schema()),
-          has_default_config_error?: true
+          has_config_error?: true
         )
 
       {:error, :invalid_json} ->
@@ -79,17 +80,17 @@ defmodule ExmudWeb.MudCallbackController do
         |> put_flash(:error, "Invalid JSON submitted.")
         |> render("edit.html",
           mud_callback: mud_callback,
-          changeset: Engine.change_mud_callback(mud_callback),
+          changeset: Builder.change_mud_callback(mud_callback),
           docs: Exmud.Util.get_module_docs(mud_callback.callback.module),
-          default_config: Poison.encode!(mud_callback.default_config),
+          config: Poison.encode!(mud_callback.config),
           config_schema: Poison.encode!(mud_callback.callback.module.config_schema()),
-          has_default_config_error?: true
+          has_config_error?: true
         )
 
       {:error, errors} ->
         {:ok, config} = extract_config(mud_callback_params)
-        errors = Exmud.Util.exjson_validator_errors_to_changeset_errors(:default_config, errors)
-        changeset = Engine.change_mud_callback(mud_callback)
+        errors = Exmud.Util.exjson_validator_errors_to_changeset_errors(:config, errors)
+        changeset = Builder.change_mud_callback(mud_callback)
 
         changeset = %{
           changeset
@@ -102,15 +103,15 @@ defmodule ExmudWeb.MudCallbackController do
           mud_callback: mud_callback,
           changeset: changeset,
           docs: Exmud.Util.get_module_docs(mud_callback.callback.module),
-          default_config: Poison.encode!(config),
+          config: Poison.encode!(config),
           config_schema: Poison.encode!(mud_callback.callback.module.config_schema()),
-          has_default_config_error?: true
+          has_config_error?: true
         )
     end
   end
 
   defp extract_config(params) do
-    case Poison.decode(params["updated_default_config"]) do
+    case Poison.decode(params["updated_config"]) do
       {:ok, updated_config} ->
         {:ok, updated_config}
 

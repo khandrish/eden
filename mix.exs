@@ -36,6 +36,7 @@ defmodule Exmud.MixProject do
     [
       {:bamboo, "~> 1.3"},
       {:defused, "~> 0.6.0"},
+      {:ecto_autoslug_field, "~> 2.0"},
       {:ecto_sql, "~> 3.0"},
       {:ex_json_schema, "~> 0.6.1"},
       {:exconstructor, "~> 1.1"},

@@ -30,7 +30,7 @@ defmodule Exmud.EngineTest do
     end
 
     test "create_mud/1 with valid data creates a mud" do
-      assert {:ok, %Mud{} = mud} = Engine.create_mud(@valid_attrs)
+      assert {:ok, %Engine{} = mud} = Engine.create_mud(@valid_attrs)
       assert mud.name == "some name"
       assert mud.status == "some status"
     end
@@ -42,7 +42,7 @@ defmodule Exmud.EngineTest do
     test "update_mud/2 with valid data updates the mud" do
       mud = mud_fixture()
 
-      assert {:ok, %Mud{} = mud} = Engine.update_mud(mud, @update_attrs)
+      assert {:ok, %Engine{} = mud} = Engine.update_mud(mud, @update_attrs)
 
       assert mud.name == "some updated name"
       assert mud.status == "some updated status"
@@ -56,7 +56,7 @@ defmodule Exmud.EngineTest do
 
     test "delete_mud/1 deletes the mud" do
       mud = mud_fixture()
-      assert {:ok, %Mud{}} = Engine.delete_mud(mud)
+      assert {:ok, %Engine{}} = Engine.delete_mud(mud)
       assert_raise Ecto.NoResultsError, fn -> Engine.get_mud!(mud.id) end
     end
 
@@ -67,19 +67,19 @@ defmodule Exmud.EngineTest do
   end
 
   describe "callbacks" do
-    alias Exmud.Engine.Callbacks
+    alias Exmud.Builder.Callbacks
 
     @valid_attrs %{
-      default_config: "some default_config",
+      config: "some config",
       module: "some module",
       type: "some type"
     }
     @update_attrs %{
-      default_config: "some updated default_config",
+      config: "some updated config",
       module: "some updated module",
       type: "some updated type"
     }
-    @invalid_attrs %{default_config: nil, module: nil, type: nil}
+    @invalid_attrs %{config: nil, module: nil, type: nil}
 
     def callbacks_fixture(attrs \\ %{}) do
       {:ok, callbacks} =
@@ -102,7 +102,7 @@ defmodule Exmud.EngineTest do
 
     test "create_callbacks/1 with valid data creates a callbacks" do
       assert {:ok, %Callbacks{} = callbacks} = Engine.create_callbacks(@valid_attrs)
-      assert callbacks.default_config == "some default_config"
+      assert callbacks.config == "some config"
       assert callbacks.module == "some module"
       assert callbacks.type == "some type"
     end
@@ -114,7 +114,7 @@ defmodule Exmud.EngineTest do
     test "update_callbacks/2 with valid data updates the callbacks" do
       callbacks = callbacks_fixture()
       assert {:ok, %Callbacks{} = callbacks} = Engine.update_callbacks(callbacks, @update_attrs)
-      assert callbacks.default_config == "some updated default_config"
+      assert callbacks.config == "some updated config"
       assert callbacks.module == "some updated module"
       assert callbacks.type == "some updated type"
     end
@@ -140,9 +140,9 @@ defmodule Exmud.EngineTest do
   describe "mud_callbacks" do
     alias Exmud.Engine.MudCallback
 
-    @valid_attrs %{default_config: "some default_config"}
-    @update_attrs %{default_config: "some updated default_config"}
-    @invalid_attrs %{default_config: nil}
+    @valid_attrs %{config: "some config"}
+    @update_attrs %{config: "some updated config"}
+    @invalid_attrs %{config: nil}
 
     def mud_callback_fixture(attrs \\ %{}) do
       {:ok, mud_callback} =
@@ -164,9 +164,9 @@ defmodule Exmud.EngineTest do
     end
 
     test "create_mud_callback/1 with valid data creates a mud_callback" do
-      assert {:ok, %MudCallback{} = mud_callback} = Engine.create_mud_callback(@valid_attrs)
+      assert {:ok, %EngineCallback{} = mud_callback} = Engine.create_mud_callback(@valid_attrs)
 
-      assert mud_callback.default_config == "some default_config"
+      assert mud_callback.config == "some config"
     end
 
     test "create_mud_callback/1 with invalid data returns error changeset" do
@@ -176,10 +176,10 @@ defmodule Exmud.EngineTest do
     test "update_mud_callback/2 with valid data updates the mud_callback" do
       mud_callback = mud_callback_fixture()
 
-      assert {:ok, %MudCallback{} = mud_callback} =
+      assert {:ok, %EngineCallback{} = mud_callback} =
                Engine.update_mud_callback(mud_callback, @update_attrs)
 
-      assert mud_callback.default_config == "some updated default_config"
+      assert mud_callback.config == "some updated config"
     end
 
     test "update_mud_callback/2 with invalid data returns error changeset" do
@@ -193,7 +193,7 @@ defmodule Exmud.EngineTest do
 
     test "delete_mud_callback/1 deletes the mud_callback" do
       mud_callback = mud_callback_fixture()
-      assert {:ok, %MudCallback{}} = Engine.delete_mud_callback(mud_callback)
+      assert {:ok, %EngineCallback{}} = Engine.delete_mud_callback(mud_callback)
 
       assert_raise Ecto.NoResultsError, fn ->
         Engine.get_mud_callback!(mud_callback.id)
@@ -339,7 +339,11 @@ defmodule Exmud.EngineTest do
     alias Exmud.Engine.Decorator
 
     @valid_attrs %{category: "some category", name: "some name", type: "some type"}
-    @update_attrs %{category: "some updated category", name: "some updated name", type: "some updated type"}
+    @update_attrs %{
+      category: "some updated category",
+      name: "some updated name",
+      type: "some updated type"
+    }
     @invalid_attrs %{category: nil, name: nil, type: nil}
 
     def decorator_fixture(attrs \\ %{}) do

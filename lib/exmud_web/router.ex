@@ -10,6 +10,7 @@ defmodule ExmudWeb.Router do
     plug :protect_from_forgery
     plug :put_secure_browser_headers
     plug NavigationHistory.Tracker
+    plug ExmudWeb.Plug.AssignSlugs
   end
 
   pipeline :api do
@@ -36,11 +37,14 @@ defmodule ExmudWeb.Router do
     # Callback related stuff
     resources "/callbacks", CallbackController, except: [:create, :delete, :new]
 
-    # Mud related stuff
+    # Engine related stuff
     resources "/mud_callbacks", MudCallbackController, only: [:edit, :show, :update]
 
-    resources "/muds", MudController do
-      get "/settings", MudController, :settings
+    resources "/muds", MudController, param: "slug" do
+      resources "/build", BuildController, only: [:index, :show]
+      resources "/build/prototypes", PrototypeController, param: "slug"
+      resources "/build/templates", TemplateController, param: "slug"
+      resources "/build/categories", CategoryController, param: "slug"
     end
 
     # Player related stuff

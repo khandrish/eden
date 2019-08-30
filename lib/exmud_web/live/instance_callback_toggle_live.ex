@@ -1,7 +1,7 @@
-defmodule ExmudWeb.MudCallbackToggleLive do
+defmodule ExmudWeb.EngineCallbackToggleLive do
   use Phoenix.LiveView
 
-  alias Exmud.Engine
+  alias Exmud.Builder
 
   def mount(%{callback_id: callback_id, mud_id: mud_id, present: present}, socket) do
     {:ok,
@@ -14,7 +14,7 @@ defmodule ExmudWeb.MudCallbackToggleLive do
 
   def render(assigns) do
     Phoenix.View.render(
-      ExmudWeb.MudView,
+      ExmudWeb.EngineView,
       "add_or_remove_button.html",
       assigns
     )
@@ -24,12 +24,12 @@ defmodule ExmudWeb.MudCallbackToggleLive do
     mud_id = socket.assigns.mud_id
     callback_id = socket.assigns.callback_id
 
-    callback = Engine.get_callback!(callback_id)
+    callback = Builder.get_callback!(callback_id)
 
-    Engine.create_mud_callback!(%{
+    Builder.create_mud_callback!(%{
       mud_id: mud_id,
       callback_id: callback_id,
-      default_config: callback.default_config
+      config: callback.config
     })
 
     {:noreply,
@@ -39,7 +39,7 @@ defmodule ExmudWeb.MudCallbackToggleLive do
   end
 
   def handle_event("remove", _, socket) do
-    :ok = Engine.delete_mud_callback!(socket.assigns.callback_id, socket.assigns.mud_id)
+    :ok = Builder.delete_mud_callback!(socket.assigns.callback_id, socket.assigns.mud_id)
 
     {:noreply,
      assign(socket,

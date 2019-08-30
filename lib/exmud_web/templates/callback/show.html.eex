@@ -21,8 +21,8 @@
     </li>
 
     <li>
-      <strong>Default config:</strong>
-      <pre><%= Poison.encode!(@callback.default_config, pretty: true) %></pre>
+      <strong>Config:</strong>
+      <pre><%= Poison.encode!(@callback.config, pretty: true) %></pre>
     </li>
 
     <li>

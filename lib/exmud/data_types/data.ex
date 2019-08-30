@@ -1,4 +1,4 @@
-defmodule Exmud.Type.Data do
+defmodule Exmud.DataType.Data do
   @moduledoc false
 
   @behaviour Ecto.Type

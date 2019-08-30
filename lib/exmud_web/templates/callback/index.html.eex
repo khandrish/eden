@@ -8,7 +8,7 @@
       <tr>
         <th>Module</th>
         <th>Type</th>
-        <th>Default Config</th>
+        <th>Config</th>
         <th>Docs</th>
         <th>Actions</th>
       </tr>
@@ -18,7 +18,7 @@
       <tr>
         <td><%= callback.module %></td>
         <td><%= callback.type %></td>
-        <td><pre><%= Poison.encode!(callback.default_config, pretty: true) %></pre></td>
+        <td><pre><%= Poison.encode!(callback.config, pretty: true) %></pre></td>
         <td><pre><%= callback.docs %></pre></td>
 
         <td>

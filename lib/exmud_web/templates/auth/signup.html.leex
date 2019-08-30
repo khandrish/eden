@@ -6,18 +6,18 @@
         <%= if @has_nickname_error? do %>
             <%= help_text_error_tag f, :nickname, "nickname_help_text" %>
             <div class="foo"></div>
-        <%= else %>
+        <% else %>
             <p class="help-text" id="nickname_help_text">This is what other players will see on the forums, wiki, and so on. Must be unique. Can be changed later.</p>
-        <%= end %>
+        <% end %>
 
         <label>Email
             <%= email_input f, :email, [{:"aria-describedby", "email_help_text"}, {:class, get_input_field_class(@changeset, :email)}] %>
         </label>
         <%= if @has_email_error? do %>
             <%= help_text_error_tag f, :email, "email_help_text" %>
-        <%= else %>
+        <% else %>
             <p class="help-text" id="email_help_text">The email address used for authentication and communication.</p>
-        <%= end %>
+        <% end %>
 
         <label>TOS
             <%= checkbox f, :tos_accepted %> Agree to the Terms of Service

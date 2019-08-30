@@ -4,12 +4,12 @@
     var container = document.getElementById("jsoneditor");
     var options = {
       onChangeText: function (jsonText) {
-        document.getElementById("mud_callback_updated_default_config").value = jsonText
+        document.getElementById("mud_callback_updated_config").value = jsonText
       },
       schema: <%= raw @config_schema %>,
       search: false
     };
-    var json = <%= raw @default_config %>;
+    var json = <%= raw @config %>;
     new JSONEditor(container, options, json);
 
     // Schema

@@ -1,5 +1,5 @@
 <div class="cell">
-  <h1>New Mud</h1>
+  <h1>New Engine</h1>
 </div>
 <div class="cell">
   <%= form_for @changeset, Routes.mud_path(@conn, :create), fn f -> %>

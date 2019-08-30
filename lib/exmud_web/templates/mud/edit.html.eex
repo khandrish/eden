@@ -1,35 +1,30 @@
-<div class="grid-x grid-padding-x">
-  <div class="cell shrink medium-cell-block-y">
-    <h3><%= String.capitalize(@mud.status) %></h3>
-    <p><span><%= link "Callbacks", class: "button primary", to: Routes.mud_path(@conn, :edit, @mud, "show": "callbacks") %></span></p>
-    <p><span><%= link "Prototypes", class: "button primary", to: Routes.mud_path(@conn, :edit, @mud, "show": "prototypes") %></span></p>
-    <p><span><%= link "Settings", class: "button primary", to: Routes.mud_path(@conn, :edit, @mud, "show": "settings") %></span></p>
+<%= f = form_for @changeset, "#", [phx_change: :validate, phx_submit: :save] %>
+  <%= label f, :name %>
+  <%= text_input f, :name %>
+  <%= if @has_name_error? do %>
+    <%= help_text_error_tag f, :name, "name_help_text" %>
+  <% else %>
+    <p class="help-text" id="name_help_text">The name of the MUD as appears to all players in the UI.</p>
+  <% end %>
 
+  <%= label f, :tagline %>
+  <%= text_input f, :tagline %>
+  <%= if @has_tagline_error? do %>
+    <%= help_text_error_tag f, :tagline, "tagline_help_text" %>
+  <% else %>
+    <p class="help-text" id="tagline_help_text">A short phrase that</p>
+  <% end %>
+
+  <%= label f, :description %>
+  <%= text_input f, :description %>
+  <%= if @has_description_error? do %>
+    <%= help_text_error_tag f, :description, "description_help_text" %>
+  <% else %>
+    <p class="help-text" id="description_help_text">The longer form description of the MUD. Should be used to give a brief but thorough overview to draw players in.</p>
+  <% end %>
+
+  <div>
+    <%= submit "Save", class: "button primary", phx_disable_with: "Saving..." %>
+    <%= link "Back", class: "button primary", to: NavigationHistory.last_path(@conn, 1) %>
   </div>
-  <div class="cell auto medium-cell-block-y">
-    <div class="grid-y grid-padding-y">
-      <div class="cell">
-        <h2><%= @mud.name %></h2>
-      </div>
-      <div class="cell">
-        <%= case @show do %>
-          <% "templates" -> %>
-            <%= render "edit_templates.html", assigns %>
-          <% "callbacks" -> %>
-            <%= render "edit_callbacks.html", assigns %>
-          <% "config" -> %>
-            <%= render "edit_config.html", assigns %>
-          <% _ -> %>
-            <%= render "edit_general.html", assigns %>
-        <% end %>
-      </div>
-      <div class="cell">
-        <div class="grid-x grid-padding-x">
-          <div class="cell">
-            <span><%= link "Done", class: "button primary", to: Routes.mud_path(@conn, :show, @mud) %></span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+</form>

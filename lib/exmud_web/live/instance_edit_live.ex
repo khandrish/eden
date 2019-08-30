@@ -1,11 +1,11 @@
-defmodule ExmudWeb.MudEditLive do
+defmodule ExmudWeb.EngineEditLive do
   use Phoenix.LiveView
 
-  alias Exmud.Engine
+  alias Exmud.Builder
 
   def mount(%{id: id}, socket) do
-    mud = Engine.get_mud!(id)
-    changeset = Engine.change_mud(mud)
+    mud = Builder.get_mud!(id)
+    changeset = Builder.change_mud(mud)
 
     {:ok,
      assign(socket,
@@ -16,7 +16,7 @@ defmodule ExmudWeb.MudEditLive do
 
   def render(assigns) do
     Phoenix.View.render(
-      ExmudWeb.MudView,
+      ExmudWeb.EngineView,
       "edit_form.html",
       assigns
     )
@@ -26,12 +26,12 @@ defmodule ExmudWeb.MudEditLive do
     mud_id = String.to_integer(socket.assigns.mud_id)
     callback_id = String.to_integer(callback_id)
 
-    callback = Engine.get_callback!(callback_id)
+    callback = Builder.get_callback!(callback_id)
 
-    Engine.create_mud_callback!(%{
+    Builder.create_mud_callback!(%{
       mud_id: mud_id,
       callback_id: callback_id,
-      default_config: callback.default_config
+      config: callback.config
     })
 
     callbacks =
@@ -51,7 +51,7 @@ defmodule ExmudWeb.MudEditLive do
 
   def handle_event("remove", callback_id, socket) do
     callback_id = String.to_integer(callback_id)
-    :ok = Engine.delete_mud_callback!(callback_id, socket.assigns.mud_id)
+    :ok = Builder.delete_mud_callback!(callback_id, socket.assigns.mud_id)
 
     callbacks =
       Enum.map(socket.assigns.callbacks, fn cb ->

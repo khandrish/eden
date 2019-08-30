@@ -6,12 +6,15 @@ defmodule Exmud.Account.Profile do
   import Ecto.Changeset
   @timestamps_opts [type: :utc_datetime_usec]
 
+  @derive {Phoenix.Param, key: :slug}
   schema "profiles" do
     field :email, :string
     field :email_verified, :boolean, default: false
     field :nickname, :string
     field :tos_accepted, :boolean, default: false
     belongs_to(:player, Exmud.Account.Player, foreign_key: :player_id)
+
+    field :slug, Exmud.DataType.NicknameSlug.Type
 
     timestamps()
   end
@@ -58,5 +61,7 @@ defmodule Exmud.Account.Profile do
     |> unique_constraint(:email)
     |> unsafe_validate_unique([:nickname], Exmud.Repo)
     |> unsafe_validate_unique([:email], Exmud.Repo)
+    |> Exmud.DataType.NicknameSlug.maybe_generate_slug()
+    |> Exmud.DataType.NicknameSlug.unique_constraint()
   end
 end
