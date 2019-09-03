@@ -30,39 +30,39 @@ module.exports = function (ctx) {
       // iconSet: 'ionicons-v4',
       // lang: 'de', // Quasar language
 
-      // all: true, // --- includes everything; for dev only!
+      all: true, // --- includes everything; for dev only!
 
-      components: [
-        'QLayout',
-        'QHeader',
-        'QDrawer',
-        'QPageContainer',
-        'QPage',
-        'QToolbar',
-        'QToolbarTitle',
-        'QBtn',
-        'QIcon',
-        'QList',
-        'QItem',
-        'QItemSection',
-        'QItemLabel'
-      ],
+      // components: [
+      //   'QLayout',
+      //   'QHeader',
+      //   'QDrawer',
+      //   'QPageContainer',
+      //   'QPage',
+      //   'QToolbar',
+      //   'QToolbarTitle',
+      //   'QBtn',
+      //   'QIcon',
+      //   'QList',
+      //   'QItem',
+      //   'QItemSection',
+      //   'QItemLabel'
+      // ],
 
-      directives: [
-        'Ripple'
-      ],
+      // directives: [
+      //   'Ripple'
+      // ],
 
       // Quasar plugins
-      plugins: [
-        'Notify'
-      ]
+      // plugins: [
+      //   'Notify'
+      // ]
     },
 
     supportIE: true,
 
     build: {
       scopeHoisting: true,
-      vueRouterMode: 'history',
+      // vueRouterMode: 'history',
       // vueCompiler: true,
       // gzip: true,
       // analyze: true,
@@ -81,13 +81,13 @@ module.exports = function (ctx) {
     },
 
     devServer: {
-      https: true,
-      port: 8080,
+      // https: true,
+      // port: 8080,
       open: true // opens browser window automatically
     },
 
-    animations: 'all', // --- includes all animations
-    // animations: [],
+    // animations: 'all', // --- includes all animations
+    animations: [],
 
     ssr: {
       pwa: false
@@ -97,9 +97,9 @@ module.exports = function (ctx) {
       // workboxPluginMode: 'InjectManifest',
       // workboxOptions: {}, // only for NON InjectManifest
       manifest: {
-        name: 'ExMUD',
-        short_name: 'ExMUD',
-        description: 'An Elixir/Quasar/Electron powered framework for the development and running of MUDs.',
+        // name: 'ExMUD',
+        // short_name: 'ExMUD',
+        // description: 'A framework for the creation and management of MUDs.',
         display: 'standalone',
         orientation: 'portrait',
         background_color: '#ffffff',

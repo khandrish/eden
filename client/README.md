@@ -1,6 +1,6 @@
 # ExMUD (exmud)
 
-An Elixir/Quasar/Electron powered framework for the development and running of MUDs.
+A framework for the creation and management of MUDs.
 
 ## Install the dependencies
 ```bash

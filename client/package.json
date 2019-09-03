@@ -1,17 +1,14 @@
 {
   "name": "exmud",
   "version": "0.0.1",
-  "description": "An Elixir/Quasar/Electron powered framework for the development and running of MUDs.",
+  "description": "A framework for the creation and management of MUDs.",
   "productName": "ExMUD",
   "cordovaId": "org.exmud",
   "author": "Chris Hicks <mononym@users.noreply.github.com>",
   "private": true,
   "scripts": {
     "lint": "eslint --ext .js,.vue src",
-    "test": "echo \"No test specified\" && exit 0",
-    "dev": "quasar dev",
-    "build": "quasar build",
-    "build:pwa": "quasar build -m pwa"
+    "test": "echo \"No test specified\" && exit 0"
   },
   "dependencies": {
     "@quasar/extras": "^1.0.0",
