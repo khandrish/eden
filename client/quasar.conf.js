@@ -30,32 +30,32 @@ module.exports = function (ctx) {
       // iconSet: 'ionicons-v4',
       // lang: 'de', // Quasar language
 
-      all: true, // --- includes everything; for dev only!
+      // all: true, // --- includes everything; for dev only!
 
-      // components: [
-      //   'QLayout',
-      //   'QHeader',
-      //   'QDrawer',
-      //   'QPageContainer',
-      //   'QPage',
-      //   'QToolbar',
-      //   'QToolbarTitle',
-      //   'QBtn',
-      //   'QIcon',
-      //   'QList',
-      //   'QItem',
-      //   'QItemSection',
-      //   'QItemLabel'
-      // ],
+      components: [
+        'QLayout',
+        'QHeader',
+        'QDrawer',
+        'QPageContainer',
+        'QPage',
+        'QToolbar',
+        'QToolbarTitle',
+        'QBtn',
+        'QIcon',
+        'QList',
+        'QItem',
+        'QItemSection',
+        'QItemLabel'
+      ],
 
-      // directives: [
-      //   'Ripple'
-      // ],
+      directives: [
+        'Ripple'
+      ],
 
       // Quasar plugins
-      // plugins: [
-      //   'Notify'
-      // ]
+      plugins: [
+        'Notify'
+      ]
     },
 
     supportIE: true,
@@ -99,7 +99,7 @@ module.exports = function (ctx) {
       manifest: {
         // name: 'ExMUD',
         // short_name: 'ExMUD',
-        // description: 'A framework for the creation and management of MUDs.',
+        // description: 'A framework for the building, management, and hosting of MUDs.',
         display: 'standalone',
         orientation: 'portrait',
         background_color: '#ffffff',

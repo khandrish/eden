@@ -1,7 +1,7 @@
 {
   "name": "exmud",
   "version": "0.0.1",
-  "description": "A framework for the creation and management of MUDs.",
+  "description": "A framework for the building, management, and hosting of MUDs.",
   "productName": "ExMUD",
   "cordovaId": "org.exmud",
   "author": "Chris Hicks <mononym@users.noreply.github.com>",

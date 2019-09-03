@@ -1,6 +1,6 @@
 # ExMUD (exmud)
 
-A framework for the creation and management of MUDs.
+A framework for the building, management, and hosting of MUDs.
 
 ## Install the dependencies
 ```bash
