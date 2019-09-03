@@ -46,7 +46,7 @@ defmodule ExmudWeb.Router do
       get "/build", BuildController, :show
       resources "/build/prototypes", PrototypeController, param: "slug"
       resources "/build/templates", TemplateController, param: "slug"
-      resources "/build/categories", CategoryController, param: "slug"
+      resources "/build/categories", CategoryController, only: [:index], param: "slug"
     end
 
     # Player related stuff

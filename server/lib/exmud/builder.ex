@@ -38,6 +38,28 @@ defmodule Exmud.Builder do
   def get_category!(id), do: Repo.get!(Category, id)
 
   @doc """
+  Gets a single category via its slug.
+
+  Raises `Ecto.NoResultsError` if the Category does not exist.
+
+  ## Examples
+
+      iex> get_category_by_slug!("banana")
+      %Category{}
+
+      iex> get_category_by_slug!("not a")
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_category_by_slug!(slug) do
+    Repo.one!(
+      from(category in Category,
+        where: category.slug == ^slug
+      )
+    )
+  end
+
+  @doc """
   Creates a category.
 
   ## Examples
