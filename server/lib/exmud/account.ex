@@ -5,6 +5,7 @@ defmodule Exmud.Account do
 
   import Ecto.Query, warn: false
   alias Exmud.Account.Player
+  alias Exmud.Account.Constants.{PlayerStatus}
   alias Exmud.Repo
   import OK, only: [success: 1, failure: 1]
   require Logger
@@ -52,6 +53,14 @@ defmodule Exmud.Account do
 
   @doc """
   Verify a login token and, if valid, return the Player it points to.
+
+  ## Examples
+
+      iex> verify_login_token(token)
+      {:ok, %Player{}}
+
+      iex> verify_login_token(bad_arams)
+      {:error, :invalid}
   """
   def verify_login_token(token) do
     with success(player_id) <-
@@ -70,54 +79,60 @@ defmodule Exmud.Account do
   end
 
   @doc """
-  Given params including nickname and email, create a player and their profile.
+  Facilitates the creation of a Player via direct registration with an Email and Nickname.
 
-  Will return a profile changeset if there was an error.
+  While the Player must supply the Email address and Nickname on registration, these actually belong to the Profile
+  behind the scenes rather than the Player object directly. This function handles the creation and linking of the
+  Player and Profile objects as well as the instantion of anything else required for an Account to work correctly,
+  such as Player Roles etc...
+
+  Will return a changeset if there was an error.
+
+  ## Examples
+
+      iex> register_player(params)
+      {:ok, %Player{}}
+
+      iex> register_player(bad_arams)
+      {:error, %Ecto.Changeset{}}
   """
-  def signup(params) do
+  def register_player(params) do
     Ecto.Multi.new()
-    |> Ecto.Multi.insert(:player, Exmud.Account.Player.new())
-    |> Ecto.Multi.insert(:profile, fn %{player: %Exmud.Account.Player{id: player_id}} ->
-      Exmud.Account.Profile.new(Map.put(params, "player_id", player_id))
+    |> Ecto.Multi.insert(:player, Exmud.Account.Player.new(%{status: PlayerStatus.registered()}))
+    |> Ecto.Multi.insert(:profile, fn %{player: player} ->
+      Ecto.build_assoc(player, :profile, params)
+      |> Exmud.Account.Profile.validate()
     end)
     |> Exmud.Repo.transaction()
     |> case do
-      {:ok, %{player: player}} ->
+      {:ok, %{player: player, profile: profile}} ->
         {:ok, player}
         |> notify_subscribers([:player, :created])
 
-        {:ok, player.id}
+        IO.inspect(player)
+
+        {:ok, %{player | profile: profile}}
 
       {:error, :profile, changeset, _} ->
-        {:error, changeset}
+        failure(changeset)
     end
   end
 
   @doc """
-  Returns the list of players.
-  ## Examples
-      iex> list_players()
-      [%Player{}, ...]
-  """
-  def list_players() do
-    Repo.all(
-      from player in Player,
-        order_by: [asc: player.id]
-    )
-  end
-
-  @doc """
-  Returns the list of players in a paginated manner.
+  Returns the list of players in a paginated manner, wrapped in a success tuple.
   ## Examples
       iex> list_players(1, 100)
-      [%Player{}, ...]
+      {:ok, [%Player{}, ...]}
   """
-  def list_players(current_page, per_page) do
-    Repo.all(
-      from player in Player,
-        order_by: [asc: player.id],
-        offset: ^((current_page - 1) * per_page),
-        limit: ^per_page
+  def list_players(page, page_size) do
+    success(
+      Repo.all(
+        from player in Player,
+          order_by: [asc: player.inserted_at],
+          offset: ^((page - 1) * page_size),
+          limit: ^page_size,
+          preload: :profile
+      )
     )
   end
 
@@ -127,13 +142,21 @@ defmodule Exmud.Account do
   ## Examples
 
       iex> get_player(123)
-      %Player{}
+      {:ok, %Player{}}
 
       iex> get_player(456)
-      nil
+      {:error, nil}
 
   """
-  def get_player(id), do: Repo.get(Player, id)
+  def get_player(id) do
+    case Repo.get(Player, id) do
+      nil ->
+        failure(:not_found)
+
+      player ->
+        success(player)
+    end
+  end
 
   @doc """
   Gets a single player.
@@ -163,8 +186,8 @@ defmodule Exmud.Account do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_player() do
-    Player.new()
+  def create_player(params) do
+    Player.new(params)
     |> Repo.insert()
     |> notify_subscribers([:player, :created])
   end

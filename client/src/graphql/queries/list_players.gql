@@ -1,0 +1,15 @@
+query ListPlayers($page: Integer!, $pageSize: Integer!) {
+  player(page: $page, pageSize: $pageSize) {
+    id
+    insertedAt
+    updatedAt
+    status
+    profile {
+      id
+      email
+      nickname
+      insertedAt
+      updatedAt
+    }
+  }
+}

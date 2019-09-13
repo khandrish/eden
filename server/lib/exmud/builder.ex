@@ -4,8 +4,9 @@ defmodule Exmud.Builder do
   """
 
   import Ecto.Query, warn: false
-  alias Exmud.Repo
+  import OK, only: [success: 1, failure: 1]
 
+  alias Exmud.Repo
   alias Exmud.Builder.Category
 
   @doc """
@@ -427,6 +428,30 @@ defmodule Exmud.Builder do
   """
   def list_muds do
     Repo.all(Engine)
+  end
+
+  @doc """
+  Gets a single mud.
+
+  Raises `Ecto.NoResultsError` if the Engine does not exist.
+
+  ## Examples
+
+      iex> get_mud(42)
+      {:ok, %Mud{}}
+
+      iex> get_mud(24)
+      {:error, :not_found}
+
+  """
+  def get_mud(id) do
+    case Exmud.Repo.get(Engine, id) do
+      nil ->
+        failure(:not_found)
+
+      mud ->
+        success(mud)
+    end
   end
 
   @doc """

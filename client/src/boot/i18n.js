@@ -4,6 +4,12 @@ import messages from 'src/i18n'
 
 Vue.use(VueI18n)
 
+Vue.prototype.$watchAll = function(props, callback) {
+  props.forEach(prop => {
+    this.$watch(prop, callback)
+  })
+}
+
 const i18n = new VueI18n({
   locale: 'en-us',
   fallbackLocale: 'en-us',

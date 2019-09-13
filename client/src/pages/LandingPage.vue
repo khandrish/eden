@@ -1,6 +1,8 @@
 <template>
   <q-page class="flex flex-center">
-    <img alt="Quasar logo" src="~assets/quasar-logo-full.svg">
+    <q-btn color="green" label="Venture Forth" :to="{ name: 'registry' }">
+      <q-tooltip>Adventure waits for no one</q-tooltip>
+    </q-btn>
   </q-page>
 </template>
 
@@ -9,6 +11,6 @@
 
 <script>
 export default {
-  name: 'PageIndex'
+  name: 'LandingPage'
 }
 </script>

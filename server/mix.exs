@@ -34,9 +34,14 @@ defmodule Exmud.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:absinthe, "~> 1.4.0"},
+      {:absinthe_phoenix, "~> 1.4"},
+      {:absinthe_plug, "~> 1.4"},
       {:bamboo, "~> 1.3"},
+      {:dataloader, "~> 1.0.0"},
       {:defused, "~> 0.6.0"},
       {:ecto_autoslug_field, "~> 2.0"},
+      {:ecto_enum, "~> 1.3"},
       {:ecto_sql, "~> 3.0"},
       {:ex_json_schema, "~> 0.6.1"},
       {:exconstructor, "~> 1.1"},

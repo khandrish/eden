@@ -3,6 +3,8 @@ defmodule Exmud.Engine.MudCallback do
   import Ecto.Changeset
 
   @timestamps_opts [type: :utc_datetime_usec]
+  @primary_key {:id, :binary_id, autogenerate: true}
+  @foreign_key_type :binary_id
 
   schema "mud_callbacks" do
     field :config, :map

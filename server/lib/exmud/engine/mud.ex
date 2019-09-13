@@ -3,6 +3,7 @@ defmodule Exmud.Engine.Mud do
   import Ecto.Changeset
 
   @timestamps_opts [type: :utc_datetime_usec]
+  @primary_key {:id, :binary_id, autogenerate: true}
 
   @derive {Phoenix.Param, key: :slug}
   schema "muds" do

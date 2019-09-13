@@ -2,10 +2,11 @@ defmodule Exmud.Repo.Migrations.CreateEngineCallbacks do
   use Ecto.Migration
 
   def change do
-    create table(:mud_callbacks) do
+    create table(:mud_callbacks, primary_key: false) do
+      add :id, :binary_id, primary_key: true
       add :config, :map
-      add :mud_id, references(:muds, on_delete: :delete_all)
-      add :callback_id, references(:callbacks, on_delete: :delete_all)
+      add :mud_id, references(:muds, on_delete: :delete_all, type: :binary_id)
+      add :callback_id, references(:callbacks, on_delete: :delete_all, type: :binary_id)
 
       timestamps()
     end

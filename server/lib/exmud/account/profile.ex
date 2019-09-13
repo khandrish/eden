@@ -5,6 +5,8 @@ defmodule Exmud.Account.Profile do
   use Ecto.Schema
   import Ecto.Changeset
   @timestamps_opts [type: :utc_datetime_usec]
+  @primary_key {:id, :binary_id, autogenerate: true}
+  @foreign_key_type :binary_id
 
   @derive {Phoenix.Param, key: :slug}
   schema "profiles" do
@@ -53,14 +55,15 @@ defmodule Exmud.Account.Profile do
     nickname_format = Application.get_env(:exmud, :nickname_format, ~r/[a-zA-Z0-9 ]/)
 
     profile
+    |> change()
     |> validate_format(:email, ~r/.+@.+/)
     |> validate_length(:email, min: 3, max: 254)
     |> validate_format(:nickname, nickname_format)
     |> validate_length(:nickname, min: nickname_min, max: nickname_max)
     |> unique_constraint(:nickname)
     |> unique_constraint(:email)
-    |> unsafe_validate_unique([:nickname], Exmud.Repo)
-    |> unsafe_validate_unique([:email], Exmud.Repo)
+    # |> unsafe_validate_unique([:nickname], Exmud.Repo)
+    # |> unsafe_validate_unique([:email], Exmud.Repo)
     |> Exmud.DataType.NicknameSlug.maybe_generate_slug()
     |> Exmud.DataType.NicknameSlug.unique_constraint()
   end

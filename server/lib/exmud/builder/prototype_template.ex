@@ -2,6 +2,10 @@ defmodule Exmud.Builder.PrototypeTemplate do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @timestamps_opts [type: :utc_datetime_usec]
+  @primary_key {:id, :binary_id, autogenerate: true}
+  @foreign_key_type :binary_id
+
   schema "prototype_templates" do
     belongs_to :template, Exmud.Builder.Template
     belongs_to :prototype, Exmud.Builder.Prototype

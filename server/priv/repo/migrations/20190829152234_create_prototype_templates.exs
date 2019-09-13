@@ -2,9 +2,10 @@ defmodule Exmud.Repo.Migrations.CreatePrototypeTemplates do
   use Ecto.Migration
 
   def change do
-    create table(:prototype_templates) do
-      add :template_id, references(:templates, on_delete: :delete_all)
-      add :prototype_id, references(:prototypes, on_delete: :delete_all)
+    create table(:prototype_templates, primary_key: false) do
+      add :id, :binary_id, primary_key: true
+      add :template_id, references(:templates, on_delete: :delete_all, type: :binary_id)
+      add :prototype_id, references(:prototypes, on_delete: :delete_all, type: :binary_id)
 
       timestamps()
     end

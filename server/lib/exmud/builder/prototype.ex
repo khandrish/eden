@@ -2,6 +2,10 @@ defmodule Exmud.Builder.Prototype do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @timestamps_opts [type: :utc_datetime_usec]
+  @primary_key {:id, :binary_id, autogenerate: true}
+  @foreign_key_type :binary_id
+
   @derive {Phoenix.Param, key: :slug}
   schema "prototypes" do
     field :name, :string
