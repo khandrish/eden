@@ -12,7 +12,7 @@ module.exports = function(ctx) {
     extras: [
       // 'ionicons-v4',
       // 'mdi-v3',
-      // 'fontawesome-v5',
+      'fontawesome-v5',
       // 'eva-icons',
       // 'themify',
       // 'roboto-font-latin-ext', // this or either 'roboto-font', NEVER both!
@@ -46,6 +46,19 @@ module.exports = function(ctx) {
         'QToolbarTitle',
         'QToggle'
       ],
+
+      config: {
+        brand: {
+          primary: '#000000',
+          secondary: '#99ccff',
+          accent: '#9C27B0',
+
+          positive: '#66ffb3',
+          negative: '#ffcccc',
+          info: '#ccccff',
+          warning: '#ffcc99'
+        }
+      },
 
       directives: ['Ripple'],
 
