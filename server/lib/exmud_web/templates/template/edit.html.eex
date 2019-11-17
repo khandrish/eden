@@ -1,5 +1,0 @@
-<h1>Edit Template</h1>
-
-<%= render "form.html", Map.put(assigns, :action, Routes.mud_template_path(@conn, :update, @mud_slug, @template)) %>
-
-<span><%= link "Back", to: Routes.mud_template_path(@conn, :index, @mud_slug) %></span>

@@ -8,7 +8,6 @@ defmodule Exmud.Repo.Migrations.CreateProfiles do
       add :slug, :string
       add :email, :string
       add :email_verified, :boolean, default: false, null: false
-      add :tos_accepted, :boolean, default: false, null: false
       add :player_id, references(:players, on_delete: :delete_all, type: :binary_id)
 
       timestamps()
@@ -16,7 +15,6 @@ defmodule Exmud.Repo.Migrations.CreateProfiles do
 
     create unique_index(:profiles, [:nickname])
     create unique_index(:profiles, [:email])
-    create index(:profiles, [:tos_accepted])
     create index(:profiles, [:player_id])
   end
 end

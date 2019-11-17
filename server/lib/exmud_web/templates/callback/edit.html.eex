@@ -1,9 +1,0 @@
-<div class="cell">
-    <h1>Edit Callback</h1>
-</div>
-<div class="cell">
-    <%= render "form.html", Map.put(assigns, :action, Routes.callback_path(@conn, :update, @callback)) %>
-</div>
-<div class="cell">
-    <span><%= link "Back", class: "button primary", to: Routes.callback_path(@conn, :index) %></span>
-</div>

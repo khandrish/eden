@@ -1,5 +1,0 @@
-<h1>Edit Category</h1>
-
-<%= render "form.html", Map.put(assigns, :action, Routes.mud_category_path(@conn, :update, @mud_slug, @category)) %>
-
-<span><%= link "Back", to: Routes.mud_category_path(@conn, :index, @mud_slug) %></span>

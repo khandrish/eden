@@ -4,7 +4,6 @@ defmodule Exmud.Util do
   """
 
   import Ecto.Changeset
-  import OK, only: [success: 1, failure: 1]
 
   def changeset_has_error?(changeset = %Ecto.Changeset{}, field) when is_atom(field) do
     Keyword.has_key?(changeset.errors, field)
@@ -37,9 +36,9 @@ defmodule Exmud.Util do
 
   def validate_json(changeset, field, options \\ []) do
     validate_change(changeset, field, fn _field, json_string ->
-      case Poison.decode(json_string) do
-        success(_) -> []
-        failure(_) -> [{field, options[:message] || "invalid JSON string"}]
+      case Jason.decode(json_string) do
+        {:ok, _} -> []
+        {:error, _} -> [{field, options[:message] || "invalid JSON string"}]
       end
     end)
   end

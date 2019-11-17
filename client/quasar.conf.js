@@ -5,7 +5,7 @@ module.exports = function(ctx) {
   return {
     // app boot file (/src/boot)
     // --> boot files are part of "main.js"
-    boot: ['i18n', 'axios', 'apollo', 'enhanceVue'],
+    boot: ['i18n', 'axios', 'enhanceVue'],
 
     css: ['app.styl'],
 
@@ -35,6 +35,7 @@ module.exports = function(ctx) {
         'QLayout',
         'QHeader',
         'QIcon',
+        'QInnerLoading',
         'QItemLabel',
         'QItemSection',
         'QItem',
@@ -48,22 +49,13 @@ module.exports = function(ctx) {
       ],
 
       config: {
-        brand: {
-          primary: '#000000',
-          secondary: '#99ccff',
-          accent: '#9C27B0',
-
-          positive: '#66ffb3',
-          negative: '#ffcccc',
-          info: '#ccccff',
-          warning: '#ffcc99'
-        }
+        dark: true // 'true' or Boolean true/false
       },
 
       directives: ['Ripple'],
 
       // Quasar plugins
-      plugins: ['Notify']
+      plugins: ['axios', 'Notify']
     },
 
     supportIE: true,

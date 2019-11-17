@@ -3,54 +3,6 @@ defmodule ExmudWeb.ErrorHelpers do
   Conveniences for translating and building error messages.
   """
 
-  use Phoenix.HTML
-
-  @doc """
-  Generates tag for inlined form input errors.
-  """
-  def error_tag(form, field) do
-    Enum.map(Keyword.get_values(form.errors, field), fn error ->
-      content_tag(:span, translate_error(error), class: "help-block")
-    end)
-  end
-
-  @doc """
-  Generates tag for form input errors using help text.
-  """
-  def help_text_error_tag(form, field, id) do
-    error_string =
-      Stream.map(Keyword.get_values(form.errors, field), fn error ->
-        translate_error(error)
-      end)
-      |> Enum.join(", ")
-
-    content_tag(:p, error_string, class: "help-text error-text", id: id)
-  end
-
-  @doc """
-  Generates tag for inlined form input errors.
-  """
-  def inline_error_tag(form, field) do
-    Enum.map(Keyword.get_values(form.errors, field), fn error ->
-      content_tag(
-        :span,
-        content_tag(:i, "", class: "fas fa-exclamation-triangle"),
-        class: "input-group-label",
-        title: translate_error(error)
-      )
-    end)
-  end
-
-  @doc """
-  Generates tag for inlined form input errors.
-  """
-  def error_title(form, field) do
-    Enum.map(Keyword.get_values(form.errors, field), fn error ->
-      translate_error(error)
-    end)
-    |> Enum.join(", ")
-  end
-
   @doc """
   Translates an error message using gettext.
   """
@@ -76,20 +28,6 @@ defmodule ExmudWeb.ErrorHelpers do
       Gettext.dngettext(ExmudWeb.Gettext, "errors", msg, msg, count, opts)
     else
       Gettext.dgettext(ExmudWeb.Gettext, "errors", msg, opts)
-    end
-  end
-
-  def input_class(field, assigns) do
-    cond do
-      Keyword.has_key?(assigns.changeset.errors, field) and
-          Map.has_key?(assigns.changeset.changes, field) ->
-        "error"
-
-      Map.has_key?(assigns.changeset.changes, field) ->
-        "success"
-
-      true ->
-        ""
     end
   end
 end

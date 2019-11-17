@@ -1,70 +1,68 @@
 defmodule Exmud.Account.Profile do
-  @moduledoc """
-  Provides the tools necessary to manage a Player Profile.
-  """
-  use Ecto.Schema
+  @moduledoc false
+
+  use Exmud.Schema
+
   import Ecto.Changeset
-  @timestamps_opts [type: :utc_datetime_usec]
-  @primary_key {:id, :binary_id, autogenerate: true}
-  @foreign_key_type :binary_id
 
   @derive {Phoenix.Param, key: :slug}
   schema "profiles" do
     field :email, :string
+    field :email_public, :boolean, default: false
     field :email_verified, :boolean, default: false
     field :nickname, :string
-    field :tos_accepted, :boolean, default: false
-    belongs_to(:player, Exmud.Account.Player, foreign_key: :player_id)
-
     field :slug, Exmud.DataType.NicknameSlug.Type
+
+    belongs_to(:player, Exmud.Account.Player, foreign_key: :player_id)
 
     timestamps()
   end
 
-  @doc """
-  Change a Profile struct into a changeset.
-  """
   def changeset(profile) do
     change(profile)
   end
 
-  @doc """
-  Update a Profile struct/changeset and validate the changes.
-  """
   def update(profile, attrs) do
     profile
-    |> cast(attrs, [:nickname, :email, :email_verified, :tos_accepted])
+    |> cast(attrs, [:nickname, :email, :email_verified])
     |> validate()
   end
 
-  @doc """
-  Create a new Profile.
-
-  Must provide email, nickname, and player_id at a minimum.
-  """
   def new(attrs) when is_map(attrs) do
     %__MODULE__{}
-    |> cast(attrs, [:nickname, :email, :email_verified, :tos_accepted, :player_id])
+    |> cast(attrs, [:nickname, :email, :email_verified, :player_id])
+    |> validate_required([:nickname, :email, :player_id])
     |> validate()
   end
 
-  @spec validate(Ecto.Changeset.t()) :: Ecto.Changeset.t()
-  def validate(profile) do
-    nickname_max = Application.get_env(:exmud, :nickname_max_length, 30)
-    nickname_min = Application.get_env(:exmud, :nickname_min_length, 2)
-    nickname_format = Application.get_env(:exmud, :nickname_format, ~r/[a-zA-Z0-9 ]/)
+  @spec validate(Ecto.Changeset.t(), boolean) :: Ecto.Changeset.t()
+  def validate(profile, unsafe \\ false) do
+    email_format = Application.get_env(:exmud, :email_format)
+    email_max_length = Application.get_env(:exmud, :email_max_length)
+    email_min_length = Application.get_env(:exmud, :email_min_length)
+    nickname_format = Application.get_env(:exmud, :nickname_format)
+    nickname_max_length = Application.get_env(:exmud, :nickname_max_length)
+    nickname_min_length = Application.get_env(:exmud, :nickname_min_length)
 
-    profile
-    |> change()
-    |> validate_format(:email, ~r/.+@.+/)
-    |> validate_length(:email, min: 3, max: 254)
-    |> validate_format(:nickname, nickname_format)
-    |> validate_length(:nickname, min: nickname_min, max: nickname_max)
-    |> unique_constraint(:nickname)
-    |> unique_constraint(:email)
-    # |> unsafe_validate_unique([:nickname], Exmud.Repo)
-    # |> unsafe_validate_unique([:email], Exmud.Repo)
-    |> Exmud.DataType.NicknameSlug.maybe_generate_slug()
-    |> Exmud.DataType.NicknameSlug.unique_constraint()
+    profile =
+      profile
+      |> change()
+      |> unique_constraint(:email)
+      |> validate_format(:email, email_format)
+      |> validate_length(:email, min: email_min_length, max: email_max_length)
+      |> unique_constraint(:nickname)
+      |> validate_format(:nickname, nickname_format)
+      |> validate_length(:nickname, min: nickname_min_length, max: nickname_max_length)
+      |> Exmud.DataType.NicknameSlug.maybe_generate_slug()
+      |> Exmud.DataType.NicknameSlug.unique_constraint()
+
+    if unsafe do
+      profile
+      |> unsafe_validate_unique([:email], Exmud.Repo)
+      |> unsafe_validate_unique([:nickname], Exmud.Repo)
+      |> unsafe_validate_unique([:slug], Exmud.Repo)
+    else
+      profile
+    end
   end
 end

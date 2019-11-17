@@ -20,23 +20,7 @@ config :exmud, ExmudWeb.Endpoint,
   debug_errors: true,
   code_reloader: true,
   check_origin: false,
-  watchers: [
-    node: [
-      "node_modules/webpack/bin/webpack.js",
-      "--mode",
-      "development",
-      "--watch-stdin",
-      cd: Path.expand("../assets", __DIR__)
-    ]
-  ],
-  live_reload: [
-    patterns: [
-      ~r"priv/static/.*(js|css|png|jpeg|jpg|gif|svg)$",
-      ~r"priv/gettext/.*(po)$",
-      ~r"lib/moerae_web/{live,views}/.*(ex)$",
-      ~r"lib/moerae_web/templates/.*(eex)$"
-    ]
-  ]
+  watchers: []
 
 # ## SSL Support
 #
@@ -62,17 +46,6 @@ config :exmud, ExmudWeb.Endpoint,
 # configured to run both http and https servers on
 # different ports.
 
-# Watch static and templates for browser reloading.
-config :exmud, ExmudWeb.Endpoint,
-  live_reload: [
-    patterns: [
-      ~r"priv/static/.*(js|css|png|jpeg|jpg|gif|svg)$",
-      ~r"priv/gettext/.*(po)$",
-      ~r"lib/exmud_web/{live,views}/.*(ex)$",
-      ~r"lib/exmud_web/templates/.*(eex)$"
-    ]
-  ]
-
 # Do not include metadata nor timestamps in development logs
 config :logger, :console, format: "[$level] $message\n"
 
@@ -86,7 +59,10 @@ config :phoenix, :plug_init_mode, :runtime
 # Configure email
 config :exmud, Exmud.Mailer, adapter: Bamboo.LocalAdapter
 
-config :exmud,
-  callback_modules: [
-    [module: Exmud.Contributions.Core.Lock.Any, type: "lock"]
+config :exmud, ExmudWeb.Endpoint,
+  https: [
+    port: 4001,
+    cipher_suite: :strong,
+    keyfile: "priv/cert/selfsigned_key.pem",
+    certfile: "priv/cert/selfsigned.pem"
   ]

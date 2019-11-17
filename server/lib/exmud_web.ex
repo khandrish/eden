@@ -23,7 +23,6 @@ defmodule ExmudWeb do
 
       import Plug.Conn
       import ExmudWeb.Gettext
-      import Phoenix.LiveView.Controller, only: [live_render: 3]
       alias ExmudWeb.Router.Helpers, as: Routes
     end
   end
@@ -37,12 +36,8 @@ defmodule ExmudWeb do
       # Import convenience functions from controllers
       import Phoenix.Controller, only: [get_flash: 1, get_flash: 2, view_module: 1]
 
-      # Use all HTML functionality (forms, tags, etc)
-      use Phoenix.HTML
-
       import ExmudWeb.ErrorHelpers
       import ExmudWeb.Gettext
-      import Phoenix.LiveView, only: [live_render: 2, live_render: 3, live_link: 1, live_link: 2]
       alias ExmudWeb.Router.Helpers, as: Routes
     end
   end
@@ -52,7 +47,6 @@ defmodule ExmudWeb do
       use Phoenix.Router
       import Plug.Conn
       import Phoenix.Controller
-      import Phoenix.LiveView.Router
     end
   end
 

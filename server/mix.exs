@@ -20,8 +20,7 @@ defmodule Exmud.MixProject do
   def application do
     [
       mod: {Exmud.Application, []},
-      extra_applications: [:logger, :runtime_tools],
-      start_phases: [init: []]
+      extra_applications: [:logger, :runtime_tools]
     ]
   end
 
@@ -34,20 +33,19 @@ defmodule Exmud.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:absinthe, "~> 1.4.0"},
-      {:absinthe_phoenix, "~> 1.4"},
-      {:absinthe_plug, "~> 1.4"},
       {:bamboo, "~> 1.3"},
-      {:dataloader, "~> 1.0.0"},
+      {:castore, ">= 0.0.0"},
+      {:cloak, "1.0.0"},
+      {:dataloader, "~> 1.0.6"},
       {:defused, "~> 0.6.0"},
       {:ecto_autoslug_field, "~> 2.0"},
-      {:ecto_enum, "~> 1.3"},
-      {:ecto_sql, "~> 3.0"},
+      {:ecto_enum, "~> 1.4.0"},
+      {:ecto_sql, "~> 3.2.0"},
       {:ex_json_schema, "~> 0.6.1"},
       {:exconstructor, "~> 1.1"},
       {:gettext, "~> 0.11"},
       {:hammer, "~> 6.0"},
-      {:hammer_plug, "~> 2.0"},
+      {:hammer_plug, "~> 2.1"},
       {:jason, "~> 1.0"},
       {:maybe, "~> 1.0"},
       {:navigation_history, "~> 0.2.2"},
@@ -64,7 +62,9 @@ defmodule Exmud.MixProject do
       {:redbird, "~> 0.4.0"},
       {:redix, "~> 0.10.2"},
       {:scribe, "~> 0.10.0"},
+      {:telemetry, "~> 0.4.0"},
       {:typed_struct, "~> 0.1.4"},
+      {:uber_multi, github: "mononym/uber_multi"},
       {:uuid, "~> 1.1.8"}
     ]
   end

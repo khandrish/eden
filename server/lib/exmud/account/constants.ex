@@ -1,8 +1,10 @@
 defmodule Exmud.Account.Constants do
   defmodule PlayerStatus do
-    @spec invited :: <<_::56>>
+    @spec created :: String.t()
+    def created, do: "created"
+    @spec invited :: String.t()
     def invited, do: "invited"
-    @spec registered :: <<_::80>>
-    def registered, do: "registered"
+    @spec pending :: String.t()
+    def pending, do: "pending"
   end
 end

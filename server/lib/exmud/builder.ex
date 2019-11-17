@@ -4,7 +4,6 @@ defmodule Exmud.Builder do
   """
 
   import Ecto.Query, warn: false
-  import OK, only: [success: 1, failure: 1]
 
   alias Exmud.Repo
   alias Exmud.Builder.Category
@@ -447,10 +446,10 @@ defmodule Exmud.Builder do
   def get_mud(id) do
     case Exmud.Repo.get(Engine, id) do
       nil ->
-        failure(:not_found)
+        {:error, :not_found}
 
       mud ->
-        success(mud)
+        {:ok, mud}
     end
   end
 
@@ -482,7 +481,7 @@ defmodule Exmud.Builder do
       iex> get_mud_by_slug!("banana")
       %Engine{}
 
-      iex> get_mud_by_slug!("not a")
+      iex> get_mud_by_slug!("not a good slug")
       ** (Ecto.NoResultsError)
 
   """

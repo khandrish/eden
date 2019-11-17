@@ -1,5 +1,0 @@
-<h1>Edit Player</h1>
-
-<%= render "form.html", Map.put(assigns, :action, Routes.player_path(@conn, :update, @player)) %>
-
-<span><%= link "Back", class: "button primary", to: Routes.player_path(@conn, :index) %></span>

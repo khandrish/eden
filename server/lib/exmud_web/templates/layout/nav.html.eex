@@ -1,3 +1,0 @@
-<nav>
-  <%= render ExmudWeb.TopBarView, "top_bar.html", conn: @conn, player_authenticated?: @player_authenticated? %>
-</nav>

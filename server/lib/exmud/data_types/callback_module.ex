@@ -19,7 +19,12 @@ defmodule Exmud.DataType.CallbackModule do
   end
 
   # Everything else is a failure
-  def cast(_), do: raise "not_a_callback_module"
+  def cast(bad_arg),
+    do:
+      raise(
+        ArgumentError,
+        "Expected an atom or a string representing a loaded module. Got: #{inspect(bad_arg)}"
+      )
 
   # When loading data from the database we are guaranteed to receive a string and we will just need to turn it into an
   # atom safely.

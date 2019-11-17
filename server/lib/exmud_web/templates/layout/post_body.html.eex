@@ -1,6 +1,0 @@
-<script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
-  <%= render_existing @view_module, "foot_scripts." <> @view_template, assigns %>
-<script>
-  $(document).foundation();
-</script>
-

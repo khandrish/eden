@@ -1,13 +1,21 @@
 defmodule Exmud.Account do
   @moduledoc """
-  The Account context.
+  The API for the Account context.
+
+  The constants or schemas can be used for pattern matching, but all Account functionality can be found here.
+
+  ## Overview
+  All functionality that is intrinsically tied to the existence of a Player can be found here. Something like Billing,
+  while providing the ability for a Player to subscribe to a recurring payment, can be used anonymously by someone via
+  the Store and so is in its own context.
   """
 
   import Ecto.Query, warn: false
+
+  alias Exmud.Account
   alias Exmud.Account.Player
-  alias Exmud.Account.Constants.{PlayerStatus}
   alias Exmud.Repo
-  import OK, only: [success: 1, failure: 1]
+
   require Logger
 
   @topic inspect(__MODULE__)
@@ -22,118 +30,168 @@ defmodule Exmud.Account do
   end
 
   @doc """
-  Subscribe to the PubSub topic for all Account events related to a single player.
+  Subscribe to the PubSub topic for all Account events related to a single Player.
   """
   @spec subscribe(integer()) :: {:ok, :subscribed}
-  def subscribe(player_id) do
+  def subscribe(player_id) when is_integer(player_id) do
     :ok = Phoenix.PubSub.subscribe(Exmud.PubSub, @topic <> ":#{player_id}")
     {:ok, :subscribed}
   end
 
-  @doc """
-  Send out a login email with a short lived token.
-  """
-  def send_login_email(email_address) do
-    case lookup_player_by_email(email_address) do
-      success(player_id) ->
-        login_token = Phoenix.Token.sign(ExmudWeb.Endpoint, "player login", player_id)
-        from_email_address = Application.get_env(:exmud, :no_reply_email_address)
+  @login_token_ttl Application.get_env(:exmud, :login_token_ttl)
+  @signup_player_token_ttl Application.get_env(:exmud, :create_player_token_ttl)
+  @from_email_address Application.get_env(:exmud, :no_reply_email_address)
 
-        Exmud.Account.Email.login_email(email_address, from_email_address, login_token)
+  @doc """
+  Send a login or welcome email out based on whether or not a Player exists that uses the provided email.
+
+  New Players will be directed to the TOS page. Returning Players will be directed to the Player Dashboard.
+  """
+  def authenticate_via_email(email_address) do
+    auth_token = UUID.uuid4() |> String.replace("-", "")
+
+    case lookup_player_by_auth_email(email_address) do
+      {:ok, player_id} ->
+        redis_set_player_auth_token(auth_token, "login", player_id, @login_token_ttl)
+
+        Exmud.Account.Emails.login_email(email_address, @from_email_address, auth_token)
         |> Exmud.Mailer.deliver_later()
 
-        {:ok, :email_sent}
+        {:ok, :player_found}
 
-      failure(:not_found) ->
-        {:error, :not_found}
+      {:error, :not_found} ->
+        signup_new_player(email_address, auth_token)
     end
   end
 
-  @login_token_ttl Application.get_env(:exmud, :login_token_ttl, 900)
+  defp signup_new_player(email_address, auth_token) do
+    email_hash = hash_email(email_address)
+    encrypted_email = Exmud.Vault.encrypt!(email_address)
+
+    player_changeset = Player.new(%{status: Account.Constants.PlayerStatus.pending()})
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.insert(:player, player_changeset)
+    |> UberMulti.run(
+      :build_auth,
+      [:player, :auth_email, %{email: encrypted_email, hash: email_hash}],
+      &Ecto.build_assoc/3,
+      true
+    )
+    |> UberMulti.run(:insert_auth, [:build_auth], &Repo.insert/1)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{player: player}} ->
+        redis_set_player_auth_token(
+          auth_token,
+          "signup",
+          player.id,
+          @signup_player_token_ttl
+        )
+
+        Exmud.Account.Emails.welcome_email(email_address, @from_email_address, auth_token)
+        |> Exmud.Mailer.deliver_later()
+
+        {:ok, :player_created}
+
+      _error ->
+        {:error, :player_not_created}
+    end
+  end
+
+  defp redis_set_player_auth_token(auth_token, type, player_id, expiry) do
+    Redix.command(:redix, [
+      "SET",
+      "player-auth-token:#{auth_token}",
+      "#{type}:#{player_id}",
+      "EX",
+      expiry
+    ])
+  end
 
   @doc """
   Verify a login token and, if valid, return the Player it points to.
 
   ## Examples
 
-      iex> verify_login_token(token)
+      iex> validate_auth_token(token)
       {:ok, %Player{}}
 
-      iex> verify_login_token(bad_arams)
+      iex> validate_auth_token(bad_token)
       {:error, :invalid}
   """
-  def verify_login_token(token) do
-    with success(player_id) <-
-           Phoenix.Token.verify(ExmudWeb.Endpoint, "player login", token,
-             max_age: @login_token_ttl
-           ),
-         player = %Exmud.Account.Player{} <- Exmud.Repo.get(Exmud.Account.Player, player_id) do
-      {:ok, player}
-    else
+  def validate_auth_token(auth_token) do
+    case Redix.command!(:redix, ["GET", "player-auth-token:#{auth_token}"]) do
       nil ->
         {:error, :invalid}
 
-      failure(error) ->
-        {:error, error}
+      string ->
+        Redix.command!(:redix, ["DEL", "player-auth-token:#{auth_token}"])
+
+        [type, player_id] = String.split(string, ":")
+        player_query = from(player in Account.Player, where: player.id == ^player_id)
+
+        case type do
+          "signup" ->
+            from(auth_email in Account.AuthEmail, where: auth_email.player_id == ^player_id)
+            |> Exmud.Repo.update_all(set: [email_validated: true])
+
+            Exmud.Repo.update_all(player_query,
+              set: [status: Account.Constants.PlayerStatus.created()]
+            )
+
+            player = Exmud.Repo.one!(player_query)
+
+            {:ok, player}
+
+          "login" ->
+            player = Exmud.Repo.one!(player_query)
+
+            {:ok, player}
+        end
     end
   end
 
   @doc """
-  Facilitates the creation of a Player via direct registration with an Email and Nickname.
+  Facilitates the creation of a Player with an Email and Nickname.
 
-  While the Player must supply the Email address and Nickname on registration, these actually belong to the Profile
-  behind the scenes rather than the Player object directly. This function handles the creation and linking of the
-  Player and Profile objects as well as the instantion of anything else required for an Account to work correctly,
-  such as Player Roles etc...
+  While the Player must supply the Email address and Nickname, these actually belong to the Profile rather than the
+  Player. This function handles the creation and linking of the Player and Profile as well as the instantion of
+  anything else required for an Account to work correctly, such as Roles etc...
 
   Will return a changeset if there was an error.
 
   ## Examples
 
-      iex> register_player(params)
+      iex> create_player(params)
       {:ok, %Player{}}
 
-      iex> register_player(bad_arams)
+      iex> create_player(bad_params)
       {:error, %Ecto.Changeset{}}
   """
-  def register_player(params) do
-    Ecto.Multi.new()
-    |> Ecto.Multi.insert(:player, Exmud.Account.Player.new(%{status: PlayerStatus.registered()}))
-    |> Ecto.Multi.insert(:profile, fn %{player: player} ->
-      Ecto.build_assoc(player, :profile, params)
-      |> Exmud.Account.Profile.validate()
-    end)
-    |> Exmud.Repo.transaction()
-    |> case do
-      {:ok, %{player: player, profile: profile}} ->
-        {:ok, player}
-        |> notify_subscribers([:player, :created])
-
-        IO.inspect(player)
-
-        {:ok, %{player | profile: profile}}
-
-      {:error, :profile, changeset, _} ->
-        failure(changeset)
-    end
+  def create_player(params) do
+    params
+    |> Player.new()
+    |> Repo.insert()
+    |> notify_subscribers([:player, :created])
   end
 
   @doc """
   Returns the list of players in a paginated manner, wrapped in a success tuple.
+
   ## Examples
       iex> list_players(1, 100)
       {:ok, [%Player{}, ...]}
   """
   def list_players(page, page_size) do
-    success(
-      Repo.all(
-        from player in Player,
-          order_by: [asc: player.inserted_at],
-          offset: ^((page - 1) * page_size),
-          limit: ^page_size,
-          preload: :profile
-      )
-    )
+    {:ok,
+     Repo.all(
+       from player in Player,
+         order_by: [asc: player.inserted_at],
+         offset: ^((page - 1) * page_size),
+         limit: ^page_size,
+         preload: :profile
+     )}
   end
 
   @doc """
@@ -145,16 +203,16 @@ defmodule Exmud.Account do
       {:ok, %Player{}}
 
       iex> get_player(456)
-      {:error, nil}
+      {:error, :not_found}
 
   """
   def get_player(id) do
     case Repo.get(Player, id) do
       nil ->
-        failure(:not_found)
+        {:error, :not_found}
 
       player ->
-        success(player)
+        {:ok, player}
     end
   end
 
@@ -175,40 +233,6 @@ defmodule Exmud.Account do
   def get_player!(id), do: Repo.get!(Player, id)
 
   @doc """
-  Creates a player.
-
-  ## Examples
-
-      iex> create_player(%{field: value})
-      {:ok, %Player{}}
-
-      iex> create_player(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def create_player(params) do
-    Player.new(params)
-    |> Repo.insert()
-    |> notify_subscribers([:player, :created])
-  end
-
-  def lookup_player_by_email(email) do
-    Repo.one(
-      from player in Player,
-        join: profile in Exmud.Account.Profile,
-        where: player.id == profile.player_id and profile.email == ^email,
-        select: player.id
-    )
-    |> case do
-      nil ->
-        {:error, :not_found}
-
-      player_id ->
-        {:ok, player_id}
-    end
-  end
-
-  @doc """
   Deletes a Player.
 
   ## Examples
@@ -225,6 +249,25 @@ defmodule Exmud.Account do
     |> notify_subscribers([:player, :deleted])
   end
 
+  @doc """
+  Updates a player.
+
+  ## Examples
+
+      iex> update_player(player, %{field: new_value})
+      {:ok, %Player{}}
+
+      iex> update_player(player, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_player(%Player{} = player, attrs) do
+    player
+    |> Player.update(attrs)
+    |> Repo.update()
+    |> notify_subscribers([:player, :updated])
+  end
+
   alias Exmud.Account.Profile
 
   @doc """
@@ -233,11 +276,13 @@ defmodule Exmud.Account do
   ## Examples
 
       iex> list_profiles()
-      [%Profile{}, ...]
+      {:ok, [%Profile{}, ...]}
 
   """
   def list_profiles do
-    Repo.all(Profile)
+    Profile
+    |> Repo.all()
+    |> (&{:ok, &1}).()
   end
 
   @doc """
@@ -271,6 +316,7 @@ defmodule Exmud.Account do
   def create_profile(attrs \\ %{}) do
     Profile.new(attrs)
     |> Repo.insert()
+    |> notify_subscribers([:profile, :created])
   end
 
   @doc """
@@ -289,6 +335,7 @@ defmodule Exmud.Account do
     profile
     |> Profile.update(attrs)
     |> Repo.update()
+    |> notify_subscribers([:profile, :updated])
   end
 
   @doc """
@@ -305,6 +352,7 @@ defmodule Exmud.Account do
   """
   def delete_profile(%Profile{} = profile) do
     Repo.delete(profile)
+    |> notify_subscribers([:profile, :deleted])
   end
 
   @doc """
@@ -323,6 +371,29 @@ defmodule Exmud.Account do
   #
   # Private functions
   #
+
+  defp hash_email(email_address), do: :crypto.hash(:sha, email_address) |> String.slice(0..4)
+
+  defp lookup_player_by_auth_email(email) do
+    email_hash = hash_email(email)
+
+    Repo.all(
+      from player in Player,
+        join: auth_email in Exmud.Account.AuthEmail,
+        where: player.id == auth_email.player_id and auth_email.hash == ^email_hash,
+        select: %{player: player.id, email: auth_email.email}
+    )
+    |> Enum.filter(fn %{email: encrypted_email} ->
+      Exmud.Vault.decrypt!(encrypted_email) === email
+    end)
+    |> case do
+      [] ->
+        {:error, :not_found}
+
+      [%{player: player_id}] ->
+        {:ok, player_id}
+    end
+  end
 
   defp notify_subscribers(result, event, global_only \\ false)
 
