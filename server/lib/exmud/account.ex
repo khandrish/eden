@@ -72,7 +72,7 @@ defmodule Exmud.Account do
 
     Ecto.Multi.new()
     |> Ecto.Multi.run(:precheck, fn _repo, _ ->
-      Repo.one(
+      Repo.all(
         from player in Player,
           join: auth_email in Exmud.Account.AuthEmail,
           where: player.id == auth_email.player_id and auth_email.hash == ^email_hash,
