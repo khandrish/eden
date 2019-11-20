@@ -24,7 +24,7 @@ defmodule ExmudWeb.PlayerController do
       if changeset.valid? do
         conn
         |> put_status(500)
-          |> put_view(ExmudWeb.ErrorView)
+        |> put_view(ExmudWeb.ErrorView)
         |> render("500.json")
       else
         conn

@@ -26,6 +26,7 @@ defmodule ExmudWeb.Router do
     post "/authenticate/email", PlayerAuthController, :authenticate_via_email
     get "/authenticate/email/:token", PlayerAuthController, :validate_auth_token
     post "/authenticate/token", PlayerAuthController, :validate_auth_token
+    get "/csrf-token", CsrfTokenController, :get_token
     # get "/logout", AuthController, :logout
 
     # Callback related stuff

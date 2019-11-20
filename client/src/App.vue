@@ -6,7 +6,10 @@
 
 <script>
 export default {
-  name: 'app'
+  name: 'app',
+  preFetch({ store }) {
+    store.dispatch('csrf/fetchCsrfToken')
+  }
 }
 </script>
 

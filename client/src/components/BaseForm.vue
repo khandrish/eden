@@ -86,14 +86,9 @@ export default {
 
         this.$axios.post('/authenticate/token', {
           token: this.form.token
-        }, {
-          headers: {
-            'x-csrf-token': this.$store.getters['csrf/getCsrfToken']
-          }
         })
           .then(function(response) {
             self.submitStatus = 'OK'
-            self.$store.dispatch('player/setPlayer', response.data.data)
           })
           .catch(function(_error) {
             self.submitStatus = 'ERROR'

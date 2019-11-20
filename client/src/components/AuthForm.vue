@@ -88,6 +88,10 @@ export default {
 
         this.$axios.post('/authenticate/email', {
           email: this.form.email
+        }, {
+          headers: {
+            'x-csrf-token': this.$store.getters['csrf/getCsrfToken']
+          }
         })
           .then(function(response) {
             self.$router.push({ path: '/authenticate' })

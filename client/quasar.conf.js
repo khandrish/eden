@@ -168,6 +168,8 @@ module.exports = function(ctx) {
         // https://www.electron.build/configuration/configuration
         // appId: 'exmud'
       }
-    }
+    },
+
+    preFetch: true
   }
 }

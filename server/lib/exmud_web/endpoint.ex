@@ -43,7 +43,7 @@ defmodule ExmudWeb.Endpoint do
   plug Corsica,
     origins: "http://localhost:8080",
     allow_credentials: true,
-    allow_headers: ["Content-Type"],
+    allow_headers: ["Content-Type", "x-csrf-token"],
     log: [rejected: :error, invalid: :warn, accepted: :debug]
 
   plug ExmudWeb.Router
