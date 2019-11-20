@@ -36,6 +36,7 @@ defmodule Exmud.MixProject do
       {:bamboo, "~> 1.3"},
       {:castore, ">= 0.0.0"},
       {:cloak, "1.0.0"},
+      {:corsica, "~> 1.0"},
       {:dataloader, "~> 1.0.6"},
       {:defused, "~> 0.6.0"},
       {:ecto, "~> 3.2.4"},
