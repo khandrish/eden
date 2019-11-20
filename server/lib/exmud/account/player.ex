@@ -20,8 +20,7 @@ defmodule Exmud.Account.Player do
   @spec new(map) :: Ecto.Changeset.t()
   def new(params) do
     %__MODULE__{}
-    |> cast(params, [:id, :status, :tos_accepted])
-    |> validate_required([:status])
+    |> cast(params, [:status, :tos_accepted])
     |> validate()
   end
 
@@ -34,6 +33,7 @@ defmodule Exmud.Account.Player do
 
   defp validate(player) do
     player
+    |> validate_required([:status, :tos_accepted])
     |> validate_inclusion(:status, apply(Account.Enums.PlayerStatus, :__valid_values__, []))
     |> validate_change(:tos_accepted, fn _, term ->
       if is_boolean(term) do

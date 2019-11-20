@@ -11,6 +11,9 @@ config :exmud,
   ecto_repos: [Exmud.Repo],
   generators: [binary_id: true]
 
+config :exmud, Exmud.Repo,
+  migration_timestamps: [type: :utc_datetime_usec]
+
 # Configures the endpoint
 config :exmud, ExmudWeb.Endpoint,
   url: [host: "localhost"],
@@ -36,8 +39,8 @@ config :exmud, env: Mix.env()
 config :exmud,
   signup_player_token_ttl: String.to_integer(System.get_env("SIGNUP_PLAYER_TOKEN_TTL", "604800")),
   email_format: Regex.compile!(System.get_env("EMAIL_FORMAT", "^.+@.+$")),
-  email_max_length: String.to_integer(System.get_env("EMAIL_MAX_LENGTH", "3")),
-  email_min_length: String.to_integer(System.get_env("EMAIL_MIN_LENGTH", "254")),
+  email_max_length: String.to_integer(System.get_env("EMAIL_MAX_LENGTH", "254")),
+  email_min_length: String.to_integer(System.get_env("EMAIL_MIN_LENGTH", "3")),
   login_token_ttl: String.to_integer(System.get_env("LOGIN_TOKEN_TTL", "900")),
   nickname_format: Regex.compile!(System.get_env("NICKNAME_FORMAT", "^[a-zA-Z0-9 ]+$")),
   nickname_max_length: String.to_integer(System.get_env("NICKNAME_MAX_LENGTH", "30")),

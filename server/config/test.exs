@@ -23,4 +23,4 @@ config :exredis,
   max_queue: :infinity
 
 # Configure email
-config :my_app, Exmud.Mailer, adapter: Bamboo.TestAdapter
+config :exmud, Exmud.Mailer, adapter: Bamboo.TestAdapter

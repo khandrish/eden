@@ -38,6 +38,7 @@ defmodule Exmud.MixProject do
       {:cloak, "1.0.0"},
       {:dataloader, "~> 1.0.6"},
       {:defused, "~> 0.6.0"},
+      {:ecto, "~> 3.2.4"},
       {:ecto_autoslug_field, "~> 2.0"},
       {:ecto_enum, "~> 1.4.0"},
       {:ecto_sql, "~> 3.2.0"},

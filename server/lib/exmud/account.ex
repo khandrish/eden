@@ -71,17 +71,32 @@ defmodule Exmud.Account do
     player_changeset = Player.new(%{status: Account.Constants.PlayerStatus.pending()})
 
     Ecto.Multi.new()
-    |> Ecto.Multi.insert(:player, player_changeset)
+    |> Ecto.Multi.run(:precheck, fn _repo, _ ->
+      Repo.one(
+        from player in Player,
+          join: auth_email in Exmud.Account.AuthEmail,
+          where: player.id == auth_email.player_id and auth_email.hash == ^email_hash,
+          select: auth_email.email
+      )
+      |> Enum.filter(fn encrypted_email -> Exmud.Vault.decrypt!(encrypted_email) === email_address end)
+      |> case do
+        [] ->
+          {:ok, :not_found}
+        [_] ->
+          {:error, :email_in_use}
+      end
+    end)
+    |> Ecto.Multi.insert(:insert_player, player_changeset)
     |> UberMulti.run(
       :build_auth,
-      [:player, :auth_email, %{email: encrypted_email, hash: email_hash}],
+      [:insert_player, :auth_email, %{email: encrypted_email, hash: email_hash}],
       &Ecto.build_assoc/3,
       true
     )
     |> UberMulti.run(:insert_auth, [:build_auth], &Repo.insert/1)
     |> Repo.transaction()
     |> case do
-      {:ok, %{player: player}} ->
+      {:ok, %{insert_player: player}} ->
         redis_set_player_auth_token(
           auth_token,
           "signup",
@@ -180,10 +195,26 @@ defmodule Exmud.Account do
   Returns the list of players in a paginated manner, wrapped in a success tuple.
 
   ## Examples
+      iex> list_players()
+      {:ok, [%Player{}, ...]}
+  """
+  def list_players() do
+    {:ok,
+     Repo.all(
+       from player in Player,
+         order_by: [asc: player.inserted_at],
+         preload: :profile
+     )}
+  end
+
+  @doc """
+  Returns the list of players in a paginated manner, wrapped in a success tuple.
+
+  ## Examples
       iex> list_players(1, 100)
       {:ok, [%Player{}, ...]}
   """
-  def list_players(page, page_size) do
+  def list_players(page, page_size) when is_integer(page) and page > 0 and is_integer(page_size) and page_size > 0 do
     {:ok,
      Repo.all(
        from player in Player,

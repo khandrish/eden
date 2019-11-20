@@ -7,18 +7,31 @@ defmodule ExmudWeb.PlayerController do
   action_fallback ExmudWeb.FallbackController
 
   def index(conn, params) do
-    page = Map.get(params, "page", 0)
+    page = Map.get(params, "page", 1)
     page_size = Map.get(params, "pageSize", 10)
-    players = Account.list_players(page, page_size)
+    {:ok, players} = Account.list_players(page, page_size)
     render(conn, "index.json", players: players)
   end
 
   def create(conn, %{"player" => player_params}) do
-    with {:ok, %Player{} = player} <- Account.create_player(player_params) do
+    case Account.create_player(player_params) do
+    {:ok, %Player{} = player} ->
       conn
       |> put_status(:created)
       |> put_resp_header("location", Routes.player_path(conn, :show, player))
       |> render("show.json", player: player)
+    {:error, changeset} ->
+      if changeset.valid? do
+        conn
+        |> put_status(500)
+          |> put_view(ExmudWeb.ErrorView)
+        |> render("500.json")
+      else
+        conn
+        |> put_status(422)
+          |> put_view(ExmudWeb.ErrorView)
+        |> render("422.json")
+      end
     end
   end
 
@@ -30,8 +43,21 @@ defmodule ExmudWeb.PlayerController do
   def update(conn, %{"id" => id, "player" => player_params}) do
     player = Account.get_player!(id)
 
-    with {:ok, %Player{} = player} <- Account.update_player(player, player_params) do
-      render(conn, "show.json", player: player)
+    case Account.update_player(player, player_params) do
+      {:ok, %Player{} = player} ->
+        render(conn, "show.json", player: player)
+      {:error, changeset} ->
+        if changeset.valid? do
+          conn
+          |> put_status(500)
+          |> put_view(ExmudWeb.ErrorView)
+          |> render("500.json")
+        else
+          conn
+          |> put_status(422)
+          |> put_view(ExmudWeb.ErrorView)
+          |> render("422.json")
+        end
     end
   end
 

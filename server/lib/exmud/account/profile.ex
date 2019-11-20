@@ -8,7 +8,6 @@ defmodule Exmud.Account.Profile do
   @derive {Phoenix.Param, key: :slug}
   schema "profiles" do
     field :email, :string
-    field :email_public, :boolean, default: false
     field :email_verified, :boolean, default: false
     field :nickname, :string
     field :slug, Exmud.DataType.NicknameSlug.Type
@@ -31,7 +30,6 @@ defmodule Exmud.Account.Profile do
   def new(attrs) when is_map(attrs) do
     %__MODULE__{}
     |> cast(attrs, [:nickname, :email, :email_verified, :player_id])
-    |> validate_required([:nickname, :email, :player_id])
     |> validate()
   end
 
@@ -47,6 +45,8 @@ defmodule Exmud.Account.Profile do
     profile =
       profile
       |> change()
+      |> validate_required([:nickname, :email, :email_verified, :player_id])
+      |> foreign_key_constraint(:player_id)
       |> unique_constraint(:email)
       |> validate_format(:email, email_format)
       |> validate_length(:email, min: email_min_length, max: email_max_length)

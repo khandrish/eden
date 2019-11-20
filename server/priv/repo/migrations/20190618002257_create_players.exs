@@ -7,7 +7,7 @@ defmodule Exmud.Repo.Migrations.CreatePlayers do
       add :status, :string
       add :tos_accepted, :boolean, default: false, null: false
 
-      timestamps(type: :utc_datetime_usec)
+      timestamps()
     end
 
     create index(:players, [:status])
