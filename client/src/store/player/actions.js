@@ -25,13 +25,13 @@ export function setPlayerId(context, playerId) {
 //   })
 // }
 
-export async function loadPlayer(context) {
+export function loadPlayer(context) {
   const self = this
 
   this._vm.$axios.get('/player')
     .then(function(response) {
-      self.dispatch('player/setPlayerId', response.data.id)
-      self.dispatch('players/putPlayer', response.data)
+      self.dispatch('player/setPlayerId', response.data.data.id)
+      self.dispatch('players/put', response.data.data)
     })
     .catch(function(_error) {
       self.dispatch('player/setPlayerId', null)
