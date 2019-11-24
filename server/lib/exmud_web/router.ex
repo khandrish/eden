@@ -8,9 +8,8 @@ defmodule ExmudWeb.Router do
     plug :fetch_session
     plug ExmudWeb.Plug.SetPlayer
 
-    if Application.get_env(:exmud, :env, :dev) != :dev do
-      plug :protect_from_forgery
-    end
+    # Why does the token sent back to server not pass the check?
+    # plug :protect_from_forgery
 
     plug :put_secure_browser_headers
   end
@@ -25,8 +24,10 @@ defmodule ExmudWeb.Router do
     # Auth related stuff
     post "/authenticate/email", PlayerAuthController, :authenticate_via_email
     get "/authenticate/email/:token", PlayerAuthController, :validate_auth_token
+    post "/logout", PlayerAuthController, :logout
     post "/authenticate/token", PlayerAuthController, :validate_auth_token
     get "/csrf-token", CsrfTokenController, :get_token
+    get "/player", PlayerController, :get_authenticated_player
     # get "/logout", AuthController, :logout
 
     # Callback related stuff

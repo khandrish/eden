@@ -5,6 +5,7 @@ defmodule ExmudWeb.Plug.SetPlayer do
   end
 
   def call(conn, _params) do
+    IO.inspect({:get_session, Plug.Conn.get_session(conn)})
     case Plug.Conn.get_session(conn, "player") do
       player = %Exmud.Account.Player{} ->
         conn

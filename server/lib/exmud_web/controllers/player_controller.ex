@@ -6,6 +6,8 @@ defmodule ExmudWeb.PlayerController do
 
   action_fallback ExmudWeb.FallbackController
 
+  plug ExmudWeb.Plug.EnforceAuthentication when action in [:create, :delete, :get_authenticated_player, :index, :show, :update]
+
   def index(conn, params) do
     page = Map.get(params, "page", 1)
     page_size = Map.get(params, "pageSize", 10)
@@ -29,7 +31,7 @@ defmodule ExmudWeb.PlayerController do
       else
         conn
         |> put_status(422)
-          |> put_view(ExmudWeb.ErrorView)
+        |> put_view(ExmudWeb.ErrorView)
         |> render("422.json")
       end
     end
@@ -45,7 +47,9 @@ defmodule ExmudWeb.PlayerController do
 
     case Account.update_player(player, player_params) do
       {:ok, %Player{} = player} ->
-        render(conn, "show.json", player: player)
+        conn
+        |> put_status(200)
+        |> render("show.json", player: player)
       {:error, changeset} ->
         if changeset.valid? do
           conn
@@ -58,6 +62,19 @@ defmodule ExmudWeb.PlayerController do
           |> put_view(ExmudWeb.ErrorView)
           |> render("422.json")
         end
+    end
+  end
+
+  def get_authenticated_player(conn, _params) do
+    IO.inspect(conn)
+    IO.inspect(conn.assigns)
+    if conn.assigns.player_authenticated? do
+      render(conn, "show.json", player: conn.assigns.player)
+    else
+      conn
+      |> put_status(401)
+      |> put_view(ExmudWeb.ErrorView)
+      |> render("401.json")
     end
   end
 

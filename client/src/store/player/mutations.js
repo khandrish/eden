@@ -1,5 +1,5 @@
-export function setPlayer(state, player) {
-  state.player = player
+export function setPlayerId(state, playerId) {
+  state.playerId = playerId
 }
 
 export function setIsAuthenticated(state, isAuthenticated) {

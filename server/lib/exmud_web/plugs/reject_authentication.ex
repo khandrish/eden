@@ -8,7 +8,9 @@ defmodule ExmudWeb.Plug.RejectAuthentication do
     if conn.assigns.player_authenticated? do
       conn
       |> put_status(401)
-      |> send_resp()
+      |> Phoenix.Controller.put_view(ExmudWeb.ErrorView)
+      |> Phoenix.Controller.render("401.json")
+      |> halt()
     else
       conn
     end

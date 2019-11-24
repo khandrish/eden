@@ -5,12 +5,15 @@ defmodule ExmudWeb.Plug.EnforceAuthentication do
   end
 
   def call(conn, _params) do
+    IO.inspect(conn.assigns)
     if conn.assigns.player_authenticated? do
       conn
     else
       conn
       |> put_status(401)
-      |> send_resp()
+      |> Phoenix.Controller.put_view(ExmudWeb.ErrorView)
+      |> Phoenix.Controller.render("401.json")
+      |> halt()
     end
   end
 end

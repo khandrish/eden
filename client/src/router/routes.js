@@ -8,6 +8,11 @@ const routes = [
     path: '/authenticate',
     component: () => import('layouts/EmptyLayout.vue'),
     children: [{ path: '', component: () => import('pages/AuthenticatePage.vue') }]
+  },
+  {
+    path: '/dashboard',
+    component: () => import('layouts/AppLayout.vue'),
+    children: [{ path: '', component: () => import('pages/DashboardPage.vue') }]
   }
 ]
 

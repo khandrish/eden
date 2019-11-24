@@ -36,9 +36,9 @@ defmodule ExmudWeb.Endpoint do
   # this means its contents can be read but not tampered with.
   # Set :encryption_salt if you would also like to encrypt it.
   plug Plug.Session,
-    store: :redis,
-    key: "sid",
-    http_only: true
+    store: :cookie,
+    key: "_exmud_session",
+    signing_salt: "mRD9b4ez"
 
   plug Corsica,
     origins: "http://localhost:8080",

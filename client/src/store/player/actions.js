@@ -1,5 +1,48 @@
-export function setPlayer(context, player) {
-  context.commit('setPlayer', player)
-  // If a Player is being set, it can be assumed that the user is authenticated
-  context.commit('setIsAuthenticated', true)
+export function setPlayerId(context, playerId) {
+  context.commit('setPlayerId', playerId)
+  // If a valid playerId is being set, it can be assumed that the user is authenticated
+  if (playerId !== null) {
+    context.commit('setIsAuthenticated', true)
+  } else {
+    context.commit('setIsAuthenticated', false)
+  }
+}
+
+// export function loadPlayer({ commit }) {
+//   const self = this
+
+//   return new Promise((resolve, reject) => {
+//     self._vm.$axios.get('/player')
+//       .then(function(response) {
+//         self.dispatch('player/setPlayerId', response.data.id)
+//         self.dispatch('players/putPlayer', response.data)
+//         resolve()
+//       })
+//       .catch(function(_error) {
+//         self.dispatch('player/setPlayerId', null)
+//         reject()
+//       })
+//   })
+// }
+
+export async function loadPlayer(context) {
+  const self = this
+
+  this._vm.$axios.get('/player')
+    .then(function(response) {
+      self.dispatch('player/setPlayerId', response.data.id)
+      self.dispatch('players/putPlayer', response.data)
+    })
+    .catch(function(_error) {
+      self.dispatch('player/setPlayerId', null)
+    })
+}
+
+export function logout(context) {
+  const self = this
+
+  this._vm.$axios.post('/logout')
+    .then(function(response) {
+      self.dispatch('player/setPlayerId', null)
+    })
 }

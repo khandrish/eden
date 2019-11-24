@@ -3,6 +3,8 @@ import Vuex from 'vuex'
 
 import csrf from './csrf'
 import player from './player'
+import players from './players'
+import settings from './settings'
 
 Vue.use(Vuex)
 
@@ -15,7 +17,9 @@ export default function(/* { ssrContext } */) {
   const Store = new Vuex.Store({
     modules: {
       csrf,
-      player
+      player,
+      players,
+      settings
     },
 
     // enable strict mode (adds overhead!)

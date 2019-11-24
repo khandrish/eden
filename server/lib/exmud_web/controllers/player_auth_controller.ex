@@ -13,14 +13,27 @@ defmodule ExmudWeb.PlayerAuthController do
     |> send_resp()
   end
 
+  def logout(conn, _params) do
+    IO.inspect(get_session(conn))
+    conn
+    |> clear_session()
+    |> resp(200, "")
+    |> send_resp()
+  end
+
   def validate_auth_token(conn, %{"token" => token}) do
     case Account.validate_auth_token(token) do
       {:ok, player} ->
-        conn
-        |> put_session("player", player)
-        |> put_status(:ok)
-        |> put_view(ExmudWeb.PlayerView)
-        |> render("show.json", player: player)
+        result =
+          conn
+          |> put_session("player", player)
+          |> put_status(:ok)
+          |> put_view(ExmudWeb.PlayerView)
+          |> render("show.json", player: player)
+
+          IO.inspect(get_session(result))
+
+          result
       _error ->
         conn
         |> resp(401, "invalid token")

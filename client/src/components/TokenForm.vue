@@ -18,14 +18,12 @@
           </template>
         </q-input>
 
-        <div>
-          <q-btn
-            label="Submit"
-            type="submit"
-            color="primary"
-            :disabled="formIsDisabled"
-          />
-        </div>
+        <q-btn
+          label="Submit"
+          type="submit"
+          color="primary"
+          :disabled="formIsDisabled"
+        />
       </q-form>
     </form-wrapper>
     <q-inner-loading :showing="requestInProgress">
@@ -80,7 +78,6 @@ export default {
       if (this.$v.$invalid) {
         this.submitStatus = 'ERROR'
       } else {
-        // do your submit logic here
         this.submitStatus = 'PENDING'
         const self = this
 
@@ -93,7 +90,16 @@ export default {
         })
           .then(function(response) {
             self.submitStatus = 'OK'
-            self.$store.dispatch('player/setPlayer', response.data.data)
+            self.$store.dispatch('player/setPlayerId', response.data.data.id)
+            self.$store.dispatch('players/put', response.data.data)
+
+            var urlParams = new URLSearchParams(window.location.search)
+
+            if (urlParams.has('referrer')) {
+              self.$router.push(urlParams.get('referrer'))
+            } else {
+              self.$router.push('dashboard')
+            }
           })
           .catch(function(_error) {
             self.submitStatus = 'ERROR'

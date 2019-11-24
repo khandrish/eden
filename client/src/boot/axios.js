@@ -2,7 +2,8 @@ import Vue from 'vue'
 import axios from 'axios'
 
 const axiosInstance = axios.create({
-  baseURL: 'https://localhost:4001/api'
+  baseURL: 'https://localhost:4001/api',
+  withCredentials: true
 })
 
 // for use inside Vue files through this.$axios

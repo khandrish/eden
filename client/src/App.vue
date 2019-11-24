@@ -9,6 +9,7 @@ export default {
   name: 'app',
   preFetch({ store }) {
     store.dispatch('csrf/fetchCsrfToken')
+    store.dispatch('player/loadPlayer')
   }
 }
 </script>

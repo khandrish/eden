@@ -2,7 +2,6 @@
   <div class="relative-position">
     <form-wrapper :validator="$v.form">
       <q-form
-        @submit="onSubmit"
         class="q-gutter-md"
         ref="form"
       >
@@ -11,21 +10,23 @@
           type="email"
           v-model="form.email"
           label="Email address *"
-          hint="Used for logging in. Will not be shown."
         >
+          <q-tooltip content-style="font-size: 12px">
+            The email is kept private.
+          </q-tooltip>
           <template v-slot:prepend>
             <q-icon name="mail" />
           </template>
+          <template v-slot:append>
+            <q-btn
+              label="Login or Signup"
+              type="submit"
+              color="primary"
+              :disabled="formIsDisabled"
+              @click="submit"
+            />
+          </template>
         </q-input>
-
-        <div>
-          <q-btn
-            label="Submit"
-            type="submit"
-            color="primary"
-            :disabled="formIsDisabled"
-          />
-        </div>
       </q-form>
     </form-wrapper>
     <q-inner-loading :showing="requestInProgress">
@@ -77,24 +78,19 @@ export default {
     }
   },
   methods: {
-    onSubmit(event) {
+    submit(event) {
       this.$v.$touch()
       if (this.$v.$invalid) {
         this.submitStatus = 'ERROR'
       } else {
-        // do your submit logic here
         this.submitStatus = 'PENDING'
         const self = this
 
         this.$axios.post('/authenticate/email', {
           email: this.form.email
-        }, {
-          headers: {
-            'x-csrf-token': this.$store.getters['csrf/getCsrfToken']
-          }
         })
           .then(function(response) {
-            self.$router.push({ path: '/authenticate' })
+            self.$router.push({ path: '/authenticate', query: { referrer: window.location.pathname } })
           })
           .catch(function(_error) {
             self.submitStatus = 'ERROR'
