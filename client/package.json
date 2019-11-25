@@ -19,6 +19,7 @@
     "axios": "^0.18.1",
     "graphql": "^14.5.5",
     "graphql-tag": "^2.10.1",
+    "json-stable-stringify": "^1.0.1",
     "node-fetch": "^2.6.0",
     "quasar": "^1.4.3",
     "vue": "^2.6.10",

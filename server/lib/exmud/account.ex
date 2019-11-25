@@ -13,7 +13,7 @@ defmodule Exmud.Account do
   import Ecto.Query, warn: false
 
   alias Exmud.Account
-  alias Exmud.Account.Player
+  alias Exmud.Account.{Player, Settings}
   alias Exmud.Repo
 
   require Logger
@@ -71,29 +71,11 @@ defmodule Exmud.Account do
     player_changeset = Player.new(%{status: Account.Constants.PlayerStatus.pending()})
 
     Ecto.Multi.new()
-    |> Ecto.Multi.run(:precheck, fn _repo, _ ->
-      Repo.all(
-        from player in Player,
-          join: auth_email in Exmud.Account.AuthEmail,
-          where: player.id == auth_email.player_id and auth_email.hash == ^email_hash,
-          select: auth_email.email
-      )
-      |> Enum.filter(fn encrypted_email -> Exmud.Vault.decrypt!(encrypted_email) === email_address end)
-      |> case do
-        [] ->
-          {:ok, :not_found}
-        [_] ->
-          {:error, :email_in_use}
-      end
-    end)
+    |> perform_email_hash_precheck(email_address, email_hash)
     |> Ecto.Multi.insert(:insert_player, player_changeset)
-    |> UberMulti.run(
-      :build_auth,
-      [:insert_player, :auth_email, %{email: encrypted_email, hash: email_hash}],
-      &Ecto.build_assoc/3,
-      true
-    )
-    |> UberMulti.run(:insert_auth, [:build_auth], &Repo.insert/1)
+    |> insert_player_auth(encrypted_email, email_hash)
+    |> insert_settings()
+    |> insert_profile()
     |> Repo.transaction()
     |> case do
       {:ok, %{insert_player: player}} ->
@@ -112,6 +94,57 @@ defmodule Exmud.Account do
       _error ->
         {:error, :player_not_created}
     end
+  end
+
+  defp perform_email_hash_precheck(multi, email_address, email_hash) do
+    Ecto.Multi.run(multi, :precheck, fn _repo, _ ->
+      Repo.all(
+        from player in Player,
+          join: auth_email in Exmud.Account.AuthEmail,
+          where: player.id == auth_email.player_id and auth_email.hash == ^email_hash,
+          select: auth_email.email
+      )
+      |> Enum.filter(fn encrypted_email -> Exmud.Vault.decrypt!(encrypted_email) === email_address end)
+      |> case do
+        [] ->
+          {:ok, :not_found}
+        [_] ->
+          {:error, :email_in_use}
+      end
+    end)
+  end
+
+  defp insert_player_auth(multi, encrypted_email, email_hash) do
+    multi
+    |> UberMulti.run(
+      :build_auth,
+      [:insert_player, :auth_email, %{email: encrypted_email, hash: email_hash}],
+      &Ecto.build_assoc/3,
+      true
+    )
+    |> UberMulti.run(:insert_auth, [:build_auth], &Repo.insert/1)
+  end
+
+  defp insert_settings(multi) do
+    multi
+    |> UberMulti.run(
+      :build_settings,
+      [:insert_player, :settings, %{}],
+      &Ecto.build_assoc/3,
+      true
+    )
+    |> UberMulti.run(:insert_settings, [:build_settings], &Repo.insert/1)
+  end
+
+  defp insert_profile(multi) do
+    multi
+    |> UberMulti.run(
+      :build_profile,
+      [:insert_player, :profile, %{}],
+      &Ecto.build_assoc/3,
+      true
+    )
+    |> UberMulti.run(:insert_profile, [:build_profile], &Repo.insert/1)
   end
 
   defp redis_set_player_auth_token(auth_token, type, player_id, expiry) do
@@ -144,23 +177,24 @@ defmodule Exmud.Account do
         Redix.command!(:redix, ["DEL", "player-auth-token:#{auth_token}"])
 
         [type, player_id] = String.split(string, ":")
-        player_query = from(player in Account.Player, where: player.id == ^player_id)
+        player_update_query = from(player in Account.Player, where: player.id == ^player_id)
+        player_select_query = from(player in Account.Player, where: player.id == ^player_id, preload: [:profile, :settings])
 
         case type do
           "signup" ->
             from(auth_email in Account.AuthEmail, where: auth_email.player_id == ^player_id)
             |> Exmud.Repo.update_all(set: [email_validated: true])
 
-            Exmud.Repo.update_all(player_query,
+            Exmud.Repo.update_all(player_update_query,
               set: [status: Account.Constants.PlayerStatus.created()]
             )
 
-            player = Exmud.Repo.one!(player_query)
+            player = Exmud.Repo.one!(player_select_query)
 
             {:ok, player}
 
           "login" ->
-            player = Exmud.Repo.one!(player_query)
+            player = Exmud.Repo.one!(player_select_query)
 
             {:ok, player}
         end
@@ -397,6 +431,20 @@ defmodule Exmud.Account do
   """
   def change_profile(%Profile{} = profile) do
     Profile.changeset(profile)
+  end
+
+  def save_player_settings(params) do
+    case Repo.get!(Settings, params.player_id) do
+      settings = %Settings{} ->
+        Settings.update(settings, params)
+        |> Repo.update()
+        |> case do
+          {:ok, settings} ->
+            {:ok, settings}
+          error = {:error, _} ->
+            error
+        end
+    end
   end
 
   #

@@ -3,7 +3,7 @@ defmodule Exmud.Repo.Migrations.CreatePlayerSettings do
 
   def change do
     create table(:player_settings, primary_key: false) do
-      add :player_id, :binary_id, references(:players), primary_key: true
+      add :player_id, references(:players, type: :binary_id), primary_key: true
       add :developer_feature_on, :boolean, default: false, null: false
 
       timestamps()

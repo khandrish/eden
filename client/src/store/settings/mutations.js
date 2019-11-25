@@ -3,5 +3,6 @@ export function setDeveloperFeatureOn(state, featureOn) {
 }
 
 export function setPlayerSettings(state, settings) {
-  state = settings
+  state.playerId = settings.playerId
+  state.developerFeatureOn = settings.developerFeatureOn
 }

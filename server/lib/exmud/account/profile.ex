@@ -5,6 +5,7 @@ defmodule Exmud.Account.Profile do
 
   import Ecto.Changeset
 
+  @primary_key {:player_id, :binary_id, autogenerate: false}
   @derive {Phoenix.Param, key: :slug}
   schema "profiles" do
     field :email, :string
@@ -12,7 +13,8 @@ defmodule Exmud.Account.Profile do
     field :nickname, :string
     field :slug, Exmud.DataType.NicknameSlug.Type
 
-    belongs_to(:player, Exmud.Account.Player, foreign_key: :player_id)
+    belongs_to(:player, Exmud.Account.Player, type: :binary_id, foreign_key: :player_id, primary_key: true, define_field: false)
+
 
     timestamps()
   end
@@ -45,7 +47,7 @@ defmodule Exmud.Account.Profile do
     profile =
       profile
       |> change()
-      |> validate_required([:nickname, :email, :email_verified, :player_id])
+      |> validate_required([:player_id])
       |> foreign_key_constraint(:player_id)
       |> unique_constraint(:email)
       |> validate_format(:email, email_format)

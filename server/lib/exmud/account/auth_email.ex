@@ -4,12 +4,12 @@ defmodule Exmud.Account.AuthEmail do
   use Exmud.Schema
   import Ecto.Changeset
 
-  @primary_key {:email, :binary, []}
-
+  @primary_key {:player_id, :binary_id, autogenerate: false}
   schema "auth_emails" do
+    field :email, :binary
     field :email_verified, :boolean, default: false
     field :hash, :binary
-    belongs_to(:player, Exmud.Account.Player)
+    belongs_to(:player, Exmud.Account.Player, type: :binary_id, foreign_key: :player_id, primary_key: true, define_field: false)
 
     timestamps()
   end

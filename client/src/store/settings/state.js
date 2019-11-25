@@ -1,1 +1,1 @@
-export default { developerFeatureOn: false }
+export default { playerId: null, developerFeatureOn: false }

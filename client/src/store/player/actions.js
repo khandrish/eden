@@ -32,6 +32,7 @@ export function loadPlayer(context) {
     .then(function(response) {
       self.dispatch('player/setPlayerId', response.data.data.id)
       self.dispatch('players/put', response.data.data)
+      self.dispatch('settings/loadSettings')
     })
     .catch(function(_error) {
       self.dispatch('player/setPlayerId', null)

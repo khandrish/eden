@@ -13,6 +13,7 @@ defmodule Exmud.Account.Player do
 
     has_one :auth_email, Account.AuthEmail
     has_one :profile, Account.Profile
+    has_one :settings, Account.Settings
 
     timestamps()
   end

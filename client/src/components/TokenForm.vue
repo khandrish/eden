@@ -92,6 +92,7 @@ export default {
             self.submitStatus = 'OK'
             self.$store.dispatch('player/setPlayerId', response.data.data.id)
             self.$store.dispatch('players/put', response.data.data)
+            self.$store.dispatch('settings/loadSettings')
 
             var urlParams = new URLSearchParams(window.location.search)
 

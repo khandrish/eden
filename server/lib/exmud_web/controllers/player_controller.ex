@@ -66,10 +66,41 @@ defmodule ExmudWeb.PlayerController do
   end
 
   def get_authenticated_player(conn, _params) do
-    IO.inspect(conn)
-    IO.inspect(conn.assigns)
     if conn.assigns.player_authenticated? do
-      render(conn, "show.json", player: conn.assigns.player)
+      render(conn, "show.json", settings: conn.assigns.player)
+    else
+      conn
+      |> put_status(401)
+      |> put_view(ExmudWeb.ErrorView)
+      |> render("401.json")
+    end
+  end
+
+  def get_authenticated_player_settings(conn, _params) do
+    if conn.assigns.player_authenticated? do
+      conn
+      |> put_view(ExmudWeb.SettingsView)
+      |> render("show.json", settings: conn.assigns.player.settings)
+    else
+      conn
+      |> put_status(401)
+      |> put_view(ExmudWeb.ErrorView)
+      |> render("401.json")
+    end
+  end
+
+  def save_authenticated_player_settings(conn, params) do
+    if conn.assigns.player_authenticated? do
+      case Account.save_player_settings(%{developer_feature_on: params["developerFeatureOn"], player_id: params["playerId"]}) do
+        {:ok, settings} ->
+          conn
+          |> put_view(ExmudWeb.SettingsView)
+          |> render("show.json", settings: settings)
+        {:error, _changeset} ->
+          conn
+          |> put_view(ExmudWeb.ErrorView)
+          |> render("401.json")
+      end
     else
       conn
       |> put_status(401)

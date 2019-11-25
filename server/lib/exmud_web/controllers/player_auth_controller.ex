@@ -14,7 +14,6 @@ defmodule ExmudWeb.PlayerAuthController do
   end
 
   def logout(conn, _params) do
-    IO.inspect(get_session(conn))
     conn
     |> clear_session()
     |> resp(200, "")

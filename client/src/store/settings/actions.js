@@ -1,26 +1,31 @@
 export function setDeveloperFeatureOn(context, featureOn) {
   context.commit('setDeveloperFeatureOn', featureOn)
+  save(context, this)
 }
 
-export function loadSettings(context, playerId) {
+export function loadSettings(context) {
   this._vm.$axios.get(`/player/settings`)
     .then(function(response) {
-      context.commit('playerSettings/setPlayerSettings', response.data)
+      context.commit('setPlayerSettings', response.data.data)
     })
 }
 
 export function saveSettings(context) {
-  this._vm.$axios.post('/player/settings', context.state)
+  save(context, this)
+}
+
+import { Notify } from 'quasar'
+
+function save(context, self) {
+  self._vm.$axios.post('/player/settings', context.state)
     .then(function(_) {
-      this.$q.notify({
-        message: 'Successfully saved Player Settings',
-        color: getComputedStyle(document.documentElement).getPropertyValue('--positive')
+      Notify.create({
+        message: 'Successfully saved Player Settings'
       })
     })
     .catch(function(_) {
-      this.$q.notify({
-        message: 'Failed to save Player Settings',
-        color: getComputedStyle(document.documentElement).getPropertyValue('--negative')
+      Notify.create({
+        message: 'Failed to save Player Settings'
       })
     })
 }

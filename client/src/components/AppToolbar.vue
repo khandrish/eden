@@ -67,7 +67,7 @@
       </q-btn-dropdown>
     </template>
     <template v-else>
-      <auth-form/>
+      <auth-form />
     </template>
 
   </q-toolbar>
@@ -79,7 +79,7 @@ import AuthForm from '../components/AuthForm.vue'
 export default {
   name: 'app-toolbar',
   mixins: [],
-  components: { 'auth-form': AuthForm },
+  components: { AuthForm },
   data() {
     return {
     }
@@ -88,15 +88,12 @@ export default {
     authenticated() {
       return this.$store.getters['player/getIsAuthenticated']
     },
-    profile() {
-      return this.$store.getters['player/getIsAuthenticated']
-    },
     developerFeatureOn: {
-      set: function(body) {
-        this.$store.commit('playerSettings/setDeveloperFeatureOn', { body })
+      set: function(value) {
+        this.$store.dispatch('settings/setDeveloperFeatureOn', value)
       },
       get: function() {
-        return this.$store.getters['playerSettings/getDeveloperFeatureOn']
+        return this.$store.getters['settings/getDeveloperFeatureOn']
       }
     }
   },
