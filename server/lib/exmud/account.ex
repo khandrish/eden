@@ -104,10 +104,13 @@ defmodule Exmud.Account do
           where: player.id == auth_email.player_id and auth_email.hash == ^email_hash,
           select: auth_email.email
       )
-      |> Enum.filter(fn encrypted_email -> Exmud.Vault.decrypt!(encrypted_email) === email_address end)
+      |> Enum.filter(fn encrypted_email ->
+        Exmud.Vault.decrypt!(encrypted_email) === email_address
+      end)
       |> case do
         [] ->
           {:ok, :not_found}
+
         [_] ->
           {:error, :email_in_use}
       end
@@ -178,7 +181,12 @@ defmodule Exmud.Account do
 
         [type, player_id] = String.split(string, ":")
         player_update_query = from(player in Account.Player, where: player.id == ^player_id)
-        player_select_query = from(player in Account.Player, where: player.id == ^player_id, preload: [:profile, :settings])
+
+        player_select_query =
+          from(player in Account.Player,
+            where: player.id == ^player_id,
+            preload: [:profile, :settings]
+          )
 
         case type do
           "signup" ->
@@ -248,7 +256,8 @@ defmodule Exmud.Account do
       iex> list_players(1, 100)
       {:ok, [%Player{}, ...]}
   """
-  def list_players(page, page_size) when is_integer(page) and page > 0 and is_integer(page_size) and page_size > 0 do
+  def list_players(page, page_size)
+      when is_integer(page) and page > 0 and is_integer(page_size) and page_size > 0 do
     {:ok,
      Repo.all(
        from player in Player,
@@ -441,6 +450,7 @@ defmodule Exmud.Account do
         |> case do
           {:ok, settings} ->
             {:ok, settings}
+
           error = {:error, _} ->
             error
         end
@@ -482,7 +492,7 @@ defmodule Exmud.Account do
     if not global_only do
       Phoenix.PubSub.broadcast(
         Exmud.PubSub,
-        @topic <> ":#{result.id}",
+        @topic <> ":#{get_id(result)}",
         {__MODULE__, event, result}
       )
     end
@@ -491,4 +501,7 @@ defmodule Exmud.Account do
   end
 
   defp notify_subscribers({:error, reason}, _event, _global_only), do: {:error, reason}
+
+  defp get_id(%Account.Player{id: id}), do: id
+  defp get_id(%{player_id: id}), do: id
 end

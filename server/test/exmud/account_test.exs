@@ -95,7 +95,7 @@ defmodule Exmud.AccountTest do
 
     test "get_profile!/1 returns the profile with given id" do
       profile = profile_fixture()
-      assert Account.get_profile!(profile.id) == profile
+      assert Account.get_profile!(profile.player_id) == profile
     end
 
     test "create_profile/1 with invalid data returns error changeset" do
@@ -113,13 +113,13 @@ defmodule Exmud.AccountTest do
     test "update_profile/2 with invalid data returns error changeset" do
       profile = profile_fixture()
       assert {:error, %Ecto.Changeset{}} = Account.update_profile(profile, @invalid_attrs)
-      assert profile == Account.get_profile!(profile.id)
+      assert profile == Account.get_profile!(profile.player_id)
     end
 
     test "delete_profile/1 deletes the profile" do
       profile = profile_fixture()
       assert {:ok, %Profile{}} = Account.delete_profile(profile)
-      assert_raise Ecto.NoResultsError, fn -> Account.get_profile!(profile.id) end
+      assert_raise Ecto.NoResultsError, fn -> Account.get_profile!(profile.player_id) end
     end
 
     test "change_profile/1 returns a profile changeset" do

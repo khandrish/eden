@@ -1,8 +1,7 @@
 defmodule Exmud.DataType.Data do
   @moduledoc false
 
-  @behaviour Ecto.Type
-  def type, do: :binary
+  use Ecto.Type
 
   # Provide custom casting rules
   # Cast binary into Elixir terms to be used at runtime
@@ -22,4 +21,6 @@ defmodule Exmud.DataType.Data do
   # When dumping data to the database any term will work.
   def dump(data),
     do: {:ok, :erlang.term_to_binary(data)}
+
+  def type, do: :binary
 end

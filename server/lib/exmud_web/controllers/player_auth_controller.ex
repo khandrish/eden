@@ -30,8 +30,6 @@ defmodule ExmudWeb.PlayerAuthController do
           |> put_view(ExmudWeb.PlayerView)
           |> render("show.json", player: player)
 
-          IO.inspect(get_session(result))
-
           result
       _error ->
         conn

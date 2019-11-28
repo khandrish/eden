@@ -32,13 +32,9 @@ defmodule ExmudWeb.Endpoint do
   plug Plug.MethodOverride
   plug Plug.Head
 
-  # The session will be stored in the cookie and signed,
-  # this means its contents can be read but not tampered with.
-  # Set :encryption_salt if you would also like to encrypt it.
   plug Plug.Session,
-    store: :cookie,
-    key: "_exmud_session",
-    signing_salt: "mRD9b4ez"
+    store: :redis,
+    key: "_exmud_session"
 
   plug Corsica,
     origins: "http://localhost:8080",

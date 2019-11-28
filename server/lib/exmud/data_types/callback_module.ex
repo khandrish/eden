@@ -1,10 +1,7 @@
 defmodule Exmud.DataType.CallbackModule do
   @moduledoc false
 
-  @behaviour Ecto.Type
-
-  @spec type :: :string
-  def type, do: :string
+  use Ecto.Type
 
   # Provide custom casting rules
   # Cast strings into a Module to be used at runtime
@@ -39,4 +36,6 @@ defmodule Exmud.DataType.CallbackModule do
     do: {:ok, Atom.to_string(callback_module)}
 
   def dump(_), do: :error
+
+  def type, do: :string
 end

@@ -13,8 +13,12 @@ defmodule Exmud.Account.Profile do
     field :nickname, :string
     field :slug, Exmud.DataType.NicknameSlug.Type
 
-    belongs_to(:player, Exmud.Account.Player, type: :binary_id, foreign_key: :player_id, primary_key: true, define_field: false)
-
+    belongs_to(:player, Exmud.Account.Player,
+      type: :binary_id,
+      foreign_key: :player_id,
+      primary_key: true,
+      define_field: false
+    )
 
     timestamps()
   end
@@ -47,7 +51,7 @@ defmodule Exmud.Account.Profile do
     profile =
       profile
       |> change()
-      |> validate_required([:player_id])
+      |> validate_required([:email_verified, :player_id])
       |> foreign_key_constraint(:player_id)
       |> unique_constraint(:email)
       |> validate_format(:email, email_format)

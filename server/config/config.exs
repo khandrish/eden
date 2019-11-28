@@ -11,8 +11,7 @@ config :exmud,
   ecto_repos: [Exmud.Repo],
   generators: [binary_id: true]
 
-config :exmud, Exmud.Repo,
-  migration_timestamps: [type: :utc_datetime_usec]
+config :exmud, Exmud.Repo, migration_timestamps: [type: :utc_datetime_usec]
 
 # Configures the endpoint
 config :exmud, ExmudWeb.Endpoint,

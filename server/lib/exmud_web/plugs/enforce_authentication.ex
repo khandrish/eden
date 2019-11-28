@@ -5,7 +5,6 @@ defmodule ExmudWeb.Plug.EnforceAuthentication do
   end
 
   def call(conn, _params) do
-    IO.inspect(conn.assigns)
     if conn.assigns.player_authenticated? do
       conn
     else

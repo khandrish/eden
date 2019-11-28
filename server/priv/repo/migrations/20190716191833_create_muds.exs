@@ -7,12 +7,12 @@ defmodule Exmud.Repo.Migrations.CreateEngines do
       add :name, :string
       add :description, :string
       add :slug, :string
-      add :status, :string
+      add :player_id, references(:players, on_delete: :nilify_all, type: :binary_id)
 
       timestamps()
     end
 
     create unique_index(:muds, [:name])
-    create index(:muds, [:status])
+    create unique_index(:muds, [:slug])
   end
 end

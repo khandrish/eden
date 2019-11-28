@@ -14,11 +14,11 @@ defmodule Exmud.Engine do
   ## Examples
 
       iex> list_muds()
-      [%Mud{}, ...]
+      {:ok, [%Mud{}, ...]}
 
   """
   def list_muds do
-    Repo.all(Mud)
+    {:ok, Repo.all(Mud)}
   end
 
   @doc """
@@ -74,8 +74,8 @@ defmodule Exmud.Engine do
 
   """
   def create_mud(attrs \\ %{}) do
-    %Mud{}
-    |> Mud.changeset(attrs)
+    attrs
+    |> Mud.new()
     |> Repo.insert()
   end
 
@@ -93,7 +93,7 @@ defmodule Exmud.Engine do
   """
   def update_mud(%Mud{} = mud, attrs) do
     mud
-    |> Mud.changeset(attrs)
+    |> Mud.update(attrs)
     |> Repo.update()
   end
 
@@ -111,18 +111,5 @@ defmodule Exmud.Engine do
   """
   def delete_mud(%Mud{} = mud) do
     Repo.delete(mud)
-  end
-
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking mud changes.
-
-  ## Examples
-
-      iex> change_mud(mud)
-      %Ecto.Changeset{source: %Mud{}}
-
-  """
-  def change_mud(%Mud{} = mud) do
-    Mud.changeset(mud, %{})
   end
 end
