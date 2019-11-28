@@ -1,7 +1,15 @@
 <template>
-  <div>
-    FooBar
-  </div>
+  <q-tabs
+    v-model="tab"
+    vertical
+    class="text-teal"
+  >
+    <q-tab
+      name="quickActions"
+      icon="fas fa-stopwatch"
+      label="Quick Actions"
+    />
+  </q-tabs>
 </template>
 
 <script>
@@ -13,6 +21,7 @@ export default {
   },
   data() {
     return {
+      tab: 'quickActions'
     }
   }
 }
