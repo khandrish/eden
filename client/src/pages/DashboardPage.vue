@@ -20,15 +20,10 @@
               class="dashboardTab"
             />
             <q-tab
-              name="alarms"
-              icon="alarm"
-              label="Alarms"
-              class="dashboardTab"
-            />
-            <q-tab
-              name="movies"
-              icon="movie"
-              label="Movies"
+              v-if="showDevTab"
+              name="muds"
+              icon="fas fa-dice-d20"
+              label="MUDs"
               class="dashboardTab"
             />
           </q-tabs>
@@ -70,18 +65,12 @@
               </q-card>
             </q-tab-panel>
 
-            <q-tab-panel name="alarms">
+            <q-tab-panel name="muds">
               <div class="text-h4 q-mb-md">Alarms</div>
               <p>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Quis praesentium cumque magnam odio iure quidem, quod illum numquam possimus obcaecati commodi minima assumenda consectetur culpa fuga nulla ullam. In, libero.</p>
               <p>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Quis praesentium cumque magnam odio iure quidem, quod illum numquam possimus obcaecati commodi minima assumenda consectetur culpa fuga nulla ullam. In, libero.</p>
             </q-tab-panel>
 
-            <q-tab-panel name="movies">
-              <div class="text-h4 q-mb-md">Movies</div>
-              <p>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Quis praesentium cumque magnam odio iure quidem, quod illum numquam possimus obcaecati commodi minima assumenda consectetur culpa fuga nulla ullam. In, libero.</p>
-              <p>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Quis praesentium cumque magnam odio iure quidem, quod illum numquam possimus obcaecati commodi minima assumenda consectetur culpa fuga nulla ullam. In, libero.</p>
-              <p>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Quis praesentium cumque magnam odio iure quidem, quod illum numquam possimus obcaecati commodi minima assumenda consectetur culpa fuga nulla ullam. In, libero.</p>
-            </q-tab-panel>
           </q-tab-panels>
         </template>
 
@@ -214,6 +203,11 @@ Object.freeze(data)
 
 export default {
   name: 'LandingPage',
+  computed: {
+    showDevTab() {
+      return this.$store.getters['settings/getDeveloperFeatureOn']
+    }
+  },
   data() {
     return {
       data,
