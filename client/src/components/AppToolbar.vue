@@ -59,19 +59,19 @@
       </q-btn-dropdown>
     </template>
     <template v-else>
-      <auth-form />
+      <email-form />
     </template>
 
   </q-toolbar>
 </template>
 
 <script>
-import AuthForm from '../components/AuthForm.vue'
+import EmailForm from '../components/EmailForm.vue'
 
 export default {
   name: 'app-toolbar',
   mixins: [],
-  components: { AuthForm },
+  components: { EmailForm },
   data() {
     return {
     }

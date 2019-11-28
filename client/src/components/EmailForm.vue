@@ -46,7 +46,7 @@ import { templates } from 'vuelidate-error-extractor'
 const emailRegex = helpers.regex('email', /^.+@.+$/)
 
 export default {
-  name: 'auth-form',
+  name: 'email-form',
   mixins: [validationMixin],
   components: {
     FormWrapper: templates.FormWrapper
@@ -90,7 +90,11 @@ export default {
           email: this.form.email
         })
           .then(function(response) {
-            self.$router.push({ path: '/authenticate', query: { referrer: window.location.pathname } })
+            if (window.location.pathname === '/') {
+              self.$router.push({ path: '/authenticate' })
+            } else {
+              self.$router.push({ path: '/authenticate', query: { referrer: window.location.pathname } })
+            }
           })
           .catch(function(_error) {
             self.submitStatus = 'ERROR'

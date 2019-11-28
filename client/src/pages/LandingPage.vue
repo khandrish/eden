@@ -8,7 +8,7 @@
           </h1>
         </div>
         <div class="col landing-page-content-column">
-          <auth-form></auth-form>
+          <email-form></email-form>
         </div>
       </div>
     </div>
@@ -63,11 +63,11 @@
 
 <script>
 import { openURL } from 'quasar'
-import AuthForm from '../components/AuthForm.vue'
+import EmailForm from '../components/EmailForm.vue'
 
 export default {
   name: 'LandingPage',
-  components: { 'auth-form': AuthForm },
+  components: { 'email-form': EmailForm },
   methods: {
     openURL
   }
