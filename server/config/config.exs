@@ -46,6 +46,10 @@ config :exmud,
   nickname_min_length: String.to_integer(System.get_env("NICKNAME_MIN_LENGTH", "2")),
   no_reply_email_address: System.get_env("NO_REPLY_EMAIL_ADDRESS", "no-reply@exmud")
 
+config :exmud, :generators,
+  migration: true,
+  binary_id: true
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"

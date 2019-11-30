@@ -66,7 +66,7 @@ config :exmud, ExmudWeb.Endpoint,
     keyfile: "priv/cert/selfsigned_key.pem",
     certfile: "priv/cert/selfsigned.pem"
   ]
-  
+
 config :scribe,
   compile_auto_inspect: true,
   auto_inspect: true

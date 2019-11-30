@@ -3,7 +3,7 @@ defmodule Exmud.EngineTest do
 
   alias Exmud.Engine
 
-  describe "players" do
+  describe "muds" do
     alias Exmud.Account
 
     @valid_player_attrs %{status: Account.Constants.PlayerStatus.created(), tos_accepted: false}
@@ -17,7 +17,6 @@ defmodule Exmud.EngineTest do
       player
     end
 
-    alias Exmud.Engine
     alias Exmud.Engine.Mud
 
     @valid_mud_attrs %{description: "This is a description", name: "Name"}
@@ -74,6 +73,62 @@ defmodule Exmud.EngineTest do
       mud = mud_fixture()
       assert {:ok, %Mud{}} = Engine.delete_mud(mud)
       assert_raise Ecto.NoResultsError, fn -> Engine.get_mud!(mud.id) end
+    end
+  end
+
+  describe "characters" do
+    alias Exmud.Engine.Character
+
+    @valid_attrs %{name: "some name"}
+
+    @update_attrs %{name: "some updated name"}
+
+    @invalid_attrs %{name: nil}
+
+    def character_fixture(attrs \\ %{}) do
+      {:ok, character} =
+        attrs
+        |> Enum.into(@valid_attrs)
+        |> Engine.create_character()
+
+      character
+    end
+
+    test "list_characters/0 returns all characters" do
+      character = character_fixture()
+      assert Engine.list_characters() == {:ok, [character]}
+    end
+
+    test "get_character!/1 returns the character with given id" do
+      character = character_fixture()
+      assert Engine.get_character_by_id!(character.id) == character
+    end
+
+    test "create_character/1 with valid data creates a character" do
+      assert {:ok, %Character{} = character} = Engine.create_character(@valid_attrs)
+      assert character.name == "some name"
+    end
+
+    test "create_character/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Engine.create_character(@invalid_attrs)
+    end
+
+    test "update_character/2 with valid data updates the character" do
+      character = character_fixture()
+      assert {:ok, %Character{} = character} = Engine.update_character(character, @update_attrs)
+      assert character.name == "some updated name"
+    end
+
+    test "update_character/2 with invalid data returns error changeset" do
+      character = character_fixture()
+      assert {:error, %Ecto.Changeset{}} = Engine.update_character(character, @invalid_attrs)
+      assert character == Engine.get_character_by_id!(character.id)
+    end
+
+    test "delete_character/1 deletes the character" do
+      character = character_fixture()
+      assert {:ok, %Character{}} = Engine.delete_character(character)
+      assert_raise Ecto.NoResultsError, fn -> Engine.get_character_by_id!(character.id) end
     end
   end
 end

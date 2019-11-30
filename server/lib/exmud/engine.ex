@@ -4,9 +4,10 @@ defmodule Exmud.Engine do
   """
 
   import Ecto.Query, warn: false
-  alias Exmud.Repo
 
-  alias Exmud.Engine.Mud
+  alias Exmud.Account.Player
+  alias Exmud.Engine.{Character, Mud}
+  alias Exmud.Repo
 
   @doc """
   Returns the list of muds.
@@ -111,5 +112,178 @@ defmodule Exmud.Engine do
   """
   def delete_mud(%Mud{} = mud) do
     Repo.delete(mud)
+  end
+
+  @doc """
+  Returns the list of characters.
+
+  ## Examples
+
+      iex> list_characters()
+      {:ok, [%Character{}, ...]}
+
+  """
+  @spec list_characters :: {:ok, [Character.t()]}
+  def list_characters do
+    {:ok, Repo.all(Character)}
+  end
+
+  @doc """
+  Gets a single character.
+
+  Raises `Ecto.NoResultsError` if the Character does not exist.
+
+  ## Examples
+
+      iex> get_character!("good uuid")
+      %Character{}
+
+      iex> get_character!("bad uuid")
+      ** (Ecto.NoResultsError)
+
+  """
+  @spec get_character_by_id!(String.t()) :: Character.t()
+  def get_character_by_id!(id), do: Repo.get!(Character, id)
+
+  @doc """
+  Gets a single character.
+
+  ## Examples
+
+      iex> get_character("good uuid")
+      {:ok, %Character{}}
+
+      iex> get_character("bad uuid")
+      {:error, :not_found}
+
+  """
+  @spec get_character_by_id(String.t()) :: {:ok, Character.t()} | {:error, :not_found}
+  def get_character_by_id(id) do
+    case Repo.get(Character, id) do
+      nil ->
+        {:error, :not_found}
+
+      character ->
+        {:ok, character}
+    end
+  end
+
+  @doc """
+  Gets a single character.
+
+  Raises `Ecto.NoResultsError` if the Character does not exist.
+
+  ## Examples
+
+      iex> get_character!("good slug")
+      %Character{}
+
+      iex> get_character!("bad slug")
+      ** (Ecto.NoResultsError)
+
+  """
+  @spec get_character_by_slug!(String.t()) :: Character.t()
+  def get_character_by_slug!(slug), do: Repo.get_by!(Character, slug: slug)
+
+  @doc """
+  Gets a single character.
+
+  ## Examples
+
+      iex> get_character("good slug")
+      {:ok, %Character{}}
+
+      iex> get_character("bad slug")
+      {:error, :not_found}
+
+  """
+  @spec get_character_by_slug(String.t()) :: {:ok, Character.t()} | {:error, :not_found}
+  def get_character_by_slug(slug) do
+    case Repo.get_by(Character, slug: slug) do
+      nil ->
+        {:error, :not_found}
+
+      character ->
+        {:ok, character}
+    end
+  end
+
+  @doc """
+  Creates a character.
+
+  ## Examples
+
+      iex> create_character(%{field: value})
+      {:ok, %Character{}}
+
+      iex> create_character(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  @spec create_character(map) :: {:ok, Character.t()} | {:error, Ecto.Changeset.t()}
+  def create_character(attrs \\ %{}) do
+    attrs
+    |> Character.new()
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates a character.
+
+  ## Examples
+
+      iex> update_character(character, %{field: new_value})
+      {:ok, %Character{}}
+
+      iex> update_character(character, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  @spec update_character(Character.t(), map) ::
+          {:ok, Character.t()} | {:error, Ecto.Changeset.t()}
+  def update_character(%Character{} = character, attrs) do
+    character
+    |> Character.update(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a Character.
+
+  ## Examples
+
+      iex> delete_character(character)
+      {:ok, %Character{}}
+
+      iex> delete_character(character)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  @spec delete_character(Character.t()) :: {:ok, Character.t()} | {:error, Ecto.Changeset.t()}
+  def delete_character(%Character{} = character) do
+    Repo.delete(character)
+  end
+
+  @doc """
+  List all of the Characters that belong to a single Player.
+
+  ## Examples
+
+      iex> list_player_characters(42)
+      {:ok, [%Character{}]}
+
+      iex> list_player_characters(43)
+      {:ok, []}
+  """
+  @spec list_player_characters(String.t()) :: {:ok, [Character.t()]}
+  def list_player_characters(player_id) when is_binary(player_id) do
+    {:ok,
+     Repo.all(
+       from(
+         character in Character,
+         join: player in Player,
+         where: player.id == character.player_id and character.player_id == ^player_id
+       )
+     )}
   end
 end

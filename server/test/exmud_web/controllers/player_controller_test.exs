@@ -26,28 +26,28 @@ defmodule ExmudWeb.PlayerControllerTest do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
   end
 
-  describe "index" do
-    test "lists all players", %{conn: conn} do
-      conn =
-        conn
-        |> Plug.Test.init_test_session(%{player: fixture(:player)})
-        |> get(Routes.player_path(conn, :index))
+  # describe "index" do
+  #   test "lists all players", %{conn: conn} do
+  #     conn =
+  #       conn
+  #       |> Plug.Test.init_test_session(%{player: fixture(:player)})
+  #       |> get(Routes.player_path(conn, :index))
 
-      response = json_response(conn, 200)["data"]
-      assert length(response) == 1
-    end
-  end
+  #     response = json_response(conn, 200)["data"]
+  #     assert length(response) == 1
+  #   end
+  # end
 
   describe "create player" do
     test "renders player when data is valid", %{conn: conn} do
       conn =
         conn
         |> Plug.Test.init_test_session(%{player: fixture(:player)})
-        |> post(Routes.player_path(conn, :create), player: @create_attrs)
+        |> post(Routes.player_path(conn, :create), params: @create_attrs)
 
       assert %{"id" => id} = json_response(conn, 201)["data"]
 
-      conn = get(conn, Routes.player_path(conn, :show, id))
+      conn = post(conn, Routes.player_path(conn, :get), id: id)
 
       assert %{
                "id" => id
@@ -58,9 +58,15 @@ defmodule ExmudWeb.PlayerControllerTest do
       conn =
         conn
         |> Plug.Test.init_test_session(%{player: fixture(:player)})
-        |> post(Routes.player_path(conn, :create), player: @invalid_attrs)
+        |> post(Routes.player_path(conn, :create), params: @invalid_attrs)
 
       assert json_response(conn, 422)["errors"] != %{}
+    end
+
+    test "cannot create a player when not logged in", %{conn: conn} do
+      conn = post(conn, Routes.player_path(conn, :create), params: @create_attrs)
+
+      assert json_response(conn, 401)["body"] == nil
     end
   end
 
@@ -71,11 +77,11 @@ defmodule ExmudWeb.PlayerControllerTest do
       conn =
         conn
         |> Plug.Test.init_test_session(%{player: player})
-        |> put(Routes.player_path(conn, :update, player), player: @update_attrs)
+        |> post(Routes.player_path(conn, :update), id: player.id, params: @update_attrs)
 
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
 
-      conn = get(conn, Routes.player_path(conn, :show, id))
+      conn = post(conn, Routes.player_path(conn, :get), id: id)
 
       assert %{
                "id" => id
@@ -86,9 +92,15 @@ defmodule ExmudWeb.PlayerControllerTest do
       conn =
         conn
         |> Plug.Test.init_test_session(%{player: player})
-        |> put(Routes.player_path(conn, :update, player), player: @invalid_attrs)
+        |> post(Routes.player_path(conn, :update), id: player.id, params: @invalid_attrs)
 
       assert json_response(conn, 422)["errors"] != %{}
+    end
+
+    test "cannot update a player when not logged in", %{conn: conn} do
+      conn = post(conn, Routes.player_path(conn, :update), params: @update_attrs)
+
+      assert json_response(conn, 401)["body"] == nil
     end
   end
 
@@ -99,13 +111,19 @@ defmodule ExmudWeb.PlayerControllerTest do
       conn =
         conn
         |> Plug.Test.init_test_session(%{player: player})
-        |> delete(Routes.player_path(conn, :delete, player))
+        |> post(Routes.player_path(conn, :delete), id: player.id)
 
       assert response(conn, 204)
 
       assert_error_sent 404, fn ->
-        get(conn, Routes.player_path(conn, :show, player))
+        post(conn, Routes.player_path(conn, :get), id: player.id)
       end
+    end
+
+    test "cannot delete a player when not logged in", %{conn: conn, player: player} do
+      conn = post(conn, Routes.player_path(conn, :delete), player: player)
+
+      assert json_response(conn, 401)["body"] == nil
     end
   end
 

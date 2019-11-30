@@ -21,35 +21,30 @@ defmodule ExmudWeb.Router do
   scope "/api", ExmudWeb do
     pipe_through :api
 
+    get "/csrf-token", CsrfTokenController, :get_token
+
     # Auth related stuff
     post "/authenticate/email", PlayerAuthController, :authenticate_via_email
     get "/authenticate/email/:token", PlayerAuthController, :validate_auth_token
-    post "/logout", PlayerAuthController, :logout
     post "/authenticate/token", PlayerAuthController, :validate_auth_token
-    get "/csrf-token", CsrfTokenController, :get_token
+    post "/logout", PlayerAuthController, :logout
+
+    # Player related stuff
+    post "/players/create", PlayerController, :create
+    post "/players/delete", PlayerController, :delete
+    post "/players/get", PlayerController, :get
+    post "/players/update", PlayerController, :update
+
+    # Authenticated Player stuff
     get "/player", PlayerController, :get_authenticated_player
     get "/player/settings", PlayerController, :get_authenticated_player_settings
     post "/player/settings", PlayerController, :save_authenticated_player_settings
-    # get "/logout", AuthController, :logout
 
-    # Callback related stuff
-    # resources "/callbacks", CallbackController, except: [:create, :delete, :new]
-
-    # Engine related stuff
-    # resources "/mud_callbacks", MudCallbackController, only: [:edit, :show, :update]
-
-    # get "/muds/build", BuildController, :index
-
-    # resources "/muds", MudController, param: "slug" do
-    #   get "/build", BuildController, :show
-    #   resources "/build/prototypes", PrototypeController, param: "slug"
-    #   resources "/build/templates", TemplateController, param: "slug"
-    #   resources "/build/categories", CategoryController, only: [:index], param: "slug"
-    # end
-
-    # Player related stuff
-    resources "/players", PlayerController, except: [:new, :edit]
-    # resources "/profiles", ProfileController
-    # live "/signup", SignupLive
+    # Character related stuff
+    post "/characters/list-player-characters", CharacterController, :list_player_characters
+    post "/characters/create", CharacterController, :create
+    post "/characters/delete", CharacterController, :delete
+    post "/characters/get", CharacterController, :get
+    post "/characters/update", CharacterController, :update
   end
 end

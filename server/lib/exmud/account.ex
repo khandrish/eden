@@ -226,7 +226,7 @@ defmodule Exmud.Account do
       iex> create_player(bad_params)
       {:error, %Ecto.Changeset{}}
   """
-  def create_player(params) do
+  def create_player(params) when is_map(params) do
     params
     |> Player.new()
     |> Repo.insert()

@@ -6,7 +6,8 @@ defmodule ExmudWeb.PlayerController do
 
   action_fallback ExmudWeb.FallbackController
 
-  plug ExmudWeb.Plug.EnforceAuthentication when action in [:create, :delete, :get_authenticated_player, :index, :show, :update]
+  plug ExmudWeb.Plug.EnforceAuthentication
+       when action in [:create, :delete, :get_authenticated_player, :index, :show, :update]
 
   def index(conn, params) do
     page = Map.get(params, "page", 1)
@@ -15,34 +16,34 @@ defmodule ExmudWeb.PlayerController do
     render(conn, "index.json", players: players)
   end
 
-  def create(conn, %{"player" => player_params}) do
+  def create(conn, %{"params" => player_params}) do
     case Account.create_player(player_params) do
-    {:ok, %Player{} = player} ->
-      conn
-      |> put_status(:created)
-      |> put_resp_header("location", Routes.player_path(conn, :show, player))
-      |> render("show.json", player: player)
-    {:error, changeset} ->
-      if changeset.valid? do
+      {:ok, %Player{} = player} ->
         conn
-        |> put_status(500)
-        |> put_view(ExmudWeb.ErrorView)
-        |> render("500.json")
-      else
-        conn
-        |> put_status(422)
-        |> put_view(ExmudWeb.ErrorView)
-        |> render("422.json")
-      end
+        |> put_status(:created)
+        |> render("show.json", player: player)
+
+      {:error, changeset} ->
+        if changeset.valid? do
+          conn
+          |> put_status(500)
+          |> put_view(ExmudWeb.ErrorView)
+          |> render("500.json")
+        else
+          conn
+          |> put_status(422)
+          |> put_view(ExmudWeb.ErrorView)
+          |> render("422.json")
+        end
     end
   end
 
-  def show(conn, %{"id" => id}) do
+  def get(conn, %{"id" => id}) do
     player = Account.get_player!(id)
     render(conn, "show.json", player: player)
   end
 
-  def update(conn, %{"id" => id, "player" => player_params}) do
+  def update(conn, %{"id" => id, "params" => player_params}) do
     player = Account.get_player!(id)
 
     case Account.update_player(player, player_params) do
@@ -50,6 +51,7 @@ defmodule ExmudWeb.PlayerController do
         conn
         |> put_status(200)
         |> render("show.json", player: player)
+
       {:error, changeset} ->
         if changeset.valid? do
           conn
@@ -91,11 +93,15 @@ defmodule ExmudWeb.PlayerController do
 
   def save_authenticated_player_settings(conn, params) do
     if conn.assigns.player_authenticated? do
-      case Account.save_player_settings(%{developer_feature_on: params["developerFeatureOn"], player_id: params["playerId"]}) do
+      case Account.save_player_settings(%{
+             developer_feature_on: params["developerFeatureOn"],
+             player_id: params["playerId"]
+           }) do
         {:ok, settings} ->
           conn
           |> put_view(ExmudWeb.SettingsView)
           |> render("show.json", settings: settings)
+
         {:error, _changeset} ->
           conn
           |> put_view(ExmudWeb.ErrorView)

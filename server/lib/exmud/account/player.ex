@@ -26,9 +26,9 @@ defmodule Exmud.Account.Player do
   end
 
   @spec update(Exmud.Account.Player.t(), map) :: Ecto.Changeset.t()
-  def update(player = %__MODULE__{}, attrs) do
+  def update(player = %__MODULE__{}, params)do
     player
-    |> cast(attrs, [:status, :tos_accepted])
+    |> cast(params, [:status, :tos_accepted])
     |> validate()
   end
 
