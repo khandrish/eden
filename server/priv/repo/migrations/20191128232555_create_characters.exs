@@ -4,10 +4,10 @@ defmodule Exmud.Repo.Migrations.CreateCharacters do
   def change do
     create table(:characters, primary_key: false) do
       add :id, :binary_id, primary_key: true
-      add :mud_id, references(:muds, on_delete: :nothing, type: :binary_id)
-      add :name, :string
-      add :player_id, references(:players, on_delete: :nothing, type: :binary_id)
-      add :slug, :string, null: true
+      add :mud_id, references(:muds, on_delete: :nilify_all, type: :binary_id)
+      add :name, :string, null: false
+      add :player_id, references(:players, on_delete: :nilify_all, type: :binary_id)
+      add :slug, :string, null: false
 
       timestamps()
     end

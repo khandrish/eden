@@ -86,9 +86,13 @@ defmodule Exmud.EngineTest do
     @invalid_attrs %{name: nil}
 
     def character_fixture(attrs \\ %{}) do
+      player = player_fixture()
+      mud = mud_fixture()
+
       {:ok, character} =
         attrs
         |> Enum.into(@valid_attrs)
+        |> Enum.into(%{mud_id: mud.id, player_id: player.id})
         |> Engine.create_character()
 
       character
@@ -105,7 +109,12 @@ defmodule Exmud.EngineTest do
     end
 
     test "create_character/1 with valid data creates a character" do
-      assert {:ok, %Character{} = character} = Engine.create_character(@valid_attrs)
+      player = player_fixture()
+      mud = mud_fixture()
+
+      attrs = Enum.into(@valid_attrs, %{mud_id: mud.id, player_id: player.id})
+
+      assert {:ok, %Character{} = character} = Engine.create_character(attrs)
       assert character.name == "some name"
     end
 

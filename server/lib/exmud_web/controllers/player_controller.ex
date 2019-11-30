@@ -33,7 +33,7 @@ defmodule ExmudWeb.PlayerController do
           conn
           |> put_status(422)
           |> put_view(ExmudWeb.ErrorView)
-          |> render("422.json")
+          |> render("errors.json", changeset: changeset)
         end
     end
   end
@@ -62,7 +62,7 @@ defmodule ExmudWeb.PlayerController do
           conn
           |> put_status(422)
           |> put_view(ExmudWeb.ErrorView)
-          |> render("422.json")
+          |> render("errors.json", changeset: changeset)
         end
     end
   end

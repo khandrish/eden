@@ -4,9 +4,10 @@ defmodule Exmud.Engine.Character do
 
   schema "characters" do
     field :name, :string
-    field :player_id, :binary_id
-    field :mud_id, :binary_id
     field :slug, Exmud.DataType.NameSlug.Type
+
+    belongs_to(:mud, Exmud.Engine.Mud)
+    belongs_to(:player, Exmud.Account.Player)
 
     timestamps()
   end
@@ -14,18 +15,20 @@ defmodule Exmud.Engine.Character do
   @doc false
   def new(attrs) when is_map(attrs) do
     %__MODULE__{}
-    |> cast(attrs, [:name])
-    |> validate_required([:name])
+    |> cast(attrs, [:player_id, :mud_id, :name])
+    |> validate_required([:player_id, :mud_id, :name])
     |> Exmud.DataType.NameSlug.maybe_generate_slug()
     |> Exmud.DataType.NameSlug.unique_constraint()
+    |> unique_constraint(:name, name: "characters_name_mud_id_index")
   end
 
   @doc false
   def update(character = %__MODULE__{}, attrs) when is_map(attrs) do
     character
-    |> cast(attrs, [:name])
+    |> cast(attrs, [:player_id, :mud_id, :name])
     |> validate_required([:name])
     |> Exmud.DataType.NameSlug.maybe_generate_slug()
     |> Exmud.DataType.NameSlug.unique_constraint()
+    |> unique_constraint(:name, name: "characters_name_mud_id_index")
   end
 end

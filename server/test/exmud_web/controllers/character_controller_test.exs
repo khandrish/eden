@@ -14,9 +14,17 @@ defmodule ExmudWeb.CharacterControllerTest do
 
   def character_fixture(attrs \\ @create_attrs) do
     player = player_fixture()
-    attrs = Map.put(attrs, :player_id, player.id)
+    mud = mud_fixture(%{player_id: player.id})
+
+    attrs =
+      attrs
+      |> Enum.into(%{mud_id: mud.id, player_id: player.id})
+
     {:ok, character} = Engine.create_character(attrs)
-    Map.put(character, :player, player)
+
+    character
+    |> Map.put(:mud, mud)
+    |> Map.put(:player, player)
   end
 
   alias Exmud.Account
@@ -27,6 +35,17 @@ defmodule ExmudWeb.CharacterControllerTest do
     {:ok, player} = Account.create_player(attrs)
 
     player
+  end
+
+  @valid_mud_attrs %{description: "This is a description", name: "Name"}
+
+  def mud_fixture(attrs) do
+    {:ok, mud} =
+      attrs
+      |> Enum.into(@valid_mud_attrs)
+      |> Engine.create_mud()
+
+    mud
   end
 
   setup %{conn: conn} do
@@ -73,24 +92,33 @@ defmodule ExmudWeb.CharacterControllerTest do
           playerId: character.player.id
         )
 
-      assert json_response(conn, 200)["data"] == []
+      assert json_response(conn, 200)["data"] == [
+               %{"id" => character.id, "name" => character.name, "slug" => character.slug}
+             ]
     end
   end
 
   describe "create character" do
-    test "renders character when data is valid", %{conn: conn} do
+    setup [:create_character]
+
+    test "renders character when data is valid", %{conn: conn, character: character} do
+      attrs =
+        %{mud_id: character.mud.id, name: "different name", player_id: character.player.id}
+        |> Enum.into(@create_attrs)
+        require IEx; IEx.pry()
+
       conn =
         conn
-        |> Plug.Test.init_test_session(%{player: player_fixture()})
-        |> post(Routes.character_path(conn, :create), character: @create_attrs)
-
+        |> Plug.Test.init_test_session(%{player: character.player})
+        |> post(Routes.character_path(conn, :create), character: attrs)
       assert %{"id" => id, "slug" => slug} = json_response(conn, 201)["data"]
 
       conn = post(conn, Routes.character_path(conn, :get), slug: slug)
 
       assert %{
                "id" => id,
-               "name" => "some name"
+               "name" => "different name",
+               "slug" => "different-name"
              } = json_response(conn, 200)["data"]
     end
 

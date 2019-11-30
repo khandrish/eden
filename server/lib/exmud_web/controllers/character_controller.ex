@@ -31,9 +31,9 @@ defmodule ExmudWeb.CharacterController do
 
       {:error, changeset} ->
         conn
-        |> put_status(:unprocessable_entity)
+        |> put_status(422)
         |> put_view(ExmudWeb.ErrorView)
-        |> render("error.json", changeset: changeset)
+        |> render("errors.json", changeset: changeset)
     end
   end
 
