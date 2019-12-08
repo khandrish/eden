@@ -13,7 +13,7 @@ defmodule Exmud.Repo.Migrations.CreateEngines do
     end
 
     create unique_index(:muds, [:name])
-    create unique_index(:muds, [:player_id])
+    create index(:muds, [:player_id])
     create unique_index(:muds, [:slug])
   end
 end

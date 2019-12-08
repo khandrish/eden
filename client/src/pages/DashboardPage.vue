@@ -26,6 +26,12 @@
               label="MUDs"
               class="dashboardTab"
             />
+            <q-tab
+              name="muds"
+              icon="fas fa-comments"
+              label="Forums"
+              class="dashboardTab"
+            />
           </q-tabs>
         </template>
 
@@ -46,6 +52,7 @@
                   <div class="q-pa-md">
                     <q-table
                       title="Quickplay"
+                      class="table"
                       :data="data"
                       :columns="columns"
                       table-style="max-height: 400px"
@@ -59,16 +66,61 @@
 
                 <q-separator />
 
-                <q-card-actions>
-                  <q-btn flat>Dismiss</q-btn>
+                <q-card-actions
+                  align="around"
+                  class="action-container"
+                >
+                  <q-btn
+                    flat
+                    class="action-button"
+                    to="/characters/new"
+                  >Create Character</q-btn>
+                  <q-btn
+                    flat
+                    class="action-button"
+                  >Dismiss</q-btn>
                 </q-card-actions>
               </q-card>
             </q-tab-panel>
 
             <q-tab-panel name="muds">
-              <div class="text-h4 q-mb-md">Alarms</div>
-              <p>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Quis praesentium cumque magnam odio iure quidem, quod illum numquam possimus obcaecati commodi minima assumenda consectetur culpa fuga nulla ullam. In, libero.</p>
-              <p>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Quis praesentium cumque magnam odio iure quidem, quod illum numquam possimus obcaecati commodi minima assumenda consectetur culpa fuga nulla ullam. In, libero.</p>
+              <q-card
+                flat
+                bordered
+                class="my-card bg-primary"
+              >
+                <q-card-section>
+                  <div class="q-pa-md">
+                    <q-table
+                      title="Quickplay"
+                      class="table"
+                      :data="data"
+                      :columns="columns"
+                      table-style="max-height: 400px"
+                      row-key="index"
+                      virtual-scroll
+                      :pagination.sync="pagination"
+                      :rows-per-page-options="[0]"
+                    />
+                  </div>
+                </q-card-section>
+
+                <q-separator />
+
+                <q-card-actions
+                  align="around"
+                  class="action-container"
+                >
+                  <q-btn
+                    flat
+                    class="action-button"
+                  >Create MUD</q-btn>
+                  <q-btn
+                    flat
+                    class="action-button"
+                  >Dismiss</q-btn>
+                </q-card-actions>
+              </q-card>
             </q-tab-panel>
 
           </q-tab-panels>
@@ -80,7 +132,39 @@
   </q-page>
 </template>
 
-<style>
+<style lang="sass">
+.table
+  /* max height is important */
+  .q-table__middle
+    max-height: 200px
+
+  .q-table__top,
+  .q-table__bottom,
+  thead tr:first-child th
+    /* bg color is important for th; just specify one */
+    background-color: #1d1d1d
+
+  thead tr th
+    position: sticky
+    z-index: 1
+  thead tr:first-child th
+    top: 0
+
+  /* this is when the loading indicator appears */
+  &.q-table--loading thead tr:last-child th
+    /* height of all previous header rows */
+    top: 48px
+
+.action-container
+  padding: 0px
+
+div.action-container button.action-button
+  flex: 1
+  padding: 8px
+
+div.action-container a.action-button
+  flex: 1
+  padding: 8px
 </style>
 
 <script>
@@ -202,7 +286,7 @@ data.forEach((row, index) => {
 Object.freeze(data)
 
 export default {
-  name: 'LandingPage',
+  name: 'DashboardPage',
   computed: {
     showDevTab() {
       return this.$store.getters['settings/getDeveloperFeatureOn']

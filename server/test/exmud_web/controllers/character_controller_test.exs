@@ -105,7 +105,6 @@ defmodule ExmudWeb.CharacterControllerTest do
       attrs =
         %{mud_id: character.mud.id, name: "different name", player_id: character.player.id}
         |> Enum.into(@create_attrs)
-        require IEx; IEx.pry()
 
       conn =
         conn

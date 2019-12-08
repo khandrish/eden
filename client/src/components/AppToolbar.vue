@@ -4,8 +4,71 @@
       <q-avatar>
         <img src="https://cdn.quasar.dev/logo/svg/quasar-logo.svg">
       </q-avatar>
-      Dashboard
+      ExMUD
     </q-toolbar-title>
+
+    <q-separator
+      dark
+      vertical
+    />
+    <q-btn
+      stretch
+      flat
+      label="Dashboard"
+      to="/dashboard"
+    />
+    <q-separator
+      dark
+      vertical
+    />
+    <q-btn
+      stretch
+      flat
+      label="MUDs"
+      to="/muds"
+    />
+    <q-separator
+      dark
+      vertical
+    />
+    <q-btn
+      stretch
+      flat
+      label="Characters"
+      to="/characters"
+    />
+    <q-separator
+      dark
+      vertical
+    />
+    <q-btn
+      stretch
+      flat
+      label="Wiki"
+    />
+    <q-separator
+      dark
+      vertical
+    />
+    <q-btn
+      stretch
+      flat
+      label="Store"
+    />
+    <q-separator
+      dark
+      vertical
+    />
+    <q-btn
+      stretch
+      flat
+      label="Forums"
+    />
+    <q-separator
+      dark
+      vertical
+    />
+    <q-space />
 
     <template v-if="authenticated">
       <q-btn-dropdown

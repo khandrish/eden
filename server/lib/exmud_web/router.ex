@@ -7,15 +7,23 @@ defmodule ExmudWeb.Router do
     plug :accepts, ["json"]
     plug :fetch_session
     plug ExmudWeb.Plug.SetPlayer
-
-    # Why does the token sent back to server not pass the check?
-    # plug :protect_from_forgery
-
     plug :put_secure_browser_headers
+  end
+
+  pipeline :json_api do
+    plug :put_secure_browser_headers
+    plug :fetch_session
+    plug ExmudWeb.Plug.SetPlayer
+    plug JSONAPI.EnsureSpec
+    plug JSONAPI.UnderscoreParameters
   end
 
   if Mix.env() == :dev do
     forward "/sent_emails", Bamboo.SentEmailViewerPlug
+  end
+
+  scope "/jsonapi", ExmudWeb do
+    pipe_through :json_api
   end
 
   scope "/api", ExmudWeb do
@@ -46,5 +54,10 @@ defmodule ExmudWeb.Router do
     post "/characters/delete", CharacterController, :delete
     post "/characters/get", CharacterController, :get
     post "/characters/update", CharacterController, :update
+
+    # Mud related stuff
+    post "/muds/checkNameAndGetSlug", MudController, :check_name_and_get_slug
+    post "/muds/create", MudController, :create
+    post "/muds/update", MudController, :update
   end
 end

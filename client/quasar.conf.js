@@ -43,6 +43,9 @@ module.exports = function(ctx) {
         'QPage',
         'QPageContainer',
         'QSeparator',
+        'QStepper',
+        'QStep',
+        'QStepperNavigation',
         'QToolbar',
         'QToolbarTitle',
         'QToggle'

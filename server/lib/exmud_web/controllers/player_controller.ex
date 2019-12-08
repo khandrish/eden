@@ -104,6 +104,7 @@ defmodule ExmudWeb.PlayerController do
 
         {:error, _changeset} ->
           conn
+          |> put_status(401)
           |> put_view(ExmudWeb.ErrorView)
           |> render("401.json")
       end

@@ -25,6 +25,28 @@ defmodule Exmud.Engine do
   @doc """
   Gets a single mud.
 
+  ## Examples
+
+      iex> get_mud("uuid")
+      {:ok, %Mud{}}
+
+      iex> get_mud("not a uuid")
+      {:error, :not_found}
+
+  """
+  def get_mud(id) when is_binary(id) do
+    case Exmud.Repo.get(Mud, id) do
+      nil ->
+        {:error, :not_found}
+
+      mud ->
+        {:ok, mud}
+    end
+  end
+
+  @doc """
+  Gets a single mud.
+
   Raises `Ecto.NoResultsError` if the Mud does not exist.
 
   ## Examples
@@ -96,6 +118,31 @@ defmodule Exmud.Engine do
     mud
     |> Mud.update(attrs)
     |> Repo.update()
+  end
+
+  @doc """
+  Updates a mud.
+
+  ## Examples
+
+      iex> update_mud(42, %{field: new_value})
+      {:ok, %Mud{}}
+
+      iex> update_mud(42, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+      iex> update_mud(24, %{field: new_value})
+      {:error, :not_found}
+
+  """
+  def update_mud(mud_id, attrs) do
+    case get_mud(mud_id) do
+      {:ok, mud} ->
+        update_mud(mud, attrs)
+
+      error ->
+        error
+    end
   end
 
   @doc """

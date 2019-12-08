@@ -13,6 +13,22 @@ const routes = [
     path: '/dashboard',
     component: () => import('layouts/AppLayout.vue'),
     children: [{ path: '', component: () => import('pages/DashboardPage.vue') }]
+  },
+  {
+    path: '/characters',
+    component: () => import('layouts/AppLayout.vue'),
+    children: [
+      { path: '', component: () => import('pages/CharactersPage.vue') },
+      { path: 'new', component: () => import('pages/CharacterCreationPage.vue') }
+    ]
+  },
+  {
+    path: '/muds',
+    component: () => import('layouts/AppLayout.vue'),
+    children: [
+      { path: '', component: () => import('pages/MudsPage.vue') },
+      { path: 'new', component: () => import('pages/MudCreationPage.vue') }
+    ]
   }
 ]
 

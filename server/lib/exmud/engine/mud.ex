@@ -37,7 +37,7 @@ defmodule Exmud.Engine.Mud do
 
   defp validate(mud) do
     mud
-    |> validate_required([:description, :name])
+    |> validate_required([:name])
     |> validate_length(:name, min: 2, max: 60)
     |> unique_constraint(:name)
     |> Exmud.DataType.NameSlug.maybe_generate_slug()
