@@ -84,20 +84,20 @@
       <div class="text-h6 q-mb-md">Settings</div>
       <div class="text-h7 q-mb-md">Features</div>
       <q-toggle
-        v-model="mudMultiplayFeatureOn"
+        v-model="mudSettingsMultiplayAllowed"
         label="Multiplaying Allowed"
       >
         <q-tooltip content-style="font-size: 12px">
           Allow a Player with multiple Characters to log into more than one Character at a time.
         </q-tooltip>
       </q-toggle>
-      <q-item v-if="mudMultiplayFeatureOn">
+      <q-item v-if="mudSettingsMultiplayAllowed">
         <q-item-section avatar>
           <q-icon name="fas fa-users" />
         </q-item-section>
         <q-item-section>
           <q-slider
-            v-model="mudMultiplayMaxAllowedCharacters"
+            v-model="mudSettingsMultiplayMaxCharacters"
             :min="2"
             :max="5"
             :step="1"
@@ -110,6 +110,59 @@
           The maximum number of Characters that can be logged into at one time.
         </q-tooltip>
       </q-item>
+      <q-toggle
+        v-model="mudSettingsMultiplayAllowed"
+        label="Public"
+      >
+        <q-tooltip content-style="font-size: 12px">
+          A Public MUD will show up in lists and search results. A Private MUD can still be discovered by manually
+          entering the url.
+        </q-tooltip>
+      </q-toggle>
+      <q-toggle
+        v-model="mudSettingsMultiplayAllowed"
+        label="Invite Only"
+      >
+        <q-tooltip content-style="font-size: 12px">
+          If on, a Player must receive an invite to create a Character on the MUD regardless of the visibility of
+          the MUD. Otherwise a Character can be created at will.
+        </q-tooltip>
+      </q-toggle>
+      <q-toggle
+        v-model="mudSettingsMultiplayAllowed"
+        label="Characters require approval"
+      >
+        <q-tooltip content-style="font-size: 12px">
+          If toggled on, players will have to first create the character and wait for it to be reviewed and approved.
+          Otherwise the Character is available for play immediately.
+        </q-tooltip>
+      </q-toggle>
+
+      <q-stepper-navigation>
+        <q-btn
+          @click="saveSettings"
+          color="primary"
+          label="Save"
+        />
+      </q-stepper-navigation>
+    </q-step>
+
+    <q-step
+      :name="4"
+      title="Build It"
+      icon="fas fa-hammer"
+      :done="step > 4"
+      :header-nav="step > 4"
+    >
+      placeholder
+
+      <q-stepper-navigation>
+        <q-btn
+          to=mudBuildLink
+          color="primary"
+          label="Start Building"
+        />
+      </q-stepper-navigation>
     </q-step>
   </q-stepper>
 </template>
@@ -139,11 +192,14 @@ export default {
       step: 1,
 
       // Feature related stuff
-      mudMultiplayFeatureOn: false,
-      mudMultiplayMaxAllowedCharacters: 2
+      mudSettingsMultiplayAllowed: false,
+      mudSettingsMultiplayMaxCharacters: 2
     }
   },
   computed: {
+    mudBuildLink() {
+      return '/muds/' + this.mud.slug + '/build'
+    }
   },
   validations: {
   },
@@ -152,6 +208,33 @@ export default {
       return {
         'cacheKey': 'MudCreationWizard'
       }
+    },
+    saveSettings: function() {
+      this.step = this.step + 1
+      // const self = this
+      // this.addDescriptionRequestInProgress = true
+
+      // this.$axios.post('/muds/updateSettings', {
+      //   id: this.mud.id,
+      //   attributes: {
+      //     description: this.mudDescription
+      //   }
+      // })
+      //   .then(function(response) {
+      //     Notify.create({
+      //       message: 'Description has been added to your mud: ' + self.mud.name
+      //     })
+
+      //     self.step = 3
+      //   })
+      //   .catch(function(_error) {
+      //     Notify.create({
+      //       message: 'Unexpected error encountered when creating MUD. If error persists please contact support.'
+      //     })
+      //   })
+      //   .finally(function() {
+      //     self.addDescriptionRequestInProgress = false
+      //   })
     },
     checkNameAndGetSlug: _.debounce(function() {
       if (this.mudName === '' || this.mudName.length < 2) {

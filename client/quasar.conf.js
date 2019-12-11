@@ -40,6 +40,7 @@ module.exports = function(ctx) {
         'QItemSection',
         'QItem',
         'QList',
+        'QOptionGroup',
         'QPage',
         'QPageContainer',
         'QSeparator',
